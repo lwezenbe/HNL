@@ -38,53 +38,25 @@ class efficiency(object):
         if isinstance(self.efficiency_num, ROOT.TH2D):   self.isTH2 = True
         if self.isTH2 and not isinstance(self.efficiency_denom, ROOT.TH2D):  print "Warning: efficiency numerator and denominator have different dimensions"
 
-    def fillNumerator1D(self, xval, weight):
+    def fill1D(self, xval, weight, passed):
         xval = min(max(self.efficiency_num.GetXaxis().GetBinCenter(1), xval), self.efficiency_num.GetXaxis().GetBinCenter(self.efficiency_num.GetXaxis().GetLast()))
-        self.efficiency_num.Fill(xval, weight)
-        
-    def fillNumerator2D(self, xval, yval, weight):
+        if passed: self.efficiency_num.Fill(xval, weight)
+        self.efficiency_denom.Fill(xval, weight)
+
+    def fill2D(self, xval, yval, weight, passed):
         xval = min(max(self.efficiency_num.GetXaxis().GetBinCenter(1), xval), self.efficiency_num.GetXaxis().GetBinCenter(self.efficiency_num.GetXaxis().GetLast()))
         yval = min(max(self.efficiency_num.GetYaxis().GetBinCenter(1), yval), self.efficiency_num.GetYaxis().GetBinCenter(self.efficiency_num.GetYaxis().GetLast()))
-        self.efficiency_num.Fill(xval, yval, weight)
-
-    def fillNumerator(self, *val, **w):
-        if len(w) == 1 and 'w' in w.keys():
-            weight = w['w']
-        else:
-            weight = 1.
-
-        if self.isTH2:
-            if len(val) != 2:
-                print "Warning. The number of values that can be entered into the histogram: 2"
-                print "         The number of values you entered:", len(val)
-                print "         Histogram not filled"
-                return
-            else:
-                self.fillNumerator2D(val[0], val[1], weight)
-        else:
-            if len(val) != 1:
-                print "Warning. The number of values that can be entered into the histogram: 1"
-                print "         The number of values you entered:", len(val)
-                print "         Histogram not filled"
-                return
-            else:
-                self.fillNumerator1D(val[0], weight)
-
-    def fillDenominator1D(self, xval, weight):
-        xval = min(max(self.efficiency_denom.GetXaxis().GetBinCenter(1), xval), self.efficiency_denom.GetXaxis().GetBinCenter(self.efficiency_denom.GetXaxis().GetLast()))
-        self.efficiency_denom.Fill(xval, weight)
-        
-    def fillDenominator2D(self, xval, yval, weight):
-        xval = min(max(self.efficiency_denom.GetXaxis().GetBinCenter(1), xval), self.efficiency_denom.GetXaxis().GetBinCenter(self.efficiency_denom.GetXaxis().GetLast()))
-        yval = min(max(self.efficiency_denom.GetYaxis().GetBinCenter(1), yval), self.efficiency_denom.GetYaxis().GetBinCenter(self.efficiency_denom.GetYaxis().GetLast()))
+        if passed: self.efficiency_num.Fill(xval, yval, weight)
         self.efficiency_denom.Fill(xval, yval, weight)
-
-    def fillDenominator(self, *val, **w):
-        if len(w) == 1 and 'w' in w.keys():
+   
+    def fill(self, *val, **w):
+        if 'w' in w.keys():
             weight = w['w']
         else:
             weight = 1.
-
+        
+        passed = w['p']
+        
         if self.isTH2:
             if len(val) != 2:
                 print "Warning. The number of values that can be entered into the histogram: 2"
@@ -92,7 +64,7 @@ class efficiency(object):
                 print "         Histogram not filled"
                 return
             else:
-                self.fillDenominator2D(val[0], val[1], weight)
+                self.fill2D(val[0], val[1], weight, passed)
         else:
             if len(val) != 1:
                 print "Warning. The number of values that can be entered into the histogram: 1"
@@ -100,8 +72,8 @@ class efficiency(object):
                 print "         Histogram not filled"
                 return
             else:
-                self.fillDenominator1D(val[0], weight)
-
+                self.fill1D(val[0], weight, passed)
+ 
     def getNumerator(self):
         num = self.efficiency_num.Clone()
         return num

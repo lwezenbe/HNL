@@ -18,7 +18,7 @@ argParser.add_argument('--subJob',   action='store',      default=None,   help='
 argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
 argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-argParser.add_argument('--passref',  action='store_false',default=True,   help='pass ref cuts')
+argParser.add_argument('--ignoreRef',action='store_true', default=False,  help='pass ref cuts')
 args = argParser.parse_args()
 
 
@@ -30,6 +30,7 @@ if args.isTest:
     args.sample = 'WZ'
     args.subJob = '0'
     args.year = '2016'
+
 
 #
 # Load in the sample list 
@@ -69,19 +70,18 @@ def passTriggers(chain):
     return False
 
 
-
 from HNL.Tools.helpers import makeDirIfNeeded
 subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
 output_name = os.path.join(os.getcwd(), 'data', sample.output)
 if args.isChild:
     output_name += '/tmp_'+sample.output
-if args.passref:        output_name += '/'+ sample.name +'_TrigEff_' +subjobAppendix+ '.root'
+if not args.ignoreRef:        output_name += '/'+ sample.name +'_TrigEff_' +subjobAppendix+ '.root'
 else:   output_name += '/'+ sample.name +'_TrigEffnoMET_' +subjobAppendix+ '.root'
     
 
 #
 # Define histograms
-#                (channel, passref) 
+#                (channel, dim) 
 category_map = {('eee', '1D') : ['integral'], 
                 ('eee', '2D') : ['integral'], 
                 ('eemu', '1D') : ('15to30', '30to55'),
@@ -91,8 +91,8 @@ category_map = {('eee', '1D') : ['integral'],
                 ('mumumu', '1D') : ['integral'],
                 ('mumumu', '2D') : ['integral']}
 
-var = {'pt' : np.arange(5., 40., 5.),
-       'eta' : np.arange(0., 3., .5)}
+var = {'pt' : (lambda c : c._lPt, np.arange(5., 40., 5.)),
+       'eta' : (lambda c : c._lEta, np.arange(-2.5, 3., .5))}
 
 from ROOT import TH2D
 from HNL.Tools.efficiency import efficiency
@@ -101,8 +101,8 @@ for channel, d in category_map.keys():
     for v in var.keys(): 
         for t in category_map[(channel, d)]:
             name = channel + '_' + d + '_' + v + '_' + t
-            if d == '2D':        bins = (var[v], var[v])
-            if d == '1D':        bins = var[v]
+            if d == '2D':        bins = (var[v][1], var[v][1])
+            if d == '1D':        bins = var[v][1]
             eff[name] = efficiency(name, output_name, bins)
 
 #
@@ -124,7 +124,7 @@ for entry in event_range:
     progress(entry - event_range[0], len(event_range))
      
     if not select3Leptons(chain): continue
-    if args.passref and not chain._passTrigger_ref:     continue
+    if not args.ignoreRef and not chain._passTrigger_ref:     continue
 
     weightfactor = 1.
     if not sample.isData: weightfactor = chain._weight
@@ -143,13 +143,12 @@ for entry in event_range:
                
                 name = channel + '_' + d + '_' + v + '_' + t
                 if d == '2D':
-                    val = (chain.l3_pt, chain.l2_pt) if 'pt' in v else (abs(chain._lEta[chain.l3]), abs(chain._lEta[chain.l2]))
-                    eff[name].fillDenominator(val[0], val[1], w=weightfactor)
-                    if passed:  eff[name].fillNumerator(val[0], val[1], w=weightfactor)
+                    eff[name].fill(var[v][0](chain)[chain.l3], var[v][0](chain)[chain.l2], w=weightfactor, p=passed)
+                    #if passed:  eff[name].fillNumerator(var[v][0](chain)[chain.l3], var[v][0](chain)[chain.l2], w=weightfactor)
                 elif d == '1D':
-                    val = chain.l3_pt if 'pt' in v else abs(chain._lEta[chain.l1])
-                    eff[name].fillDenominator(val, w=weightfactor)
-                    if passed:  eff[name].fillNumerator(val, w=weightfactor)
+                    lIndex = chain.l3 if 'pt' in v else chain.l1
+                    eff[name].fill(var[v][0](chain)[lIndex], w=weightfactor, p=passed)
+                    #if passed:  eff[name].fillNumerator(var[v][0](chain)[lIndex], w=weightfactor)
 
 if args.isTest: exit(0)
 

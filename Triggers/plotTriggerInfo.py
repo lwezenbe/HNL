@@ -1,12 +1,12 @@
 from HNL.Tools.mergeFiles import merge
 import os
 import glob
+from HNL.Tools.helpers import makePathTimeStamped
 
 #Merges subfiles if needed
 merge_files = glob.glob(os.getcwd()+'/data/*')
 for mf in merge_files:
     if "Results" in mf: continue
-    print mf
     merge(mf)
 
 
@@ -21,6 +21,7 @@ from HNL.Plotting.plottingTools import draw2DHist
 from HNL.Plotting.style import setDefault2D
 from HNL.Tools.efficiency import efficiency
 
+output_dir = makePathTimeStamped(os.getcwd()+'/data/Results/'+f_name)
 hists = {}
 samples = []
 keyNames = []
@@ -34,7 +35,7 @@ for f in inputFiles:
         h.Divide(getObjFromFile(f, k+k+'_denom'))
         if '2D' in k:
             p = Plot(k, h, samples, 'p_{T}^{trailing} [GeV]','p_{T}^{subleading} [GeV]' )
-            p.draw2D(output_dir = os.getcwd()+'/data/Results/'+f_name+'/'+sample)
+            p.draw2D(output_dir = output_dir+'/'+sample)
         else:
             try:
                 hists[k].append(h)
@@ -49,5 +50,5 @@ for k in keyNames:
         axis_labels = ('|#eta|_{trailing} [GeV]','efficiency')
         
     p = Plot(k, hists[k], samples, axis_labels[0], axis_labels[1] )
-    p.drawHist(output_dir = os.getcwd()+'/data/Results/'+f_name)
+    p.drawHist(output_dir = output_dir)
     
