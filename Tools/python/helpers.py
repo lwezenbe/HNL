@@ -52,7 +52,7 @@ def progress(i, N, prefix="", size=60):
 
 def makeDirIfNeeded(path):
     try:
-        os.makedirs(path)
+        os.makedirs(os.path.dirname(path))
     except OSError:
         pass
 
@@ -130,3 +130,87 @@ def isTimeStampFormat(input_string):
     if len(str_arr) != 2:       return False
     if not str_arr[0].isdigit() or not str_arr[1].isdigit():    return False
     return True
+
+#
+#Create Four Vector
+#
+def getFourVec(pt, eta, phi, E):
+    vec = TLorentzVector()
+    vec.SetPtEtaPhiE(pt, eta, phi, E)
+    return vec
+
+#
+# Delta phi and R function
+#
+def deltaPhi(phi1, phi2):
+  dphi = phi2-phi1
+  if dphi > pi:   dphi -= 2.0*pi
+  if dphi <= -pi: dphi += 2.0*pi
+  return abs(dphi)
+
+def deltaR(eta1, eta2, phi1, phi2):
+  return sqrt(deltaPhi(phi1, phi2)**2 + (eta1-eta2)**2)
+
+#
+# Get all subdirectories
+#
+def getSubDir(path):
+    list_of_subdir = next(os.walk(path))[1]
+    return [path + '/' + f for f in list_of_subdir]
+
+#
+# Read the content of a root file
+#
+def rootFileContent(d, basepath="/", getNested=False):
+    "Generator function to recurse into a ROOT file/dir and yield (path, obj) pairs"
+    for key in d.GetListOfKeys():
+        kname = key.GetName()
+        if key.IsFolder() and getNested:
+            # TODO: -> "yield from" in Py3
+            for i in rootFileContent(d.Get(kname), basepath+kname+"/"):
+                yield i
+        else:
+            yield basepath+kname, d.Get(kname)
+
+#
+# Get Maximum or Minimum value including the error on the bin. I could not find any
+# existing root function for it
+#
+
+def getMaxWithErr(hist):
+    max_val = 0
+    if isinstance(hist, ROOT.TH1):
+        for bx in xrange(1, hist.GetNbinsX()):
+            new_val = hist.GetBinContent(bx) + hist.GetBinErrorUp(bx)
+            if new_val > max_val:       max_val = new_val
+
+    elif isinstance(hist, ROOT.TH2):
+        for bx in xrange(1, hist.GetNbinsX()):
+            for by in xrange(1, hist.GetNbinsY()):
+                new_val = hist.GetBinContent(bx, by) + hist.GetBinErrorUp(bx, by)
+                if new_val > max_val:       max_val = new_val
+              
+    else:
+        print "Wrong type in getMaxWithErr. Returning 0."
+        return 0.
+
+    return max_val  
+            
+def getMinWithErr(hist):
+    min_val = 0
+    if isinstance(hist, ROOT.TH1):
+        for bx in xrange(1, hist.GetNbinsX()):
+            new_val = hist.GetBinContent(bx) - hist.GetBinErrorLow(bx)
+            if new_val < min_val:       min_val = new_val
+
+    elif isinstance(hist, ROOT.TH2):
+        for bx in xrange(1, hist.GetNbinsX()):
+            for by in xrange(1, hist.GetNbinsY()):
+                new_val = hist.GetBinContent(bx, by) - hist.GetBinErrorLow(bx, by)
+                if new_val < min_val:       min_val = new_val
+              
+    else:
+        print "Wrong type in getMaxWithErr. Returning 0."
+        return 0.
+
+    return min_val  

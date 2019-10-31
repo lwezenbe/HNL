@@ -1,0 +1,11 @@
+__init__.py
+**/*.pyc
+**/*.swp
+**/log
+**/*.log
+**/Results
+**/Plots
+**/*.png
+**/*.pdf
+**/*.root
+**/*.zip
