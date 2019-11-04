@@ -19,7 +19,6 @@ from HNL.Tools.helpers import rootFileContent, getObjFromFile
 from HNL.Plotting.plot import Plot
 from HNL.Plotting.plottingTools import draw2DHist
 from HNL.Plotting.style import setDefault2D
-from HNL.Tools.efficiency import efficiency
 
 output_dir = makePathTimeStamped(os.getcwd()+'/data/Results/'+f_name)
 hists = {}
@@ -34,7 +33,7 @@ for f in inputFiles:
         h = getObjFromFile(f, k+k+'_num').Clone(k.split('/')[1]+'_efficiency')
         h.Divide(getObjFromFile(f, k+k+'_denom'))
         if '2D' in k:
-            p = Plot(k, h, samples, 'p_{T}^{trailing} [GeV]','p_{T}^{subleading} [GeV]' )
+            p = Plot(k, h, samples, h.GetXaxis().GetTitle(), h.GetYaxis().GetTitle())
             p.draw2D(output_dir = output_dir+'/'+sample)
         else:
             try:
@@ -44,11 +43,7 @@ for f in inputFiles:
 
 for k in keyNames:
     if '2D' in k:       continue
-    if 'pt' in k:
-        axis_labels = ('p_{T}^{trailing} [GeV]','efficiency')
-    else:
-        axis_labels = ('|#eta|_{trailing} [GeV]','efficiency')
         
-    p = Plot(k, hists[k], samples, axis_labels[0], axis_labels[1] )
+    p = Plot(k, hists[k], samples, hists[k][0].GetXaxis().GetTitle(), hists[k][0].GetYaxis().GetTitle() )
     p.drawHist(output_dir = output_dir)
     

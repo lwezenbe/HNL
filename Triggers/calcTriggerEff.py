@@ -81,6 +81,7 @@ else:   output_name += '/'+ sample.name +'_TrigEffnoMET_' +subjobAppendix+ '.roo
 
 #
 # Define histograms
+# Could these lists could have been done in a nicer way but since the wanted lepton is different for different var, I was too lazy for now. Redo later if needed
 #                (channel, dim) 
 category_map = {('eee', '1D') : ['integral'], 
                 ('eee', '2D') : ['integral'], 
@@ -91,25 +92,25 @@ category_map = {('eee', '1D') : ['integral'],
                 ('mumumu', '1D') : ['integral'],
                 ('mumumu', '2D') : ['integral']}
 
-var = {'pt' : (lambda c : c._lPt, np.arange(5., 40., 5.)),
-       'eta' : (lambda c : c._lEta, np.arange(-2.5, 3., .5))}
+var = {('pt', '1D') : (lambda c : c._lPt[c.l3],                                 np.arange(5., 40., 5.),                 ('p_{T}(trailing) [GeV]', 'Events')),
+       ('eta', '1D') : (lambda c : abs(c._lEta[c.l1]),                          np.arange(0., 3., .5),                  ('|#eta|(leading) [GeV]', 'Events')),
+       ('pt', '2D') : (lambda c : (c._lPt[c.l3], c._lPt[c.l2]),                     (np.arange(5., 40., 5.), np.arange(5., 40., 5.)), ('p_{T}(trailing) [GeV]', 'p_{T}(subleading) [GeV]')),
+       ('eta', '2D') : (lambda c : (abs(c._lEta[c.l3]), abs(c._lEta[c.l2])),      (np.arange(0., 3., .5), np.arange(0., 3., .5)), ('|#eta|(trailing) [GeV]', '|#eta|(subleading) [GeV]'))}
 
 from ROOT import TH2D
-from HNL.Tools.efficiency import efficiency
+from HNL.Tools.efficiency import Efficiency
 eff = {}
 for channel, d in category_map.keys():
-    for v in var.keys(): 
+    for v in {k[0] for k in var.keys()}:
         for t in category_map[(channel, d)]:
             name = channel + '_' + d + '_' + v + '_' + t
-            if d == '2D':        bins = (var[v][1], var[v][1])
-            if d == '1D':        bins = var[v][1]
-            eff[name] = efficiency(name, output_name, bins)
+            eff[name] = Efficiency(name, var[(v, d)][0], var[(v, d)][2], output_name, var[(v, d)][1])
 
 #
 # Set event range
 #
 if args.isTest:
-    event_range = xrange(1000)
+    event_range = xrange(100000)
 else:
     event_range = sample.getEventRange(args.subJob)    
 
@@ -127,12 +128,12 @@ for entry in event_range:
     if not args.ignoreRef and not chain._passTrigger_ref:     continue
 
     weightfactor = 1.
-    if not sample.isData: weightfactor = chain._weight
+    #if not sample.isData: weightfactor *= chain._weight
 
     passed = passTriggers(chain) 
     
     for channel, d in category_map.keys():
-        for v in var.keys(): 
+        for v in {k[0] for k in var.keys()}: 
             for t in category_map[(channel, d)]:
                 
                 if not passedCategory(chain, channel): continue
@@ -142,15 +143,11 @@ for entry in event_range:
                                 
                
                 name = channel + '_' + d + '_' + v + '_' + t
-                if d == '2D':
-                    eff[name].fill(var[v][0](chain)[chain.l3], var[v][0](chain)[chain.l2], w=weightfactor, p=passed)
-                    #if passed:  eff[name].fillNumerator(var[v][0](chain)[chain.l3], var[v][0](chain)[chain.l2], w=weightfactor)
-                elif d == '1D':
-                    lIndex = chain.l3 if 'pt' in v else chain.l1
-                    eff[name].fill(var[v][0](chain)[lIndex], w=weightfactor, p=passed)
-                    #if passed:  eff[name].fillNumerator(var[v][0](chain)[lIndex], w=weightfactor)
+                eff[name].fill(chain, weightfactor, passed)
 
-if args.isTest: exit(0)
+print eff['eee_2D_pt_integral'].getNumerator().GetBinContent(3, 3)
+print eff['eee_2D_pt_integral'].getDenominator().GetBinContent(3, 3)
+#if args.isTest: exit(0)
 
 #
 # Save all histograms
@@ -159,7 +156,7 @@ makeDirIfNeeded(output_name)
 
 from ROOT import TFile
 for channel, d in category_map.keys():
-    for v in var.keys(): 
+    for v in {k[0] for k in var.keys()}: 
         for t in category_map[(channel, d)]:
             name = channel + '_' + d + '_' + v + '_' + t
             eff[name].write(append=True)
