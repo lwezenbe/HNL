@@ -57,6 +57,7 @@ if not args.isChild:
 #
 sample = getSampleFromList(sample_list, args.sample)
 chain = sample.initTree()
+chain.year = int(args.year)
 
 #
 # Does an event pass the triggers
@@ -110,15 +111,15 @@ for channel, d in category_map.keys():
 # Set event range
 #
 if args.isTest:
-    event_range = xrange(100000)
+    event_range = xrange(1000)
 else:
     event_range = sample.getEventRange(args.subJob)    
 
 #
 # Loop over all events
 #
-from HNL.Tools.helpers import progress
-from HNL.SkimTuples.eventSelection import select3Leptons, passedCategory
+from HNL.Tools.helpers import progress, showBranch
+from HNL.Triggers.eventSelection import select3Leptons, passedCategory
 for entry in event_range:
     
     chain.GetEntry(entry)
@@ -145,8 +146,8 @@ for entry in event_range:
                 name = channel + '_' + d + '_' + v + '_' + t
                 eff[name].fill(chain, weightfactor, passed)
 
-print eff['eee_2D_pt_integral'].getNumerator().GetBinContent(3, 3)
-print eff['eee_2D_pt_integral'].getDenominator().GetBinContent(3, 3)
+print eff['eee_2D_pt_integral'].getNumerator().GetSumOfWeights()
+print eff['eee_2D_pt_integral'].getDenominator().GetSumOfWeights()
 #if args.isTest: exit(0)
 
 #

@@ -7,27 +7,27 @@ from HNL.ObjectSelection.leptonSelector import isTightLepton
 
 def getSortKey(item): return item[0]
 
-def select3Leptons(chain):
+def select3Leptons(chain, output_chain):
 
     chain.leptons = [(chain._lPt[l], l) for l in xrange(chain._nLight) if isTightLepton(chain, l)]
     if len(chain.leptons) < 3:  return False
 
     ptAndIndex = sorted(chain.leptons, reverse=True, key = getSortKey) 
-    chain.l1 = ptAndIndex[0][1]
-    chain.l2 = ptAndIndex[1][1]
-    chain.l3 = ptAndIndex[2][1]
-    chain.l1_pt = ptAndIndex[0][0]
-    chain.l2_pt = ptAndIndex[1][0]
-    chain.l3_pt = ptAndIndex[2][0]
+    output_chain.l1 = ptAndIndex[0][1]
+    output_chain.l2 = ptAndIndex[1][1]
+    output_chain.l3 = ptAndIndex[2][1]
+    output_chain.l1_pt = ptAndIndex[0][0]
+    output_chain.l2_pt = ptAndIndex[1][0]
+    output_chain.l3_pt = ptAndIndex[2][0]
 
-    chain.isEEE = (chain._lFlavor[chain.l1] == 0 and chain._lFlavor[chain.l2] == 0 and chain._lFlavor[chain.l3] == 0)
-    chain.isEEMu = ((chain._lFlavor[chain.l1] == 0 and chain._lFlavor[chain.l2] == 0 and chain._lFlavor[chain.l3] == 1)
+    output_chain.isEEE = (chain._lFlavor[chain.l1] == 0 and chain._lFlavor[chain.l2] == 0 and chain._lFlavor[chain.l3] == 0)
+    output_chain.isEEMu = ((chain._lFlavor[chain.l1] == 0 and chain._lFlavor[chain.l2] == 0 and chain._lFlavor[chain.l3] == 1)
                     or (chain._lFlavor[chain.l1] == 0 and chain._lFlavor[chain.l2] == 1 and chain._lFlavor[chain.l3] == 0)
                     or (chain._lFlavor[chain.l1] == 1 and chain._lFlavor[chain.l2] == 0 and chain._lFlavor[chain.l3] == 0))
-    chain.isEMuMu = ((chain._lFlavor[chain.l1] == 0 and chain._lFlavor[chain.l2] == 1 and chain._lFlavor[chain.l3] == 1)
+    output_chain.isEMuMu = ((chain._lFlavor[chain.l1] == 0 and chain._lFlavor[chain.l2] == 1 and chain._lFlavor[chain.l3] == 1)
                     or (chain._lFlavor[chain.l1] == 1 and chain._lFlavor[chain.l2] == 1 and chain._lFlavor[chain.l3] == 0)
                     or (chain._lFlavor[chain.l1] == 1 and chain._lFlavor[chain.l2] == 0 and chain._lFlavor[chain.l3] == 1))
-    chain.isMuMuMu = (chain._lFlavor[chain.l1] == 1 and chain._lFlavor[chain.l2] == 1 and chain._lFlavor[chain.l3] == 1)
+    output_chain.isMuMuMu = (chain._lFlavor[chain.l1] == 1 and chain._lFlavor[chain.l2] == 1 and chain._lFlavor[chain.l3] == 1)
     return passesPtCuts(chain)    
 
 def passesPtCuts(chain):

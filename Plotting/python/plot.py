@@ -29,13 +29,13 @@ from HNL.Tools.helpers import isTimeStampFormat, makeDirIfNeeded
 from HNL.Plotting.style import setDefault, setDefault2D
 class Plot:
     
-    def __init__(self, name, signal_hist, tex_names, x_name, y_name, bkgr_hist = None, extra_text = None, x_log = None, y_log = None):
-        self.name = name
-        self.s = signal_hist
+    def __init__(self, signal_hist, tex_names, name = None, x_name = None, y_name = None, bkgr_hist = None, extra_text = None, x_log = None, y_log = None):
+        self.s = makeList(signal_hist)
         self.tex_names = tex_names
+        self.name = name if name else self.s[0].GetTitle()
         self.b = bkgr_hist
-        self.x_name = x_name
-        self.y_name = y_name   
+        self.x_name = x_name if x_name else self.s[0].getXaxis().GetTitle()
+        self.y_name = y_name if y_name else self.s[0].getYaxis().GetTitle()
         self.pad = None #Can not be created until gROOT and gStyle settings are set
         self.x_log = x_log
         self.y_log = y_log
@@ -140,7 +140,6 @@ class Plot:
         self.pad = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
 
         #Set Histogram Styles
-        self.s = makeList(self.s)
         for h in self.s:
             h.SetLineColor(ROOT.TColor.GetColor(pt.GetLineColor(self.s.index(h))))
             h.SetLineWidth(3)
@@ -171,7 +170,8 @@ class Plot:
         cl.CMS_lumi(self.pad, 4, 11, 'Preliminary', False)
 
         #Save everything
-        self.savePlot(output_dir +'/'+ self.s[0].GetName())
+        print output_dir +'/'+ self.name
+        self.savePlot(output_dir +'/'+ self.name)
 
 
     def draw2D(self, option='ETextColz', output_dir = None):
@@ -179,12 +179,11 @@ class Plot:
         setDefault2D()    
         self.pad = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
         self.setAxisLog(is2D=True)
-        self.s = makeList(self.s)
         
         for h in self.s:
             h.SetTitle(';'+self.x_name+';'+self.y_name) 
             h.Draw(option)
-            output_name = output_dir +'/'+h.GetName()
+            output_name = output_dir +'/'+h.GetTitle() #Not using name here because loop over things with different names
             cl.CMS_lumi(self.pad, 4, 0, 'Preliminary', True)
             self.savePlot(output_name)
             self.pad.Clear()
