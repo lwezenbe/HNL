@@ -9,15 +9,14 @@ from HNL.Tools.helpers import getSubDir
 import glob
 
 def getListOfGroupID(path):
-    
     list_of_files = glob.glob(path+'/*root')
     list_of_id = {f.rsplit('/')[-1].split('_')[1] for f in list_of_files if f.rsplit('/')[-1].split('_')[2]}
     return list_of_id
 
 def checkForMerge(paths):
     
-    for p in paths:
-        if not 'tmp' in p:      paths.pop(p)
+    for i, p in enumerate(paths):
+        if not 'tmp' in p:      paths.pop(i)
     return paths 
 
 def merge(path):
@@ -31,6 +30,6 @@ def merge(path):
     for p in merge_paths:
         print p, getListOfGroupID(p)
         for id in getListOfGroupID(p):
-            os.system('hadd -f '+ p.rsplit('/', 1)[0]+ '/'+id+'.root '+p+'/*'+id+'*root')
-            os.system('rm -r '+p)
+            os.system('hadd -f '+ p.rsplit('/', 1)[0]+ '/'+id+'.root '+p+'/*_'+id+'_*root')
+        os.system('rm -r '+p)
     
