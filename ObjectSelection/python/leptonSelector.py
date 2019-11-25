@@ -1,44 +1,44 @@
 #
 # Loose WP for light leptons
 #
-from electronSelector import isLooseElectronCutBased, isLooseElectronttH
-from muonSelector import isLooseMuonCutBased, isLooseMuonttH
+from electronSelector import isLooseElectron
+from muonSelector import isLooseMuon
 
 def isLooseLightLepton(chain, index, algo = 'cutbased'):
     
     if chain._lFlavor[index] == 0:
-        return isLooseElectronCutBased(chain, index) if algo == 'cutbased' else isLooseElectronttH(chain, index)
+        return isLooseElectron(chain, index, algo)
  
     if chain._lFlavor[index] == 1:
-        return isLooseMuonCutBased(chain, index) if algo == 'cutbased' else isLooseMuonttH(chain, index)
+        return isLooseMuon(chain, index, algo)
 
     return False #If tau
 #
 # FO WP for light leptons
 #
-from electronSelector import isFOElectronCutBased, isFOElectronttH
-from muonSelector import isFOMuonCutBased, isFOMuonttH
+from electronSelector import isFOElectron
+from muonSelector import isFOMuon
 
 def isFOLightLepton(chain, index, algo = 'cutbased'):
     
     if chain._lFlavor[index] == 0:
-        return isFOElectronCutBased(chain, index) if algo == 'cutbased' else isFOElectronttH(chain, index)
+        return isFOElectron(chain, index, algo)
     if chain._lFlavor[index] == 1:   
-        return isFOMuonCutBased(chain, index) if algo == 'cutbased' else isFOMuonttH(chain, index)
+        return isFOMuon(chain, index, algo)
     return False
 
 #
 # Tight WP for light leptons
 #
-from electronSelector import isTightElectronCutBased, isTightElectronttH
-from muonSelector import isTightMuonCutBased, isTightMuonttH
+from electronSelector import isTightElectron
+from muonSelector import isTightMuon
 
 def isTightLightLepton(chain, index, algo ='cutbased'):
     
     if chain._lFlavor[index] == 0:    
-        return isTightElectronCutBased(chain, index) if algo == 'cutbased' else isTightElectronttH(chain, index)
+        return isTightElectron(chain, index, algo)
     if chain._lFlavor[index] == 1:   
-        return isTightMuonCutBased(chain, index) if algo == 'cutbased' else isTightMuonttH(chain, index)
+        return isTightMuon(chain, index, algo)
     return False
 
 #

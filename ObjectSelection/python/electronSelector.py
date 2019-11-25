@@ -16,10 +16,39 @@ def isCleanFromMuons(chain, index):
 #
 # WP as defined in AN 2017/014
 #
+def slidingCut(chain, index, high, low):
+    
+    slope = (high - low)/10.
+    return min(low, max(high, low + slope*(chain._lPt[index]-15)));
+        
+def cutBasedMVA(chain, index, WP, pt):
+    
+    if pt < 15:
+        if WP == 'FO':
+            if abs(chain._lEta[index]) < 0.8: return -0.02
+            elif abs(chain._lEta[index]) < 1.479: return -0.52
+            else:       return -0.52
+        else:
+            if abs(chain._lEta[index]) < 0.8: return 0.77
+            elif abs(chain._lEta[index]) < 1.479: return 0.56
+            else:       return 0.48
+
+    elif pt > 25:
+        if WP == 'FO':
+            if abs(chain._lEta[index]) < 0.8: return -0.02
+            elif abs(chain._lEta[index]) < 1.479: return -0.52
+            else:       return -0.52
+        else:
+            if abs(chain._lEta[index]) < 0.8: return 0.52
+            elif abs(chain._lEta[index]) < 1.479: return 0.11
+            else:       return -0.01
+    else:
+        return slidingCut(chain, index, cutBasedMVA(chain, index,WP, 14), cutBasedMVA(chain, index,WP, 26))
+
 def isLooseElectronCutBased(chain, index):
     
     if abs(chain._lEta[index]) >= 2.5:          return False
-    if chain._lPt[index] < 10:                  return False
+    if chain._lPt[index] <= 10:                  return False
     if not isCleanFromMuons(chain, index):      return False
     if abs(chain._dxy[index]) >= 0.05:          return False
     if abs(chain._dz[index]) >= 0.1:            return False
@@ -32,6 +61,7 @@ def isFOElectronCutBased(chain, index):
     
     if not isLooseElectronCutBased(chain, index):       return False
     if chain._3dIPSig[index] >= 4:              return False
+    if cutBasedMVA(chain, index, 'FO', chain._lPt[index]) >= chain._lElectronSummer16MvaGP[index]: return False
     if not chain._lElectronPassEmu[index]:      return False   #sigma_ietaieta, H/E, deltaEta_in, deltaPhi_in, 1/E-1/p
     if chain._lElectronMissingHits[index] != 0: return False
     #MVA
@@ -41,6 +71,7 @@ def isTightElectronCutBased(chain, index):
 
     if not isFOElectronCutBased(chain, index):          return False
     if chain._relIso[index] >= 0.1:                    return False
+    if cutBasedMVA(chain, index, 'tight', chain._lPt[index]) >= chain._lElectronSummer16MvaGP[index]: return False
     #MVA
     return True
 
@@ -138,3 +169,11 @@ def isTightElectronttH(chain, index):
     return True
 
 
+def isLooseElectron(chain, index, algo = 'cutbased'):
+    return isLooseElectronCutBased(chain, index) if algo == 'cutbased' else isLooseElectronttH(chain, index)
+
+def isFOElectron(chain, index, algo = 'cutbased'):
+    return isFOElectronCutBased(chain, index) if algo == 'cutbased' else isFOElectronttH(chain, index)
+
+def isTightElectron(chain, index, algo = 'cutbased'):
+    return isTightElectronCutBased(chain, index) if algo == 'cutbased' else isTightElectronttH(chain, index)

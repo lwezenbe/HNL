@@ -3,6 +3,8 @@ WP = { (2016, 'loose', 'CSV') : 0.2217,
         (2016, 'medium', 'CSV') : 0.6321,
         (2016, 'tight', 'CVS') : 0.8953,
 
+        (2016, 'loose', 'AN2017-014') : 0.5426,
+        
         (2017, 'loose', 'CSV') : 0.1522,
         (2017, 'medium', 'CSV') : 0.4941,
         (2017, 'tight', 'CVS') : 0.8001,
@@ -27,6 +29,16 @@ WP = { (2016, 'loose', 'CSV') : 0.2217,
 def getBTagWP(year, working_point, algo = 'Deep'):
     return WP[year, working_point, algo]
 
+def readBTagValue(chain, jet, algo = 'Deep'):
+    if algo == 'Deep':
+        return chain._jetDeepCsv_b[jet] + chain._jetDeepCsv_bb[jet]
+    elif algo == 'CSV':
+        return chain._jetDeepCsv[jet]
+    elif algo == 'AN2017-014':
+        return chain._jetCsvV2[jet]
+    else:
+        print 'Unknown b-tagging algorithm'
+
 def slidingDeepFlavorThreshold(year, pt, algo='Deep' ):
     minPt = 20.
     maxPt = 45.
@@ -38,4 +50,5 @@ def slidingDeepFlavorThreshold(year, pt, algo='Deep' ):
         return looseWP
     else:
         return ( mediumWP - ( mediumWP - looseWP ) / ( maxPt - minPt ) * ( pt - minPt ) )
+
 

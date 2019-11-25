@@ -50,3 +50,11 @@ def isTightMuonttH(chain, index):
     return True
     
 
+def isLooseMuon(chain, index, algo = 'cutbased'):
+    return isLooseMuonCutBased(chain, index) if algo == 'cutbased' else isLooseMuonttH(chain, index)
+
+def isFOMuon(chain, index, algo = 'cutbased'):
+    return isFOMuonCutBased(chain, index) if algo == 'cutbased' else isFOMuonttH(chain, index)
+
+def isTightMuon(chain, index, algo = 'cutbased'):
+    return isTightMuonCutBased(chain, index) if algo == 'cutbased' else isTightMuonttH(chain, index)
