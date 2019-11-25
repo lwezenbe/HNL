@@ -56,9 +56,10 @@ def submitJobs(script, subJobArgs, subJobList, argParser, dropArgs=None, subLog=
             else:
                 try:    submitArgs.pop(arg)
                 except: pass
-
+        
         command = script + ' ' + ' '.join(['--' + arg + '=' + str(value) for arg, value in submitArgs.iteritems() if value != False])
         command = command.replace('=True','')
+        
         logdir  = os.path.join('log', os.path.basename(script).split('.')[0]+(('-'+subLog) if subLog else ''), *(str(s) for s in subJob[:-1]))
         logfile = os.path.join(logdir, str(subJob[-1]) + ".log")
 

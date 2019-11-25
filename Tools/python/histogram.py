@@ -13,7 +13,7 @@ class Histogram:
  
     def __init__(self, *args, **overflow):
 
-        if len(args) == 1 and (isinstance(args[0], ROOT.TH1) or isintance(args[0], ROOT.TH2)):
+        if len(args) == 1 and (isinstance(args[0], ROOT.TH1) or isinstance(args[0], ROOT.TH2)):
             self.hist = args[0]
             self.name = self.hist.GetName()
             self.var = None             #Temporary, will not need it in this case yet and dont know how to deal with it yet
@@ -45,10 +45,13 @@ class Histogram:
         except:
             self.overflow = True
 
-    def fill1D(self, chain, weight):
-        if self.overflow: xval = min(max(self.hist.GetXaxis().GetBinCenter(1), self.var(chain)), self.hist.GetXaxis().GetBinCenter(self.hist.GetXaxis().GetLast()))
-        else: xval = self.var
-
+    def fill1D(self, chain, weight, index = None):
+        if index is not None:
+            var = self.var(chain, index)
+        else:
+            var = self.var(chain)
+        if self.overflow: xval = min(max(self.hist.GetXaxis().GetBinCenter(1), var), self.hist.GetXaxis().GetBinCenter(self.hist.GetXaxis().GetLast()))
+        else: xval = var
         self.hist.Fill(xval, weight)
 
     def fill2D(self, chain, weight):
@@ -61,11 +64,11 @@ class Histogram:
 
         self.hist.Fill(xval, yval, weight)
 
-    def fill(self, chain, weight):
+    def fill(self, chain, weight, index = None):
         if self.isTH2:
             self.fill2D(chain, weight)
         else:
-            self.fill1D(chain, weight)
+            self.fill1D(chain, weight, index)
 
     def getXTitle(self):
         return self.var_tex[0]

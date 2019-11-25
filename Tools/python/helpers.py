@@ -162,7 +162,7 @@ def getSubDir(path):
 # Read the content of a root file
 #
 def rootFileContent(d, basepath="/", getNested=False):
-    "Generator function to recurse into a ROOT file/dir and yield (path, obj) pairs"
+    #"Generator function to recurse into a ROOT file/dir and yield (path, obj) pairs"
     for key in d.GetListOfKeys():
         kname = key.GetName()
         if key.IsFolder() and getNested:
@@ -190,6 +190,12 @@ def getMaxWithErr(hist):
                 new_val = hist.GetBinContent(bx, by) + hist.GetBinErrorUp(bx, by)
                 if new_val > max_val:       max_val = new_val
               
+#    elif isinstance(hist, ROOT.TGraph):
+#        for bx in xrange(1, hist.GetNbinsX()):
+#            for by in xrange(1, hist.GetNbinsY()):
+#                new_val = hist.GetBinContent(bx, by) + hist.GetBinErrorUp(bx, by)
+#                if new_val > max_val:       max_val = new_val
+    
     else:
         print "Wrong type in getMaxWithErr. Returning 0."
         return 0.

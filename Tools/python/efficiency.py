@@ -34,9 +34,9 @@ class Efficiency(object):
         self.isTH2 = self.efficiency_num.isTH2
         if self.isTH2 and not self.efficiency_denom.isTH2:  print "Warning: efficiency numerator and denominator have different dimensions"
 
-    def fill(self, chain, weight, passed):
-        self.efficiency_denom.fill(chain, weight)
-        if passed:      self.efficiency_num.fill(chain, weight)
+    def fill(self, chain, weight, passed, index = None):
+        self.efficiency_denom.fill(chain, weight, index)
+        if passed:      self.efficiency_num.fill(chain, weight, index)
  
     def getNumerator(self):
         num = self.efficiency_num.getHist().Clone()
