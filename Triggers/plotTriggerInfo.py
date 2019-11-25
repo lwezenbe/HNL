@@ -36,7 +36,7 @@ for f_name in f_names:
             h = getObjFromFile(f, k+k+'_num').Clone(k.split('/')[1]+'_efficiency')
             h.Divide(getObjFromFile(f, k+k+'_denom'))
             if '2D' in k:
-                p = Plot(h, samples, k, h.GetXaxis().GetTitle(), h.GetYaxis().GetTitle())
+                p = Plot(h, samples, k.split('/')[1], h.GetXaxis().GetTitle(), h.GetYaxis().GetTitle())
                 p.draw2D(output_dir = output_dir+'/'+sample)
             else:
                 try:
@@ -47,6 +47,6 @@ for f_name in f_names:
     for k in keyNames:
         if '2D' in k:       continue
             
-        p = Plot(hists[k], samples, k, hists[k][0].GetXaxis().GetTitle(), hists[k][0].GetYaxis().GetTitle() )
+        p = Plot(hists[k], samples, k.split('/')[1], hists[k][0].GetXaxis().GetTitle(), hists[k][0].GetYaxis().GetTitle() )
         p.drawHist(output_dir = output_dir)
         

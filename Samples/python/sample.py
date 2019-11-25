@@ -25,7 +25,7 @@ class sample:
  
     def calcSplitJobs(self, init_value):
         splitJobs = 1
-        if init_value == 'Calc':
+        if 'Calc' in init_value:
             tot_size = 0
             if self.path.endswith('.root'):
                 tot_size = self.fileSize(self.path)
@@ -34,6 +34,7 @@ class sample:
                     tot_size += self.fileSize(f)
                 if tot_size == 0:       print "No file loaded, check the input path again."
             splitJobs = int(round((tot_size/self.max_filesize)+0.5))
+            if '*' in init_value:       splitJobs *= float(init_value.split('*')[-1])
         else:
             splitJobs = int(init_value)
         return splitJobs
@@ -106,7 +107,15 @@ def createSampleFileFromShortlist(fileName):
         outfile.write(name + ' ' + p + ' ' + output + '       Calc    0.  \n')
     outfile.close()
     return 
-     
+    
+def getListOfSampleNames(fileName):
+    sampleInfos = [line.split('%')[0].strip() for line in open(fileName)]                     # Strip % comments and \n charachters
+    sampleInfos = [line.split() for line in sampleInfos if line]                              # Get lines into tuples
+    name_list = []
+    for name, path, output, splitJobs, xsec in sampleInfos:
+        name_list.append(name)
+
+    return name_list
 if __name__ == "__main__":
     createSampleFileFromShortlist('input.conf') 
     listw = createSampleList('input_sampleList.conf')

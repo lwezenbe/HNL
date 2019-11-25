@@ -39,7 +39,7 @@ class Plot:
         self.pad = None #Can not be created until gROOT and gStyle settings are set
         self.x_log = x_log
         self.y_log = y_log
-        
+        self.extra_text = extra_text
  
     def setAxisLog(self, is2D = False):
         if not is2D:
@@ -54,22 +54,22 @@ class Plot:
         else:
             if not is2D: self.s[0].GetYaxis().SetRangeUser(0.7*OverallMin, 1.3*OverallMax)
 
-    def drawExtraText(self, additionalInformation):
+    def drawExtraText(self):
         self.pad.cd()
         #Write extra text
-        if additionalInformation is not None:
+        if self.extra_text is not None:
             lastYpos = 0.8
             lastCorrectedYpos = None
             lastXpos = 0.2
             extraText = TLatex()
-            for info in additionalInformation:
+            for info in self.extra_text:
                 try :
                     extraTextString = info[0]
                     extraTextXpos = info[1]
                     extraTextYpos = info[2]
                     extraTextSize = info[3]
                 except:
-                    print("Wrong Format for additionalInformation. Stopping")
+                    print("Wrong Format for self.extra_text. Stopping")
                     pass
 
                 if extraTextSize is None:
@@ -120,7 +120,7 @@ class Plot:
         self.pad.SaveAs(destination + ".pdf")
         self.pad.SaveAs(destination + ".png")
         self.pad.SaveAs(destination + ".root")
-
+        print destination + ".png"
         #Clean out the php directory you want to write to if it is already filled, otherwise things go wrong with updating the file on the website
         #os.system("rm "+php_destination.rsplit('/')[0]+"/*")
 
@@ -183,8 +183,50 @@ class Plot:
         for h in self.s:
             h.SetTitle(';'+self.x_name+';'+self.y_name) 
             h.Draw(option)
-            output_name = output_dir +'/'+h.GetTitle() #Not using name here because loop over things with different names
+            output_name = output_dir +'/'+h.GetName() #Not using name here because loop over things with different names
             cl.CMS_lumi(self.pad, 4, 0, 'Preliminary', True)
             self.savePlot(output_name)
             self.pad.Clear()
         return
+
+    def drawGraph(self, output_dir = None):
+        
+        setDefault()
+        
+        #Create Canvas
+        self.pad = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
+
+        #Create TGraph
+        mgraph = ROOT.TMultiGraph()
+       
+        print self.s 
+        for i, graph in enumerate(self.s):
+            graph.SetMarkerSize(1.5)
+            graph.SetLineColor(ROOT.TColor.GetColor(pt.GetLineColor(self.s.index(graph))))
+            graph.SetMarkerColor(ROOT.TColor.GetColor(pt.GetLineColor(self.s.index(graph))))
+            graph.SetMarkerStyle(pt.GetMarker(self.s.index(graph)))
+            mgraph.Add(graph)
+
+        mgraph.Draw("APLine")
+        mgraph.SetTitle(";" + self.x_name + ";" + self.y_name)
+        
+        
+        #self.setAxisLog() 
+        #Write extra text
+        if self.extra_text is not None:
+            self.drawExtraText()
+        
+        #Create Legend
+        legend = ROOT.TLegend(0.5, .8, .9, .9)
+        for h, n in zip(self.s, self.tex_names):
+            legend.AddEntry(h, n)
+        legend.SetFillStyle(0)
+        legend.SetBorderSize(0)
+        legend.Draw()
+        
+        cl.CMS_lumi(self.pad, 4, 11, 'Simulation', False)
+
+        #Save everything
+        print output_dir +'/'+ self.name
+        self.savePlot(output_dir +'/'+ self.name)
+
