@@ -1,8 +1,8 @@
 #
 # Loose WP for light leptons
 #
-from electronSelector import isLooseElectron
-from muonSelector import isLooseMuon
+from HNL.ObjectSelection.electronSelector import isLooseElectron
+from HNL.ObjectSelection.muonSelector import isLooseMuon
 
 def isLooseLightLepton(chain, index, algo = 'cutbased'):
     
@@ -16,8 +16,8 @@ def isLooseLightLepton(chain, index, algo = 'cutbased'):
 #
 # FO WP for light leptons
 #
-from electronSelector import isFOElectron
-from muonSelector import isFOMuon
+from HNL.ObjectSelection.electronSelector import isFOElectron
+from HNL.ObjectSelection.muonSelector import isFOMuon
 
 def isFOLightLepton(chain, index, algo = 'cutbased'):
     
@@ -30,8 +30,8 @@ def isFOLightLepton(chain, index, algo = 'cutbased'):
 #
 # Tight WP for light leptons
 #
-from electronSelector import isTightElectron
-from muonSelector import isTightMuon
+from HNL.ObjectSelection.electronSelector import isTightElectron
+from HNL.ObjectSelection.muonSelector import isTightMuon
 
 def isTightLightLepton(chain, index, algo ='cutbased'):
     
@@ -44,7 +44,7 @@ def isTightLightLepton(chain, index, algo ='cutbased'):
 #
 # Loose WP for leptons
 #
-from tauSelector import isLooseTau, isFOTau, isTightTau
+from HNL.ObjectSelection.tauSelector import isLooseTau, isFOTau, isTightTau
 
 def isLooseLepton(chain, index, algo = 'cutbased'):
    

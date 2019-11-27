@@ -73,7 +73,7 @@ class Histogram:
     def getXTitle(self):
         return self.var_tex[0]
     
-    def getXTitle(self):
+    def getYTitle(self):
         return self.var_tex[1]
 
     def getHist(self):

@@ -1,6 +1,4 @@
 import ROOT
-import numpy as np
-import HNL.Samples.sample
 from HNL.Tools.helpers import makeDirIfNeeded, getObjFromFile, isValidRootFile
 from HNL.Tools.histogram import Histogram
 
@@ -18,9 +16,9 @@ class Efficiency(object):
         #If bins == None, load in histograms from the path
         bins_check = False
         try:
-            if bins:    bins_check=True
+            if bins:    bins_check = True
         except:
-            if bins.any():      bins_check=True
+            if bins.any():      bins_check = True
        
         if bins_check:
             self.efficiency_num = Histogram(name+'_num', self.var, var_tex, bins)

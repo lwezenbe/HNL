@@ -1,4 +1,3 @@
-import ROOT
 import numpy as np
 from HNL.ObjectSelection.electronSelector import isLooseElectron
 from HNL.ObjectSelection.muonSelector import isLooseMuon
@@ -89,14 +88,14 @@ def isLooseTau(chain, index, algo_iso = default_id_algo, algo_ele = default_eleD
 
 def isFOTau(chain, index, algo = default_id_algo, algo_ele = default_eleDiscr_algo, algo_mu = default_muonDiscr_algo):
     
-    if not isLooseTau(chain, index, algo):              return False
+    if not isLooseTau(chain, index, algo, algo_ele, algo_mu):              return False
     if not tau_id_WP[(algo, 'medium')](chain)[index]:   return False
     return True
 
 
 def isTightTau(chain, index, algo = default_id_algo, algo_ele = default_eleDiscr_algo, algo_mu = default_muonDiscr_algo): 
     
-    if not isFOTau(chain, index, algo):              return False
+    if not isFOTau(chain, index, algo, algo_ele, algo_mu):              return False
     if not tau_id_WP[(algo, 'tight')](chain)[index]:   return False
     return True
 

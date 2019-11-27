@@ -29,7 +29,7 @@ def merge(path):
 
     for p in merge_paths:
         print p, getListOfGroupID(p)
-        for id in getListOfGroupID(p):
-            os.system('hadd -f '+ p.rsplit('/', 1)[0]+ '/'+id+'.root '+p+'/*_'+id+'_*root')
+        for group_id in getListOfGroupID(p):
+            os.system('hadd -f '+ p.rsplit('/', 1)[0]+ '/'+group_id+'.root '+p+'/*_'+group_id+'_*root')
         os.system('rm -r '+p)
     

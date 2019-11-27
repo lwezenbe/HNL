@@ -1,4 +1,6 @@
-import ROOT
+#
+#       Defines jet WP and b-tagging
+#
 
 def isGoodJet(chain, index):
     if chain._jetPt[index] < 25:        return False
@@ -8,8 +10,8 @@ def isGoodJet(chain, index):
 
 
 from bTagWP import getBTagWP, readBTagValue
-def isBJet(chain, index, algo, WP):
-    if readBTagValue(chain, index, algo) < getBTagWP(chain.year, WP, algo): return False
+def isBJet(chain, index, algo, wp):
+    if readBTagValue(chain, index, algo) < getBTagWP(chain.year, wp, algo): return False
     return True
     
 

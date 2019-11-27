@@ -18,7 +18,7 @@ argParser.add_argument('--subJob',   action='store',      default=None,   help='
 argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
 argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-argParser.add_argument('--ignoreRef',action='store_true', default=False,  help='pass ref cuts')
+argParser.add_argument('--ignoreRef', action='store_true', default=False,  help='pass ref cuts')
 args = argParser.parse_args()
 
 
@@ -62,12 +62,12 @@ chain.year = int(args.year)
 #
 # Does an event pass the triggers
 #
-def passTriggers(chain):
-    if chain._HLT_Ele16_Ele12_Ele8_CaloIdL_TrackIdL or chain._HLT_Mu8_DiEle12_CaloIdL_TrackIdL or chain._HLT_DiMu9_Ele9_CaloIdL_TrackIdL or chain._HLT_TripleMu_12_10_5:        return True
-    if chain._HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ or chain._HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ or chain._HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL_DZ:  return True
-    if chain._HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL or chain._HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL:     return True
-    if chain._passTrigger_mm: return True
-    if chain._HLT_Ele27_WPTight_Gsf or chain._HLT_IsoMu24 or chain._HLT_IsoTkMu24:      return True
+def passTriggers(c):
+    if c._HLT_Ele16_Ele12_Ele8_CaloIdL_TrackIdL or c._HLT_Mu8_DiEle12_CaloIdL_TrackIdL or c._HLT_DiMu9_Ele9_CaloIdL_TrackIdL or chain._HLT_TripleMu_12_10_5:        return True
+    if c._HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ or c._HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ or c._HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL_DZ:  return True
+    if c._HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL or c._HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL:     return True
+    if c._passTrigger_mm: return True
+    if c._HLT_Ele27_WPTight_Gsf or c._HLT_IsoMu24 or c._HLT_IsoTkMu24:      return True
     return False
 
 
@@ -98,7 +98,6 @@ var = {('pt', '1D') : (lambda c : c._lPt[c.l3],                                 
        ('pt', '2D') : (lambda c : (c._lPt[c.l3], c._lPt[c.l2]),                     (np.arange(5., 40., 5.), np.arange(5., 40., 5.)), ('p_{T}(trailing) [GeV]', 'p_{T}(subleading) [GeV]')),
        ('eta', '2D') : (lambda c : (abs(c._lEta[c.l3]), abs(c._lEta[c.l2])),      (np.arange(0., 3., .5), np.arange(0., 3., .5)), ('|#eta|(trailing) [GeV]', '|#eta|(subleading) [GeV]'))}
 
-from ROOT import TH2D
 from HNL.Tools.efficiency import Efficiency
 eff = {}
 for channel, d in category_map.keys():
@@ -118,7 +117,7 @@ else:
 #
 # Loop over all events
 #
-from HNL.Tools.helpers import progress, showBranch
+from HNL.Tools.helpers import progress
 from HNL.Triggers.eventSelection import select3Leptons, passedCategory
 for entry in event_range:
     
@@ -155,7 +154,6 @@ print eff['eee_2D_pt_integral'].getDenominator().GetSumOfWeights()
 #
 makeDirIfNeeded(output_name)
 
-from ROOT import TFile
 for channel, d in category_map.keys():
     for v in {k[0] for k in var.keys()}: 
         for t in category_map[(channel, d)]:

@@ -1,3 +1,5 @@
+#pylint: disable=W0311
+
 import ROOT as rt
 
 def tdrGrid( gridOn):

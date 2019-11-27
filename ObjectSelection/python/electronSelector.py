@@ -5,11 +5,11 @@ from bTagWP import getBTagWP
 #
 # We dont use electrons that fall within dr 0.05 of a loose muon
 #
-from HNL.ObjectSelection.muonSelector import isLooseMuonCutBased, isLooseMuonttH
-def isCleanFromMuons(chain, index):
+from HNL.ObjectSelection.muonSelector import isLooseMuon
+def isCleanFromMuons(chain, index, mu_algo = 'cut_based'):
     
     for mu in xrange(chain._nMu):
-        if not isLooseMuonCutBased(chain, mu):  continue
+        if not isLooseMuon(chain, mu, mu_algo):  continue
         if deltaR(chain._lEta[mu], chain._lEta[index], chain._lPhi[mu], chain._lPhi[index]) < 0.05: return False
     return True
 
@@ -19,12 +19,12 @@ def isCleanFromMuons(chain, index):
 def slidingCut(chain, index, high, low):
     
     slope = (high - low)/10.
-    return min(low, max(high, low + slope*(chain._lPt[index]-15)));
+    return min(low, max(high, low + slope*(chain._lPt[index]-15)))
         
-def cutBasedMVA(chain, index, WP, pt):
+def cutBasedMVA(chain, index, wp, pt):
     
     if pt < 15:
-        if WP == 'FO':
+        if wp == 'FO':
             if abs(chain._lEta[index]) < 0.8: return -0.02
             elif abs(chain._lEta[index]) < 1.479: return -0.52
             else:       return -0.52
@@ -34,7 +34,7 @@ def cutBasedMVA(chain, index, WP, pt):
             else:       return 0.48
 
     elif pt > 25:
-        if WP == 'FO':
+        if wp == 'FO':
             if abs(chain._lEta[index]) < 0.8: return -0.02
             elif abs(chain._lEta[index]) < 1.479: return -0.52
             else:       return -0.52
@@ -43,7 +43,7 @@ def cutBasedMVA(chain, index, WP, pt):
             elif abs(chain._lEta[index]) < 1.479: return 0.11
             else:       return -0.01
     else:
-        return slidingCut(chain, index, cutBasedMVA(chain, index,WP, 14), cutBasedMVA(chain, index,WP, 26))
+        return slidingCut(chain, index, cutBasedMVA(chain, index, wp, 14), cutBasedMVA(chain, index, wp, 26))
 
 def isLooseElectronCutBased(chain, index):
     
@@ -104,7 +104,7 @@ def looseMVAcut(chain, index):
     else: return -0.0321841194737 
 
 
-def WP80MVACut(chain, index):
+def wp80MVACut(chain, index):
     category = electronMVAcategory(chain, index)
     if category == 0:  return 3.53495358797 - math.exp( -chain._lPt[index] / 3.07272325141 ) * 9.94262764352
     elif category == 1:  return 3.06015605623 - math.exp( -chain._lPt[index] / 1.95572234114 ) * 14.3091184421
@@ -113,7 +113,7 @@ def WP80MVACut(chain, index):
     elif category == 4:  return 6.41811074032 - math.exp( -chain._lPt[index] / 14.730562874 ) * 6.96387331587
     else: return 5.64936312428 - math.exp( -chain._lPt[index] / 16.3664949747 ) * 7.19607610311
 
-def WP90MVACut(chain, index):
+def wp90MVACut(chain, index):
     category = electronMVAcategory(chain, index)
     if category == 0: return 2.84704783417 - math.exp( -chain._lPt[index] / 3.32529515837 ) * 9.38050947827
     elif category == 1: return 2.03833922005 - math.exp( -chain._lPt[index] / 1.93288758682 ) * 15.364588247
@@ -128,11 +128,11 @@ def passMVAloose(chain, index):
 
 def passMVAWP80(chain, index):
     rawMVA = rawElectronMVA(chain._lElectronMvaFall17NoIso[index])
-    return rawMVA > WP80MVACut(chain, index)
+    return rawMVA > wp80MVACut(chain, index)
     
 def passMVAWP90(chain, index):
     rawMVA = rawElectronMVA(chain._lElectronMvaFall17NoIso[index])
-    return rawMVA > WP90MVACut(chain, index)
+    return rawMVA > wp90MVACut(chain, index)
 
 def isLooseElectronttH(chain, index):
     

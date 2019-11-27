@@ -18,6 +18,7 @@ argParser.add_argument('--subJob',   action='store',      default=None,   help='
 argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
 argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
+argParser.add_argument('--FOcut',   action='store_true', default=False,  help='Perform baseline FO cut')
 args = argParser.parse_args()
 
 
@@ -58,7 +59,6 @@ if not args.isChild:
 sample = getSampleFromList(sample_list, args.sample)
 chain = sample.initTree()
 
-from HNL.Tools.helpers import makeDirIfNeeded
 subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
 output_name = os.path.join(os.getcwd(), 'data', sample.output)
 if args.isChild:
@@ -74,15 +74,15 @@ from HNL.Samples.sample import getListOfSampleNames
 def getMassRange(sample_list_location):
     list_of_names = getListOfSampleNames(sample_list_location)
     all_masses = [float(name.rsplit('-', 1)[-1]) for name in list_of_names]
-    mass_range = []
+    m_range = []
     if len(all_masses) == 1:
-        mass_range = [all_masses[0]/2, all_masses[0]*1.5]
+        m_range = [all_masses[0]/2, all_masses[0]*1.5]
     else:
         for i, mass in enumerate(all_masses):
             if i != len(all_masses)-1: distance_to_next = all_masses[i+1] - mass
-            if i == 0: mass_range.append(mass - 0.5*distance_to_next)
-            mass_range.append(mass+0.5*distance_to_next)  #For last run, distance_to_next should still be the same
-    return mass_range
+            if i == 0: m_range.append(mass - 0.5*distance_to_next)
+            m_range.append(mass+0.5*distance_to_next)  #For last run, distance_to_next should still be the same
+    return m_range
 
 mass_range = getMassRange(list_location)
 
@@ -98,8 +98,8 @@ efficiency = Efficiency('efficiency', var['HNLmass'][0], var['HNLmass'][2], outp
 # Set event range
 #
 if args.isTest:
-    event_range = sample.getEventRange(args.subJob)    
-    #event_range = xrange(1000)
+    #event_range = sample.getEventRange(args.subJob)    
+    event_range = xrange(1000)
 else:
     event_range = sample.getEventRange(args.subJob)    
 
@@ -110,7 +110,7 @@ chain.year = int(args.year)
 #
 # Loop over all events
 #
-from HNL.Tools.helpers import progress, showBranch
+from HNL.Tools.helpers import progress
 from HNL.EventSelection.eventSelection import select3Leptons
 from HNL.ObjectSelection.leptonSelector import isFOLepton
 for entry in event_range:
@@ -118,8 +118,9 @@ for entry in event_range:
     chain.GetEntry(entry)
     progress(entry - event_range[0], len(event_range))
 
-#    tmp = [l for l in xrange(chain._nL) if isFOLepton(chain, l)]
-#    if len(tmp) < 3: continue   
+    if args.FOcut:
+        tmp = [l for l in xrange(chain._nL) if isFOLepton(chain, l)]
+        if len(tmp) < 3: continue   
   
     passed = select3Leptons(chain)
 

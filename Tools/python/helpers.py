@@ -1,21 +1,20 @@
-import ROOT, socket, os, shutil, subprocess, time
-from math import pi, sqrt
-from operator import mul
+import ROOT, os, time
 from numpy import loadtxt
+from math import pi, sqrt
 import sys
 
 #
 # Check if valid ROOT file exists
 #
 def isValidRootFile(fname):
-  if not os.path.exists(os.path.expandvars(fname)): return False
-  if 'pnfs' in fname: fname = 'root://maite.iihe.ac.be'+ fname         #faster for pnfs files + avoids certain unstable problems I had with input/output errors
-  f = ROOT.TFile.Open(fname)
-  if not f: return False
-  try:
-    return not (f.IsZombie() or f.TestBit(ROOT.TFile.kRecovered) or f.GetListOfKeys().IsEmpty())
-  finally:
-    f.Close()
+    if not os.path.exists(os.path.expandvars(fname)): return False
+    if 'pnfs' in fname: fname = 'root://maite.iihe.ac.be'+ fname         #faster for pnfs files + avoids certain unstable problems I had with input/output errors
+    f = ROOT.TFile.Open(fname)
+    if not f: return False
+    try:
+        return not (f.IsZombie() or f.TestBit(ROOT.TFile.kRecovered) or f.GetListOfKeys().IsEmpty())
+    finally:
+        f.Close()
 
 #
 # Get object (e.g. hist) from file using key, and keep in memory after closing
@@ -25,15 +24,15 @@ def getObjFromFile(fname, hname):
 
     if 'pnfs' in fname: fname = 'root://maite.iihe.ac.be'+ fname         #faster for pnfs file
     try:
-      f = ROOT.TFile.Open(fname)
-      f.cd()
-      htmp = f.Get(hname)
-      if not htmp: return None
-      ROOT.gDirectory.cd('PyROOT:/')
-      res = htmp.Clone()
-      return res
+        f = ROOT.TFile.Open(fname)
+        f.cd()
+        htmp = f.Get(hname)
+        if not htmp: return None
+        ROOT.gDirectory.cd('PyROOT:/')
+        res = htmp.Clone()
+        return res
     finally:
-      f.Close()
+        f.Close()
 
 def loadtxtCstyle(source):
     arr = loadtxt(source)
@@ -45,9 +44,9 @@ def loadtxtCstyle(source):
 # Progress bar
 #
 
-def progress(i, N, prefix="", size=60):
-    x = int(size*i/(N-1))
-    sys.stdout.write("%s\x1b[6;30;42m%s\x1b[0m\x1b[0;30;41m%s\x1b[0m %i/%i %s\r" % (" "*0, " "*x, " "*(size-x), i, N, prefix))
+def progress(i, n, prefix="", size=60):
+    x = int(size*i/(n-1))
+    sys.stdout.write("%s\x1b[6;30;42m%s\x1b[0m\x1b[0;30;41m%s\x1b[0m %i/%i %s\r" % (" "*0, " "*x, " "*(size-x), i, n, prefix))
     sys.stdout.flush()
 
 def makeDirIfNeeded(path):
@@ -77,7 +76,7 @@ def makePathTimeStamped(path):
 #Sort one list based on another list
 #
 def sortByOtherList(to_sort, base):
-    orderedList = [x for _,x in sorted(zip(base,to_sort))]
+    orderedList = [x for _, x in sorted(zip(base, to_sort))]
     return orderedList
 
 #
@@ -94,7 +93,7 @@ def getLowEdges(hist):
 #Set all negative values to 0 in a hist
 #
 
-def CleanNegativeBins(hist):
+def cleanNegativeBins(hist):
     h = hist.Clone()
     for b in xrange(h.GetXaxis().GetNbins()):
         if h.GetBinContent(b+1) < 0:
@@ -134,22 +133,22 @@ def isTimeStampFormat(input_string):
 #
 #Create Four Vector
 #
-def getFourVec(pt, eta, phi, E):
-    vec = TLorentzVector()
-    vec.SetPtEtaPhiE(pt, eta, phi, E)
+def getFourVec(pt, eta, phi, e):
+    vec = ROOT.TLorentzVector()
+    vec.SetPtEtaPhiE(pt, eta, phi, e)
     return vec
 
 #
 # Delta phi and R function
 #
 def deltaPhi(phi1, phi2):
-  dphi = phi2-phi1
-  if dphi > pi:   dphi -= 2.0*pi
-  if dphi <= -pi: dphi += 2.0*pi
-  return abs(dphi)
+    dphi = phi2-phi1
+    if dphi > pi:   dphi -= 2.0*pi
+    if dphi <= -pi: dphi += 2.0*pi
+    return abs(dphi)
 
 def deltaR(eta1, eta2, phi1, phi2):
-  return sqrt(deltaPhi(phi1, phi2)**2 + (eta1-eta2)**2)
+    return sqrt(deltaPhi(phi1, phi2)**2 + (eta1-eta2)**2)
 
 #
 # Get all subdirectories

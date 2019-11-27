@@ -53,7 +53,7 @@ def select3Leptons(chain):
 
     return True   
 
-from HNL.ObjectSelection.jetSelector import *
+from HNL.ObjectSelection.jetSelector import isGoodJet, isBJet
 def bVeto(chain, algo):
     for jet in xrange(chain._nJets):
         if not isGoodJet(chain, jet): continue

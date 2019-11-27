@@ -20,7 +20,7 @@ def checkQueueOnCream02():
 
 # Cream02 running
 from datetime import datetime
-def launchCream02(command, logfile, checkQueue=False, name=None, wallTimeInHours='12', queue='localgrid', cores=1, jobLabel=None):
+def launchCream02(command, logfile, checkQueue=False, wallTimeInHours='12', queue='localgrid', cores=1, jobLabel=None):
     jobName = jobLabel + datetime.now().strftime("%d_%H%M%S.%f")[:12]
     if checkQueue: checkQueueOnCream02()
     log.info('Launching ' + command + ' on cream02')

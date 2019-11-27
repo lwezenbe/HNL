@@ -31,8 +31,8 @@ if args.isTest:
     args.sample = 'WZ'
     args.subJob = '0'
     args.year = '2016'
-    args.isoAlgo='none'
-    args.eleAlgo='againstElectron'
+    args.isoAlgo = 'none'
+    args.eleAlgo = 'againstElectron'
 
 #
 # All ID's and WP we want to test
@@ -47,11 +47,11 @@ tau_id_algos = {'MVA2017v2': ['vloose', 'loose', 'medium', 'tight', 'vtight'],
                 }
 
 ele_discr_algos = {'againstElectron': ['loose', 'tight'],
-#                  'deeptauVSe': ['vvvloose', 'vvloose', 'vloose', 'loose', 'medium', 'tight', 'vtight', 'vvtight']}
-
+#                  'deeptauVSe': ['vvvloose', 'vvloose', 'vloose', 'loose', 'medium', 'tight', 'vtight', 'vvtight']
+                }
 muon_discr_algos = {'againstMuon': ['loose', 'tight'],
-#                  'deeptauVSmu': ['vloose', 'loose', 'medium', 'tight']}
-
+#                  'deeptauVSmu': ['vloose', 'loose', 'medium', 'tight']
+                    }
 #
 # Load in the sample list 
 #
@@ -92,8 +92,8 @@ isBkgr = 'WZ' in sample.name
 if isBkgr:
     bkgr_allowed_genstatus = []
     if args.isoAlgo != 'none':        bkgr_allowed_genstatus.append(6)
-    if args.eleAlgo != 'none':        bkgr_allowed_genstatus.extend([1,3])
-    if args.muAlgo != 'none':         bkgr_allowed_genstatus.extend([2,4])
+    if args.eleAlgo != 'none':        bkgr_allowed_genstatus.extend([1, 3])
+    if args.muAlgo != 'none':         bkgr_allowed_genstatus.extend([2, 4])
 
 #Set output dir
 #Since number of subjobs was set to be 1 (HNL samples are small), this name was chosen since no overlap possible
@@ -149,13 +149,13 @@ for entry in event_range:
         
             for index, wp in enumerate(algo_wp):
                 passed = isGeneralTau(chain, lepton, args.isoAlgo, wp, args.eleAlgo, wp, args.muAlgo, wp)
-                iso_efficiencies.fill_eff(chain, index, passed)
+                iso_efficiencies.fillEfficiency(chain, index, passed)
 
 
         elif isBkgr and chain._tauGenStatus[lepton] in bkgr_allowed_genstatus:
             for index, wp in enumerate(algo_wp):
                 passed = isGeneralTau(chain, lepton, args.isoAlgo, wp, args.eleAlgo, wp, args.muAlgo, wp)
-                iso_efficiencies.fill_misid(chain, index, passed)
+                iso_efficiencies.fillMisid(chain, index, passed)
 
 
 #

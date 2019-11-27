@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 
 import ROOT
-import numpy as np
 import os
 
 lumi = 35545.499065
@@ -95,7 +94,7 @@ for entry in eventRange:
     pt_hist[2].Fill(pts[2][0])
 
     if args.plotSoftTau and 'tau' in sample.name:
-       if len(taus) > 0: pt_hist[3].Fill(taus[-1][0]) 
+        if len(taus) > 0: pt_hist[3].Fill(taus[-1][0]) 
 
 #if args.isTest: exit(0)
 
@@ -107,7 +106,6 @@ for subh in pt_hist:
 out_file.Close()
 
 
-from HNL.Plotting.plottingTools import DrawHist
 from HNL.Plotting.plot import Plot
 legend_names = ['leading gen p_{T}', 'subleading gen p_{T}', 'trailing gen p_{T}']
 if args.plotSoftTau and 'tau' in sample.name:

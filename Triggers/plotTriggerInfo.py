@@ -9,16 +9,12 @@ for mf in merge_files:
     if "Results" in mf: continue
     merge(mf)
 
-
-import glob
 inputFiles = glob.glob(os.getcwd()+'/data/*/*.root')
 f_names = {f.split('/')[-1].split('.')[0] for f in inputFiles}
 
 import ROOT
 from HNL.Tools.helpers import rootFileContent, getObjFromFile
 from HNL.Plotting.plot import Plot
-from HNL.Plotting.plottingTools import draw2DHist
-from HNL.Plotting.style import setDefault2D
 
 for f_name in f_names:
     output_dir = makePathTimeStamped(os.getcwd()+'/data/Results/'+f_name)

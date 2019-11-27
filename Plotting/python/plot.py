@@ -18,7 +18,6 @@ def makeList(item):
         item = [item]
     return item
 
-#generalSettings()
 #
 # Define class
 #
@@ -43,58 +42,57 @@ class Plot:
  
     def setAxisLog(self, is2D = False):
         if not is2D:
-            OverallMax = pt.GetOverallMaximum(self.s)
-            OverallMin = pt.GetOverallMinimum(self.s)
+            overall_max = pt.getOverallMaximum(self.s)
+            overall_min = pt.getOverallMinimum(self.s)
 
         if self.x_log:
             self.pad.SetLogx()
         if self.y_log:
             self.pad.SetLogy()
-            if not is2D: self.s[0].GetYaxis().SetRangeUser(0.3*OverallMin, 30*OverallMax)
+            if not is2D: self.s[0].GetYaxis().SetRangeUser(0.3*overall_min, 30*overall_max)
         else:
-            if not is2D: self.s[0].GetYaxis().SetRangeUser(0.7*OverallMin, 1.3*OverallMax)
+            if not is2D: self.s[0].GetYaxis().SetRangeUser(0.7*overall_min, 1.3*overall_max)
 
     def drawExtraText(self):
         self.pad.cd()
         #Write extra text
         if self.extra_text is not None:
-            lastYpos = 0.8
-            lastCorrectedYpos = None
-            lastXpos = 0.2
-            extraText = TLatex()
+            last_y_pos = 0.8
+            last_corrected_y_pos = None
+            last_x_pos = 0.2
+            extra_text = ROOT.TLatex()
             for info in self.extra_text:
                 try :
-                    extraTextString = info[0]
-                    extraTextXpos = info[1]
-                    extraTextYpos = info[2]
-                    extraTextSize = info[3]
+                    extra_text_string = info[0]
+                    extra_text_x_pos = info[1]
+                    extra_text_y_pos = info[2]
+                    extra_text_size = info[3]
                 except:
                     print("Wrong Format for self.extra_text. Stopping")
-                    pass
 
-                if extraTextSize is None:
-                    extraTextSize = 0.03
+                if extra_text_size is None:
+                    extra_text_size = 0.03
                 
-                correction_term = extraTextSize*(5./3.)
+                correction_term = extra_text_size*(5./3.)
 
-                if extraTextXpos is None:
-                    if extraTextYpos is None:
-                        extraTextXpos = lastXpos
+                if extra_text_x_pos is None:
+                    if extra_text_y_pos is None:
+                        extra_text_x_pos = last_x_pos
                     else:
-                        extraTextXpos = 0.2
-                if extraTextYpos is None:
-                    if lastYpos is None:
-                        extraTextYpos = lastCorrectedYpos - correction_term
-                    else: extraTextYpos = lastYpos - correction_term
+                        extra_text_x_pos = 0.2
+                if extra_text_y_pos is None:
+                    if last_y_pos is None:
+                        extra_text_y_pos = last_corrected_y_pos - correction_term
+                    else: extra_text_y_pos = last_y_pos - correction_term
                 
-                extraText.SetNDC()
-                extraText.SetTextAlign(info[4])
-                extraText.SetTextSize(extraTextSize)
-                extraText.DrawLatex(extraTextXpos, extraTextYpos, extraTextString)
+                extra_text.SetNDC()
+                extra_text.SetTextAlign(info[4])
+                extra_text.SetTextSize(extra_text_size)
+                extra_text.DrawLatex(extra_text_x_pos, extra_text_y_pos, extra_text_string)
                 
-                lastXpos = extraTextXpos
-                lastYpos = info[2]
-                lastCorrectedYpos = extraTextYpos
+                last_x_pos = extra_text_x_pos
+                last_y_pos = info[2]
+                last_corrected_y_pos = extra_text_y_pos
 
         else:
             print 'Please provide the text to draw'
@@ -141,10 +139,10 @@ class Plot:
 
         #Set Histogram Styles
         for h in self.s:
-            h.SetLineColor(ROOT.TColor.GetColor(pt.GetLineColor(self.s.index(h))))
+            h.SetLineColor(ROOT.TColor.GetColor(pt.getLineColor(self.s.index(h))))
             h.SetLineWidth(3)
             h.SetMarkerStyle(8)
-            h.SetMarkerColor(ROOT.TColor.GetColor(pt.GetLineColor(self.s.index(h))))
+            h.SetMarkerColor(ROOT.TColor.GetColor(pt.getLineColor(self.s.index(h))))
         title = " ;" +self.x_name+ " ; "+self.y_name+' / ' +str(self.s[0].GetBinWidth(1)) +' '+ pt.getUnit(self.x_name)
         self.s[0].SetTitle(title)
 
@@ -202,9 +200,9 @@ class Plot:
         print self.s 
         for i, graph in enumerate(self.s):
             graph.SetMarkerSize(1.5)
-            graph.SetLineColor(ROOT.TColor.GetColor(pt.GetLineColor(self.s.index(graph))))
-            graph.SetMarkerColor(ROOT.TColor.GetColor(pt.GetLineColor(self.s.index(graph))))
-            graph.SetMarkerStyle(pt.GetMarker(self.s.index(graph)))
+            graph.SetLineColor(ROOT.TColor.GetColor(pt.getLineColor(i)))
+            graph.SetMarkerColor(ROOT.TColor.GetColor(pt.getLineColor(i)))
+            graph.SetMarkerStyle(pt.getMarker(i))
             mgraph.Add(graph)
 
         mgraph.Draw("APLine")

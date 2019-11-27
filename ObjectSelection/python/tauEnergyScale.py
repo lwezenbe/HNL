@@ -1,12 +1,11 @@
-from helpers import getObjFromFile
-from tauSelector import default_algo
+from HNL.ObjectSelection.tauSelector import default_algo
 
 #
 #Tau enery scale class
 #
 
 
-class tauEnergyScale:
+class TauEnergyScale:
 
     TAU_ENERGY_SCALES_MVA2017V2 = {('2016_ReReco', 0) : (-0.005, 0.012),
                          ('2016_ReReco', 1) : (0.011, 0.012),
@@ -28,23 +27,23 @@ class tauEnergyScale:
                          ('2018_', 2) : (-0.005, 0.009),
                          ('2018_', 10) : (-0.012, 0.008)}
 
-    def __init__(self, algo = default_algo, reco = ''):
+    def __init__(self, chain, algo = default_algo, reco = ''):
         self.reco = reco
         self.algo = algo
         self.year = str(chain.year)
         if not self.reco:
-            if year == '2016':
+            if self.year == '2016':
                 self.reco = 'Legacy'
-            elif year == '2018':
+            elif self.year == '2018':
                 pass
             else:
                 self.reco = 'ReReco'
-        self.era = year + '_' + self.reco
+        self.era = self.year + '_' + self.reco
 
-    def getES(self, DM):
+    def getES(self, dm):
         if self.algo == 'MVA2017v2': tes = self.TAU_ENERGY_SCALES_MVA2017V2
         else:
             print 'invalid algo in tauEnergyScale'
             return 1.
-        ES = tes.get((self.era, DM))
-        return 1. + ES[0]
+        es = tes.get((self.era, dm))
+        return 1. + es[0]
