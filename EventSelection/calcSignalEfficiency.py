@@ -18,6 +18,7 @@ argParser.add_argument('--subJob',   action='store',      default=None,   help='
 argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
 argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
+argParser.add_argument('--oldANcuts',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 argParser.add_argument('--FOcut',   action='store_true', default=False,  help='Perform baseline FO cut')
 args = argParser.parse_args()
 
@@ -46,7 +47,7 @@ if not args.isChild:
     from HNL.Tools.jobSubmitter import submitJobs
     jobs = []
     for sample in sample_list:
-        for njob in xrange(sample.splitJobs): 
+        for njob in xrange(sample.split_jobs): 
             jobs += [(sample.name, str(njob))]
 
     submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'trigger_'+sample.name)
@@ -111,7 +112,7 @@ chain.year = int(args.year)
 # Loop over all events
 #
 from HNL.Tools.helpers import progress
-from HNL.EventSelection.eventSelection import select3Leptons
+from HNL.EventSelection.eventSelection import select3Leptons, select3LightLeptons,  lowMassCuts
 from HNL.ObjectSelection.leptonSelector import isFOLepton
 for entry in event_range:
     
@@ -121,10 +122,14 @@ for entry in event_range:
     if args.FOcut:
         tmp = [l for l in xrange(chain._nL) if isFOLepton(chain, l)]
         if len(tmp) < 3: continue   
-  
-    passed = select3Leptons(chain)
 
-    weight = 1.
+    if args.oldANcuts:
+        passed = select3LightLeptons(chain)
+    else:
+        passed = select3Leptons(chain)
+
+    if not lowMassCuts:         continue
+    weight = chain._weight
     efficiency.fill(chain, weight, passed)   
     
 

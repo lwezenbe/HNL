@@ -36,7 +36,7 @@ if not args.isChild:
     from HNL.Tools.jobSubmitter import submitJobs
     jobs = []
     for sample in sample_list:
-        for njob in xrange(sample.splitJobs): 
+        for njob in xrange(sample.split_jobs): 
             jobs += [(sample.name, str(njob))]
 
     submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'compression_'+sample.name)
@@ -65,6 +65,7 @@ pt_hist = [ROOT.TH1D('leading_pt', sample.name, 100, 0, 100),
            ROOT.TH1D('subleading_pt', sample.name, 100, 0, 100),
            ROOT.TH1D('trailing_pt', sample.name, 100, 0, 100)]
 if args.plotSoftTau and 'tau' in sample.name: pt_hist.append(ROOT.TH1D('softest_tau', sample.name, 100, 0, 100))
+if args.plotSoftTau and 'tau' in sample.name: pt_hist.append(ROOT.TH1D('subleading_tau', sample.name, 100, 0, 100))
 
 #Determine if testrun so it doesn't need to calculate the number of events in the getEventRange
 if args.isTest:
@@ -94,7 +95,9 @@ for entry in eventRange:
     pt_hist[2].Fill(pts[2][0])
 
     if args.plotSoftTau and 'tau' in sample.name:
+        print len(taus)
         if len(taus) > 0: pt_hist[3].Fill(taus[-1][0]) 
+        if len(taus) > 1: pt_hist[4].Fill(taus[-2][0]) 
 
 #if args.isTest: exit(0)
 
@@ -110,6 +113,7 @@ from HNL.Plotting.plot import Plot
 legend_names = ['leading gen p_{T}', 'subleading gen p_{T}', 'trailing gen p_{T}']
 if args.plotSoftTau and 'tau' in sample.name:
     legend_names.append('softest gen tau p_{T}')
+    legend_names.append('subleading gen tau p_{T}')
 plot = Plot(pt_hist, legend_names, name = sample.name, x_name = 'p_{T} [GeV]', y_name = 'Events')
 plot_name = os.path.join(os.path.expandvars('$CMSSW_BASE/src/HNL/Test/data'), os.path.basename(__file__).split('.')[0], 'Plots')
 plot.drawHist(plot_name)

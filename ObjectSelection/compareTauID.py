@@ -31,8 +31,8 @@ if args.isTest:
     args.sample = 'WZ'
     args.subJob = '0'
     args.year = '2016'
-    args.isoAlgo = 'none'
-    args.eleAlgo = 'againstElectron'
+    args.isoAlgo = 'MVA2015'
+    args.eleAlgo = 'none'
 
 #
 # All ID's and WP we want to test
@@ -40,17 +40,17 @@ if args.isTest:
 
 tau_id_algos = {'MVA2017v2': ['vloose', 'loose', 'medium', 'tight', 'vtight'],
                 'MVA2017v2New': ['vloose', 'loose', 'medium', 'tight', 'vtight'],
-                #'MVA2015': ['vloose', 'loose', 'medium', 'tight', 'vtight'],
-                #'MVA2015New': ['vloose', 'loose', 'medium', 'tight', 'vtight'],
+                'MVA2015': ['vloose', 'loose', 'medium', 'tight', 'vtight'],
+                'MVA2015New': ['vloose', 'loose', 'medium', 'tight', 'vtight'],
                 #'cut_based': ['vvloose', 'vloose', 'loose', 'medium', 'tight']),
-#                'deeptauVSjets': ['vvvloose', 'vvloose', 'vloose', 'loose', 'medium', 'tight', 'vtight', 'vvtight']
+                'deeptauVSjets': ['vvvloose', 'vvloose', 'vloose', 'loose', 'medium', 'tight', 'vtight', 'vvtight']
                 }
 
 ele_discr_algos = {'againstElectron': ['loose', 'tight'],
-#                  'deeptauVSe': ['vvvloose', 'vvloose', 'vloose', 'loose', 'medium', 'tight', 'vtight', 'vvtight']
+                  'deeptauVSe': ['vvvloose', 'vvloose', 'vloose', 'loose', 'medium', 'tight', 'vtight', 'vvtight']
                 }
 muon_discr_algos = {'againstMuon': ['loose', 'tight'],
-#                  'deeptauVSmu': ['vloose', 'loose', 'medium', 'tight']
+                  'deeptauVSmu': ['vloose', 'loose', 'medium', 'tight']
                     }
 #
 # Load in the sample list 
@@ -70,7 +70,7 @@ if not args.isChild:
     from HNL.Tools.jobSubmitter import submitJobs
     jobs = []
     for sample in sample_list:
-        for njob in xrange(sample.splitJobs):
+        for njob in xrange(sample.split_jobs):
             for c in tau_id_algos.keys():
                 jobs += [(sample.name, str(njob), c, 'none', 'none')]
             for c in ele_discr_algos.keys():
@@ -161,6 +161,4 @@ for entry in event_range:
 #
 # Write
 #
-print iso_efficiencies.eff_numerator.getHist().GetSumOfWeights()
 iso_efficiencies.write(True)
-      

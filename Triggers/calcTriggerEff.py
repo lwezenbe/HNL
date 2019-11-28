@@ -45,7 +45,7 @@ if not args.isChild:
     from HNL.Tools.jobSubmitter import submitJobs
     jobs = []
     for sample in sample_list:
-        for njob in xrange(sample.splitJobs): 
+        for njob in xrange(sample.split_jobs): 
             jobs += [(sample.name, str(njob))]
 
     submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'trigger_'+sample.name)
