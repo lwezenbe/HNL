@@ -124,7 +124,7 @@ for entry in event_range:
     chain.GetEntry(entry)
     progress(entry - event_range[0], len(event_range))
      
-    if not select3Leptons(chain): continue
+    if not select3Leptons(chain, chain): continue
     if not args.ignoreRef and not chain._passTrigger_ref:     continue
 
     weightfactor = 1.

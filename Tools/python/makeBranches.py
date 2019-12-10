@@ -16,13 +16,17 @@ cType = {
     'l': 'ULong64_t',
     'O': 'Bool_t',
 }
-
+#
+# Function to add new branches to a tree
+# the ProcessLine makes a new structure newVars that contains a sort of list of all branches as objects, as far as I understand
+#
 def makeBranches(tree, branches):
     branches = [tuple(branch.split('/')) for branch in branches]        
     ROOT.gROOT.ProcessLine('struct newVars {' + ';'.join([cType[t] + ' ' + name for name, t in branches]) + ';};')
+    
     from ROOT import newVars
     newVars = newVars()
-
+    
     for name, t in sorted(branches):
-        tree.Branch(name, ROOT.AddressOf(newVars, name), name+ '/' + t)
+        tree.Branch(name.split('[')[0], ROOT.AddressOf(newVars, name.split('[')[0]), name.split('[')[0]+ '/' + t)
     return newVars

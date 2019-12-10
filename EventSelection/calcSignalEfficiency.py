@@ -124,9 +124,9 @@ for entry in event_range:
         if len(tmp) < 3: continue   
 
     if args.oldANcuts:
-        passed = select3LightLeptons(chain)
+        passed = select3LightLeptons(chain, chain)
     else:
-        passed = select3Leptons(chain)
+        passed = select3Leptons(chain, chain)
 
     if not lowMassCuts:         continue
     weight = chain._weight
