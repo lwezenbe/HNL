@@ -16,7 +16,7 @@ bkgr_base = os.getcwd()+'/data/compareTauID/WZ'
 samples = {f.split('/')[-2] for f in inputFiles}
 f_names = {f.split('/')[-1].split('.')[0] for f in inputFiles}
 
-print samples
+print samples, f_names
 
 from HNL.Plotting.plot import Plot
 

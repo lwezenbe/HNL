@@ -14,7 +14,7 @@ def generalSettings(paintformat = "4.2f"):
     ROOT.gROOT.ProcessLine( "gErrorIgnoreLevel = 1001;")
 
 def makeList(item):
-    if not isinstance(item, (list,)):
+    if not isinstance(item, (list,)) and not isinstance(item, set):
         item = [item]
     return item
 
@@ -30,7 +30,7 @@ class Plot:
     
     def __init__(self, signal_hist, tex_names, name = None, x_name = None, y_name = None, bkgr_hist = None, extra_text = None, x_log = None, y_log = None):
         self.s = makeList(signal_hist)
-        self.tex_names = tex_names
+        self.tex_names = makeList(tex_names)
         self.name = name if name else self.s[0].GetTitle()
         self.b = bkgr_hist
         self.x_name = x_name if x_name else self.s[0].getXaxis().GetTitle()
@@ -197,7 +197,6 @@ class Plot:
         #Create TGraph
         mgraph = ROOT.TMultiGraph()
        
-        print self.s 
         for i, graph in enumerate(self.s):
             graph.SetMarkerSize(1.5)
             graph.SetLineColor(ROOT.TColor.GetColor(pt.getLineColor(i)))

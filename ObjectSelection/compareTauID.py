@@ -36,6 +36,8 @@ if args.isTest:
 
 #
 # All ID's and WP we want to test
+# If you want to add a new algorithm, add a line below
+# Make sure all algo keys and WP have a corresponding entry in HNL.ObjectSelection.tauSelector
 #
 
 tau_id_algos = {'MVA2017v2': ['vloose', 'loose', 'medium', 'tight', 'vtight'],
@@ -52,6 +54,19 @@ ele_discr_algos = {'againstElectron': ['loose', 'tight'],
 muon_discr_algos = {'againstMuon': ['loose', 'tight'],
                   'deeptauVSmu': ['vloose', 'loose', 'medium', 'tight']
                     }
+
+#
+# Make a full list of all algorithms that need to be checked in this event loop
+#
+full_list = []    
+if tau_id_algos:
+    full_list.extend([(k, 'none', 'none') for k in tau_id_algos.keys()]) 
+if ele_discr_algos:
+    full_list.extend([('none', k, 'none') for k in ele_discr_algos.keys()]) 
+if muon_discr_algos:
+    full_list.extend([('none', 'none', k) for k in muon_discr_algos.keys()]) 
+
+print full_list
 #
 # Load in the sample list 
 #
@@ -60,10 +75,11 @@ sample_list = createSampleList(os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/I
 
 #
 # Submit Jobs
+# TODO: Rewrite so that it checks all ID's in a single event loop instead of using more resources than needed by having jobs for every algorithm
 #
 if not args.isChild:
 
-    #find a more elegant way to make combinations of different algos
+    #TODO: find a more elegant way to make combinations of different algos
     #combos is a list of whether the isoAlgo, eleAlgo and muAlgo should be on
     #(isoAlgo, eleAlgo, muAlgo)
 
@@ -86,7 +102,7 @@ if not args.isChild:
 #
 sample = getSampleFromList(sample_list, args.sample)
 chain = sample.initTree(False)
-isBkgr = 'WZ' in sample.name
+isBkgr = not 'HNL' in sample.name
 
 #add jets, electrons and muons to bkgr sample if needed
 if isBkgr:
@@ -95,9 +111,9 @@ if isBkgr:
     if args.eleAlgo != 'none':        bkgr_allowed_genstatus.extend([1, 3])
     if args.muAlgo != 'none':         bkgr_allowed_genstatus.extend([2, 4])
 
+#
 #Set output dir
-#Since number of subjobs was set to be 1 (HNL samples are small), this name was chosen since no overlap possible
-#If this changes, this needs to be changed as well
+#
 from HNL.Tools.helpers import makeDirIfNeeded
 output_name = os.path.join(os.getcwd(), 'data', os.path.basename(__file__).split('.')[0], sample.output)
 if args.isChild:
@@ -120,7 +136,7 @@ elif args.muAlgo != 'none':
 
 algo_bin = np.arange(0., len(algo_wp)+1., 1)
 var = lambda c, i : c.var[i]
-iso_efficiencies = ROC(name, var, 'tmp', output_name, algo_bin)   #Currently the way the var is implemented in Histogram class makes this a little cumbersome, change this
+efficiencies = ROC(name, var, 'tmp', output_name, algo_bin)   #TODO: Currently the way the var is implemented in Histogram class makes this a little cumbersome, change this
 
 #Determine if testrun so it doesn't need to calculate the number of events in the getEventRange
 if args.isTest:
@@ -149,16 +165,16 @@ for entry in event_range:
         
             for index, wp in enumerate(algo_wp):
                 passed = isGeneralTau(chain, lepton, args.isoAlgo, wp, args.eleAlgo, wp, args.muAlgo, wp)
-                iso_efficiencies.fillEfficiency(chain, index, passed)
+                efficiencies.fillEfficiency(chain, index, passed)
 
 
         elif isBkgr and chain._tauGenStatus[lepton] in bkgr_allowed_genstatus:
             for index, wp in enumerate(algo_wp):
                 passed = isGeneralTau(chain, lepton, args.isoAlgo, wp, args.eleAlgo, wp, args.muAlgo, wp)
-                iso_efficiencies.fillMisid(chain, index, passed)
+                efficiencies.fillMisid(chain, index, passed)
 
 
 #
 # Write
 #
-iso_efficiencies.write(True)
+efficiencies.write(True)

@@ -31,6 +31,23 @@ tau_id_WP = {('MVA2017v2', 'none') : lambda c : np.ones(c._nL, dtype=bool),
             ('deeptauVSjets', 'tight') : lambda c : c._tauTightDeepTauVsJets,
             ('deeptauVSjets', 'vtight') : lambda c : c._tauVTightDeepTauVsJets,
             ('deeptauVSjets', 'vvtight') : lambda c : c._tauVVTightDeepTauVsJets,
+
+            #From here on very outdated WP, purely there for showing that the new ones are much better
+            ('MVA2015', 'none') : lambda c : np.ones(c._nL, dtype=bool),
+            ('MVA2015', 'vloose') : lambda c : c._tauPOGVLoose2015,
+            ('MVA2015', 'loose') : lambda c : c._tauPOGLoose2015,
+            ('MVA2015', 'medium') : lambda c : c._tauPOGMedium2015,
+            ('MVA2015', 'tight') : lambda c : c._tauPOGTight2015,
+            ('MVA2015', 'vtight') : lambda c : c._tauPOGVTight2015,
+            
+            ('MVA2015New', 'none') : lambda c : np.ones(c._nL, dtype=bool),
+            ('MVA2015New', 'vloose') : lambda c : c._tauVLooseMvaNew2015,
+            ('MVA2015New', 'loose') : lambda c : c._tauLooseMvaNew2015,
+            ('MVA2015New', 'medium') : lambda c : c._tauMediumMvaNew2015,
+            ('MVA2015New', 'tight') : lambda c : c._tauTightMvaNew2015,
+            ('MVA2015New', 'vtight') : lambda c : c._tauVTightMvaNew2015,
+            
+            
             }
 
 tau_eleDiscr_WP = {('againstElectron', 'none') : lambda c : np.ones(c._nL, dtype=bool),
@@ -60,6 +77,8 @@ tau_muonDiscr_WP = {('againstMuon', 'none') : lambda c : np.ones(c._nL, dtype=bo
 
 tau_DMfinding = {'MVA2017v2' : lambda c : c._decayModeFinding,
           'MVA2017v2New' : lambda c : c._decayModeFindingNew,
+          'MVA2015' : lambda c : c._decayModeFinding,
+          'MVA2015New' : lambda c : c._decayModeFindingNew,
           'deeptauVSjets' : lambda c : c._decayModeFindingDeepTau,
 }
 

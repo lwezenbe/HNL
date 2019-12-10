@@ -30,12 +30,6 @@ class ROC:
             self.misid_numerator = Histogram(getObjFromFile(tmp_path, name+'/'+name + '_misid_numerator'))
             self.misid_denominator = Histogram(getObjFromFile(tmp_path, name+'/'+name + '_misid_denominator'))
     
-        print self.eff_numerator.getHist().GetSumOfWeights()
-        print self.eff_denominator.getHist().GetSumOfWeights()
-        print self.misid_numerator.getHist().GetSumOfWeights()
-        print self.misid_denominator.getHist().GetSumOfWeights()
- 
-            
 
     def fillEfficiency(self, chain, index, passed, weight=1.):
         self.eff_denominator.fill(chain, weight, index)
@@ -103,7 +97,6 @@ class ROC:
         xerr = self.binerrorToArray(eff).flatten('C')
         yerr = self.binerrorToArray(fr).flatten('C')
 
-        print xval
         graph = TGraphErrors(len(xval), xval, yval, xerr, yerr)
         return graph
 
