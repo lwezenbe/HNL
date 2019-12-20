@@ -56,6 +56,8 @@ class Plot:
  
     def setAxisLog(self, is2D = False):
         to_check = [i for i in self.s]                  #Make a copy
+        to_check_max = [j for j in to_check]
+        to_check_min = [j for j in to_check]
         if self.b is not None:  
             to_check_min = to_check + self.b
             to_check_max = to_check + [self.total_b]
@@ -176,10 +178,11 @@ class Plot:
                 if i != 0:      self.total_b.Add(h)
                 self.hs.Add(h)
             
-        self.hs.Draw("EHist")                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
-        self.hs.SetTitle(title)
-        #self.hs.GetHistogram().GetXaxis().SetLabelOffset(9999999)
-        #self.hs.GetHistogram().SetMaximum(1)   
+        if self.b is not None:
+            self.hs.Draw("EHist")                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
+            self.hs.SetTitle(title)
+            #self.hs.GetHistogram().GetXaxis().SetLabelOffset(9999999)
+            #self.hs.GetHistogram().SetMaximum(1)   
         tdr.setTDRStyle()                       #TODO: Find out why we need a setTDRStyle after drawing the stack
  
         #Set Signal Histogram Styles

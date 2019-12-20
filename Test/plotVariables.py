@@ -166,7 +166,11 @@ from HNL.Tools.helpers import makePathTimeStamped
 output_dir =  makePathTimeStamped(os.getcwd()+'/data/Results')
 for v in var:
     legend_names = list_of_hist[v]['signal'].keys()+list_of_hist[v]['bkgr'].keys()
-    p = Plot(list_of_hist[v]['signal'].values(), legend_names, v, bkgr_hist = list_of_hist[v]['bkgr'].values(), y_log = True)
+    if not list_of_hist[v]['bkgr'].values(): 
+        bkgr_hist = None
+    else:
+        bkgr_hist = list_of_hist[v]['bkgr'].values()
+    p = Plot(list_of_hist[v]['signal'].values(), legend_names, v, bkgr_hist = bkgr_hist, y_log = True)
     p.drawHist(output_dir = output_dir, normalize_signal=True, signal_style=True)
 
 
