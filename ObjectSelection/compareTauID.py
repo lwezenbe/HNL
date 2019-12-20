@@ -18,9 +18,6 @@ argParser.add_argument('--sample',   action='store',      default=None,   help='
 argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
 argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-argParser.add_argument('--isoAlgo',   action='store',     default='none',  help='do not launch subjobs, only show them')
-argParser.add_argument('--eleAlgo',   action='store',     default='none',  help='do not launch subjobs, only show them')
-argParser.add_argument('--muAlgo',   action='store',     default='none',  help='do not launch subjobs, only show them')
 args = argParser.parse_args()
 
 #
@@ -31,16 +28,14 @@ if args.isTest:
     args.sample = 'WZ'
     args.subJob = '0'
     args.year = '2016'
-    args.isoAlgo = 'MVA2015'
-    args.eleAlgo = 'none'
 
 #
 # All ID's and WP we want to test
 # If you want to add a new algorithm, add a line below
 # Make sure all algo keys and WP have a corresponding entry in HNL.ObjectSelection.tauSelector
 #
-
-tau_id_algos = {'MVA2017v2': ['vloose', 'loose', 'medium', 'tight', 'vtight'],
+algos = {}
+algos['tau_id'] = {'MVA2017v2': ['vloose', 'loose', 'medium', 'tight', 'vtight'],
                 'MVA2017v2New': ['vloose', 'loose', 'medium', 'tight', 'vtight'],
                 'MVA2015': ['vloose', 'loose', 'medium', 'tight', 'vtight'],
                 'MVA2015New': ['vloose', 'loose', 'medium', 'tight', 'vtight'],
@@ -48,25 +43,31 @@ tau_id_algos = {'MVA2017v2': ['vloose', 'loose', 'medium', 'tight', 'vtight'],
                 'deeptauVSjets': ['vvvloose', 'vvloose', 'vloose', 'loose', 'medium', 'tight', 'vtight', 'vvtight']
                 }
 
-ele_discr_algos = {'againstElectron': ['loose', 'tight'],
+algos['ele_discr'] = {'againstElectron': ['loose', 'tight'],
                   'deeptauVSe': ['vvvloose', 'vvloose', 'vloose', 'loose', 'medium', 'tight', 'vtight', 'vvtight']
-                }
-muon_discr_algos = {'againstMuon': ['loose', 'tight'],
+                } 
+
+algos['mu_discr'] = {'againstMuon': ['loose', 'tight'],
                   'deeptauVSmu': ['vloose', 'loose', 'medium', 'tight']
                     }
 
+def getHighestLen():
+    global algos
+    max_len = 0
+    for a in ['tau_id', 'ele_discr', 'mu_discr']:
+        for k in algos[a].keys():
+            if len(algos[a][k]) > max_len:      max_len = len(algos[a][k])
+    return max_len    
+
 #
 # Make a full list of all algorithms that need to be checked in this event loop
+# Not really needed at the moment but implemented with idea of combining algorithms later
 #
 full_list = []    
-if tau_id_algos:
-    full_list.extend([(k, 'none', 'none') for k in tau_id_algos.keys()]) 
-if ele_discr_algos:
-    full_list.extend([('none', k, 'none') for k in ele_discr_algos.keys()]) 
-if muon_discr_algos:
-    full_list.extend([('none', 'none', k) for k in muon_discr_algos.keys()]) 
+full_list.extend([(k, 'none', 'none') for k in algos['tau_id'].keys()]) 
+full_list.extend([('none', k, 'none') for k in algos['ele_discr'].keys()]) 
+full_list.extend([('none', 'none', k) for k in algos['mu_discr'].keys()]) 
 
-print full_list
 #
 # Load in the sample list 
 #
@@ -79,22 +80,13 @@ sample_list = createSampleList(os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/I
 #
 if not args.isChild:
 
-    #TODO: find a more elegant way to make combinations of different algos
-    #combos is a list of whether the isoAlgo, eleAlgo and muAlgo should be on
-    #(isoAlgo, eleAlgo, muAlgo)
-
     from HNL.Tools.jobSubmitter import submitJobs
     jobs = []
     for sample in sample_list:
         for njob in xrange(sample.split_jobs):
-            for c in tau_id_algos.keys():
-                jobs += [(sample.name, str(njob), c, 'none', 'none')]
-            for c in ele_discr_algos.keys():
-                jobs += [(sample.name, str(njob),  'none', c, 'none')]
-            for c in muon_discr_algos.keys():
-                jobs += [(sample.name, str(njob),  'none', 'none', c)]
+            jobs += [(sample.name, str(njob))]
 
-    submitJobs(__file__, ('sample', 'subJob', 'isoAlgo', 'eleAlgo', 'muAlgo'), jobs, argParser, jobLabel = 'trigger_'+sample.name)
+    submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'trigger_'+sample.name)
     exit(0)
 
 #
@@ -105,12 +97,13 @@ chain = sample.initTree(False)
 isBkgr = not 'HNL' in sample.name
 
 #add jets, electrons and muons to bkgr sample if needed
-if isBkgr:
-    bkgr_allowed_genstatus = []
-    if args.isoAlgo != 'none':        bkgr_allowed_genstatus.append(6)
-    if args.eleAlgo != 'none':        bkgr_allowed_genstatus.extend([1, 3])
-    if args.muAlgo != 'none':         bkgr_allowed_genstatus.extend([2, 4])
 
+def allowedGenstatus(isoAlgo, eleAlgo, muAlgo):
+    bkgr_allowed_genstatus = []
+    if isoAlgo != 'none':        bkgr_allowed_genstatus.append(6)
+    if eleAlgo != 'none':        bkgr_allowed_genstatus.extend([1, 3])
+    if muAlgo != 'none':         bkgr_allowed_genstatus.extend([2, 4])
+    return bkgr_allowed_genstatus
 #
 #Set output dir
 #
@@ -118,25 +111,35 @@ from HNL.Tools.helpers import makeDirIfNeeded
 output_name = os.path.join(os.getcwd(), 'data', os.path.basename(__file__).split('.')[0], sample.output)
 if args.isChild:
     output_name += '/tmp_'+sample.output
-name = args.isoAlgo + '-' + args.eleAlgo + '-' + args.muAlgo
-output_name += '/'+ sample.name + '_'+name+ '_' + args.subJob+'.root'
-makeDirIfNeeded(output_name)
 
 
 print 'Getting things ready to start the event loop'
 
+def getWP(algo):
+    
+    algo_wp = None
+    if algo[0] != 'none':
+        algo_wp = algos['tau_id'][algo[0]]
+    elif algo[1] != 'none':
+        algo_wp = algos['ele_discr'][algo[1]]
+    elif algo[2] != 'none':
+        algo_wp = algos['mu_discr'][algo[2]]
+    return algo_wp
+
 #Initialize histograms
 from HNL.Tools.ROC import ROC
-if args.isoAlgo != 'none':
-    algo_wp = tau_id_algos[args.isoAlgo]
-elif args.eleAlgo != 'none':
-    algo_wp = ele_discr_algos[args.eleAlgo]
-elif args.muAlgo != 'none':
-    algo_wp = muon_discr_algos[args.muAlgo]
+list_of_roc = []
+for algo in full_list:
 
-algo_bin = np.arange(0., len(algo_wp)+1., 1)
-var = lambda c, i : c.var[i]
-efficiencies = ROC(name, var, 'tmp', output_name, algo_bin)   #TODO: Currently the way the var is implemented in Histogram class makes this a little cumbersome, change this
+    algo_wp = getWP(algo) 
+ 
+    algo_bin = np.arange(0., len(algo_wp)+1., 1)
+    var = lambda c, i : c.var[i]
+    
+    name = algo[0] + '-' + algo[1] + '-' + algo[2]
+    tot_name = output_name+'/'+ sample.name + '_'+name+ '_' + args.subJob+'.root'
+    makeDirIfNeeded(tot_name)
+    list_of_roc.append(ROC(name, var, 'tmp', tot_name, algo_bin))   #TODO: Currently the way the var is implemented in Histogram class makes this a little cumbersome, change this
 
 #Determine if testrun so it doesn't need to calculate the number of events in the getEventRange
 if args.isTest:
@@ -144,8 +147,7 @@ if args.isTest:
 else:
     event_range = sample.getEventRange(int(args.subJob))
 
-
-chain.var = np.arange(0.5, len(algo_wp)+0.5, 1)
+chain.var = np.arange(0.5, getHighestLen()+0.5, 1)
 
 from HNL.Tools.helpers import progress
 from HNL.ObjectSelection.tauSelector import isGeneralTau
@@ -157,24 +159,26 @@ for entry in event_range:
 
     #Loop over real taus for efficiency
     for lepton in xrange(chain._nLight, chain._nL):
-        
-        if args.isoAlgo and not isGeneralTau(chain, lepton, args.isoAlgo, 'none', 'againstElectron', 'none', 'againstMuon', 'none', needDMfinding=False): continue
-        elif args.isoAlgo == 'none' and not isGeneralTau(chain, lepton, args.isoAlgo, 'loose', 'againstElectron', 'none', 'againstMuon', 'none', needDMfinding=True): continue
+       
+        for i, algo in enumerate(full_list): 
+            if algo[0] != 'none' and not isGeneralTau(chain, lepton, algo[0], 'none', 'againstElectron', 'none', 'againstMuon', 'none', needDMfinding=False): continue
+            elif algo[0] == 'none' and not isGeneralTau(chain, lepton, algo[0], 'loose', 'againstElectron', 'none', 'againstMuon', 'none', needDMfinding=True): continue
 
-        if chain._tauGenStatus[lepton] == 5 and not isBkgr: 
-        
-            for index, wp in enumerate(algo_wp):
-                passed = isGeneralTau(chain, lepton, args.isoAlgo, wp, args.eleAlgo, wp, args.muAlgo, wp)
-                efficiencies.fillEfficiency(chain, index, passed)
+            if chain._tauGenStatus[lepton] == 5 and not isBkgr: 
+            
+                for index, wp in enumerate(getWP(algo)):
+                    passed = isGeneralTau(chain, lepton, algo[0], wp, algo[1], wp, algo[2], wp)
+                    list_of_roc[i].fillEfficiency(chain, index, passed)
 
 
-        elif isBkgr and chain._tauGenStatus[lepton] in bkgr_allowed_genstatus:
-            for index, wp in enumerate(algo_wp):
-                passed = isGeneralTau(chain, lepton, args.isoAlgo, wp, args.eleAlgo, wp, args.muAlgo, wp)
-                efficiencies.fillMisid(chain, index, passed)
+            elif isBkgr and chain._tauGenStatus[lepton] in allowedGenstatus(algo[0], algo[1], algo[2]):
+                for index, wp in enumerate(getWP(algo)):
+                    passed = isGeneralTau(chain, lepton, algo[0], wp, algo[1], wp, algo[2], wp)
+                    list_of_roc[i].fillMisid(chain, index, passed)
 
 
 #
 # Write
 #
-efficiencies.write(True)
+for r in list_of_roc:
+    r.write(True)
