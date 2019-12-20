@@ -90,7 +90,7 @@ class Sample:
             list_of_files         = [self.path]
         else:
             list_of_files         = sorted(glob.glob(self.path + '/*/*/*.root'))
-       
+    
         for f in list_of_files:
             if 'pnfs' in f:
                 f = 'root://maite.iihe.ac.be'+f
@@ -138,18 +138,22 @@ def getSampleFromList(sample_list, name):
 def createSampleFileFromShortlist(file_name):
     sample_infos = [line.split('%')[0].strip() for line in open(file_name)]                     # Strip % comments and \n charachters
     sample_infos = [line.split() for line in sample_infos if line]                              # Get lines into tuples
-    
+ 
     list_of_paths = []
     for sample in sample_infos:
-        list_of_paths += glob.glob(sample[0])
+        list_of_paths.extend([(s, sample[1]) for s in glob.glob(sample[0])])
     
-    print "\033[93m !Warning! \033[0m Be aware that right know your samples do not have a cross section because you are in skimming mode. \n If you need a cross section, use the createSampleList function."
+    print file_name.rsplit('.')[0]+'_sampleList.conf'
     outfile = open(file_name.rsplit('.')[0]+'_sampleList.conf', 'w')
-    for p in list_of_paths:
-        split_path = p.split('/')
+    names = [] #retain lists of names so you can make them unique
+    for i, p in enumerate(list_of_paths):
+        split_path = p[0].split('/')
         name = split_path[-1]
+        xsec = p[1] if p[1] else 0.
+        if name in names: name += '_'+str(i)
+        names.append(name)
         output = split_path[-2]
-        outfile.write(name + ' ' + p + ' ' + output + '       Calc    0.  \n')
+        outfile.write(name + ' ' + p[0] + ' ' + output + '       Calc    '+ xsec  +'  \n')
     outfile.close()
     return 
 

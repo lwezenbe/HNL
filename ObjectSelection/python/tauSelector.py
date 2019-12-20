@@ -79,7 +79,8 @@ tau_DMfinding = {'MVA2017v2' : lambda c : c._decayModeFinding,
           'MVA2017v2New' : lambda c : c._decayModeFindingNew,
           'MVA2015' : lambda c : c._decayModeFinding,
           'MVA2015New' : lambda c : c._decayModeFindingNew,
-          'deeptauVSjets' : lambda c : c._decayModeFindingDeepTau,
+          'deeptauVSjets' : lambda c : c._decayModeFindingNew,
+          #'deeptauVSjets' : lambda c : c._decayModeFindingDeepTau,
 }
 
 default_id_algo = 'MVA2017v2'
@@ -87,7 +88,6 @@ default_eleDiscr_algo = 'againstElectron'
 default_muonDiscr_algo = 'againstMuon'
 
 def isCleanFromLightLeptons(chain, index):
-    
     for l in xrange(chain._nLight):
         if chain._lFlavor == 1 and not isLooseMuon(chain, l):    continue
         if chain._lFlavor == 0 and not isLooseElectron(chain, l):    continue
@@ -128,6 +128,6 @@ def isGeneralTau(chain, index, algo_iso, iso_WP, algo_ele, ele_WP, algo_mu, mu_W
         if algo_iso == 'none': algo_iso = default_id_algo
         if not tau_DMfinding[algo_iso](chain)[index]:   return False
     if not isCleanFromLightLeptons(chain, index):       return False
-    if algo_mu != 'none' and not tau_eleDiscr_WP[(algo_ele, ele_WP)](chain)[index]:    return False
+    if algo_ele != 'none' and not tau_eleDiscr_WP[(algo_ele, ele_WP)](chain)[index]:    return False
     if algo_mu != 'none' and not tau_muonDiscr_WP[(algo_mu, mu_WP)](chain)[index]:    return False
     return True

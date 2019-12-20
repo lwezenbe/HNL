@@ -201,21 +201,24 @@ def getMaxWithErr(hist):
 
     return max_val  
             
-def getMinWithErr(hist):
-    min_val = 0
+def getMinWithErr(hist, zero_not_allowed=False):
+    min_val = 99999999.
     if isinstance(hist, ROOT.TH1):
         for bx in xrange(1, hist.GetNbinsX()):
+            if zero_not_allowed and not hist.GetBinContent(bx) > 0.: continue
             new_val = hist.GetBinContent(bx) - hist.GetBinErrorLow(bx)
+            if zero_not_allowed and new_val <= 0.: new_val = hist.GetBinContent(bx)
             if new_val < min_val:       min_val = new_val
 
     elif isinstance(hist, ROOT.TH2):
         for bx in xrange(1, hist.GetNbinsX()):
             for by in xrange(1, hist.GetNbinsY()):
+                if zero_not_allowed and not hist.GetBinContent(bx, by) > 0: continue
                 new_val = hist.GetBinContent(bx, by) - hist.GetBinErrorLow(bx, by)
+                if zero_not_allowed and new_val <= 0.: new_val = hist.GetBinContent(bx, by)
                 if new_val < min_val:       min_val = new_val
               
     else:
         print "Wrong type in getMaxWithErr. Returning 0."
         return 0.
-
     return min_val  

@@ -77,4 +77,7 @@ def getMarker(index):
     if index == 1:      return 21
     if index == 2:      return 22
     if index == 3:      return 23
+    if index == 4:      return 24
+    if index == 5:      return 25
+    if index == 6:      return 26
 

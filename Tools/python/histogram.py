@@ -1,13 +1,14 @@
 import ROOT
 
 #
-# Custom histogram class
+# Custom histogram class to set names and so on automatically and custom Fill functions
 #
 
 class Histogram:
    
     #
-    # Either make a histogram from scratch. I this case the args should be: name, var, var_tex and bins
+    # Either make a histogram from scratch. In this case the args should be: name, var, var_tex and bins
+    # bins only accepts np.arrays, otherwise weird things might happen
     # Or load in an existing histogram and make properties more accessible. I this case: args = hist
     #    
  
@@ -16,10 +17,10 @@ class Histogram:
         if len(args) == 1 and (isinstance(args[0], ROOT.TH1) or isinstance(args[0], ROOT.TH2)):
             self.hist = args[0]
             self.name = self.hist.GetName()
-            self.var = None             #Temporary, will not need it in this case yet and dont know how to deal with it yet
             self.var_tex = (self.hist.GetXaxis().GetTitle(), self.hist.GetYaxis().GetTitle())
-            self.bins = None            #Temporary, will not need it in this case yet and dont know how to deal with it yet
             self.isTH2 = isinstance(self.hist, ROOT.TH2)
+            self.var = None           #TODO: Is it possible to store the variable as well
+            self.bins = None          #TODO: Read bins from axis and return  
         elif len(args) == 4:
             self.name = args[0]
             self.var = args[1]
@@ -46,6 +47,11 @@ class Histogram:
             self.overflow = True
 
     def fill1D(self, chain, weight, index = None):
+
+        if self.var is None:
+            print "\033[93m !Warning! \033[0m This histogram was loaded from a root file, the variable to fill is not known at the moment. Histogram will not be filled."
+            return
+
         if index is not None:
             var = self.var(chain, index)
         else:
@@ -55,6 +61,10 @@ class Histogram:
         self.hist.Fill(xval, weight)
 
     def fill2D(self, chain, weight):
+        if self.var is None:
+            print "\033[93m !Warning! \033[0m This histogram was loaded from a root file, the variable to fill is not known at the moment. Histogram will not be filled."
+            return
+
         if self.overflow:
             xval = min(max(self.hist.GetXaxis().GetBinCenter(1), self.var(chain)[0]), self.hist.GetXaxis().GetBinCenter(self.hist.GetXaxis().GetLast()))
             yval = min(max(self.hist.GetYaxis().GetBinCenter(1), self.var(chain)[1]), self.hist.GetYaxis().GetBinCenter(self.hist.GetYaxis().GetLast()))
@@ -65,6 +75,10 @@ class Histogram:
         self.hist.Fill(xval, yval, weight)
 
     def fill(self, chain, weight, index = None):
+        if self.var is None:
+            print "\033[93m !Warning! \033[0m This histogram was loaded from a root file, the variable to fill is not known at the moment. Histogram will not be filled."
+            return
+
         if self.isTH2:
             self.fill2D(chain, weight)
         else:

@@ -254,13 +254,30 @@ class Plot:
             graph.SetMarkerSize(1.5)
             graph.SetLineColor(ps.getLineColor(i))
             graph.SetMarkerColor(ps.getLineColor(i))
-            graph.SetMarkerStyle(pt.getMarker(i))
+            graph.SetMarkerStyle(ps.getMarker(i))
             mgraph.Add(graph)
 
         mgraph.Draw("APLine")
         mgraph.SetTitle(";" + self.x_name + ";" + self.y_name)
+ 
+        xmax = pt.getXMax(self.s)
+        xmin = pt.getXMin(self.s)
+        ymax = pt.getYMax(self.s)
+        ymin = pt.getYMin(self.s)
+
+        if self.x_log :
+            self.pad.SetLogx()
+            mgraph.GetXaxis().SetRangeUser(0.3*xmin, 30*xmax)
+        else :
+            mgraph.GetXaxis().SetRangeUser(0.7*xmin, 1.3*xmax)
         
-        
+        if self.y_log:
+            self.pad.SetLogy()
+            mgraph.GetYaxis().SetRangeUser(0.3*ymin, 10*ymax)
+        else :
+            mgraph.GetYaxis().SetRangeUser(0.5*ymin, 1.2*ymax)       
+
+ 
         #self.setAxisLog() 
         #Write extra text
         if self.extra_text is not None:
