@@ -2,59 +2,6 @@ from ROOT import TMath
 import numpy as np
 from HNL.Tools.helpers import sortByOtherList, getMaxWithErr, getMinWithErr
 
-def getStackColor(index):
-    if index == 0:      return "#4C5760"
-    if index == 1:      return "#93A8AC"
-    if index == 2:      return "#D7CEB2"
-    if index == 3:      return "#F4FDD9"
-    if index == 4:      return "#AA767C"
-    if index == 5:      return "#D6A184"
-
-def getStackColorTauPOG(index):
-    if index == 0:      return "#18252a"
-    if index == 1:      return "#de5a6a"
-    if index == 2:      return "#9999cc"
-    if index == 3:      return "#4496c8"
-    if index == 4:      return "#e5b7e5"
-    if index == 5:      return "#ffcc66"
-
-def getStackColorTauPOGbyName(name):
-    if 'VVV' in name:           return "#87F1FF"
-    elif 'TT' in name:            return "#18252a"
-    elif 'VV' in name:          return "#de5a6a"
-    elif 'ST' in name:          return "#9999cc"
-    elif 'WJets' in name:       return "#4496c8"
-    elif 'QCD' in name:         return "#e5b7e5"
-    elif 'DY' in name:          return "#ffcc66"
-#    elif 'H' in name:           return "#87F1FF"
-    else:                       return "#F4F1BB"
-
-def getHistColor(index):        
-    if index == 0:      return "#000000"
-    if index == 1:      return "#000075"
-    if index == 2:      return "#800000"
-    if index == 3:      return "#f58231"
-    if index == 4:      return "#3cb44d"
-    if index == 5:      return "#ffe119"
-    if index == 6:      return "#87F1FF"
-    if index == 7:      return "#F4F1BB"
-
-def getLineColor(index):
-    if index == 3:      return "#000000"
-    if index == 4:      return "#e6194B"
-    if index == 5:      return "#4363d8"
-    if index == 0:      return "#B9BAA3"
-    if index == 1:      return "#685762"
-    if index == 2:      return "#E8C547"
-
-def getMarker(index):
-    if index == 0:      return 20
-    if index == 1:      return 21
-    if index == 2:      return 22
-    if index == 3:      return 23
-    if index == 4:      return 24
-    if index == 5:      return 25
-
 def getOverallMaximum(hist):
     current_max = 0
     for h in hist:
@@ -65,8 +12,7 @@ def getOverallMaximum(hist):
 def getOverallMinimum(hist, zero_not_allowed = False):
     current_min = 999999
     for h in hist:
-        loc_min = getMinWithErr(h)
-        if loc_min <= 0 and zero_not_allowed: continue
+        loc_min = getMinWithErr(h, zero_not_allowed)
         if loc_min < current_min:    current_min = loc_min
     return current_min
 

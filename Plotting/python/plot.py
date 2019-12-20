@@ -2,6 +2,7 @@
 # Plot class
 #
 import HNL.Plotting.plottingTools as pt
+import HNL.Plotting.style as ps
 import HNL.Plotting.tdrstyle as tdr
 #
 # Define some general functions to use later
@@ -18,6 +19,17 @@ def makeList(item):
         item = [item]
     return item
 
+import HNL.Tools.histogram
+def getHistList(item):
+    if item is None or not isinstance(item[0], HNL.Tools.histogram.Histogram):
+        return item
+    else:
+        try:
+            return [h.getHist() for h in item]
+        except:
+            return item.getHist()
+    
+
 #
 # Define class
 #
@@ -28,30 +40,44 @@ from HNL.Tools.helpers import isTimeStampFormat, makeDirIfNeeded
 from HNL.Plotting.style import setDefault, setDefault2D
 class Plot:
     
-    def __init__(self, signal_hist, tex_names, name = None, x_name = None, y_name = None, bkgr_hist = None, extra_text = None, x_log = None, y_log = None):
-        self.s = makeList(signal_hist)
+    def __init__(self, signal_hist, tex_names, name = None, x_name = None, y_name = None, bkgr_hist = None, data_hist = None, extra_text = None, x_log = None, y_log = None):
+        self.s = makeList(getHistList(signal_hist))
         self.tex_names = makeList(tex_names)
         self.name = name if name else self.s[0].GetTitle()
-        self.b = bkgr_hist
-        self.x_name = x_name if x_name else self.s[0].getXaxis().GetTitle()
-        self.y_name = y_name if y_name else self.s[0].getYaxis().GetTitle()
+        self.b = makeList(getHistList(bkgr_hist)) if bkgr_hist is not None else None
+        self.total_b = None
+        self.hs = None  #hist stack for bkgr
+        self.x_name = x_name if x_name else self.s[0].GetXaxis().GetTitle()
+        self.y_name = y_name if y_name else self.s[0].GetYaxis().GetTitle()
         self.pad = None #Can not be created until gROOT and gStyle settings are set
         self.x_log = x_log
         self.y_log = y_log
         self.extra_text = extra_text
  
     def setAxisLog(self, is2D = False):
+        to_check = [i for i in self.s]                  #Make a copy
+        if self.b is not None:  
+            to_check_min = to_check + self.b
+            to_check_max = to_check + [self.total_b]
         if not is2D:
-            overall_max = pt.getOverallMaximum(self.s)
-            overall_min = pt.getOverallMinimum(self.s)
+            overall_max = pt.getOverallMaximum(to_check_max)
+            overall_min = pt.getOverallMinimum(to_check_min, zero_not_allowed=True)
 
         if self.x_log:
             self.pad.SetLogx()
         if self.y_log:
             self.pad.SetLogy()
-            if not is2D: self.s[0].GetYaxis().SetRangeUser(0.3*overall_min, 30*overall_max)
+            if not is2D: 
+                if self.b is None: self.s[0].GetYaxis().SetRangeUser(0.3*overall_min, 30*overall_max)
+                else: 
+                    self.hs.SetMinimum(0.3*overall_min)
+                    self.hs.SetMaximum(20*overall_max)
         else:
-            if not is2D: self.s[0].GetYaxis().SetRangeUser(0.7*overall_min, 1.3*overall_max)
+            if not is2D: 
+                if self.b is None: self.s[0].GetYaxis().SetRangeUser(0.7*overall_min, 1.5*overall_max)
+                else: self.hs.GetHistogram.GetYaxis().SetRangeUser(0.7*overall_min, 1.5*overall_max)
+
+        
 
     def drawExtraText(self):
         self.pad.cd()
@@ -131,34 +157,62 @@ class Plot:
     # Functions to do actual plotting
     #
 
-    def drawHist(self, output_dir = None):
+    def drawHist(self, output_dir = None, normalize_signal = False, signal_style = False):
 
         setDefault()
         #Create Canvas
         self.pad = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
-
-        #Set Histogram Styles
-        for h in self.s:
-            h.SetLineColor(ROOT.TColor.GetColor(pt.getLineColor(self.s.index(h))))
-            h.SetLineWidth(3)
-            h.SetMarkerStyle(8)
-            h.SetMarkerColor(ROOT.TColor.GetColor(pt.getLineColor(self.s.index(h))))
+        
         title = " ;" +self.x_name+ " ; "+self.y_name+' / ' +str(self.s[0].GetBinWidth(1)) +' '+ pt.getUnit(self.x_name)
-        self.s[0].SetTitle(title)
-
+        
+        #Set Bkgr Histogram Styles
+        #Do this first so it is not overlapping the signal
+        if self.b is not None:
+            self.hs = ROOT.THStack("hs", "hs")
+            self.total_b = self.b[0].Clone('total_bkgr')
+            for i, (h, n) in enumerate(zip(self.b, self.tex_names[len(self.s):])):
+                h.SetLineColor(ps.getStackColorTauPOGbyName(n))
+                h.SetFillColor(ps.getStackColorTauPOGbyName(n))
+                if i != 0:      self.total_b.Add(h)
+                self.hs.Add(h)
+            
+        self.hs.Draw("EHist")                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
+        self.hs.SetTitle(title)
+        #self.hs.GetHistogram().GetXaxis().SetLabelOffset(9999999)
+        #self.hs.GetHistogram().SetMaximum(1)   
+        tdr.setTDRStyle()                       #TODO: Find out why we need a setTDRStyle after drawing the stack
+ 
+        #Set Signal Histogram Styles
+        for h, n in zip(self.s, self.tex_names):
+            if signal_style:
+                h.SetLineColor(ps.getHNLColor(n))
+                h.SetLineWidth(3)
+            else:
+                h.SetLineColor((ps.getLineColor(self.s.index(h))))
+                h.SetLineWidth(3)
+                h.SetMarkerStyle(8)
+                h.SetMarkerColor(ps.getLineColor(self.s.index(h)))
+        if self.b is None:      self.s[0].SetTitle(title)       #If no bkgr was given, the SetTitle was not done yet
         self.setAxisLog()
-
+        
         #Start Drawing
         for h in self.s:
-            if(self.s.index(h) == 0) :
-                h.Draw("EP")
+            if normalize_signal and self.b is not None:
+                h.Scale(self.total_b.GetSumOfWeights()/h.GetSumOfWeights())
+
+            if(self.s.index(h) == 0 and self.b is None):
+                h.Draw("EHist")
             else:
-                h.Draw("EPSAME")
+                h.Draw("EHistSAME")
+           # h.Draw("EHistSAME")
 
         #Create Legend
         legend = ROOT.TLegend(0.5, .8, .9, .9)
         legend.SetNColumns(2)
-        for h, n in zip(self.s, self.tex_names):
+        
+        loop_obj = self.s
+        if self.b is not None: loop_obj.extend(self.b)
+        for h, n in zip(loop_obj, self.tex_names):
             legend.AddEntry(h, n)
         legend.SetFillStyle(0)
         legend.SetBorderSize(0)
@@ -168,7 +222,6 @@ class Plot:
         cl.CMS_lumi(self.pad, 4, 11, 'Preliminary', False)
 
         #Save everything
-        print output_dir +'/'+ self.name
         self.savePlot(output_dir +'/'+ self.name)
 
 
@@ -199,8 +252,8 @@ class Plot:
        
         for i, graph in enumerate(self.s):
             graph.SetMarkerSize(1.5)
-            graph.SetLineColor(ROOT.TColor.GetColor(pt.getLineColor(i)))
-            graph.SetMarkerColor(ROOT.TColor.GetColor(pt.getLineColor(i)))
+            graph.SetLineColor(ps.getLineColor(i))
+            graph.SetMarkerColor(ps.getLineColor(i))
             graph.SetMarkerStyle(pt.getMarker(i))
             mgraph.Add(graph)
 
@@ -224,6 +277,5 @@ class Plot:
         cl.CMS_lumi(self.pad, 4, 11, 'Simulation', False)
 
         #Save everything
-        print output_dir +'/'+ self.name
         self.savePlot(output_dir +'/'+ self.name)
 
