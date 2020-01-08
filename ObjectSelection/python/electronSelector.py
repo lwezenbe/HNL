@@ -64,7 +64,6 @@ def isFOElectronCutBased(chain, index):
     if cutBasedMVA(chain, index, 'FO', chain._lPt[index]) >= chain._lElectronSummer16MvaGP[index]: return False
     if not chain._lElectronPassEmu[index]:      return False   #sigma_ietaieta, H/E, deltaEta_in, deltaPhi_in, 1/E-1/p
     if chain._lElectronMissingHits[index] != 0: return False
-    #MVA
     return True
 
 def isTightElectronCutBased(chain, index):
@@ -72,7 +71,6 @@ def isTightElectronCutBased(chain, index):
     if not isFOElectronCutBased(chain, index):          return False
     if chain._relIso[index] >= 0.1:                    return False
     if cutBasedMVA(chain, index, 'tight', chain._lPt[index]) >= chain._lElectronSummer16MvaGP[index]: return False
-    #MVA
     return True
 
 #

@@ -1,4 +1,3 @@
-from HNL.Tools.mergeFiles import merge
 import os
 import glob
 

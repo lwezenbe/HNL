@@ -83,9 +83,9 @@ tau_DMfinding = {'MVA2017v2' : lambda c : c._decayModeFinding,
           #'deeptauVSjets' : lambda c : c._decayModeFindingDeepTau,
 }
 
-default_id_algo = 'MVA2017v2'
-default_eleDiscr_algo = 'againstElectron'
-default_muonDiscr_algo = 'againstMuon'
+default_id_algo = 'deeptauVSjets'
+default_eleDiscr_algo = 'deeptauVSe'
+default_muonDiscr_algo = 'deeptauVSmu'
 
 def isCleanFromLightLeptons(chain, index):
     for l in xrange(chain._nLight):

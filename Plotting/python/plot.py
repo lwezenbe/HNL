@@ -40,7 +40,7 @@ from HNL.Tools.helpers import isTimeStampFormat, makeDirIfNeeded
 from HNL.Plotting.style import setDefault, setDefault2D
 class Plot:
     
-    def __init__(self, signal_hist, tex_names, name = None, x_name = None, y_name = None, bkgr_hist = None, data_hist = None, extra_text = None, x_log = None, y_log = None):
+    def __init__(self, signal_hist, tex_names, name = None, x_name = None, y_name = None, bkgr_hist = None, extra_text = None, x_log = None, y_log = None):
         self.s = makeList(getHistList(signal_hist))
         self.tex_names = makeList(tex_names)
         self.name = name if name else self.s[0].GetTitle()
@@ -200,6 +200,7 @@ class Plot:
         
         #Start Drawing
         for h in self.s:
+            if h.GetSumOfWeights() == 0: continue
             if normalize_signal and self.b is not None:
                 h.Scale(self.total_b.GetSumOfWeights()/h.GetSumOfWeights())
 
@@ -209,6 +210,10 @@ class Plot:
                 h.Draw("EHistSAME")
            # h.Draw("EHistSAME")
 
+        #Write extra text
+        if self.extra_text is not None:
+            self.drawExtraText()
+        
         #Create Legend
         legend = ROOT.TLegend(0.5, .8, .9, .9)
         legend.SetNColumns(2)

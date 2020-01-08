@@ -39,7 +39,7 @@ if not args.isChild:
         for njob in xrange(sample.split_jobs): 
             jobs += [(sample.name, str(njob))]
 
-    submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'compression_'+sample.name)
+    submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'compression')
     exit(0)
 
 

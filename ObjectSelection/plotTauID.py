@@ -1,7 +1,6 @@
 from HNL.Tools.ROC import ROC
 from HNL.Tools.mergeFiles import merge
 import os
-import sys
 import glob
 from HNL.Tools.helpers import makePathTimeStamped
 
@@ -15,7 +14,7 @@ for mf in merge_files:
 #
 # Argument parser and logging
 #
-import os, argparse
+import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('algo',     action='store',      default=None,   help='Select algorithms', choices=['iso', 'eleDiscr', 'muDiscr'])
 argParser.add_argument('bkgr',     action='store',      default=None,   help='Select bkgr')

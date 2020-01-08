@@ -32,7 +32,7 @@ log = getLogger(args.logLevel)
 # Set some args for when performing a test
 #
 if args.isTest:
-    args.sample = 'localSubmission_HNL_5'
+    args.sample = 'crab_MiniAOD2016v3_ext1-v2_dilepton_MC_2016_v2'
     args.year = '2016'
     args.subJob = 0
     args.isChild = True
@@ -42,7 +42,6 @@ if args.isTest:
 #
 from HNL.Samples.sample import createSampleList, getSampleFromList
 sample_list = createSampleList('../Samples/InputFiles/skimList_'+args.year+'_sampleList.conf')
-#sample_list = createSampleList('../Samples/InputFiles/signallist_'+args.year+'.conf')
 
 #
 # Submit subjobs
@@ -54,7 +53,7 @@ if not args.isChild and not args.isTest:
         for njob in xrange(sample.split_jobs):
             jobs += [(sample.name, str(njob))]
 
-    submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'trigger_'+sample.name)
+    submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'skim')
     exit(0)
 
 #
@@ -110,12 +109,9 @@ output_tree = chain.CloneTree(0)
 new_branches = []
 new_branches.extend(['M3l/F', 'minMos/F', 'pt_cone[20]/F', 'mtOther/F'])
 new_branches.extend(['l1/I', 'l2/I', 'l3/I', 'index_other/I'])
-new_branches.extend(['l1_pt/F', 'l2_pt/F', 'l3_pt/F'])
-new_branches.extend(['l1_e/F', 'l2_e/F', 'l3_e/F'])
-new_branches.extend(['l1_eta/F', 'l2_eta/F', 'l3_eta/F'])
-new_branches.extend(['l1_phi/F', 'l2_phi/F', 'l3_phi/F'])
-new_branches.extend(['l1_charge/F', 'l2_charge/F', 'l3_charge/F'])
+new_branches.extend(['l_pt[3]/F', 'l_eta[3]/F', 'l_phi[3]/F', 'l_e[3]/F', 'l_charge[3]/F', 'l_flavor[3]/I'])
 new_branches.extend(['lumiweight/F'])
+new_branches.extend(['event_category/I', 'event_subcategory/I'])
 
 from HNL.Tools.makeBranches import makeBranches
 new_vars = makeBranches(output_tree, new_branches)
@@ -125,22 +121,32 @@ new_vars = makeBranches(output_tree, new_branches)
 #
 if args.isTest:
     event_range = range(500)
+    #event_range = sample.getEventRange(args.subJob)    
 else:
     event_range = sample.getEventRange(args.subJob)    
 
 from HNL.Tools.helpers import progress
 from HNL.EventSelection.eventSelection import calculateKinematicVariables, select3Leptons, select3GenLeptons
+from HNL.EventSelection.eventCategorization import EventCategory
 for entry in event_range:
     chain.GetEntry(entry)
     progress(entry - event_range[0], len(event_range))
-   
+ 
     if args.genSkim:
         if not select3GenLeptons(chain, new_vars):      continue
     else:
         if not select3Leptons(chain, new_vars):       continue
+    
+    ec = EventCategory(new_vars)
+    c, sc = ec.returnCategory()
+    new_vars.event_category = c
+    new_vars.event_subcategory = sc
 
     calculateKinematicVariables(chain, new_vars, is_reco_level=not args.genSkim)
-    new_vars.lumiweight = chain._weight*(sample.xsec*lumi[chain.year])/sample.hcount
+    if not chain.is_signal:
+        new_vars.lumiweight = chain._weight*(sample.xsec*lumi[chain.year])/sample.hcount
+    else:
+        new_vars.lumiweight = 1
     output_tree.Fill()
 
 output_tree.AutoSave()

@@ -52,11 +52,10 @@ algos['mu_discr'] = {'againstMuon': ['loose', 'tight'],
                     }
 
 def getHighestLen():
-    global algos
     max_len = 0
     for a in ['tau_id', 'ele_discr', 'mu_discr']:
-        for k in algos[a].keys():
-            if len(algos[a][k]) > max_len:      max_len = len(algos[a][k])
+        for ak in algos[a].keys():
+            if len(algos[a][ak]) > max_len:      max_len = len(algos[a][ak])
     return max_len    
 
 #
@@ -86,7 +85,7 @@ if not args.isChild:
         for njob in xrange(sample.split_jobs):
             jobs += [(sample.name, str(njob))]
 
-    submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'trigger_'+sample.name)
+    submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'compareTauID')
     exit(0)
 
 #
@@ -115,16 +114,16 @@ if args.isChild:
 
 print 'Getting things ready to start the event loop'
 
-def getWP(algo):
+def getWP(algorithm):
     
-    algo_wp = None
-    if algo[0] != 'none':
-        algo_wp = algos['tau_id'][algo[0]]
-    elif algo[1] != 'none':
-        algo_wp = algos['ele_discr'][algo[1]]
-    elif algo[2] != 'none':
-        algo_wp = algos['mu_discr'][algo[2]]
-    return algo_wp
+    algorithm_wp = None
+    if algorithm[0] != 'none':
+        algorithm_wp = algos['tau_id'][algorithm[0]]
+    elif algorithm[1] != 'none':
+        algorithm_wp = algos['ele_discr'][algorithm[1]]
+    elif algorithm[2] != 'none':
+        algorithm_wp = algos['mu_discr'][algorithm[2]]
+    return algorithm_wp
 
 #Initialize histograms
 from HNL.Tools.ROC import ROC
