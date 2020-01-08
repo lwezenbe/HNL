@@ -28,6 +28,5 @@ def makeBranches(tree, branches):
     newVars = newVars()
     
     for name, t in sorted(branches):
-        print name.split('[')[0]
         tree.Branch(name.split('[')[0], ROOT.AddressOf(newVars, name.split('[')[0]), name+ '/' + t)
     return newVars

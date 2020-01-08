@@ -32,7 +32,7 @@ log = getLogger(args.logLevel)
 # Set some args for when performing a test
 #
 if args.isTest:
-    args.sample = 'crab_MiniAOD2016v3_ext1-v2_dilepton_MC_2016_v2'
+    args.sample = 'crab_MiniAOD2016v3_ext1-v2_singlelepton_MC_2016_v2'
     args.year = '2016'
     args.subJob = 0
     args.isChild = True
@@ -41,7 +41,8 @@ if args.isTest:
 #Load in samples
 #
 from HNL.Samples.sample import createSampleList, getSampleFromList
-sample_list = createSampleList('../Samples/InputFiles/skimList_'+args.year+'_sampleList.conf')
+input_file = '../Samples/InputFiles/skimList_'+args.year+'_sampleList.conf'
+sample_list = createSampleList(input_file)
 
 #
 # Submit subjobs
@@ -83,10 +84,10 @@ output_file.cd('blackJackAndHookers')
 #
 # Get hCounter
 #
-hcounter = None
-try:    hcounter = sample.hcounter
-except: pass
-
+from HNL.Samples.sample import getListOfPathsWithSameOutput
+hcount = sample.hcount
+for path_name in getListOfPathsWithSameOutput(input_file, sample.name, sample.output):
+    hcount += sample.getHist('hCounter', path_name).GetSumOfWeights()
 #
 # Switch off unused branches and create outputTree
 #
@@ -144,13 +145,13 @@ for entry in event_range:
 
     calculateKinematicVariables(chain, new_vars, is_reco_level=not args.genSkim)
     if not chain.is_signal:
-        new_vars.lumiweight = chain._weight*(sample.xsec*lumi[chain.year])/sample.hcount
+        new_vars.lumiweight = chain._weight*(sample.xsec*lumi[chain.year])/hcount
     else:
         new_vars.lumiweight = 1
     output_tree.Fill()
 
 output_tree.AutoSave()
-if hcounter is not None:
-    hcounter.Write()
+#if hcounter is not None:
+#    hcounter.Write()
     
 output_file.Close()

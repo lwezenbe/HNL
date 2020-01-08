@@ -71,7 +71,7 @@ class Sample:
             return hcounter
         else:
             hcounter = None
-            listOfFiles                 = glob.glob(self.path + '/*/*/*.root')
+            listOfFiles                 = glob.glob(sub_path + '/*/*/*.root')
             for f in listOfFiles:
                 if hcounter is None:     
                     hcounter = self.getHist(name, f)
@@ -169,8 +169,23 @@ def getListOfSampleNames(file_name):
 
     return name_list
 
+#
+#       If during skimming there are extension files, they are on 
+#       different lines with the same output but different names.
+#       Usually getHist would get the correct hcounter per line.
+#       However, if we want to save lumiweight in trees after skimming,
+#       We need all events that are in all extension files.
+#       This function lists all other files with the same outputname
+#
+def getListOfPathsWithSameOutput(file_name, name, output):
+    sample_infos = [line.split('%')[0].strip() for line in open(file_name)]                     # Strip % comments and \n charachters
+    sample_infos = [line.split() for line in sample_infos if line]                              # Get lines into tuples
+    path_list = []
+    for line in sample_infos:
+        if line[2] != output: continue
+        if line[0] == name: continue
+        path_list.append(line[1])
+    return path_list   
+ 
 if __name__ == "__main__":
-    createSampleFileFromShortlist('input.conf') 
-    LISTW = createSampleList('input_sampleList.conf')
-    for l in LISTW:
-        print l.name, l.output, l.split_jobs
+    print getListOfPathsWithSameOutput('../InputFiles/skimList_2016_sampleList.conf', 'crab_MiniAOD2016v3_ext1-v2_singlelepton_MC_2016_v2', 'DYJetsToLL_M-10to50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8'), 'crab_MiniAOD2016v3_ext1-v2_singlelepton_MC_2016_v2', 'DYJetsToLL_M-10to50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8'
