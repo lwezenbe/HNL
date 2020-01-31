@@ -4,6 +4,7 @@ import ROOT
 # Custom histogram class to set names and so on automatically and custom Fill functions
 #
 
+import numpy as np
 class Histogram:
    
     #
@@ -92,3 +93,26 @@ class Histogram:
 
     def getHist(self):
         return self.hist
+
+    def write(self, path, append = False):
+        append_string = 'recreate'
+        if append and isValidRootFile(self.path): append_string = 'update'
+
+        makeDirIfNeeded(self.path)
+        output_file = ROOT.TFile(path, append_string)
+        output_file.mkdir(self.name)
+        output_file.cd(self.name)
+        self.hist.getHist().Write()
+        output_file.Close()
+
+def returnSqrt(th1):
+    sqrt = th1.Clone('sqrt')
+    for xbin in xrange(1, th1.GetSize()-1):                     #GetSize returns nbins + 2 (for overflow and underflow bin)
+        if th1.GetBinContent(xbin) <= 0:
+            sqrt_x = 0
+            sqrt.SetBinError(xbin, 0)
+        else:
+            sqrt_x = np.sqrt(th1.GetBinContent(xbin))
+            sqrt.SetBinError(xbin, 0.5*th1.GetBinError(xbin)/sqrt_x)
+        sqrt.SetBinContent(xbin, sqrt_x)
+    return sqrt

@@ -4,7 +4,7 @@ from HNL.Tools.histogram import Histogram
 
 class Efficiency(object):
 
-    def __init__(self, name, var, var_tex, path, bins=None, subdir = None):      
+    def __init__(self, name, var, var_tex, path, bins=None, subdirs=None):      
         self.name = name
         self.path = path
         self.var = var
@@ -24,11 +24,17 @@ class Efficiency(object):
             self.efficiency_num = Histogram(name+'_num', self.var, var_tex, bins)
             self.efficiency_denom = Histogram(name+'_denom', self.var, var_tex, bins)
         else:
-            if subdir: name = subdir 
-            else: name = ''
-            self.efficiency_num = getObjFromFile(self.path, name+'/'+name+'_num')
-            self.efficiency_denom = getObjFromFile(self.path, name+'/'+name+'_denom')
-        
+            #self.efficiency_num = getObjFromFile(self.path, name+'/'+name+'_num')
+            #self.efficiency_denom = getObjFromFile(self.path, name+'/'+name+'_denom')
+            if subdirs is not None:
+                obj_name = ''
+                for d in subdirs:
+                    obj_name += d+'/'
+            else:
+                obj_name = self.name + '/'
+            self.efficiency_num = Histogram(getObjFromFile(self.path, obj_name+self.name+'_num'))
+            self.efficiency_denom = Histogram(getObjFromFile(self.path, obj_name+self.name+'_denom'))
+     
         self.isTH2 = self.efficiency_num.isTH2
         if self.isTH2 and not self.efficiency_denom.isTH2:  print "Warning: efficiency numerator and denominator have different dimensions"
 
@@ -49,14 +55,21 @@ class Efficiency(object):
         if inPercent: eff.Scale(100.)
         return eff
 
-    def write(self, append = False):
+    def write(self, append = False, subdirs = None):
         append_string = 'recreate'
         if append and isValidRootFile(self.path): append_string = 'update'
 
         makeDirIfNeeded(self.path)
         output_file = ROOT.TFile(self.path, append_string)
-        output_file.mkdir(self.name)
-        output_file.cd(self.name)
+        if subdirs is None:
+            output_file.mkdir(self.name)
+            output_file.cd(self.name)
+        else:
+            nomo = ''
+            for d in subdirs:
+                nomo += d + '/'
+                output_file.mkdir(nomo)
+                output_file.cd(nomo)
         self.efficiency_num.getHist().Write()
         self.efficiency_denom.getHist().Write()
         self.getEfficiency().Write()

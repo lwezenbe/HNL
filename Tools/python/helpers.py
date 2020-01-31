@@ -179,12 +179,12 @@ def rootFileContent(d, basepath="/", getNested=False):
 def getMaxWithErr(hist):
     max_val = 0
     if isinstance(hist, ROOT.TH1):
-        for bx in xrange(1, hist.GetNbinsX()):
+        for bx in xrange(1, hist.GetNbinsX()+1):
             new_val = hist.GetBinContent(bx) + hist.GetBinErrorUp(bx)
             if new_val > max_val:       max_val = new_val
 
     elif isinstance(hist, ROOT.TH2):
-        for bx in xrange(1, hist.GetNbinsX()):
+        for bx in xrange(1, hist.GetNbinsX()+1):
             for by in xrange(1, hist.GetNbinsY()):
                 new_val = hist.GetBinContent(bx, by) + hist.GetBinErrorUp(bx, by)
                 if new_val > max_val:       max_val = new_val
@@ -204,14 +204,14 @@ def getMaxWithErr(hist):
 def getMinWithErr(hist, zero_not_allowed=False):
     min_val = 99999999.
     if isinstance(hist, ROOT.TH1):
-        for bx in xrange(1, hist.GetNbinsX()):
+        for bx in xrange(1, hist.GetNbinsX()+1):
             if zero_not_allowed and not hist.GetBinContent(bx) > 0.: continue
             new_val = hist.GetBinContent(bx) - hist.GetBinErrorLow(bx)
             if zero_not_allowed and new_val <= 0.: new_val = hist.GetBinContent(bx)
             if new_val < min_val:       min_val = new_val
 
     elif isinstance(hist, ROOT.TH2):
-        for bx in xrange(1, hist.GetNbinsX()):
+        for bx in xrange(1, hist.GetNbinsX()+1):
             for by in xrange(1, hist.GetNbinsY()):
                 if zero_not_allowed and not hist.GetBinContent(bx, by) > 0: continue
                 new_val = hist.GetBinContent(bx, by) - hist.GetBinErrorLow(bx, by)
