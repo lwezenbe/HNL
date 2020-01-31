@@ -32,7 +32,7 @@ log = getLogger(args.logLevel)
 # Set some args for when performing a test
 #
 if args.isTest:
-    args.sample = 'crab_MiniAOD2016v3_ext1-v2_singlelepton_MC_2016_v2'
+    args.sample = 'localSubmission_HNL_11'
     args.year = '2016'
     args.subJob = 0
     args.isChild = True
@@ -121,8 +121,8 @@ new_vars = makeBranches(output_tree, new_branches)
 # Start event loop
 #
 if args.isTest:
-    event_range = range(500)
-    #event_range = sample.getEventRange(args.subJob)    
+    #event_range = range(500)
+    event_range = sample.getEventRange(args.subJob)    
 else:
     event_range = sample.getEventRange(args.subJob)    
 
@@ -143,11 +143,13 @@ for entry in event_range:
     new_vars.event_category = c
     new_vars.event_subcategory = sc
 
+    print 'calcing'
     calculateKinematicVariables(chain, new_vars, is_reco_level=not args.genSkim)
+    print new_vars.M3l
     if not chain.is_signal:
         new_vars.lumiweight = chain._weight*(sample.xsec*lumi[chain.year])/hcount
     else:
-        new_vars.lumiweight = 1
+        new_vars.lumiweight = chain._weight
     output_tree.Fill()
 
 output_tree.AutoSave()
