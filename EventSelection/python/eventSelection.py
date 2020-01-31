@@ -49,6 +49,14 @@ from HNL.ObjectSelection.leptonSelector import isTightLepton
 
 def select3Leptons(chain, new_chain, no_tau=False):
 
+    if chain is new_chain:
+        new_chain.l_pt = [0.0]*3
+        new_chain.l_eta = [0.0]*3
+        new_chain.l_phi = [0.0]*3
+        new_chain.l_charge = [0.0]*3
+        new_chain.l_flavor = [0.0]*3
+        new_chain.l_e = [0.0]*3
+
     collection = chain._nL if not no_tau else chain._nLight
     chain.leptons = [(chain._lPt[l], l) for l in xrange(collection) if isTightLepton(chain, l, algo = 'leptonMVA')]
     if len(chain.leptons) != 3:  return False
@@ -73,7 +81,15 @@ def select3Leptons(chain, new_chain, no_tau=False):
     return True  
 
 def select3GenLeptons(chain, new_chain):
-   
+  
+    if chain is new_chain:
+        new_chain.l_pt = [0.0]*3
+        new_chain.l_eta = [0.0]*3
+        new_chain.l_phi = [0.0]*3
+        new_chain.l_charge = [0.0]*3
+        new_chain.l_flavor = [0.0]*3
+        new_chain.l_e = [0.0]*3
+ 
     chain.leptons = []
     for l in xrange(chain._gen_nL):
         if chain._gen_lFlavor[l] == 2 and not chain._gen_lDecayedHadr[l]:       continue
@@ -112,7 +128,6 @@ def passesPtCuts(chain):
     if chain._lFlavor[chain.l3] == 1 and chain.l_pt[l3] < 5:      return False    
     if chain._lFlavor[chain.l3] == 0 and chain.l_pt[l3] < 10:      return False    
 
-
     #TODO: Update 
     if chain.isEEE:
         if (chain.l_pt[l1] > 19 and chain.l_pt[l2] > 15) or chain.l_pt[l1] > 30:  return True
@@ -126,7 +141,46 @@ def passesPtCuts(chain):
         if chain._lFlavor[chain.l3] == 1 and chain.l_pt[l3] < 9:  return (chain.l_pt[l1] > 23)
 
     return True
-    
+
+from HNL.EventSelection.eventCategorization import returnCategoryPtCuts 
+
+def passedCustomPtCuts(chain, cuts):
+    for i, c in enumerate(cuts):
+        if c is None: continue
+        if chain.l_pt[i] < c: return False
+    return True
+
+def passedPtCutsByCategory(chain, cat):
+    cuts_collection = returnCategoryPtCuts(cat)
+    passed = [passedCustomPtCuts(chain, cut) for cut in cuts_collection]
+    print passed
+    return any(passed)
+
+#    if cat[0] == 1 or cat[0] == 2:
+#        if chain.l_flavor[2] == 0 and chain.l_pt[2] < 23:       return False
+#        elif chain.l_flavor[2] == 1 and chain.l_pt[2] < 22:       return False    
+#        elif chain.l_flavor[2] == 2 and (chain.l_pt[0] < 32 or chain.l_pt[0] < 32): return False
+#    elif cat[0] == 3:
+#        if chain.l_flavor[1] == 0 and chain.l_flavor[2] == 0:
+#            if chain.l_pt[1] < 23 or chain.l_pt[2] < 12: return False
+#        elif chain.l_flavor[1] == 1 and chain.l_flavor[2] == 0:
+#            if chain.l_pt[1] < 23 or chain.l_pt[2] < 8: return False
+#        elif chain.l_flavor[1] == 1 and chain.l_flavor[2] == 1:
+#            if chain.l_pt[1] < 17 or chain.l_pt[2] < 8: return False
+#        elif chain.l_flavor[1] == 0 and chain.l_flavor[2] == 1:
+#            if chain.l_pt[2] < 8: return False
+#    elif cat[0] == 4:
+#        if chain.l_flavor[0] == 0 and chain.l_flavor[2] == 0:
+#            if chain.l_pt[0] < 24 or chain.l_pt[2] < 20: return False
+#        elif chain.l_flavor[0] == 1 and chain.l_flavor[2] == 0:
+#            if chain.l_pt[0] < 22: return False
+#        elif chain.l_flavor[0] == 1 and chain.l_flavor[2] == 1:
+#            if chain.l_pt[0] < 17 or chain.l_pt[2] < 8: return False
+#        elif chain.l_flavor[0] == 0 and chain.l_flavor[2] == 1:
+#            if chain.l_pt[0] < 23 or chain.l_pt[2] < 12: return False
+#    else:
+#        return True
+ 
 def passedCategory(chain, cat_name):
     
     if cat_name == 'eee' and not chain.isEEE: return False
@@ -144,7 +198,7 @@ def calculateKinematicVariables(chain, new_chain, is_reco_level = True):
 
     #M3l
     new_chain.M3l = (l1Vec + l2Vec + l3Vec).M()
- 
+
     #min(M_OS)
     min_mos = 9999999.
     os = [10, 10]

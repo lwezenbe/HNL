@@ -1,7 +1,10 @@
 #! /usr/bin/env python
 
 #
-# Code to calculate trigger efficiency
+#       Code to calculate trigger efficiency
+#
+# Can be used on RECO level, where you check how many events pass the reco selection
+# Is also used to check how many events on a generator level pass certain pt cuts
 #
 
 import numpy as np
@@ -20,6 +23,10 @@ argParser.add_argument('--runLocal', action='store_true', default=False,  help='
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 argParser.add_argument('--oldANcuts',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 argParser.add_argument('--FOcut',   action='store_true', default=False,  help='Perform baseline FO cut')
+argParser.add_argument('--onlyHadronic',   action='store_true', default=False,  help='Only allow hadronic final states')
+argParser.add_argument('--divideByCategory',   action='store_true', default=False,  help='Look at the efficiency per event category')
+argParser.add_argument('--genLevel',   action='store_true', default=False,  help='Check how many events pass cuts on gen level')
+argParser.add_argument('--triggerTest',   action='store_true', default=False,  help='Check pt cuts separately instead of or-ing them')
 args = argParser.parse_args()
 
 
@@ -28,7 +35,7 @@ args = argParser.parse_args()
 #
 if args.isTest: 
     args.isChild = True
-    args.sample = 'HNLtau-5'
+    args.sample = 'HNLtau-200'
     args.subJob = '0'
     args.year = '2016'
 
@@ -61,10 +68,19 @@ sample = getSampleFromList(sample_list, args.sample)
 chain = sample.initTree()
 
 subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
-output_name = os.path.join(os.getcwd(), 'data', sample.output)
+output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], sample.output)
+if args.divideByCategory:
+    output_name += '/divideByCategory'
+    if args.triggerTest: 
+        output_name += '/triggerTest'
+
 if args.isChild:
     output_name += '/tmp_'+sample.output
-output_name += '/'+ sample.name +'_signalSelection_' +subjobAppendix+ '.root'
+
+if not args.FOcut:
+    output_name += '/'+ sample.name +'_signalSelectionFull_' +subjobAppendix+ '.root'
+else:
+    output_name += '/'+ sample.name +'_signalSelectionFObase_' +subjobAppendix+ '.root'
 
 #
 # Calculate the range for the histograms. These are as a function of the mass of the signal samples.
@@ -92,14 +108,30 @@ mass_range = getMassRange(list_location)
 #
 var = {'HNLmass': (lambda c : c.HNLmass,        np.array(mass_range),   ('m_{N} [GeV]', 'Events'))}
 
+from HNL.EventSelection.eventCategorization import EventCategory, categoryName, subcategoryName
+ec = EventCategory(chain)
+
 from HNL.Tools.efficiency import Efficiency
-efficiency = Efficiency('efficiency', var['HNLmass'][0], var['HNLmass'][2], output_name, var['HNLmass'][1])
-    
+from HNL.EventSelection.eventCategorization import returnCategoryPtCuts
+if not args.divideByCategory:
+    efficiency = Efficiency('efficiency', var['HNLmass'][0], var['HNLmass'][2], output_name, var['HNLmass'][1])
+else:
+    efficiency = {}
+    if not args.triggerTest:
+        for cat in ec.categories:
+            efficiency[cat] = Efficiency('efficiency_'+str(cat[0])+'_'+str(cat[1]), var['HNLmass'][0], var['HNLmass'][2], output_name, var['HNLmass'][1])        
+    else:
+        for cat in ec.categories:
+            efficiency[cat] = {}
+            for dink in returnCategoryPtCuts(cat):
+                efficiency[cat][dink] = Efficiency('efficiency_'+str(cat[0])+'_'+str(cat[1])+'_l1_'+str(dink[0])+'_l2_'+str(dink[1])+'_l3_'+str(dink[2]), var['HNLmass'][0], var['HNLmass'][2], output_name, var['HNLmass'][1])        
+
+print efficiency
+
 #
 # Set event range
 #
 if args.isTest:
-    #event_range = sample.getEventRange(args.subJob)    
     event_range = xrange(1000)
 else:
     event_range = sample.getEventRange(args.subJob)    
@@ -107,35 +139,69 @@ else:
 chain.HNLmass = float(sample.name.rsplit('-', 1)[1])
 chain.year = int(args.year)
 
-
 #
 # Loop over all events
 #
 from HNL.Tools.helpers import progress
-from HNL.EventSelection.eventSelection import select3Leptons, select3LightLeptons,  lowMassCuts
+from HNL.EventSelection.eventSelection import select3Leptons, select3LightLeptons, select3GenLeptons, lowMassCuts, passedPtCutsByCategory, passedCustomPtCuts
+from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
 from HNL.ObjectSelection.leptonSelector import isFOLepton
 for entry in event_range:
     
     chain.GetEntry(entry)
     progress(entry - event_range[0], len(event_range))
 
+    if not select3GenLeptons(chain, chain):   continue
+    if args.genLevel:
+        slm = SignalLeptonMatcher(chain)
+        slm.saveNewOrder()
+
+    true_cat = ec.returnCategory()
+
     if args.FOcut:
         tmp = [l for l in xrange(chain._nL) if isFOLepton(chain, l)]
         if len(tmp) < 3: continue   
-
+    
     if args.oldANcuts:
         passed = select3LightLeptons(chain, chain)
-    else:
+    elif not args.genLevel:
         passed = select3Leptons(chain, chain)
+    elif args.triggerTest:
+        passed = False
+    else:
+        #implement custom cuts here
+        passed = passedPtCutsByCategory(chain, true_cat)
 
-    if not lowMassCuts:         continue
+    #if args.onlyHadronic and ec.returnCategory()[0] > 3: passed = False
+
+#    if not lowMassCuts:         continue
     weight = chain._weight
-    efficiency.fill(chain, weight, passed)   
-    
+    if args.divideByCategory:
+        if not args.genLevel and true_cat != ec.returnCategory(): passed = False
+        if args.triggerTest:
+            for cuts in efficiency[true_cat].keys():
+                passed = passedCustomPtCuts(chain, cuts)
+                efficiency[true_cat][cuts].fill(chain, weight, passed)   
+        else:
+            efficiency[true_cat].fill(chain, weight, passed)   
+                
+    else:
+        efficiency.fill(chain, weight, passed)   
+        
 
 #if args.isTest: exit(0)
 
 #
 # Save all histograms
 #
-efficiency.write()
+if args.divideByCategory:
+    for i, cat in enumerate(ec.categories):
+        if not args.triggerTest:
+            if i == 0:       efficiency[cat].write()
+            else:            efficiency[cat].write(append=True)
+        else: 
+            for j, cuts in enumerate(efficiency[cat].keys()):
+                if i == 0 and j == 0:       efficiency[cat][cuts].write(subdirs=['efficiency_'+str(cat[0])+'_'+str(cat[1]), 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])])
+                else:                       efficiency[cat][cuts].write(append=True, subdirs=['efficiency_'+str(cat[0])+'_'+str(cat[1]), 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])])
+else:
+    efficiency.write()

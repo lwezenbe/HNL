@@ -20,6 +20,7 @@ def makeList(item):
     return item
 
 import HNL.Tools.histogram
+from  HNL.Tools.histogram import returnSqrt
 def getHistList(item):
     if item is None or not isinstance(item[0], HNL.Tools.histogram.Histogram):
         return item
@@ -40,40 +41,48 @@ from HNL.Tools.helpers import isTimeStampFormat, makeDirIfNeeded
 from HNL.Plotting.style import setDefault, setDefault2D
 class Plot:
     
-    def __init__(self, signal_hist, tex_names, name = None, x_name = None, y_name = None, bkgr_hist = None, extra_text = None, x_log = None, y_log = None):
+    def __init__(self, signal_hist, tex_names, name = None, x_name = None, y_name = None, bkgr_hist = None, extra_text = None, x_log = None, y_log = None, draw_ratio = False, draw_significance = False):
         self.s = makeList(getHistList(signal_hist))
         self.tex_names = makeList(tex_names)
+        self.s_tex_names = self.tex_names[:len(self.s)] 
+        self.b_tex_names = self.tex_names[len(self.s):] 
         self.name = name if name else self.s[0].GetTitle()
         self.b = makeList(getHistList(bkgr_hist)) if bkgr_hist is not None else None
         self.total_b = None
         self.hs = None  #hist stack for bkgr
         self.x_name = x_name if x_name else self.s[0].GetXaxis().GetTitle()
         self.y_name = y_name if y_name else self.s[0].GetYaxis().GetTitle()
-        self.pad = None #Can not be created until gROOT and gStyle settings are set
+        self.canvas = None #Can not be created until gROOT and gStyle settings are set
+        self.plotpad = None
         self.x_log = x_log
         self.y_log = y_log
-        self.extra_text = extra_text
- 
+        self.extra_text = [i for i in extra_text] if extra_text is not None else None
+        self.draw_ratio = draw_ratio
+        self.draw_significance = draw_significance
+
     def setAxisLog(self, is2D = False):
-        to_check = [i for i in self.s]                  #Make a copy
-        to_check_max = [j for j in to_check]
-        to_check_min = [j for j in to_check]
+        to_check_max = [j for j in self.s]
+        to_check_min = [j for j in self.s]
         if self.b is not None:  
-            to_check_min = to_check + self.b
-            to_check_max = to_check + [self.total_b]
+            to_check_min += self.b
+            to_check_max += [self.total_b]
         if not is2D:
             overall_max = pt.getOverallMaximum(to_check_max)
             overall_min = pt.getOverallMinimum(to_check_min, zero_not_allowed=True)
 
         if self.x_log:
-            self.pad.SetLogx()
+            #self.canvas.SetLogx()
+            self.plotpad.SetLogx()
         if self.y_log:
-            self.pad.SetLogy()
-            if not is2D: 
-                if self.b is None: self.s[0].GetYaxis().SetRangeUser(0.3*overall_min, 30*overall_max)
+            #self.canvas.SetLogy()
+            self.plotpad.SetLogy()
+            if not is2D:
+                if self.b is None: 
+                    self.s[0].SetMinimum(0.3*overall_min)
+                    self.s[0].SetMaximum(30*overall_max)
                 else: 
                     self.hs.SetMinimum(0.3*overall_min)
-                    self.hs.SetMaximum(20*overall_max)
+                    self.hs.SetMaximum(30*overall_max)
         else:
             if not is2D: 
                 if self.b is None: self.s[0].GetYaxis().SetRangeUser(0.7*overall_min, 1.5*overall_max)
@@ -82,7 +91,8 @@ class Plot:
         
 
     def drawExtraText(self):
-        self.pad.cd()
+        self.canvas.cd()
+
         #Write extra text
         if self.extra_text is not None:
             last_y_pos = 0.8
@@ -117,16 +127,133 @@ class Plot:
                 extra_text.SetTextAlign(info[4])
                 extra_text.SetTextSize(extra_text_size)
                 extra_text.DrawLatex(extra_text_x_pos, extra_text_y_pos, extra_text_string)
-                
+               
                 last_x_pos = extra_text_x_pos
                 last_y_pos = info[2]
                 last_corrected_y_pos = extra_text_y_pos
 
         else:
             print 'Please provide the text to draw'
+        self.plotpad.Update()
 
-        self.pad.Update()
+        return
+
+    def setPads(self):
+        plot_pad_y = 0.05
+        if self.draw_significance and self.draw_ratio:
+            self.sig_pad = ROOT.TPad('sig_pad', 'sig_pad', 0, 0.05, 1, 0.25)
+            self.ratio_pad = ROOT.TPad('ratio_pad', 'ratio_pad', 0, 0.25, 1, 0.45)
+            self.ratio_pad.SetBottomMargin(0.05)
+            plot_pad_y = 0.45
+        elif self.draw_ratio:
+            self.ratio_pad = ROOT.TPad('ratio_pad', 'ratio_pad', 0, 0.05, 1, 0.25)
+            self.ratio_pad.SetBottomMargin(0.3)
+            plot_pad_y = 0.25
+        elif self.draw_significance:
+            self.sig_pad = ROOT.TPad('sig_pad', 'sig_pad', 0, 0.05, 1, 0.25)
+            plot_pad_y = 0.25
+             
+        self.plotpad = ROOT.TPad('plotpad', 'plotpad', 0, plot_pad_y, 1, 0.98)
+
+        self.plotpad.Draw()
+        if self.draw_ratio:
+            self.plotpad.SetBottomMargin(0.)
+            self.ratio_pad.SetTopMargin(0.05)
+            self.ratio_pad.Draw()
+
+        if self.draw_significance:
+            self.plotpad.SetBottomMargin(0.)
+            self.sig_pad.SetTopMargin(0.05)
+            self.sig_pad.SetBottomMargin(0.3)
+            self.sig_pad.Draw()
+
+        return        
+
+    def calculateRatio(self):
+        ratios = []
+        for i, s in enumerate(self.s):
+            ratios.append(s.Clone('ratio'))
+            ratios[i].Divide(self.total_b)
+
+        return ratios
+
+    def drawRatio(self, ratios):
+        self.ratio_pad.cd()        
+
+        #Set axis: if significance is also drawn, no x-axis
+        if self.draw_significance:
+            ratios[0].SetTitle('; ; S/B')
+        else:
+            ratios[0].SetTitle(';'+ self.x_name+'; S/B')
+        ratios[0].SetMinimum(0.3)
+        ratios[0].SetMaximum(1.7)
+        ratios[0].GetXaxis().SetTitleSize(.12)
+        ratios[0].GetYaxis().SetTitleSize(.12)
+        ratios[0].GetXaxis().SetLabelSize(.12)
+        ratios[0].GetYaxis().SetLabelSize(.12)
+        ratios[0].GetYaxis().SetTitleOffset(.6)
+        if self.draw_significance:
+            ratios[0].GetXaxis().SetLabelOffset(999999)
+        else:
+            ratios[0].GetXaxis().SetTitleOffset(1.0)
+            
+
+        for r in ratios:
+            r.SetMarkerStyle(20)
+            r.SetMarkerColor(r.GetLineColor())
+
+        #Draw a guide for the eye
+        self.line = ROOT.TLine(ratios[0].GetXaxis().GetXmin(),1,ratios[0].GetXaxis().GetXmax(),1)
+        self.line.SetLineColor(ROOT.kBlack)
+        self.line.SetLineWidth(1)
+        self.line.SetLineStyle(3)
+        
+        ratios[0].Draw('EP')
+        for r in ratios[1:]:
+            r.Draw('EPSame')
+       
+        self.line.Draw()
+        
+        self.ratio_pad.Update() 
+        self.canvas.cd() 
+        self.canvas.Update() 
+        return self.ratio_pad
+   
+    def calculateSignificance(self):
+        significances = []
+        for i, s in enumerate(self.s):
+            tot = s.Clone('tot')
+            tot.Add(self.total_b)
+            significances.append(returnSqrt(tot))
+
+        return significances
     
+    def drawSignificance(self, significances):
+        self.sig_pad.cd()
+
+        #Set axis: if significance is also drawn, no x-axis
+        significances[0].SetTitle(';'+ self.x_name+'; S/#sqrt{S+B}')
+        significances[0].SetMinimum(0.)
+        significances[0].GetXaxis().SetTitleSize(.12)
+        significances[0].GetYaxis().SetTitleSize(.12)
+        significances[0].GetXaxis().SetTitleOffset(1.0)
+        significances[0].GetXaxis().SetLabelSize(.12)
+        significances[0].GetYaxis().SetLabelSize(.12)
+        significances[0].GetYaxis().SetTitleOffset(0.6)
+        
+        for r in significances:
+            r.SetMarkerStyle(20)
+            r.SetMarkerColor(r.GetLineColor())
+
+        significances[0].Draw('EP')
+        for r in significances[1:]:
+            r.Draw('EPSame')
+
+        self.sig_pad.Update()
+        self.canvas.cd()
+        self.canvas.Update() 
+        return self.sig_pad
+
     def savePlot(self, destination):
         makeDirIfNeeded(destination)
         destination_components = destination.split('/')
@@ -143,45 +270,58 @@ class Plot:
             os.system('cp -rf $CMSSW_BASE/src/HNL/Tools/php/index.php '+ php_destination.rsplit('/', 1)[0]+'/index.php')    
 
 
-        self.pad.SaveAs(destination + ".pdf")
-        self.pad.SaveAs(destination + ".png")
-        self.pad.SaveAs(destination + ".root")
+        self.canvas.SaveAs(destination + ".pdf")
+        self.canvas.SaveAs(destination + ".png")
+        self.canvas.SaveAs(destination + ".root")
         print destination + ".png"
         #Clean out the php directory you want to write to if it is already filled, otherwise things go wrong with updating the file on the website
         #os.system("rm "+php_destination.rsplit('/')[0]+"/*")
 
         if index_for_php:
-            self.pad.SaveAs(php_destination + ".pdf")
-            self.pad.SaveAs(php_destination + ".png")
-            self.pad.SaveAs(php_destination + ".root")
+            self.canvas.SaveAs(php_destination + ".pdf")
+            self.canvas.SaveAs(php_destination + ".png")
+            self.canvas.SaveAs(php_destination + ".root")
     
     #
     # Functions to do actual plotting
     #
 
-    def drawHist(self, output_dir = None, normalize_signal = False, signal_style = False):
+    def drawHist(self, output_dir = None, normalize_signal = False, signal_style = False, draw_option = 'EHist', draw_cuts = None):
 
         setDefault()
         #Create Canvas
-        self.pad = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
-        
-        title = " ;" +self.x_name+ " ; "+self.y_name+' / ' +str(self.s[0].GetBinWidth(1)) +' '+ pt.getUnit(self.x_name)
+        self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
+        self.setPads()
+        #self.plotpad = ROOT.TPad('plotpad', 'plotpad', 0, 0.01, 1, 0.98)
+        self.plotpad.Draw()
+        self.plotpad.cd()
+
+        if self.draw_ratio or self.draw_significance:
+            title = " ; ; "+self.y_name+' / ' +str(self.s[0].GetBinWidth(1)) +' '+ pt.getUnit(self.x_name)
+        else:
+            title = " ;" +self.x_name+ " ; "+self.y_name+' / ' +str(self.s[0].GetBinWidth(1)) +' '+ pt.getUnit(self.x_name)
         
         #Set Bkgr Histogram Styles
         #Do this first so it is not overlapping the signal
         if self.b is not None:
+            self.b, self.b_tex_names = pt.orderHist(self.b, self.b_tex_names, lowest_first = True)
             self.hs = ROOT.THStack("hs", "hs")
             self.total_b = self.b[0].Clone('total_bkgr')
-            for i, (h, n) in enumerate(zip(self.b, self.tex_names[len(self.s):])):
+            for i, (h, n) in enumerate(zip(self.b, self.b_tex_names)):
                 h.SetLineColor(ps.getStackColorTauPOGbyName(n))
                 h.SetFillColor(ps.getStackColorTauPOGbyName(n))
                 if i != 0:      self.total_b.Add(h)
                 self.hs.Add(h)
-            
+
+        
+        self.s, self.s_tex_names = pt.orderHist(self.s, self.s_tex_names) #Order signals so those with 0 sum of weights come last and arent skipped (which cause the axis to not be updated)
+        self.tex_names = self.s_tex_names + self.b_tex_names
+     
         if self.b is not None:
-            self.hs.Draw("EHist")                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
+            self.hs.Draw(draw_option)                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
             self.hs.SetTitle(title)
-            #self.hs.GetHistogram().GetXaxis().SetLabelOffset(9999999)
+            if self.draw_ratio or self.draw_significance: 
+                self.hs.GetHistogram().GetXaxis().SetLabelOffset(9999999)
             #self.hs.GetHistogram().SetMaximum(1)   
         tdr.setTDRStyle()                       #TODO: Find out why we need a setTDRStyle after drawing the stack
  
@@ -196,8 +336,8 @@ class Plot:
                 h.SetMarkerStyle(8)
                 h.SetMarkerColor(ps.getLineColor(self.s.index(h)))
         if self.b is None:      self.s[0].SetTitle(title)       #If no bkgr was given, the SetTitle was not done yet
-        self.setAxisLog()
         
+        #print 'e'
         #Start Drawing
         for h in self.s:
             if h.GetSumOfWeights() == 0: continue
@@ -205,20 +345,41 @@ class Plot:
                 h.Scale(self.total_b.GetSumOfWeights()/h.GetSumOfWeights())
 
             if(self.s.index(h) == 0 and self.b is None):
-                h.Draw("EHist")
+                h.Draw(draw_option)
+                if self.draw_ratio or self.draw_significance: 
+                    h.GetXaxis().SetLabelOffset(9999999)
             else:
-                h.Draw("EHistSAME")
+                h.Draw(draw_option+'Same')
            # h.Draw("EHistSAME")
+        self.setAxisLog()
+
+        #Option only used in plotVariables.py
+        if draw_cuts is not None:
+            if self.extra_text is None: self.extra_text = []
+            lines = []
+            i = 0 #Cant use enumerate because of if statement, first filled value might be at i=2 but lines[2] doesnt exist then
+            for j, (h, l) in enumerate(zip(self.s, draw_cuts[0])):
+                if l is not None:
+                    lines.append(ROOT.TLine(l, 0, l, self.s[0].GetMaximum()))
+                    lines[i].SetLineColor(self.s[j].GetLineColor())
+                    lines[i].SetLineStyle(10)
+                    lines[i].SetLineWidth(2)
+                    lines[i].Draw('Same')
+                    self.extra_text.append(pt.extraTextFormat('p_{T}(l'+str(j+1)+') < '+str(l) +' GeV'))
+                    i += 1
+            self.extra_text.append(pt.extraTextFormat('Eff: %.4g' % draw_cuts[1]+'%'))
 
         #Write extra text
         if self.extra_text is not None:
             self.drawExtraText()
+
         
+        self.canvas.cd()
         #Create Legend
         legend = ROOT.TLegend(0.5, .8, .9, .9)
-        legend.SetNColumns(2)
-        
-        loop_obj = self.s
+        legend.SetNColumns(3)
+       
+        loop_obj = [item for item in self.s]
         if self.b is not None: loop_obj.extend(self.b)
         for h, n in zip(loop_obj, self.tex_names):
             legend.AddEntry(h, n)
@@ -226,26 +387,39 @@ class Plot:
         legend.SetBorderSize(0)
         legend.Draw()
 
+        if self.draw_ratio:
+            ratios = self.calculateRatio()
+            self.drawRatio(ratios)
+            self.ratio_pad.Update()
+        if self.draw_significance:
+            significances = self.calculateSignificance()
+            self.drawSignificance(significances)
+            self.sig_pad.Update()
+
+        ROOT.gPad.Update() 
+        self.canvas.Update()
         #CMS lumi
-        cl.CMS_lumi(self.pad, 4, 11, 'Preliminary', False)
+        cl.CMS_lumi(self.canvas, 4, 11, 'Preliminary', False)
 
         #Save everything
         self.savePlot(output_dir +'/'+ self.name)
+        ROOT.SetOwnership(self.canvas, False)
+        return
 
 
     def draw2D(self, option='ETextColz', output_dir = None):
      
         setDefault2D()    
-        self.pad = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
+        self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
         self.setAxisLog(is2D=True)
         
         for h in self.s:
             h.SetTitle(';'+self.x_name+';'+self.y_name) 
             h.Draw(option)
             output_name = output_dir +'/'+h.GetName() #Not using name here because loop over things with different names
-            cl.CMS_lumi(self.pad, 4, 0, 'Preliminary', True)
+            cl.CMS_lumi(self.canvas, 4, 0, 'Preliminary', True)
             self.savePlot(output_name)
-            self.pad.Clear()
+            self.canvas.Clear()
         return
 
     def drawGraph(self, output_dir = None):
@@ -253,7 +427,7 @@ class Plot:
         setDefault()
         
         #Create Canvas
-        self.pad = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
+        self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
 
         #Create TGraph
         mgraph = ROOT.TMultiGraph()
@@ -274,13 +448,13 @@ class Plot:
         ymin = pt.getYMin(self.s)
 
         if self.x_log :
-            self.pad.SetLogx()
+            self.canvas.SetLogx()
             mgraph.GetXaxis().SetRangeUser(0.3*xmin, 30*xmax)
         else :
             mgraph.GetXaxis().SetRangeUser(0.7*xmin, 1.3*xmax)
         
         if self.y_log:
-            self.pad.SetLogy()
+            self.canvas.SetLogy()
             mgraph.GetYaxis().SetRangeUser(0.3*ymin, 10*ymax)
         else :
             mgraph.GetYaxis().SetRangeUser(0.5*ymin, 1.2*ymax)       
@@ -299,7 +473,7 @@ class Plot:
         legend.SetBorderSize(0)
         legend.Draw()
         
-        cl.CMS_lumi(self.pad, 4, 11, 'Simulation', False)
+        cl.CMS_lumi(self.canvas, 4, 11, 'Simulation', False)
 
         #Save everything
         self.savePlot(output_dir +'/'+ self.name)

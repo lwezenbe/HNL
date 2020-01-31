@@ -65,6 +65,11 @@ def orderHist(hist, names, lowest_first = False):
 def extraTextFormat(text, xpos = None, ypos = None, textsize = None, align = 12):
     return [text, xpos, ypos, textsize, align]
 
+def removeNegativeErrors(h):
+    for xbin in xrange(1, th1.GetSize()-1):                     #GetSize returns nbins + 2 (for overflow and underflow bin)
+        if (h.GetBinContent(xbin) - h.GetBinErrorLow(xbin)) < 0:
+            h.SetBinError
+
 def getUnit(x):
     if x.find('[') == -1:
         return ''
