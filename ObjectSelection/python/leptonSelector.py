@@ -1,4 +1,18 @@
 #
+# Is good lepton on generator level
+#
+from HNL.ObjectSelection.electronSelector import isGoodGenElectron
+from HNL.ObjectSelection.muonSelector import isGoodGenMuon
+from HNL.ObjectSelection.tauSelector import isGoodGenTau
+
+def isGoodGenLepton(chain, index):
+    if chain._gen_lFlavor[index] == 0:       return isGoodGenElectron(chain, index)
+    if chain._gen_lFlavor[index] == 1:       return isGoodGenMuon(chain, index)
+    if chain._gen_lFlavor[index] == 2:       return isGoodGenTau(chain, index)
+    else:
+        return False
+
+#
 # Loose WP for light leptons
 #
 from HNL.ObjectSelection.electronSelector import isLooseElectron

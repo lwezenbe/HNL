@@ -3,6 +3,14 @@ import math
 from bTagWP import getBTagWP
 
 #
+# Simple gen level selection
+#
+def isGoodGenElectron(chain, index):
+    if not chain._gen_lIsPrompt[index]:         return False
+    if chain._gen_lEta[index] > 2.5:            return False
+    return True
+
+#
 # We dont use electrons that fall within dr 0.05 of a loose muon
 #
 from HNL.ObjectSelection.muonSelector import isLooseMuon

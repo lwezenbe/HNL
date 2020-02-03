@@ -1,4 +1,8 @@
 
+def isGoodGenMuon(chain, index):
+    if not chain._gen_lIsPrompt[index]:         return False
+    if chain._gen_lEta[index] > 2.4:            return False
+    return True
 
 def isLooseMuonCutBased(chain, index):
     if abs(chain._lEta[index]) >= 2.4:          return False

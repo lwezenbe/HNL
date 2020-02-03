@@ -46,8 +46,6 @@ tau_id_WP = {('MVA2017v2', 'none') : lambda c : np.ones(c._nL, dtype=bool),
             ('MVA2015New', 'medium') : lambda c : c._tauMediumMvaNew2015,
             ('MVA2015New', 'tight') : lambda c : c._tauTightMvaNew2015,
             ('MVA2015New', 'vtight') : lambda c : c._tauVTightMvaNew2015,
-            
-            
             }
 
 tau_eleDiscr_WP = {('againstElectron', 'none') : lambda c : np.ones(c._nL, dtype=bool),
@@ -87,6 +85,12 @@ default_id_algo = 'deeptauVSjets'
 default_eleDiscr_algo = 'deeptauVSe'
 default_muonDiscr_algo = 'deeptauVSmu'
 
+def isGoodGenTau(chain, index):
+    if not chain._gen_lIsPrompt[index]:         return False
+    if not chain._gen_lDecayedHadr[index]:          return False
+    if chain._gen_lEta[index] > 2.1:            return False
+    return True             
+
 def isCleanFromLightLeptons(chain, index):
     for l in xrange(chain._nLight):
         if chain._lFlavor == 1 and not isLooseMuon(chain, l):    continue
@@ -110,7 +114,6 @@ def isFOTau(chain, index, algo = default_id_algo, algo_ele = default_eleDiscr_al
     if not isLooseTau(chain, index, algo, algo_ele, algo_mu):              return False
     if not tau_id_WP[(algo, 'medium')](chain)[index]:   return False
     return True
-
 
 def isTightTau(chain, index, algo = default_id_algo, algo_ele = default_eleDiscr_algo, algo_mu = default_muonDiscr_algo): 
     

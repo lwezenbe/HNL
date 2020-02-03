@@ -80,6 +80,8 @@ def select3Leptons(chain, new_chain, no_tau=False):
 
     return True  
 
+from HNL.ObjectSelection.leptonSelector import isGoodGenLepton
+
 def select3GenLeptons(chain, new_chain):
   
     if chain is new_chain:
@@ -92,8 +94,8 @@ def select3GenLeptons(chain, new_chain):
  
     chain.leptons = []
     for l in xrange(chain._gen_nL):
-        if chain._gen_lFlavor[l] == 2 and not chain._gen_lDecayedHadr[l]:       continue
-        if chain._gen_lIsPrompt[l]: chain.leptons.append((chain._gen_lPt[l], l))  
+        if isGoodGenLepton(chain, l): 
+            chain.leptons.append((chain._gen_lPt[l], l))  
 
     if len(chain.leptons) != 3:  return False
 
@@ -144,16 +146,21 @@ def passesPtCuts(chain):
 
 from HNL.EventSelection.eventCategorization import returnCategoryPtCuts 
 
+
 def passedCustomPtCuts(chain, cuts):
-    for i, c in enumerate(cuts):
-        if c is None: continue
-        if chain.l_pt[i] < c: return False
-    return True
+    multiple_cut_collections = isinstance(cuts[0], (tuple,))   #cuts should always be an array of cuts for the three leptons, so no error expected
+    if multiple_cut_collections:
+        passed = [passedCustomPtCuts(chain, cuts_collection) for cuts_collection in cuts]
+        return any(passed)
+    else:  
+        for i, c in enumerate(cuts):
+            if c is None: continue
+            if chain.l_pt[i] < c: return False
+        return True
 
 def passedPtCutsByCategory(chain, cat):
     cuts_collection = returnCategoryPtCuts(cat)
     passed = [passedCustomPtCuts(chain, cut) for cut in cuts_collection]
-    print passed
     return any(passed)
 
 #    if cat[0] == 1 or cat[0] == 2:
