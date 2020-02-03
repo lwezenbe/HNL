@@ -14,14 +14,10 @@ l3 = 2
 # 2: l1, l2 OS tau, l3 any lepton (N to W decay)
 # 3: l1 tau, l2l3 OSSF pair (N to Z decay)
 # 4: l2 tau, l1l3 SSSF pair (second tau to lepton decay)
-#OLD
-# 4: l1 and l2 SS ele, l3 any lepton (N to W decay)
-# 5: l1, l2 OS ele, l3 any lepton (N to W decay)
-# 6: l1 ele, l2l3 OSSF pair (N to Z decay)
-# 7: l1 and l2 SS mu, l3 any lepton (N to W decay)
-# 8: l1, l2 OS mu, l3 any lepton (N to W decay)
-# 9: l1 mu, l2l3 OSSF pair (N to Z decay)
-# 10: everything else
+# 5: eee
+# 6: mumumu
+# 7: eemu
+# 8: emumu    
 #
 # subcategories show what the remaining lepton(s) are (l3 when N to W decay and l2l3 in case of N to Z)
 # 1: tau
@@ -44,15 +40,6 @@ CATEGORY_TEX_NAMES = {1: '#tau^{#pm}#tau^{#pm}',
                         2: '#tau^{#pm}#tau^{#mp}',
                         3: '#tau',
                         4: '#tau',
-#                        5: 'all'
-#                        4: 'e^{#pm}e^{#pm}',
-
-#                        5: 'e^{#pm}e^{#mp}',
-#                        6: 'e',
-#                        7: '#mu^{#pm}#mu^{#pm}',
-#                        8: '#mu^{#pm}#mu^{#mp}',
-#                        9: '#mu',
-#                        10: 'll'
 }
 
 SUBCATEGORY_TEX_NAMES = {'DoubleTau' : {1: 'e', 2: '#mu', 3: '#tau'},
@@ -114,8 +101,20 @@ class EventCategory():
             else:
                 self.category = len(CATEGORY_NAMES) + 1
 
+        #All light lepton categories
+        elif self.n_tau == 0:
+            if self.n_ele == 3:
+                self.category = 5:
+            elif self.n_ele == 0 and self.n_mu == 3:
+                self.category == 6
+            elif self.n_ele == 2 and self.n_mu == 1:
+                self.category == 7
+            elif self.n_ele == 1 and self.n_mu == 2:
+                self.category == 8
+
         else:
             self.category = len(CATEGORY_NAMES) + 1
+
 
     def determineSubCategory(self):
         #Double Tau
@@ -184,9 +183,48 @@ def returnCategoryPtCuts(cat):
         else:
             return [(None, None, None)]
     
-    print 'No category found, allowing event'
     return [(None, None, None)]
         
+#
+# Function to return triggers interesting to the specific category
+# Used to study triggers
+#
+
+def returnCategoryTriggers(chain, cat):
+    if cat[0] == 1 or cat[0] == 2:
+        if cat[1] == 1:       
+            return [chain._HLT_Ele27_WPTight_Gsf, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20, chain._HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg]    
+        elif cat[1] == 2:       
+            return [chain._HLT_IsoMu22_eta2p1, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20, chain._HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg]    
+        elif cat[1] == 3: 
+            return [chain._HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg]
+        else:
+            return [None]
+    elif cat[0] == 3:
+        if cat[1] == 1:
+            return [chain._HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20, chain._HLT_Ele27_WPTight_Gsf]
+        elif cat[1] == 2:
+            return [chain._HLT_IsoMu22_eta2p1, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20, chain._HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ, chain._HLT_Ele27_WPTight_Gsf]
+        elif cat[1] == 3:
+            return [chain._HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL, chain._HLT_IsoMu22_eta2p1, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20, chain._HLT_Ele27_WPTight_Gsf]
+        elif cat[1] == 4:
+            return [chain._HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20, chain._HLT_IsoMu22_eta2p1]
+        else:
+            return [None]
+    elif cat[0] == 4:
+        if cat[1] == 1:
+            return [chain._HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20, chain._HLT_Ele27_WPTight_Gsf]
+        elif cat[1] == 2:
+            return [chain._HLT_IsoMu22_eta2p1, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20, chain._HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ, chain._HLT_Ele27_WPTight_Gsf]
+        elif cat[1] == 3:
+            return [chain._HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL, chain._HLT_IsoMu22_eta2p1, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20, chain._HLT_Ele27_WPTight_Gsf]
+        elif cat[1] == 4:
+            return [chain._HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20, chain._HLT_IsoMu22_eta2p1]
+        else:
+            return [None]
+    
+    return [None]
+    
 
 def categoryName(c):
     if c[0] > len(CATEGORY_NAMES):      return 'all'
