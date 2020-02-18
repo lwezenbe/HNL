@@ -5,8 +5,6 @@
 import ROOT
 import os
 
-lumi = {2016 : 35546}
-
 #
 # Argument parser and logging
 #
@@ -66,6 +64,12 @@ chain.year = int(args.year)
 chain.is_signal = 'HNL' in sample.name
 
 #
+# Get lumiweight
+#
+from HNL.Weights.lumiweight import LumiWeight
+lw = LumiWeight(sample, chain, input_file)
+
+#
 # Create new reduced tree (except if it already exists and overwrite option is not used)
 #
 from HNL.Tools.helpers import isValidRootFile, makeDirIfNeeded
@@ -81,13 +85,6 @@ output_file = ROOT.TFile(output_name ,"RECREATE")
 output_file.mkdir('blackJackAndHookers')
 output_file.cd('blackJackAndHookers')
 
-#
-# Get hCounter
-#
-from HNL.Samples.sample import getListOfPathsWithSameOutput
-hcount = sample.hcount
-for path_name in getListOfPathsWithSameOutput(input_file, sample.name, sample.output):
-    hcount += sample.getHist('hCounter', path_name).GetSumOfWeights()
 #
 # Switch off unused branches and create outputTree
 #
@@ -146,10 +143,7 @@ for entry in event_range:
     print 'calcing'
     calculateKinematicVariables(chain, new_vars, is_reco_level=not args.genSkim)
     print new_vars.M3l
-    if not chain.is_signal:
-        new_vars.lumiweight = chain._weight*(sample.xsec*lumi[chain.year])/hcount
-    else:
-        new_vars.lumiweight = chain._weight
+    new_vars.lumiweight = lw.getLumiWeight()
     output_tree.Fill()
 
 output_tree.AutoSave()
