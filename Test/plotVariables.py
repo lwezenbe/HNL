@@ -164,6 +164,7 @@ if not args.makePlots:
                 if not slm.saveNewOrder(): continue
                 calculateKinematicVariables(chain, chain, is_reco_level=False)
             chain.event_category, chain.event_subcategory = ec.returnCategory()
+            if chain.event_category == 2:       chain.event_category = 1
 
             #Add here any additional cuts
             l1Vec = TLorentzVector(chain.l_pt[0], chain.l_eta[0], chain.l_phi[0], chain.l_e[0])
