@@ -20,6 +20,11 @@ def getSortKey(item):
 def getSortKeyHNLtruth(item): 
     return item[2]
 
+
+#
+# TODO: remove this function and clean up any remaining remnants
+# Outdated
+#
 def select3LightLeptons(chain, new_chain):
 
     chain.leptons = [(chain._lPt[l], l) for l in xrange(chain._nLight) if isTightLightLepton(chain, l)]
@@ -47,7 +52,12 @@ def select3LightLeptons(chain, new_chain):
 
 from HNL.ObjectSelection.leptonSelector import isTightLepton
 
-def select3Leptons(chain, new_chain, no_tau=False):
+#
+# Function to select 3 good leptons and save their variables in the chain
+# no_tau: turn on to only accept 3 light leptons
+# tau_algo: if set to 'gen_truth', it will still run over all reco taus but instead of using tight taus it will only look if they were matched to a hadronically decayed gen tau
+#
+def select3Leptons(chain, new_chain, no_tau=False, tau_algo = None):
 
     if chain is new_chain:
         new_chain.l_pt = [0.0]*3
@@ -58,7 +68,7 @@ def select3Leptons(chain, new_chain, no_tau=False):
         new_chain.l_e = [0.0]*3
 
     collection = chain._nL if not no_tau else chain._nLight
-    chain.leptons = [(chain._lPt[l], l) for l in xrange(collection) if isTightLepton(chain, l, algo = 'leptonMVA')]
+    chain.leptons = [(chain._lPt[l], l) for l in xrange(collection) if isTightLepton(chain, l, algo = 'leptonMVA', tau_algo=tau_algo)]
     if len(chain.leptons) != 3:  return False
 
     ptAndIndex = sorted(chain.leptons, reverse=True, key = getSortKey)
@@ -76,7 +86,8 @@ def select3Leptons(chain, new_chain, no_tau=False):
 
 #    if not passesPtCuts(chain):         return False
     
-    if bVeto(chain, 'Deep'):      return False
+    #if bVeto(chain, 'Deep'):      return False
+#    print 'passed bVeto'
 
     return True  
 
