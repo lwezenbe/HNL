@@ -165,8 +165,9 @@ def rootFileContent(d, basepath="/", getNested=False):
     for key in d.GetListOfKeys():
         kname = key.GetName()
         if key.IsFolder() and getNested:
+    #    if key.IsFolder():
             # TODO: -> "yield from" in Py3
-            for i in rootFileContent(d.Get(kname), basepath+kname+"/"):
+            for i in rootFileContent(d.Get(kname), basepath+kname+"/", getNested):
                 yield i
         else:
             yield basepath+kname, d.Get(kname)
@@ -222,3 +223,18 @@ def getMinWithErr(hist, zero_not_allowed=False):
         print "Wrong type in getMaxWithErr. Returning 0."
         return 0.
     return min_val  
+
+
+def getMassRange(sample_list_location):
+    from HNL.Samples.sample import getListOfSampleNames
+    list_of_names = getListOfSampleNames(sample_list_location)
+    all_masses = [float(name.rsplit('-', 1)[-1]) for name in list_of_names]
+    m_range = []
+    if len(all_masses) == 1:
+        m_range = [all_masses[0]/2, all_masses[0]*1.5]
+    else:
+        for i, mass in enumerate(all_masses):
+            if i != len(all_masses)-1: distance_to_next = all_masses[i+1] - mass
+            if i == 0: m_range.append(mass - 0.5*distance_to_next)
+            m_range.append(mass+0.5*distance_to_next)  #For last run, distance_to_next should still be the same
+    return m_range

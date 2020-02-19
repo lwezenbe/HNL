@@ -51,9 +51,24 @@ class Efficiency(object):
 
     def getEfficiency(self, inPercent = False):
         eff = self.getNumerator().Clone(self.name+'_efficiency')
-        eff.Divide(self.getDenominator())
+        eff.Divide(eff, self.getDenominator(), 1., 1., "B")
         if inPercent: eff.Scale(100.)
         return eff
+
+    def getGraph(self):
+        eff = self.getEfficiency()
+        graph = ROOT.TGraphAsymmErrors(eff)
+        y_values = [y for y in graph.GetY()] 
+        for i in xrange(eff.GetNbinsX()):
+            err_up = graph.GetErrorYhigh(i)
+            err_x = graph.GetErrorX(i)
+            val_y = y_values[i]
+            if val_y + err_up > 1.:
+                graph.SetPointEYhigh(i, 1.-val_y)
+       
+        graph.SetTitle(eff.GetName()+ ';' + eff.GetXaxis().GetTitle()+';'+eff.GetYaxis().GetTitle()) 
+        return graph
+    
 
     def write(self, append = False, subdirs = None):
         append_string = 'recreate'

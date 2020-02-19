@@ -1,4 +1,5 @@
 import ROOT
+from HNL.Tools.helpers import makeDirIfNeeded, isValidRootFile
 
 #
 # Custom histogram class to set names and so on automatically and custom Fill functions
@@ -96,13 +97,13 @@ class Histogram:
 
     def write(self, path, append = False):
         append_string = 'recreate'
-        if append and isValidRootFile(self.path): append_string = 'update'
+        if append and isValidRootFile(path): append_string = 'update'
 
-        makeDirIfNeeded(self.path)
+        makeDirIfNeeded(path)
         output_file = ROOT.TFile(path, append_string)
         output_file.mkdir(self.name)
         output_file.cd(self.name)
-        self.hist.getHist().Write()
+        self.hist.Write()
         output_file.Close()
 
 def returnSqrt(th1):
