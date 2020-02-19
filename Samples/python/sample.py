@@ -53,7 +53,7 @@ class Sample:
                     print "No file loaded, check the input path again."
             split_jobs = int(round((tot_size/self.max_filesize)+0.5))
             if '*' in init_value:       
-                split_jobs *= float(init_value.split('*')[-1])
+                split_jobs *= int(init_value.split('*')[-1])
         else:
             split_jobs = int(init_value)
         return split_jobs
@@ -143,17 +143,18 @@ def createSampleFileFromShortlist(file_name):
     for sample in sample_infos:
         list_of_paths.extend([(s, sample[1]) for s in glob.glob(sample[0])])
     
-    print file_name.rsplit('.')[0]+'_sampleList.conf'
     outfile = open(file_name.rsplit('.')[0]+'_sampleList.conf', 'w')
     names = [] #retain lists of names so you can make them unique
     for i, p in enumerate(list_of_paths):
         split_path = p[0].split('/')
-        name = split_path[-1]
+        name = split_path[-2]
         xsec = p[1] if p[1] else 0.
-        if name in names: name += '_'+str(i)
+        if name in names: 
+            name += '_ext'+str(i)
         names.append(name)
         output = split_path[-2]
         outfile.write(name + ' ' + p[0] + ' ' + output + '       Calc    '+ xsec  +'  \n')
+        
     outfile.close()
     return 
 
@@ -175,15 +176,21 @@ def getListOfSampleNames(file_name):
 #       Usually getHist would get the correct hcounter per line.
 #       However, if we want to save lumiweight in trees after skimming,
 #       We need all events that are in all extension files.
-#       This function lists all other files with the same outputname
+#       This function lists all extension files
 #
-def getListOfPathsWithSameOutput(file_name, name, output):
+def getListOfPathsWithSameOutput(file_name, name):
     sample_infos = [line.split('%')[0].strip() for line in open(file_name)]                     # Strip % comments and \n charachters
     sample_infos = [line.split() for line in sample_infos if line]                              # Get lines into tuples
+
+    if 'ext' in name:
+        tmp_sample_name = name.rsplit('-', 1)[0]
+    else:
+        tmp_sample_name = name
+
     path_list = []
     for line in sample_infos:
-        if line[2] != output: continue
-        if line[0] == name: continue
+        if not tmp_sample_name in line[0]: continue
+        if line[0] == name: continue                            #Make sure the same file is not in the list
         path_list.append(line[1])
     return path_list   
  
