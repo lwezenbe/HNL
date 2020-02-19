@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 #
-#       Code to calculate trigger efficiency
+#       Code to calculate signal efficiency
 #
 # Can be used on RECO level, where you check how many events pass the reco selection
 # Is also used to check how many events on a generator level pass certain pt cuts
@@ -27,6 +27,7 @@ argParser.add_argument('--onlyHadronic',   action='store_true', default=False,  
 argParser.add_argument('--divideByCategory',   action='store_true', default=False,  help='Look at the efficiency per event category')
 argParser.add_argument('--genLevel',   action='store_true', default=False,  help='Check how many events pass cuts on gen level')
 argParser.add_argument('--triggerTest',   action='store_true', default=False,  help='Check pt cuts separately instead of or-ing them')
+argParser.add_argument('--compareTriggerCuts',   action='store_true', default=False,  help='Store signals for different cuts cumulatively')
 args = argParser.parse_args()
 
 
@@ -35,7 +36,7 @@ args = argParser.parse_args()
 #
 if args.isTest: 
     args.isChild = True
-    args.sample = 'HNLtau-200'
+    args.sample = 'HNLtau-80'
     args.subJob = '0'
     args.year = '2016'
 
@@ -87,19 +88,7 @@ else:
 # This function looks at the names of all samples and returns an array with all values right the middle of those
 # It assumes the samples are ordered by mass in the input list
 #
-from HNL.Samples.sample import getListOfSampleNames
-def getMassRange(sample_list_location):
-    list_of_names = getListOfSampleNames(sample_list_location)
-    all_masses = [float(name.rsplit('-', 1)[-1]) for name in list_of_names]
-    m_range = []
-    if len(all_masses) == 1:
-        m_range = [all_masses[0]/2, all_masses[0]*1.5]
-    else:
-        for i, mass in enumerate(all_masses):
-            if i != len(all_masses)-1: distance_to_next = all_masses[i+1] - mass
-            if i == 0: m_range.append(mass - 0.5*distance_to_next)
-            m_range.append(mass+0.5*distance_to_next)  #For last run, distance_to_next should still be the same
-    return m_range
+from HNL.Tools.helpers import getMassRange
 
 mass_range = getMassRange(list_location)
 
@@ -118,21 +107,26 @@ if not args.divideByCategory:
 else:
     efficiency = {}
     if not args.triggerTest:
-        for cat in ec.categories:
-            efficiency[cat] = Efficiency('efficiency_'+str(cat[0])+'_'+str(cat[1]), var['HNLmass'][0], var['HNLmass'][2], output_name, var['HNLmass'][1])        
+        if not args.compareTriggerCuts:
+            for cat in ec.categories:
+                efficiency[cat] = Efficiency('efficiency_'+str(cat[0])+'_'+str(cat[1]), var['HNLmass'][0], var['HNLmass'][2], output_name, var['HNLmass'][1])        
+        else:
+            for cat in ec.categories:
+                efficiency[cat] = {}
+                for dink in returnCategoryPtCuts(cat):
+                    efficiency[cat][dink] = Efficiency('efficiency_'+str(cat[0])+'_'+str(cat[1])+'_l1_'+str(dink[0])+'_l2_'+str(dink[1])+'_l3_'+str(dink[2]), var['HNLmass'][0], var['HNLmass'][2], output_name, var['HNLmass'][1])        
     else:
         for cat in ec.categories:
             efficiency[cat] = {}
             for dink in returnCategoryPtCuts(cat):
                 efficiency[cat][dink] = Efficiency('efficiency_'+str(cat[0])+'_'+str(cat[1])+'_l1_'+str(dink[0])+'_l2_'+str(dink[1])+'_l3_'+str(dink[2]), var['HNLmass'][0], var['HNLmass'][2], output_name, var['HNLmass'][1])        
 
-print efficiency
-
 #
 # Set event range
 #
 if args.isTest:
-    event_range = xrange(1000)
+    #event_range = xrange(1000)
+    event_range = sample.getEventRange(args.subJob)    
 else:
     event_range = sample.getEventRange(args.subJob)    
 
@@ -150,23 +144,27 @@ for entry in event_range:
     
     chain.GetEntry(entry)
     progress(entry - event_range[0], len(event_range))
-
+    
     if not select3GenLeptons(chain, chain):   continue
+    
     if args.genLevel:
         slm = SignalLeptonMatcher(chain)
         slm.saveNewOrder()
 
     true_cat = ec.returnCategory()
+    if true_cat[0] == 2:        true_cat = (1, true_cat[1])         #Temporary to have OS and SS tau in 1 category
 
     if args.FOcut:
         tmp = [l for l in xrange(chain._nL) if isFOLepton(chain, l)]
         if len(tmp) < 3: continue   
-    
+   
     if args.oldANcuts:
         passed = select3LightLeptons(chain, chain)
     elif not args.genLevel:
         passed = select3Leptons(chain, chain)
     elif args.triggerTest:
+        passed = False
+    elif args.compareTriggerCuts:
         passed = False
     else:
         #implement custom cuts here
@@ -183,20 +181,24 @@ for entry in event_range:
                 passed = passedCustomPtCuts(chain, cuts)
                 efficiency[true_cat][cuts].fill(chain, weight, passed)   
         else:
-            efficiency[true_cat].fill(chain, weight, passed)   
+            if not args.compareTriggerCuts:
+                efficiency[true_cat].fill(chain, weight, passed)   
+            else:
+                for i, cuts in enumerate(returnCategoryPtCuts(true_cat)):
+                    passed = passedCustomPtCuts(chain, returnCategoryPtCuts(true_cat)[:i+1])
+                    efficiency[true_cat][cuts].fill(chain, weight, passedCustomPtCuts(chain, returnCategoryPtCuts(true_cat)[:i+1]))
                 
     else:
         efficiency.fill(chain, weight, passed)   
         
-
-#if args.isTest: exit(0)
+if args.isTest: exit(0)
 
 #
 # Save all histograms
 #
 if args.divideByCategory:
     for i, cat in enumerate(ec.categories):
-        if not args.triggerTest:
+        if not args.triggerTest and not args.compareTriggerCuts:
             if i == 0:       efficiency[cat].write()
             else:            efficiency[cat].write(append=True)
         else: 
