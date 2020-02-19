@@ -60,7 +60,7 @@ class Plot:
         self.draw_ratio = draw_ratio
         self.draw_significance = draw_significance
 
-    def setAxisLog(self, is2D = False):
+    def setAxisLog(self, is2D = False, bkgr_stacked = True):
         to_check_max = [j for j in self.s]
         to_check_min = [j for j in self.s]
         if self.b is not None:  
@@ -80,15 +80,27 @@ class Plot:
                 if self.b is None: 
                     self.s[0].SetMinimum(0.3*overall_min)
                     self.s[0].SetMaximum(30*overall_max)
+                elif not bkgr_stacked:
+                    self.b[0].SetMinimum(0.3*overall_min)
+                    self.b[0].SetMaximum(30*overall_max)
                 else: 
                     self.hs.SetMinimum(0.3*overall_min)
                     self.hs.SetMaximum(30*overall_max)
         else:
             if not is2D: 
                 if self.b is None: self.s[0].GetYaxis().SetRangeUser(0.7*overall_min, 1.5*overall_max)
-                else: self.hs.GetHistogram.GetYaxis().SetRangeUser(0.7*overall_min, 1.5*overall_max)
+                elif not bkgr_stacked: self.b[0].GetYaxis().SetRangeUser(0.7*overall_min, 1.5*overall_max)
+                else: self.hs.GetHistogram().GetYaxis().SetRangeUser(0.7*overall_min, 1.5*overall_max)
 
-        
+    from HNL.Plotting.plottingTools import allBinsSameWidth
+    def getYName(self):   
+        add_x_width = allBinsSameWidth(self.s[0])
+        if '[' in self.y_name:
+            return
+        elif add_x_width: 
+            self.y_name +=  ' / ' +str(self.s[0].GetBinWidth(1)) +' '+ pt.getUnit(self.x_name)
+
+        return
 
     def drawExtraText(self):
         self.canvas.cd()
@@ -286,7 +298,7 @@ class Plot:
     # Functions to do actual plotting
     #
 
-    def drawHist(self, output_dir = None, normalize_signal = False, signal_style = False, draw_option = 'EHist', draw_cuts = None):
+    def drawHist(self, output_dir = None, normalize_signal = False, signal_style = False, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None):
 
         setDefault()
         #Create Canvas
@@ -297,31 +309,45 @@ class Plot:
         self.plotpad.cd()
 
         if self.draw_ratio or self.draw_significance:
-            title = " ; ; "+self.y_name+' / ' +str(self.s[0].GetBinWidth(1)) +' '+ pt.getUnit(self.x_name)
+            title = " ; ; "+self.y_name
         else:
-            title = " ;" +self.x_name+ " ; "+self.y_name+' / ' +str(self.s[0].GetBinWidth(1)) +' '+ pt.getUnit(self.x_name)
+            title = " ;" +self.x_name+ " ; "+self.y_name
         
         #Set Bkgr Histogram Styles
         #Do this first so it is not overlapping the signal
         if self.b is not None:
-            self.b, self.b_tex_names = pt.orderHist(self.b, self.b_tex_names, lowest_first = True)
-            self.hs = ROOT.THStack("hs", "hs")
             self.total_b = self.b[0].Clone('total_bkgr')
             for i, (h, n) in enumerate(zip(self.b, self.b_tex_names)):
                 h.SetLineColor(ps.getStackColorTauPOGbyName(n))
-                h.SetFillColor(ps.getStackColorTauPOGbyName(n))
+                h.SetLineWidth(3)
                 if i != 0:      self.total_b.Add(h)
-                self.hs.Add(h)
-
+            
+            if bkgr_draw_option == 'Stack':
+                self.b, self.b_tex_names = pt.orderHist(self.b, self.b_tex_names, lowest_first = True)
+                self.hs = ROOT.THStack("hs", "hs")
+                for i, (h, n) in enumerate(zip(self.b, self.b_tex_names)):
+                    h.SetFillColor(ps.getStackColorTauPOGbyName(n))
+                    self.hs.Add(h)
         
         self.s, self.s_tex_names = pt.orderHist(self.s, self.s_tex_names) #Order signals so those with 0 sum of weights come last and arent skipped (which cause the axis to not be updated)
         self.tex_names = self.s_tex_names + self.b_tex_names
      
         if self.b is not None:
-            self.hs.Draw(draw_option)                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
-            self.hs.SetTitle(title)
-            if self.draw_ratio or self.draw_significance: 
-                self.hs.GetHistogram().GetXaxis().SetLabelOffset(9999999)
+            if bkgr_draw_option == 'Stack':
+                self.hs.Draw(draw_option)                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
+                self.hs.SetTitle(title)
+                if self.draw_ratio or self.draw_significance: 
+                    self.hs.GetHistogram().GetXaxis().SetLabelOffset(9999999)
+
+            else:
+                for i, b in enumerate(self.b):
+                    if i == 0:
+                        b.Draw(bkgr_draw_option)
+                        b.SetTitle(title)
+                        if self.draw_ratio or self.draw_significance: 
+                            b.GetXaxis().SetLabelOffset(9999999)
+                    else:
+                        b.Draw(bkgr_draw_option + 'Same')
             #self.hs.GetHistogram().SetMaximum(1)   
         tdr.setTDRStyle()                       #TODO: Find out why we need a setTDRStyle after drawing the stack
  
@@ -331,10 +357,12 @@ class Plot:
                 h.SetLineColor(ps.getHNLColor(n))
                 h.SetLineWidth(3)
             else:
-                h.SetLineColor((ps.getLineColor(self.s.index(h))))
+                h.SetLineColor(ps.getHistDidar(self.s.index(h)))
+                #h.SetLineColor(ps.getLineColor(self.s.index(h)))
                 h.SetLineWidth(3)
                 h.SetMarkerStyle(8)
-                h.SetMarkerColor(ps.getLineColor(self.s.index(h)))
+                h.SetMarkerColor(ps.getHistDidar(self.s.index(h)))
+                #h.SetMarkerColor(ps.getLineColor(self.s.index(h)))
         if self.b is None:      self.s[0].SetTitle(title)       #If no bkgr was given, the SetTitle was not done yet
         
         #print 'e'
@@ -351,7 +379,7 @@ class Plot:
             else:
                 h.Draw(draw_option+'Same')
            # h.Draw("EHistSAME")
-        self.setAxisLog()
+        self.setAxisLog(bkgr_stacked = 'Stack' in bkgr_draw_option)
 
         #Option only used in plotVariables.py
         if draw_cuts is not None:
@@ -377,7 +405,7 @@ class Plot:
         self.canvas.cd()
         #Create Legend
         legend = ROOT.TLegend(0.5, .8, .9, .9)
-        legend.SetNColumns(3)
+        legend.SetNColumns(1)
        
         loop_obj = [item for item in self.s]
         if self.b is not None: loop_obj.extend(self.b)
@@ -429,6 +457,10 @@ class Plot:
         #Create Canvas
         self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
 
+        self.setPads()
+        self.plotpad.Draw()
+        self.plotpad.cd()
+
         #Create TGraph
         mgraph = ROOT.TMultiGraph()
        
@@ -439,8 +471,10 @@ class Plot:
             graph.SetMarkerStyle(ps.getMarker(i))
             mgraph.Add(graph)
 
+        print 'inside', self.s[0]
         mgraph.Draw("APLine")
         mgraph.SetTitle(";" + self.x_name + ";" + self.y_name)
+        print 'inside', self.s[0]
  
         xmax = pt.getXMax(self.s)
         xmin = pt.getXMin(self.s)
@@ -466,15 +500,24 @@ class Plot:
             self.drawExtraText()
         
         #Create Legend
+        self.canvas.cd()
         legend = ROOT.TLegend(0.5, .8, .9, .9)
         for h, n in zip(self.s, self.tex_names):
             legend.AddEntry(h, n)
         legend.SetFillStyle(0)
         legend.SetBorderSize(0)
         legend.Draw()
-        
+       
+ 
+        ROOT.gPad.Update() 
+        self.canvas.Update()
         cl.CMS_lumi(self.canvas, 4, 11, 'Simulation', False)
 
+        print 'inside', self.s[0]
         #Save everything
         self.savePlot(output_dir +'/'+ self.name)
+        print self.s[0]
+        ROOT.SetOwnership(self.canvas, False)
+        
+        print 'done'
 

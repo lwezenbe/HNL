@@ -76,3 +76,6 @@ def getUnit(x):
     else:
         return x[x.find('[')+len('['):x.rfind(']')]
 
+def allBinsSameWidth(hist):
+    bin_array = [hist.GetBinWidth(b) for b in xrange(hist.GetNbinsX())]
+    return bin_array.count(bin_array[0]) == len(bin_array)

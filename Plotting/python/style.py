@@ -1,4 +1,5 @@
 from ROOT import gROOT, gStyle, kIsland, TColor
+import ROOT
 import HNL.Plotting.tdrstyle as tdr
 
 def setDefault(paintformat = "4.2f"):
@@ -42,7 +43,7 @@ def getStackColorTauPOGbyName(name):
     elif 'ttX' in name:         return TColor.GetColor("#6B717E") 
     elif 'XG' in name:          return TColor.GetColor("#360568")
 #    elif 'H' in name:           return "#87F1FF"
-    else:                       return TColor.GetColor("#F4F1BB")
+    else:                       return ROOT.kCyan
 
 def getHistColor(index):        
     if index == 0:      return TColor.GetColor("#000075")
@@ -52,6 +53,15 @@ def getHistColor(index):
     if index == 4:      return TColor.GetColor("#ffe119")
     if index == 5:      return TColor.GetColor("#87F1FF")
     if index == 6:      return TColor.GetColor("#F4F1BB")
+
+def getHistDidar(index):        
+    if index == 0:      return ROOT.kBlack
+    if index == 1:      return ROOT.kRed
+    if index == 2:      return ROOT.kBlue
+    if index == 3:      return ROOT.kGreen
+    if index == 4:      return ROOT.kCyan
+    if index == 5:      return ROOT.kYellow
+    if index == 6:      return ROOT.kMagenta
 
 def getHNLColor(name):
     if '200' in name:   return TColor.GetColor("#9F4A54")
