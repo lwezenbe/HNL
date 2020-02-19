@@ -78,8 +78,10 @@ def isFOLepton(chain, index, algo = 'cutbased'):
 #
 # Tight WP for leptons
 #
-def isTightLepton(chain, index, algo ='cutbased'):
+def isTightLepton(chain, index, algo ='cutbased', tau_algo = None):
     
     if chain._lFlavor[index] != 2: return isTightLightLepton(chain, index, algo)
-    if chain._lFlavor[index] == 2: return isTightTau(chain, index)
+    if chain._lFlavor[index] == 2: 
+        if tau_algo:    return isTightTau(chain, index, tau_algo)
+        else:           return isTightTau(chain, index)
     return False

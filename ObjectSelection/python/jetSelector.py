@@ -5,7 +5,7 @@
 def isGoodJet(chain, index):
     if chain._jetPt[index] < 25:        return False
     if abs(chain._jetEta[index]) > 2.4: return False
-    if not chain._jetIsLoose[index]:    return False
+    if not chain._jetIsTight[index]:    return False
     return True
 
 

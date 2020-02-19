@@ -86,9 +86,10 @@ default_eleDiscr_algo = 'deeptauVSe'
 default_muonDiscr_algo = 'deeptauVSmu'
 
 def isGoodGenTau(chain, index):
+    if chain._gen_lFlavor[index] != 2:          return False
     if not chain._gen_lIsPrompt[index]:         return False
-    if not chain._gen_lDecayedHadr[index]:          return False
-    if chain._gen_lEta[index] > 2.1:            return False
+    if not chain._gen_lDecayedHadr[index]:      return False
+    if abs(chain._gen_lEta[index]) > 2.1:            return False
     return True             
 
 def isCleanFromLightLeptons(chain, index):
@@ -116,10 +117,14 @@ def isFOTau(chain, index, algo = default_id_algo, algo_ele = default_eleDiscr_al
     return True
 
 def isTightTau(chain, index, algo = default_id_algo, algo_ele = default_eleDiscr_algo, algo_mu = default_muonDiscr_algo): 
-    
-    if not isFOTau(chain, index, algo, algo_ele, algo_mu):              return False
-    if not tau_id_WP[(algo, 'tight')](chain)[index]:   return False
-    return True
+   
+    if algo == 'gen_truth': 
+        return chain._tauGenStatus[index] == 5
+    else:
+        if not isLooseTau(chain, index, algo, algo_ele, algo_mu):       return False
+        #if not isFOTau(chain, index, algo, algo_ele, algo_mu):              return False
+        #if not tau_id_WP[(algo, 'tight')](chain)[index]:   return False
+        return True
 
 
 # Test function only used in compareTauID
@@ -134,3 +139,16 @@ def isGeneralTau(chain, index, algo_iso, iso_WP, algo_ele, ele_WP, algo_mu, mu_W
     if algo_ele != 'none' and not tau_eleDiscr_WP[(algo_ele, ele_WP)](chain)[index]:    return False
     if algo_mu != 'none' and not tau_muonDiscr_WP[(algo_mu, mu_WP)](chain)[index]:    return False
     return True
+
+def matchGenToReco(chain, l):
+   
+    min_dr = 0.3
+    matched_l = None
+    for lepton in xrange(chain._nLight, chain._nL):
+        if chain._tauGenStatus[lepton] != 5: continue
+        dr = deltaR(chain._gen_lEta[l], chain._lEta[lepton], chain._gen_lPhi[l], chain._lPhi[lepton])
+        if dr < min_dr:
+            matched_l = lepton
+            min_dr = dr
+        
+    return matched_l
