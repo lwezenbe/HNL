@@ -103,6 +103,8 @@ def isCleanFromLightLeptons(chain, index):
 def isLooseTau(chain, index, algo_iso = default_id_algo, algo_ele = default_eleDiscr_algo, algo_mu = default_muonDiscr_algo):
     
     if chain._lFlavor[index] != 2:              return False
+    if chain._lPt[index] < 20:                  return False
+    if chain._lEta[index] > 2.1:                return False
     if not tau_DMfinding[algo_iso](chain)[index]:   return False
     if not tau_id_WP[(algo_iso, 'vloose')](chain)[index]:   return False
     if not isCleanFromLightLeptons(chain, index):       return False
@@ -121,9 +123,9 @@ def isTightTau(chain, index, algo = default_id_algo, algo_ele = default_eleDiscr
     if algo == 'gen_truth': 
         return chain._tauGenStatus[index] == 5
     else:
-        if not isLooseTau(chain, index, algo, algo_ele, algo_mu):       return False
-        #if not isFOTau(chain, index, algo, algo_ele, algo_mu):              return False
-        #if not tau_id_WP[(algo, 'tight')](chain)[index]:   return False
+        #if not isLooseTau(chain, index, algo, algo_ele, algo_mu):       return False
+        if not isFOTau(chain, index, algo, algo_ele, algo_mu):              return False
+        if not tau_id_WP[(algo, 'tight')](chain)[index]:   return False
         return True
 
 

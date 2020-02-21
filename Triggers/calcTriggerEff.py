@@ -18,7 +18,7 @@ argParser.add_argument('--subJob',   action='store',      default=None,   help='
 argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
 argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-argParser.add_argument('--ignoreRef', action='store_true', default=False,  help='pass ref cuts')
+argParser.add_argument('--useRef', action='store_true', default=False,  help='pass ref cuts')
 argParser.add_argument('--ignoreCategories', action='store_true', default=False,  help='do not split the events in different categories')
 argParser.add_argument('--separateTriggers', action='store', default=None,  help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', choices=['single', 'cumulative', 'full'])
 args = argParser.parse_args()
@@ -89,7 +89,7 @@ def getOutputName(var):
             output_name += '/'+args.separateTriggers
         if args.isChild:
             output_name += '/tmp_HNLmass'
-        if not args.ignoreRef:        output_name += '/'+ sample.name +'_TrigEff_' +subjobAppendix+ '.root'
+        if args.useRef:        output_name += '/'+ sample.name +'_TrigEff_' +subjobAppendix+ '.root'
         else:   output_name += '/'+ sample.name +'_TrigEffnoMET_' +subjobAppendix+ '.root'
 
     else:
@@ -99,7 +99,7 @@ def getOutputName(var):
         if args.isChild:
             output_name += '/tmp_'+sample.output
         
-        if not args.ignoreRef:        output_name += '/'+ sample.name +'_TrigEff_' +subjobAppendix+ '.root'
+        if not args.useRef:        output_name += '/'+ sample.name +'_TrigEff_' +subjobAppendix+ '.root'
         else:   output_name += '/'+ sample.name +'_TrigEffnoMET_' +subjobAppendix+ '.root'
 
     return output_name 
@@ -172,8 +172,8 @@ for c in ec.super_categories:
             else:
                 #for i, trigger in enumerate(returnCategoryTriggers(chain, c)):
                 for i, trigger in enumerate(returnSuperCategoryTriggers(chain, c)):
-                    #name = 'cat_'+str(c[0]) + '_' +str(c[1])+ '_' +v + '_' + t +'_'+str(i)
-                    name = 'supercat_'+str(c)+ '_' +v + '_' + t +'_'+str(i)
+                    name = 'cat_'+str(c[0]) + '_' +str(c[1])+ '_' +v + '_' + t +'_'+str(i)
+                    #name = 'supercat_'+str(c)+ '_' +v + '_' + t +'_'+str(i)
                     if v != 'HNLmass':
                         eff[(c, v, t, i)] = Efficiency(name, var[v][0], var[v][2], getOutputName(v), var[v][1])
                     else:
@@ -201,9 +201,8 @@ for entry in event_range:
     chain.GetEntry(entry)
     progress(entry - event_range[0], len(event_range))
 
-    if not select3Leptons(chain, chain, tau_algo='gen_truth'): continue
-    if not args.ignoreRef and not chain._passTrigger_ref:     continue
-
+    if not select3Leptons(chain, chain): continue
+    if args.useRef and not chain._passTrigger_ref:     continue
 
     weightfactor = 1.
     if not sample.is_data: weightfactor *= chain._weight
@@ -214,7 +213,7 @@ for entry in event_range:
     #true_cat = ec.returnCategory()    
     true_cat = ec.returnSuperCategory()    
 
-#    if true_cat[0] == 2:        true_cat = (1, true_cat[1])         #Temporary to have OS and SS tau in 1 category
+    #if true_cat[0] == 2:        true_cat = (1, true_cat[1])         #Temporary to have OS and SS tau in 1 category
 
     #for c in ec.categories:
     for c in ec.super_categories:
@@ -229,7 +228,6 @@ for entry in event_range:
                                 
                 if args.separateTriggers is None:
                     eff[(c, v, t)].fill(chain, weightfactor, passed)
-
                 else:
                     #for i, trigger in enumerate(returnCategoryTriggers(chain, c)):
                     for i, trigger in enumerate(returnSuperCategoryTriggers(chain, c)):
@@ -242,13 +240,12 @@ for entry in event_range:
                             #print c, v, i, trigger
                             eff[(c, v, t, i)].fill(chain, weightfactor, passed)
                             
-
 #if args.isTest: exit(0)
 
 #
 # Save all histograms
 #
-#from HNL.EventSelection.eventCategorization import returnCategoryTriggerNames
+from HNL.EventSelection.eventCategorization import returnCategoryTriggerNames
 from HNL.EventSelection.eventCategorization import returnSuperCategoryTriggerNames
 #for i, c in enumerate(ec.categories):
 for i, c in enumerate(ec.super_categories):
