@@ -20,6 +20,7 @@ argParser.add_argument('--runLocal', action='store_true', default=False,  help='
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 argParser.add_argument('--useRef', action='store_true', default=False,  help='pass ref cuts')
 argParser.add_argument('--ignoreCategories', action='store_true', default=False,  help='do not split the events in different categories')
+argParser.add_argument('--detailedCategories', action='store_true', default=False,  help='Use detailed categories instead of the supercategories')
 argParser.add_argument('--separateTriggers', action='store', default=None,  help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', choices=['single', 'cumulative', 'full'])
 args = argParser.parse_args()
 
@@ -110,6 +111,10 @@ def getOutputName(var):
 #                (channel, dim) 
 from HNL.EventSelection.eventCategorization import EventCategory
 ec = EventCategory(chain)
+#categories = ec.categories
+#category_triggers = lambda chain, category : returnCategoryTriggers(chain, category)
+categories = ec.super_categories
+category_triggers = lambda chain, category : returnSuperCategoryTriggers(chain, category)
 
 #First if keeps old code for reference
 if args.ignoreCategories:
@@ -135,8 +140,7 @@ else:
     mass_range = getMassRange(list_location)
 
     category_map = {}
-    #for c in ec.categories:
-    for c in ec.super_categories:
+    for c in categories:
         category_map[c] = ['integral']   
  
     var = {'l1pt' : (lambda c : c.l_pt[0],                          np.arange(0., 100., 15.),                 ('p_{T}(l1) [GeV]', 'Efficiency')),
@@ -157,12 +161,10 @@ from HNL.EventSelection.eventCategorization import returnCategoryTriggers
 from HNL.EventSelection.eventCategorization import returnSuperCategoryTriggers
 from HNL.Triggers.triggerSelection import applyCustomTriggers
 eff = {}
-#for c in ec.categories:
-for c in ec.super_categories:
+for c in categories:
     for v in {k for k in var.keys()}:
         for t in category_map[c]:
             if args.separateTriggers is None:
-                #name = 'cat_'+str(c[0]) + '_' +str(c[1])+ '_' +v + '_' + t
                 name = 'supercat_'+str(c)+ '_' +v + '_' + t
                 if v != 'HNLmass':
                     eff[(c, v, t)] = Efficiency(name, var[v][0], var[v][2], getOutputName(v), var[v][1])
@@ -170,10 +172,8 @@ for c in ec.super_categories:
                     eff[(c, v, t)] = Efficiency(name, var[v][0], var[v][2], getOutputName(v), var[v][1])
                 makeDirIfNeeded(getOutputName(v))
             else:
-                #for i, trigger in enumerate(returnCategoryTriggers(chain, c)):
-                for i, trigger in enumerate(returnSuperCategoryTriggers(chain, c)):
+                for i, trigger in enumerate(category_triggers(chain, c)):
                     name = 'cat_'+str(c[0]) + '_' +str(c[1])+ '_' +v + '_' + t +'_'+str(i)
-                    #name = 'supercat_'+str(c)+ '_' +v + '_' + t +'_'+str(i)
                     if v != 'HNLmass':
                         eff[(c, v, t, i)] = Efficiency(name, var[v][0], var[v][2], getOutputName(v), var[v][1])
                     else:
@@ -185,7 +185,6 @@ for c in ec.super_categories:
 #
 if args.isTest:
     event_range = xrange(500)
-    #event_range = sample.getEventRange(args.subJob)    
 else:
     event_range = sample.getEventRange(args.subJob)    
 
@@ -210,13 +209,9 @@ for entry in event_range:
     if args.separateTriggers is None:    
         passed = passTriggers(chain) 
     
-    #true_cat = ec.returnCategory()    
-    true_cat = ec.returnSuperCategory()    
+    true_cat = ec.returnCategory() if args.detailedCategories else ec.returnSuperCategory()
 
-    #if true_cat[0] == 2:        true_cat = (1, true_cat[1])         #Temporary to have OS and SS tau in 1 category
-
-    #for c in ec.categories:
-    for c in ec.super_categories:
+    for c in categories:
         for v in {k for k in var.keys()}: 
             for t in category_map[c]:
                 
@@ -229,37 +224,34 @@ for entry in event_range:
                 if args.separateTriggers is None:
                     eff[(c, v, t)].fill(chain, weightfactor, passed)
                 else:
-                    #for i, trigger in enumerate(returnCategoryTriggers(chain, c)):
-                    for i, trigger in enumerate(returnSuperCategoryTriggers(chain, c)):
+                    for i, trigger in enumerate(category_triggers(chain, c)):
                         if args.separateTriggers == 'single':
                             passed = applyCustomTriggers(chain, trigger)
                             eff[(c, v, t, i)].fill(chain, weightfactor, passed)
                         elif args.separateTriggers == 'cumulative':
-                            #passed = applyCustomTriggers(chain, returnCategoryTriggers(chain, c)[:i+1])
-                            passed = applyCustomTriggers(chain, returnSuperCategoryTriggers(chain, c)[:i+1])
-                            #print c, v, i, trigger
+                            passed = applyCustomTriggers(chain, category_triggers(chain, c)[:i+1])
                             eff[(c, v, t, i)].fill(chain, weightfactor, passed)
                             
-#if args.isTest: exit(0)
+if args.isTest: exit(0)
 
 #
 # Save all histograms
 #
 from HNL.EventSelection.eventCategorization import returnCategoryTriggerNames
 from HNL.EventSelection.eventCategorization import returnSuperCategoryTriggerNames
-#for i, c in enumerate(ec.categories):
-for i, c in enumerate(ec.super_categories):
+for i, c in enumerate(categories):
     for l, v in enumerate({k for k in var.keys()}): 
         for t in category_map[c]:
             if args.separateTriggers is None:
                 if i == 0 and l == 0:      eff[(c, v, t)].write(subdirs=['efficiency', v, 'allTriggers'])
                 else:           eff[(c, v, t)].write(append=True, subdirs=['efficiency', v, 'allTriggers'])
             else:
-                #for j, trigger in enumerate(returnCategoryTriggers(chain, c)):
-                for j, trigger in enumerate(returnSuperCategoryTriggers(chain, c)):
-                    #if i == 0 and l == 0 and j == 0:       eff[(c, v, t, j)].write(subdirs=['efficiency_'+str(c[0])+'_'+str(c[1]), v, str(returnCategoryTriggerNames(c)[j])])
-                    #else:                       eff[(c, v, t, j)].write(append=True, subdirs=['efficiency_'+str(c[0])+'_'+str(c[1]), v, str(returnCategoryTriggerNames(c)[j])])
-                    if i == 0 and l == 0 and j == 0:       eff[(c, v, t, j)].write(subdirs=['efficiency_'+str(c), v, str(returnSuperCategoryTriggerNames(c)[j])])
-                    else:                       eff[(c, v, t, j)].write(append=True, subdirs=['efficiency_'+str(c), v, str(returnSuperCategoryTriggerNames(c)[j])])
+                for j, trigger in enumerate(category_triggers(chain, c)):
+                    if args.detailedCategories:
+                        if i == 0 and l == 0 and j == 0:       eff[(c, v, t, j)].write(subdirs=['efficiency_'+str(c[0])+'_'+str(c[1]), v, str(returnCategoryTriggerNames(c)[j])])
+                        else:                       eff[(c, v, t, j)].write(append=True, subdirs=['efficiency_'+str(c[0])+'_'+str(c[1]), v, str(returnCategoryTriggerNames(c)[j])])
+                    else:
+                        if i == 0 and l == 0 and j == 0:       eff[(c, v, t, j)].write(subdirs=['efficiency_'+str(c), v, str(returnSuperCategoryTriggerNames(c)[j])])
+                        else:                       eff[(c, v, t, j)].write(append=True, subdirs=['efficiency_'+str(c), v, str(returnSuperCategoryTriggerNames(c)[j])])
 
 

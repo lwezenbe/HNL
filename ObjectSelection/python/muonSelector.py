@@ -1,3 +1,4 @@
+default_muon_selector = 'leptonMVA'
 
 def isGoodGenMuon(chain, index):
     if not chain._gen_lIsPrompt[index]:         return False
@@ -54,11 +55,11 @@ def isTightMuonttH(chain, index):
     return True
     
 
-def isLooseMuon(chain, index, algo = 'cutbased'):
+def isLooseMuon(chain, index, algo = default_muon_selector):
     return isLooseMuonCutBased(chain, index) if algo == 'cutbased' else isLooseMuonttH(chain, index)
 
-def isFOMuon(chain, index, algo = 'cutbased'):
+def isFOMuon(chain, index, algo = default_muon_selector):
     return isFOMuonCutBased(chain, index) if algo == 'cutbased' else isFOMuonttH(chain, index)
 
-def isTightMuon(chain, index, algo = 'cutbased'):
+def isTightMuon(chain, index, algo = default_muon_selector):
     return isTightMuonCutBased(chain, index) if algo == 'cutbased' else isTightMuonttH(chain, index)

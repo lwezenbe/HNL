@@ -21,6 +21,8 @@ def isCleanFromMuons(chain, index, mu_algo = 'cut_based'):
         if deltaR(chain._lEta[mu], chain._lEta[index], chain._lPhi[mu], chain._lPhi[index]) < 0.05: return False
     return True
 
+default_electron_selection = 'TTHmva'
+
 #
 # WP as defined in AN 2017/014
 #
@@ -175,11 +177,11 @@ def isTightElectronttH(chain, index):
     return True
 
 
-def isLooseElectron(chain, index, algo = 'cutbased'):
+def isLooseElectron(chain, index, algo = default_electron_selection):
     return isLooseElectronCutBased(chain, index) if algo == 'cutbased' else isLooseElectronttH(chain, index)
 
-def isFOElectron(chain, index, algo = 'cutbased'):
+def isFOElectron(chain, index, algo = default_electron_selection):
     return isFOElectronCutBased(chain, index) if algo == 'cutbased' else isFOElectronttH(chain, index)
 
-def isTightElectron(chain, index, algo = 'cutbased'):
+def isTightElectron(chain, index, algo = default_electron_selection):
     return isTightElectronCutBased(chain, index) if algo == 'cutbased' else isTightElectronttH(chain, index)

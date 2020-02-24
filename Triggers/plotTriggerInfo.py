@@ -65,7 +65,7 @@ def getCategory(name, trigger_test = False, super_cat = False):
         if super_cat: 
             return int(split_name[1])
         else:
-            return (int(split_name[1]), int(split_name[2]))
+            return (int(split_name[1].split(',')[0].split('(')[1]), int(split_name[1].split(',')[0].split('(')[1]))
     except:
         return None
 
@@ -130,7 +130,6 @@ for f_name in f_names:
         #Variables        
         for c in file_name_comp[sample].keys():
             cat = getCategory(c, super_cat = True)
-            print c, cat
             extra_text = [extraTextFormat(returnTexName(cat), ypos = 0.83)] if cat is not None else None
 
             for v in file_name_comp[sample][c].keys():
