@@ -4,6 +4,8 @@
 import HNL.Plotting.plottingTools as pt
 import HNL.Plotting.style as ps
 import HNL.Plotting.tdrstyle as tdr
+import array as arr
+import numpy as np
 #
 # Define some general functions to use later
 #
@@ -50,8 +52,8 @@ class Plot:
         self.b = makeList(getHistList(bkgr_hist)) if bkgr_hist is not None else None
         self.total_b = None
         self.hs = None  #hist stack for bkgr
-        self.x_name = x_name if x_name else self.s[0].GetXaxis().GetTitle()
-        self.y_name = y_name if y_name else self.s[0].GetYaxis().GetTitle()
+        self.x_name = x_name if x_name is not None else self.s[0].GetXaxis().GetTitle()
+        self.y_name = y_name if y_name is not None else self.s[0].GetYaxis().GetTitle()
         self.canvas = None #Can not be created until gROOT and gStyle settings are set
         self.plotpad = None
         self.x_log = x_log
@@ -77,15 +79,15 @@ class Plot:
             #self.canvas.SetLogy()
             self.plotpad.SetLogy()
             if not is2D:
-                if self.b is None: 
-                    self.s[0].SetMinimum(0.3*overall_min)
-                    self.s[0].SetMaximum(30*overall_max)
-                elif not bkgr_stacked:
-                    self.b[0].SetMinimum(0.3*overall_min)
-                    self.b[0].SetMaximum(30*overall_max)
-                else: 
+                if bkgr_stacked:
                     self.hs.SetMinimum(0.3*overall_min)
                     self.hs.SetMaximum(30*overall_max)
+                elif self.b is None: 
+                    self.s[0].SetMinimum(0.3*overall_min)
+                    self.s[0].SetMaximum(30*overall_max)
+                else:
+                    self.b[0].SetMinimum(0.3*overall_min)
+                    self.b[0].SetMaximum(30*overall_max)
         else:
             if not is2D: 
                 if self.b is None: self.s[0].GetYaxis().SetRangeUser(0.7*overall_min, 1.5*overall_max)
@@ -146,7 +148,7 @@ class Plot:
 
         else:
             print 'Please provide the text to draw'
-        self.plotpad.Update()
+        #self.plotpad.Update()
 
         return
 
@@ -294,7 +296,7 @@ class Plot:
             self.canvas.SaveAs(php_destination + ".png")
             self.canvas.SaveAs(php_destination + ".root")
     
-    #
+    #Width
     # Functions to do actual plotting
     #
 
@@ -308,6 +310,10 @@ class Plot:
         self.plotpad.Draw()
         self.plotpad.cd()
 
+        if isinstance(self.x_name, list):
+            print 'invalid x_names'
+            return
+        
         if self.draw_ratio or self.draw_significance:
             title = " ; ; "+self.y_name
         else:
@@ -441,6 +447,10 @@ class Plot:
         self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
         self.setAxisLog(is2D=True)
         
+        if isinstance(self.x_name, list):
+            print 'invalid x_names'
+            return
+        
         for h in self.s:
             h.SetTitle(';'+self.x_name+';'+self.y_name) 
             h.Draw(option)
@@ -471,10 +481,11 @@ class Plot:
             graph.SetMarkerStyle(ps.getMarker(i))
             mgraph.Add(graph)
 
-        print 'inside', self.s[0]
         mgraph.Draw("APLine")
+        if isinstance(self.x_name, list):
+            print 'invalid x_names'
+            return
         mgraph.SetTitle(";" + self.x_name + ";" + self.y_name)
-        print 'inside', self.s[0]
  
         xmax = pt.getXMax(self.s)
         xmin = pt.getXMin(self.s)
@@ -513,11 +524,114 @@ class Plot:
         self.canvas.Update()
         cl.CMS_lumi(self.canvas, 4, 11, 'Simulation', False)
 
-        print 'inside', self.s[0]
         #Save everything
         self.savePlot(output_dir +'/'+ self.name)
-        print self.s[0]
         ROOT.SetOwnership(self.canvas, False)
         
-        print 'done'
+    def drawBarChart(self, output_dir = None, parallel_bins=False):
+        
+        setDefault()
+        #Create Canvas
+        self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
+        self.setPads()
+        self.plotpad.Draw()
+        self.plotpad.cd()
+        
+#        self.s, self.s_tex_names = pt.orderHist(self.s, self.s_tex_names, lowest_first=True) 
+        #self.tex_names = self.s_tex_names + self.b_tex_names
 
+        title = " ; ; "+self.y_name
+        if isinstance(self.x_name, list) and len(self.x_name) == self.s[0].GetNbinsX():
+            for i, n in enumerate(self.x_name):
+                self.s[0].GetXaxis().SetBinLabel(i+1, n)
+
+        if not parallel_bins:
+            self.hs = ROOT.THStack("hs", "hs")
+            #Set style
+            for hist, name in zip(self.s, self.tex_names):
+                hist.SetFillColor(ps.getStackColorTauPOGbyName(name))
+                hist.SetLineColor(ps.getStackColorTauPOGbyName(name))
+                hist.SetBarWidth(0.8)
+                hist.SetBarOffset(0.1)
+                self.hs.Add(hist)
+     
+            self.hs.Draw('B')                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
+            self.hs.SetTitle(title)
+
+        else:
+            for i, (hist, name) in enumerate(zip(self.s, self.tex_names)):
+                hist.SetFillColor(ps.getStackColorTauPOGbyName(name))
+                hist.SetLineColor(ps.getStackColorTauPOGbyName(name))
+                hist.SetBarWidth(0.8/len(self.s[0]))
+                hist.SetBarOffset(0.1+i*hist.GetBarWidth())
+                if i == 0:
+                    hist.Draw('B')
+                else:
+                    hist.Draw('BSame')
+            self.s[0].SetTitle(title)
+
+        self.setAxisLog(bkgr_stacked = not parallel_bins)
+        
+        #Create Legend
+        legend = ROOT.TLegend(0.7, .8, .95, .9)
+        legend.SetNColumns(2)
+       
+        loop_obj = [item for item in self.s]
+        if self.b is not None: loop_obj.extend(self.b)
+        for h, n in zip(loop_obj, self.tex_names):
+            legend.AddEntry(h, n)
+        legend.SetFillStyle(0)
+        legend.SetBorderSize(0)
+        legend.Draw()
+
+
+
+        ROOT.gPad.Update() 
+        self.canvas.Update()
+        #CMS lumi
+        cl.CMS_lumi(self.canvas, 4, 11, 'Preliminary', False)
+
+        #Save everything
+        self.savePlot(output_dir +'/'+ self.name)
+        ROOT.SetOwnership(self.canvas, False)
+        return
+
+    def drawPieChart(self, output_dir, draw_percent=False):
+        setDefault()
+        #Create Canvas
+        self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 2000, 2000)
+       
+        colors = []
+        nvals = self.s[0].GetNbinsX()
+        vals = []
+        for b, sample_name in enumerate(self.tex_names):
+            vals.append(self.s[0].GetBinContent(b+1))
+            colors.append(ps.getStackColorTauPOGbyName(sample_name)) 
+
+        pie = ROOT.TPie('pie', 'pie', nvals, arr.array('d', vals), arr.array('i', colors))        
+        
+        for b, sample_name in enumerate(self.tex_names):
+            label = sample_name
+            #if draw_percent:
+            #    label += ' ('+str(vals[b]/self.s[0].GetSumOfWeights())+'%)'
+            pie.SetEntryLabel(b, label)
+       
+        #pie.SetLabelSize(0.8)  
+        if draw_percent: pie.SetLabelFormat('%txt (%perc)')
+        pie.SetCircle(0.5, 0.45, 0.25)
+        pie.SetTextSize(0.04)
+        #pie.Draw('rsc')
+        pie.Draw('nol rsc')
+
+        #Write extra text
+        if self.extra_text is not None:
+            self.drawExtraText()
+        
+        self.canvas.Update()
+
+        #Save everything
+        self.savePlot(output_dir +'/'+ self.name)
+        ROOT.SetOwnership(self.canvas, False)
+        return
+
+         

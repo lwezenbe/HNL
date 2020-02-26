@@ -24,7 +24,11 @@ l3 = 2
 # 2: ele
 # 3: mu
 
-SUPER_CATEGORY_NAMES = {1: 'TauTauEle', 2: 'TauTauMu', 3 : 'TauEleEle', 4: 'TauEleMu', 5: 'TauMuMu'}
+#
+# SuperCategories dont look at specific leptons like l1 matched to whatever, but in general how many tau, how many e, how many mu?
+#
+
+SUPER_CATEGORY_NAMES = {1: 'TauTauEle', 2: 'TauTauMu', 3 : 'TauEleEle', 4: 'TauEleMu', 5: 'TauMuMu', 6: 'EEE', 7: 'MuMuMu', 8: 'EEMu', 9: 'EMuMu'}
 CATEGORY_NAMES = {1: 'SSTau', 2: 'OSTau', 3: 'SingleTau+OS-l', 4: 'SingleTau+SS-l', 5: 'eee', 6: 'mumumu', 7: 'eemu', 8: 'emumu'}
 CATEGORY_SUBCATEGORY_LINK = {1: 'DoubleTau', 2: 'DoubleTau', 3: 'SingleTau', 4: 'SingleTau', 5: 'NoTau', 6: 'NoTau', 7: 'NoTau', 8: 'NoTau', 9: 'SingleTau'}
 SUBCATEGORY_NAMES = {'DoubleTau' : {1: 'e', 2: 'mu', 3: 'tau'},
@@ -56,7 +60,7 @@ SUBCATEGORY_TEX_NAMES = {'DoubleTau' : {1: 'e', 2: '#mu', 3: '#tau'},
                     'SingleTau' : {1: 'ee', 2: 'e#mu', 3:'#mu e', 4:'#mu#mu'},
                     'NoTau' : {1: ''}}
 
-SUPERCATEGORY_TEX_NAMES = {1: '#tau#tau e', 2: '#tau#tau#mu', 3 : '#tau e e', 4: '#tau e #mu', 5: '#tau#mu#mu'}
+SUPERCATEGORY_TEX_NAMES = {1: '#tau#tau e', 2: '#tau#tau#mu', 3 : '#tau e e', 4: '#tau e #mu', 5: '#tau#mu#mu', 6: 'eee', 7: '#mu#mu#mu', 8: 'ee#mu', 9: 'e#mu#mu', 10: 'other'}
 
 class EventCategory():
     
@@ -73,11 +77,13 @@ class EventCategory():
 
     def flavorContent(self):
 
+        self.n_l = 0
         self.n_mu = 0
         self.n_ele = 0
         self.n_tau = 0
         
         for f in self.chain.l_flavor:
+            self.n_l  += 1
             if f == 0:  self.n_ele += 1
             elif f == 1:  self.n_mu += 1
             elif f == 2:  self.n_tau += 1
@@ -164,13 +170,20 @@ class EventCategory():
     
     def returnSuperCategory(self):
         self.flavorContent()
-        if self.n_tau == 2:
+        if self.n_l != 3:
+            self.super_category = len(SUPER_CATEGORY_NAMES) + 1 
+        elif self.n_tau == 2:
             if self.n_ele == 1: self.super_category = 1
             elif self.n_mu == 1: self.super_category = 2
         elif self.n_tau == 1:
             if self.n_ele == 2: self.super_category = 3
             elif self.n_ele == 1 and self.n_mu == 1:    self.super_category = 4
             elif self.n_mu ==2: self.super_category = 5
+        elif self.n_tau == 0:
+            if self.n_ele == 3: self.super_category = 6
+            elif self.n_mu == 3: self.super_category = 7
+            if self.n_ele == 2 and self.n_mu == 1: self.super_category = 8
+            if self.n_ele == 1 and self.n_mu == 2: self.super_category = 9
         else:
             self.super_category = len(SUPER_CATEGORY_NAMES) + 1
 

@@ -36,14 +36,26 @@ def getStackColorTauPOGbyName(name):
     if 'triboson' in name:           return TColor.GetColor("#87F1FF")
     elif 'TT' in name:            return TColor.GetColor("#18252a")
     elif 'WZ' in name:          return TColor.GetColor("#de5a6a")
+    elif 'ZZ' in name:          return TColor.GetColor("#AAFAC8")
+    elif 'WW' in name:          return TColor.GetColor("#514B23")
     elif 'ST' in name:          return TColor.GetColor("#9999cc")
     elif 'WJets' in name:       return TColor.GetColor("#4496c8")
     elif 'QCD' in name:         return TColor.GetColor("#e5b7e5")
     elif 'DY' in name:          return TColor.GetColor("#ffcc66")
     elif 'ttX' in name:         return TColor.GetColor("#6B717E") 
     elif 'XG' in name:          return TColor.GetColor("#360568")
+    elif '200' in name:   return TColor.GetColor("#9F4A54")
+    elif '150' in name:   return TColor.GetColor("#51A3A3")
+    elif '120' in name:   return TColor.GetColor("#D1D1D1")
+    elif '100' in name:   return TColor.GetColor("#EAD94C")
+    elif '80' in name:   return TColor.GetColor("#3B3561")
+    elif '60' in name:   return TColor.GetColor("#DD7373")
+    elif '40' in name:   return TColor.GetColor("#3454D1")
+    elif '20' in name:   return TColor.GetColor("#9368B7")
+    elif '10' in name:   return TColor.GetColor("#610F7F")
+    elif '5' in name:   return TColor.GetColor("#613DC1")
 #    elif 'H' in name:           return "#87F1FF"
-    else:                       return ROOT.kCyan
+    else:                       return ROOT.kGreen
 
 def getHistColor(index):        
     if index == 0:      return TColor.GetColor("#000075")
