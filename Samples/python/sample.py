@@ -179,6 +179,7 @@ def getListOfSampleNames(file_name):
 #       This function lists all extension files
 #
 def getListOfPathsWithSameOutput(file_name, name):
+    print file_name, name
     sample_infos = [line.split('%')[0].strip() for line in open(file_name)]                     # Strip % comments and \n charachters
     sample_infos = [line.split() for line in sample_infos if line]                              # Get lines into tuples
 
@@ -189,10 +190,11 @@ def getListOfPathsWithSameOutput(file_name, name):
 
     path_list = []
     for line in sample_infos:
-        if not tmp_sample_name in line[0]: continue
+        shaved_line_name = line[0] if not 'ext' in line[0] else line[0].rsplit('-', 1)[0]
+        if tmp_sample_name != shaved_line_name: continue
         if line[0] == name: continue                            #Make sure the same file is not in the list
         path_list.append(line[1])
     return path_list   
  
 if __name__ == "__main__":
-    print getListOfPathsWithSameOutput('../InputFiles/skimList_2016_sampleList.conf', 'crab_MiniAOD2016v3_ext1-v2_singlelepton_MC_2016_v2', 'DYJetsToLL_M-10to50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8'), 'crab_MiniAOD2016v3_ext1-v2_singlelepton_MC_2016_v2', 'DYJetsToLL_M-10to50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8'
+    print getListOfPathsWithSameOutput('../InputFiles/sampleList_2016_noskim.conf', 'DYJetsToLL-M-10to50')
