@@ -121,6 +121,13 @@ class SignalLeptonMatcher:
         self.c.l1 = self.l1
         self.c.l2 = self.l2
         self.c.l3 = self.l3
+        for i, l in enumerate([self.l1, self.l2, self.l3]):
+            self.c.l_pt[i] = self.c._gen_lPt[l] 
+            self.c.l_eta[i] = self.c._gen_lEta[l]
+            self.c.l_phi[i] = self.c._gen_lPhi[l]
+            self.c.l_e[i] = self.c._gen_lE[l]
+            self.c.l_charge[i] = self.c._gen_lCharge[l]
+            self.c.l_flavor[i] = self.c._gen_lFlavor[l]
         
         return True
     
