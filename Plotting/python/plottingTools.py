@@ -79,3 +79,8 @@ def getUnit(x):
 def allBinsSameWidth(hist):
     bin_array = [hist.GetBinWidth(b) for b in xrange(hist.GetNbinsX())]
     return bin_array.count(bin_array[0]) == len(bin_array)
+
+def writeMessage(output_dir, message):
+    out_file = open(output_dir + '/note.txt', 'w')
+    out_file.write(message)
+    out_file.close()

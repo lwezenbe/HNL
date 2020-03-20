@@ -44,6 +44,9 @@ def getStackColorTauPOGbyName(name):
     elif 'DY' in name:          return TColor.GetColor("#ffcc66")
     elif 'ttX' in name:         return TColor.GetColor("#6B717E") 
     elif 'XG' in name:          return TColor.GetColor("#360568")
+    
+    elif '600' in name:   return TColor.GetColor("#F7C59F")
+    elif '400' in name:   return TColor.GetColor("#A8C256")
     elif '200' in name:   return TColor.GetColor("#9F4A54")
     elif '150' in name:   return TColor.GetColor("#51A3A3")
     elif '120' in name:   return TColor.GetColor("#D1D1D1")
@@ -104,4 +107,7 @@ def getMarker(index):
     if index == 4:      return 24
     if index == 5:      return 25
     if index == 6:      return 26
+
+def returnSignalLegendName(name):
+    split_name = name.split('-M')
 

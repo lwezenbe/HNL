@@ -196,9 +196,9 @@ class EventCategory():
 def returnCategoryPtCuts(cat):
     if cat[0] == 1 or cat[0] == 2:
         if cat[1] == 1:       
-            return [(None, None, 27), (None, 20, 24), (35, 35, None)]    
+            return [(None, None, 27), (20, None, 24), (35, 35, None)]    
         elif cat[1] == 2:       
-            return [(None, None, 22), (None, 20, 19), (35, 35, None)]    
+            return [(None, None, 22), (20, None, 19), (35, 35, None)]    
         elif cat[1] == 3: 
             return [(35, 35, None)]
         else:

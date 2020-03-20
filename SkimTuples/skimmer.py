@@ -19,6 +19,9 @@ argParser.add_argument('--runLocal', action='store_true', default=False,  help='
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 argParser.add_argument('--overwrite', action='store_true', default=False,                help='overwrite if valid output file already exists')
 argParser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+argParser.add_argument('--lightLeptonSelection', action='store', default='leptonMVAtZq', help='selection algorithm for light leptons', choices = ['leptonMVAtZq', 'leptonMVAttH', 'cutbased'])
+argParser.add_argument('--tauSelection',  action='store',      default='deeptauVSjets', help='selection algorithm for taus', choices=['deeptauVSjets', 'MVA2017v2'])
+argParser.add_argument('--summaryFile', action='store_true', default=False,  help='Create text file that shows all selected arguments')
 argParser.add_argument('--genSkim',  action='store_true',      default=False,               help='skim on generator level leptons')
 
 args = argParser.parse_args()
@@ -30,7 +33,8 @@ log = getLogger(args.logLevel)
 # Set some args for when performing a test
 #
 if args.isTest:
-    args.sample = 'localSubmission_HNL_11'
+    args.sample = 'DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8'
+    #args.sample = 'TTJets_DiLept_TuneCUETP8M1_13TeV-madgraphMLM-pythia8'
     args.year = '2016'
     args.subJob = 0
     args.isChild = True
@@ -39,7 +43,8 @@ if args.isTest:
 #Load in samples
 #
 from HNL.Samples.sample import createSampleList, getSampleFromList
-input_file = '../Samples/InputFiles/skimList_'+args.year+'_sampleList.conf'
+#input_file = '../Samples/InputFiles/skimList_'+args.year+'_sampleList.conf'
+input_file = '../Samples/InputFiles/test.conf'
 sample_list = createSampleList(input_file)
 
 #
@@ -53,6 +58,14 @@ if not args.isChild and not args.isTest:
             jobs += [(sample.name, str(njob))]
 
     submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'skim')
+    
+    if args.summaryFile:
+        gen_name = 'Gen' if args.genSkim else 'Reco'
+        f = open(os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL', str(args.year), gen_name, 'summary.txt')), 'w')
+        for arg in vars(args):
+            if not getattr(args, arg): continue
+            f.write(arg + '    ' + str(getattr(args, arg)) +  '\n')
+        f.close()
     exit(0)
 
 #
@@ -109,7 +122,8 @@ new_branches.extend(['M3l/F', 'minMos/F', 'pt_cone[20]/F', 'mtOther/F'])
 new_branches.extend(['l1/I', 'l2/I', 'l3/I', 'index_other/I'])
 new_branches.extend(['l_pt[3]/F', 'l_eta[3]/F', 'l_phi[3]/F', 'l_e[3]/F', 'l_charge[3]/F', 'l_flavor[3]/I'])
 new_branches.extend(['lumiweight/F'])
-new_branches.extend(['event_category/I', 'event_subcategory/I'])
+new_branches.extend(['event_category/I', 'event_subcategory/I', 'event_supercategory/I'])
+new_branches.extend(['njets/I', 'nbjets/I'])
 
 from HNL.Tools.makeBranches import makeBranches
 new_vars = makeBranches(output_tree, new_branches)
@@ -133,16 +147,18 @@ for entry in event_range:
     if args.genSkim:
         if not select3GenLeptons(chain, new_vars):      continue
     else:
-        if not select3Leptons(chain, new_vars):       continue
+        # if not select3Leptons(chain, new_vars, light_algo=args.lightLeptonSelection, tau_algo=args.tauSelection):       continue
+        select3Leptons(chain, new_vars, light_algo=args.lightLeptonSelection, tau_algo=args.tauSelection)
+        if len(chain.leptons) < 3:       continue
     
     ec = EventCategory(new_vars)
     c, sc = ec.returnCategory()
     new_vars.event_category = c
     new_vars.event_subcategory = sc
+    new_vars.event_supercategory = ec.returnSuperCategory()
 
     print 'calcing'
     calculateKinematicVariables(chain, new_vars, is_reco_level=not args.genSkim)
-    print new_vars.M3l
     new_vars.lumiweight = lw.getLumiWeight()
     output_tree.Fill()
 

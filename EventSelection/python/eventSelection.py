@@ -5,6 +5,7 @@
 import numpy as np
 
 from HNL.ObjectSelection.leptonSelector import isTightLightLepton
+from HNL.ObjectSelection.jetSelector import isGoodJet, isBJet
 
 #
 # Define a few constants
@@ -57,7 +58,7 @@ from HNL.ObjectSelection.leptonSelector import isTightLepton
 # no_tau: turn on to only accept 3 light leptons
 # tau_algo: if set to 'gen_truth', it will still run over all reco taus but instead of using tight taus it will only look if they were matched to a hadronically decayed gen tau
 #
-def select3Leptons(chain, new_chain, no_tau=False, tau_algo = None):
+def select3Leptons(chain, new_chain, no_tau=False, light_algo = 'leptonMVAtZq', tau_algo = None, cutter = None):
 
     if chain is new_chain:
         new_chain.l_pt = [0.0]*3
@@ -68,7 +69,11 @@ def select3Leptons(chain, new_chain, no_tau=False, tau_algo = None):
         new_chain.l_e = [0.0]*3
 
     collection = chain._nL if not no_tau else chain._nLight
-    chain.leptons = [(chain._lPt[l], l) for l in xrange(collection) if isTightLepton(chain, l, algo = 'leptonMVA', tau_algo=tau_algo)]
+    chain.leptons = [(chain._lPt[l], l) for l in xrange(collection) if isTightLepton(chain, l, algo = light_algo, tau_algo=tau_algo)]
+    if cutter is not None:
+        cutter.cut(len(chain.leptons) > 0, 'at_least_1_lep')
+        cutter.cut(len(chain.leptons) > 1, 'at_least_2_lep')
+        cutter.cut(len(chain.leptons) > 2, 'at_least_3_lep')
     if len(chain.leptons) != 3:  return False
 
     ptAndIndex = sorted(chain.leptons, reverse=True, key = getSortKey)
@@ -84,12 +89,20 @@ def select3Leptons(chain, new_chain, no_tau=False, tau_algo = None):
         new_chain.l_charge[i] = chain._lCharge[ptAndIndex[i][1]]
         new_chain.l_flavor[i] = chain._lFlavor[ptAndIndex[i][1]]
 
+
 #    if not passesPtCuts(chain):         return False
     
-    #if bVeto(chain, 'Deep'):      return False
+   #if bVeto(chain, 'Deep'):      return False
 #    print 'passed bVeto'
 
     return True  
+
+def passBaseCuts(chain, new_chain, cutter):
+    
+    if not cutter.cut(not bVeto(chain, 'Deep'), 'b-veto'):              return False
+    if not cutter.cut(abs(new_chain.M3l-90) > 15, 'M3l_Z_veto'):        return False 
+    if not cutter.cut(Zveto(chain, new_chain), 'M2l_OS_Z_veto'):        return False
+    return True
 
 from HNL.ObjectSelection.leptonSelector import isGoodGenLepton
 
@@ -133,6 +146,15 @@ def bVeto(chain, algo):
         if isBJet(chain, jet, algo, 'loose'): return True    
     return False
 
+def Zveto(chain, new_chain):
+    for fl in xrange(2):
+        l1Vec = getFourVec(new_chain.l_pt[fl], new_chain.l_eta[fl], new_chain.l_phi[fl], new_chain.l_e[fl])
+        for sl in xrange(1, 3):
+            if fl == sl: continue
+            if new_chain.l_charge[fl] == new_chain.l_charge[sl]: continue
+            l2Vec = getFourVec(new_chain.l_pt[sl], new_chain.l_eta[sl], new_chain.l_phi[sl], new_chain.l_e[sl])
+            if abs((l1Vec + l2Vec).M() - 90) < 15: return False
+    return True
 
 def passesPtCuts(chain):
     
@@ -234,31 +256,40 @@ def calculateKinematicVariables(chain, new_chain, is_reco_level = True):
     new_chain.index_other = [item for item in [new_chain.l1, new_chain.l2, new_chain.l3] if item not in os][0]   
 
     #TODO: Seems like there must be a better way to do this
-    if is_reco_level:    
-        new_chain.mtOther = np.sqrt(2*chain._met*chain._lPt[new_chain.index_other]*(1-np.cos(deltaPhi(chain._lPhi[new_chain.index_other], chain._metPhi))))
-        
-        #ptCone
-        for l in xrange(chain._nLight):
-            new_chain.pt_cone[l] = chain._lPt[l]*(1+max(0., chain._miniIso[l]-0.4)) #TODO: is this the correct definition?
+#    if is_reco_level:    
+#        new_chain.mtOther = np.sqrt(2*chain._met*chain._lPt[new_chain.index_other]*(1-np.cos(deltaPhi(chain._lPhi[new_chain.index_other], chain._metPhi))))
+#        
+#        #ptCone
+#        for l in xrange(chain._nLight):
+#            new_chain.pt_cone[l] = chain._lPt[l]*(1+max(0., chain._miniIso[l]-0.4)) #TODO: is this the correct definition?
+#
+#    else:
+#        new_chain.mtOther = np.sqrt(2*chain._gen_met*chain._gen_lPt[new_chain.index_other]*(1-np.cos(deltaPhi(chain._gen_lPhi[new_chain.index_other], chain._gen_metPhi))))
+#        #ptCone
+#        for l in xrange(chain._nLight):
+#            new_chain.pt_cone[l] = chain._lPt[l] #TODO: is this the correct definition?
+   
+    #calculate #jets and #bjets
+    njets = 0
+    nbjets = 0
+    for jet in xrange(chain._nJets):
+        if isGoodJet(chain, jet):       
+            njets += 1        
+            if isBJet(chain, jet, 'Deep', 'loose'): nbjets += 1
 
-    else:
-        new_chain.mtOther = np.sqrt(2*chain._gen_met*chain._gen_lPt[new_chain.index_other]*(1-np.cos(deltaPhi(chain._gen_lPhi[new_chain.index_other], chain._gen_metPhi))))
-        #ptCone
-        for l in xrange(chain._nLight):
-            new_chain.pt_cone[l] = chain._lPt[l] #TODO: is this the correct definition?
-    
+    new_chain.njets = njets
+    new_chain.nbjets = nbjets
+        
     return
 
-def lowMassCuts(chain, new_chain):
+def lowMassCuts(chain, new_chain, cutter):
     calculateKinematicVariables(chain, new_chain)
-    if new_chain._met > 75:         return False
-    if new_chain.m3l > 80:          return False
-    if new_chain.l_pt[l1] > 55:        return False
+    if not cutter.cut(new_chain._met < 75, 'MET'):         return False
+    if not cutter.cut(new_chain.m3l < 80, 'm3l<80'):          return False
+    if not cutter.cut(new_chain.l_pt[l1] < 55, 'l1pt<55'):        return False
     return True 
      
 def highMassCuts(chain, new_chain):
     calculateKinematicVariables(chain, new_chain)
-    if new_chain._met > 75:         return False
-    if new_chain.m3l > 80:          return False
-    if new_chain.l_pt[l1] < 55:        return False
+    if not cutter.cut(new_chain.l_pt[l1] > 55, 'l1pt>55'):        return False
     return True 

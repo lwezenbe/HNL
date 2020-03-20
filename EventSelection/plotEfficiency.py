@@ -18,6 +18,7 @@ args = argParser.parse_args()
 input_name  = os.getcwd()+'/data/calcSignalEfficiency/*'
 if args.divideByCategory:       input_name += '/divideByCategory'
 if args.triggerTest:                 input_name += '/triggerTest'
+if args.cumulativeCuts:                 input_name += '/compareTriggerCuts'
 merge_files = glob.glob(input_name)
 for mf in merge_files:
     if "Results" in mf: continue
@@ -70,7 +71,7 @@ for f_name in f_names:
         output_dir = os.getcwd()+'/data/calcSignalEfficiency/Results/'+f_name +'/'+sample
         if args.divideByCategory:       output_dir += '/divideByCategory'
         if args.triggerTest:                 output_dir += '/triggerTest'
-        if args.cumulativeCuts:                 output_dir += '/cumulativeCuts'
+        if args.cumulativeCuts:                 output_dir += '/compareTriggerCuts'
         output_dir = makePathTimeStamped(output_dir)
 
         dict_of_categories = {}

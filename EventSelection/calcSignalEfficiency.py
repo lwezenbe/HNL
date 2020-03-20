@@ -74,6 +74,9 @@ if args.divideByCategory:
     output_name += '/divideByCategory'
     if args.triggerTest: 
         output_name += '/triggerTest'
+    if args.compareTriggerCuts:
+        output_name += '/compareTriggerCuts'
+        
 
 if args.isChild:
     output_name += '/tmp_'+sample.output
@@ -125,8 +128,8 @@ else:
 # Set event range
 #
 if args.isTest:
-    #event_range = xrange(1000)
-    event_range = sample.getEventRange(args.subJob)    
+    event_range = xrange(1000)
+    #event_range = sample.getEventRange(args.subJob)    
 else:
     event_range = sample.getEventRange(args.subJob)    
 

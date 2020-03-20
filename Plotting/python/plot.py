@@ -80,7 +80,9 @@ class Plot:
             self.plotpad.SetLogy()
             if not is2D:
                 if bkgr_stacked:
-                    self.hs.SetMinimum(0.3*overall_min)
+                    # self.hs.SetMinimum(0.3*overall_min)
+                    # self.hs.SetMaximum(30*overall_max)
+                    self.hs.SetMinimum(0.3*pt.getOverallMinimum([self.s[0]], zero_not_allowed=True))
                     self.hs.SetMaximum(30*overall_max)
                 elif self.b is None: 
                     self.s[0].SetMinimum(0.3*overall_min)
@@ -268,7 +270,7 @@ class Plot:
         self.canvas.Update() 
         return self.sig_pad
 
-    def savePlot(self, destination):
+    def savePlot(self, destination, message = None):
         makeDirIfNeeded(destination)
         destination_components = destination.split('/')
         cleaned_components = [x for x in destination_components if not isTimeStampFormat(x)]
@@ -287,7 +289,6 @@ class Plot:
         self.canvas.SaveAs(destination + ".pdf")
         self.canvas.SaveAs(destination + ".png")
         self.canvas.SaveAs(destination + ".root")
-        print destination + ".png"
         #Clean out the php directory you want to write to if it is already filled, otherwise things go wrong with updating the file on the website
         #os.system("rm "+php_destination.rsplit('/')[0]+"/*")
 
@@ -295,12 +296,15 @@ class Plot:
             self.canvas.SaveAs(php_destination + ".pdf")
             self.canvas.SaveAs(php_destination + ".png")
             self.canvas.SaveAs(php_destination + ".root")
+
+        if message is not None:
+            pt.writeMessage(destination.rsplit('/', 1)[0], message)
     
     #Width
     # Functions to do actual plotting
     #
 
-    def drawHist(self, output_dir = None, normalize_signal = False, signal_style = False, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None):
+    def drawHist(self, output_dir = None, normalize_signal = False, signal_style = False, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None, message = None):
 
         setDefault()
         #Create Canvas
@@ -385,7 +389,7 @@ class Plot:
             else:
                 h.Draw(draw_option+'Same')
            # h.Draw("EHistSAME")
-        self.setAxisLog(bkgr_stacked = 'Stack' in bkgr_draw_option)
+        self.setAxisLog(bkgr_stacked = self.b is not None and 'Stack' in bkgr_draw_option)
 
         #Option only used in plotVariables.py
         if draw_cuts is not None:
@@ -411,7 +415,7 @@ class Plot:
         self.canvas.cd()
         #Create Legend
         legend = ROOT.TLegend(0.5, .8, .9, .9)
-        legend.SetNColumns(1)
+        legend.SetNColumns(3)
        
         loop_obj = [item for item in self.s]
         if self.b is not None: loop_obj.extend(self.b)
@@ -436,12 +440,12 @@ class Plot:
         cl.CMS_lumi(self.canvas, 4, 11, 'Preliminary', False)
 
         #Save everything
-        self.savePlot(output_dir +'/'+ self.name)
+        self.savePlot(output_dir +'/'+ self.name, message)
         ROOT.SetOwnership(self.canvas, False)
         return
 
 
-    def draw2D(self, option='ETextColz', output_dir = None):
+    def draw2D(self, option='ETextColz', output_dir = None, message = None):
      
         setDefault2D()    
         self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
@@ -456,11 +460,11 @@ class Plot:
             h.Draw(option)
             output_name = output_dir +'/'+h.GetName() #Not using name here because loop over things with different names
             cl.CMS_lumi(self.canvas, 4, 0, 'Preliminary', True)
-            self.savePlot(output_name)
+            self.savePlot(output_name, message)
             self.canvas.Clear()
         return
 
-    def drawGraph(self, output_dir = None):
+    def drawGraph(self, output_dir = None, message = None):
         
         setDefault()
         
@@ -493,13 +497,13 @@ class Plot:
         ymin = pt.getYMin(self.s)
 
         if self.x_log :
-            self.canvas.SetLogx()
+            self.plotpad.SetLogx()
             mgraph.GetXaxis().SetRangeUser(0.3*xmin, 30*xmax)
         else :
             mgraph.GetXaxis().SetRangeUser(0.7*xmin, 1.3*xmax)
         
         if self.y_log:
-            self.canvas.SetLogy()
+            self.plotpad.SetLogy()
             mgraph.GetYaxis().SetRangeUser(0.3*ymin, 10*ymax)
         else :
             mgraph.GetYaxis().SetRangeUser(0.5*ymin, 1.2*ymax)       
@@ -525,10 +529,10 @@ class Plot:
         cl.CMS_lumi(self.canvas, 4, 11, 'Simulation', False)
 
         #Save everything
-        self.savePlot(output_dir +'/'+ self.name)
+        self.savePlot(output_dir +'/'+ self.name, message = None)
         ROOT.SetOwnership(self.canvas, False)
         
-    def drawBarChart(self, output_dir = None, parallel_bins=False):
+    def drawBarChart(self, output_dir = None, parallel_bins=False, message = None):
         
         setDefault()
         #Create Canvas
@@ -537,8 +541,8 @@ class Plot:
         self.plotpad.Draw()
         self.plotpad.cd()
         
-#        self.s, self.s_tex_names = pt.orderHist(self.s, self.s_tex_names, lowest_first=True) 
-        #self.tex_names = self.s_tex_names + self.b_tex_names
+        # self.s, self.s_tex_names = pt.orderHist(self.s, self.s_tex_names, lowest_first=True) 
+        # self.tex_names = self.s_tex_names + self.b_tex_names
 
         title = " ; ; "+self.y_name
         if isinstance(self.x_name, list) and len(self.x_name) == self.s[0].GetNbinsX():
@@ -562,7 +566,8 @@ class Plot:
             for i, (hist, name) in enumerate(zip(self.s, self.tex_names)):
                 hist.SetFillColor(ps.getStackColorTauPOGbyName(name))
                 hist.SetLineColor(ps.getStackColorTauPOGbyName(name))
-                hist.SetBarWidth(0.8/len(self.s[0]))
+                hist.SetMarkerColor(ps.getStackColorTauPOGbyName(name))
+                hist.SetBarWidth(0.8/len(self.s))
                 hist.SetBarOffset(0.1+i*hist.GetBarWidth())
                 if i == 0:
                     hist.Draw('B')
@@ -592,11 +597,11 @@ class Plot:
         cl.CMS_lumi(self.canvas, 4, 11, 'Preliminary', False)
 
         #Save everything
-        self.savePlot(output_dir +'/'+ self.name)
+        self.savePlot(output_dir +'/'+ self.name, message)
         ROOT.SetOwnership(self.canvas, False)
         return
 
-    def drawPieChart(self, output_dir, draw_percent=False):
+    def drawPieChart(self, output_dir, draw_percent=False, message = None):
         setDefault()
         #Create Canvas
         self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 2000, 2000)
@@ -630,7 +635,7 @@ class Plot:
         self.canvas.Update()
 
         #Save everything
-        self.savePlot(output_dir +'/'+ self.name)
+        self.savePlot(output_dir +'/'+ self.name, message)
         ROOT.SetOwnership(self.canvas, False)
         return
 
