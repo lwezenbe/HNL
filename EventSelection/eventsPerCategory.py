@@ -98,8 +98,7 @@ if not args.makeTextFiles and not args.makeBarCharts and not args.makePieCharts:
     chain = sample.initTree(needhcount=args.noskim)
 
     if args.isTest:
-        # event_range = xrange(10)
-        event_range = sample.getEventRange(args.subJob)    
+        event_range = xrange(50)
     else:
         event_range = sample.getEventRange(args.subJob)    
 
@@ -140,7 +139,6 @@ if not args.makeTextFiles and not args.makeBarCharts and not args.makePieCharts:
         
         chain.GetEntry(entry)
         progress(entry - event_range[0], len(event_range))
-        #print entry, cutter.list_of_cuts['total'].GetSumOfWeights()
         cutter.cut(True, 'total')
 
         if args.noskim: weight = lw.getLumiWeight()
@@ -157,6 +155,7 @@ if not args.makeTextFiles and not args.makeBarCharts and not args.makePieCharts:
         list_of_numbers['total'].fill(chain, weight)
         list_of_numbers[ec.returnSuperCategory()].fill(chain, weight)
 
+    if args.isTest: exit(0)
     for i, h in enumerate(list_of_numbers.values()):
         if i == 0:
             h.write(output_name)
@@ -192,7 +191,6 @@ else:
     else:
         accepted_categories = range(1, 10, 1)
     x_names = [SUPERCATEGORY_TEX_NAMES[i] for i in accepted_categories]
-    print x_names
     for sample in sample_list:
         path_name = os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/eventsPerCategory/'+sample.output+'/events.root')
         is_signal = 'signal' if 'HNL' in sample.output else 'bkgr'

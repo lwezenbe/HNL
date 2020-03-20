@@ -200,7 +200,7 @@ if not args.makePlots:
         #
         # Save histograms
         #
-        #if args.isTest:  continue
+        if args.isTest:  continue
         subjobAppendix = '_subJob' + args.subJob if args.subJob else ''
         output_name = os.path.join(os.getcwd(), 'data', 'plotVariables', reco_or_gen_str, signal_str)
         

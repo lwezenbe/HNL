@@ -198,6 +198,7 @@ for entry in event_range:
 #
 # Write
 #
+if args.isTest: exit(0)
 for r in list_of_roc:
     r.write(True)
 

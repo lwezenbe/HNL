@@ -34,7 +34,6 @@ log = getLogger(args.logLevel)
 #
 if args.isTest:
     args.sample = 'DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8'
-    #args.sample = 'TTJets_DiLept_TuneCUETP8M1_13TeV-madgraphMLM-pythia8'
     args.year = '2016'
     args.subJob = 0
     args.isChild = True
@@ -43,8 +42,7 @@ if args.isTest:
 #Load in samples
 #
 from HNL.Samples.sample import createSampleList, getSampleFromList
-#input_file = '../Samples/InputFiles/skimList_'+args.year+'_sampleList.conf'
-input_file = '../Samples/InputFiles/test.conf'
+input_file = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Samples', 'InputFiles', 'skimList_'+args.year+'_sampleList.conf'))
 sample_list = createSampleList(input_file)
 
 #
@@ -90,13 +88,14 @@ gen_name = 'Reco' if not args.genSkim else 'Gen'
 output_name = os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL', str(args.year), gen_name, 'tmp_'+sample.output, sample.name + '_' + str(args.subJob) + '.root'))
 makeDirIfNeeded(output_name)
 
-if not args.overwrite and isValidRootFile(output_name):
+if not args.isTest and not args.overwrite and isValidRootFile(output_name):
     log.info('Finished: valid outputfile already exists')
     exit(0)
 
-output_file = ROOT.TFile(output_name ,"RECREATE")
-output_file.mkdir('blackJackAndHookers')
-output_file.cd('blackJackAndHookers')
+if not args.isTest:
+    output_file = ROOT.TFile(output_name ,"RECREATE")
+    output_file.mkdir('blackJackAndHookers')
+    output_file.cd('blackJackAndHookers')
 
 #
 # Switch off unused branches and create outputTree
@@ -132,8 +131,7 @@ new_vars = makeBranches(output_tree, new_branches)
 # Start event loop
 #
 if args.isTest:
-    #event_range = range(500)
-    event_range = sample.getEventRange(args.subJob)    
+    event_range = range(50)
 else:
     event_range = sample.getEventRange(args.subJob)    
 
@@ -166,4 +164,4 @@ output_tree.AutoSave()
 #if hcounter is not None:
 #    hcounter.Write()
     
-output_file.Close()
+if not args.isTest: output_file.Close()

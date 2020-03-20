@@ -116,8 +116,6 @@ output_name = os.path.join(output_name, sample.output)
 if args.isChild:
     output_name += '/tmp_'+sample.output
 
-print output_name
-
 print 'Getting things ready to start the event loop'
 
 def getWP(algorithm):
@@ -245,6 +243,8 @@ for entry in event_range:
 #
 # Write
 #
+if args.isTest: exit(0)
+
 for r in list_of_roc:
     r.write(True)
 

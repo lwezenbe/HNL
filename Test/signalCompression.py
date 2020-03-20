@@ -99,7 +99,7 @@ for entry in eventRange:
         if len(taus) > 0: pt_hist[3].Fill(taus[-1][0]) 
         if len(taus) > 1: pt_hist[4].Fill(taus[-2][0]) 
 
-#if args.isTest: exit(0)
+if args.isTest: exit(0)
 
 #Write and plot
 out_file = ROOT.TFile(output_name, 'recreate')

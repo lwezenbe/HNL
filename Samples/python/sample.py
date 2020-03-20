@@ -179,7 +179,6 @@ def getListOfSampleNames(file_name):
 #       This function lists all extension files
 #
 def getListOfPathsWithSameOutput(file_name, name):
-    print file_name, name
     sample_infos = [line.split('%')[0].strip() for line in open(file_name)]                     # Strip % comments and \n charachters
     sample_infos = [line.split() for line in sample_infos if line]                              # Get lines into tuples
 

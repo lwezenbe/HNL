@@ -24,7 +24,6 @@ def merge(path):
     merge_paths = getSubDir(path)
     merge_paths = checkForMerge(merge_paths)
     if not merge_paths:
-        print "Nothing to merge"
         return
 
     for p in merge_paths:

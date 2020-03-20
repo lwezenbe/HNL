@@ -128,8 +128,7 @@ else:
 # Set event range
 #
 if args.isTest:
-    event_range = xrange(1000)
-    #event_range = sample.getEventRange(args.subJob)    
+    event_range = xrange(50)
 else:
     event_range = sample.getEventRange(args.subJob)    
 
