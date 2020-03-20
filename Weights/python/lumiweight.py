@@ -7,7 +7,7 @@ class LumiWeight:
         self.sample = sample
         self.chain = chain
         self.lumi_weight = 1.  
- 
+
         self.total_hcount = self.sample.hcount
         if input_file is not None:
             for path_name in getListOfPathsWithSameOutput(input_file, self.sample.name):
@@ -20,7 +20,7 @@ class LumiWeight:
 if __name__ == '__main__':
     from HNL.Samples.sample import createSampleList, getSampleFromList
     import os
-    input_file = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/compareTauIdList_2016.conf')
+    input_file = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/sampleList_2016_noskim.conf')
     sample_list = createSampleList(input_file)
 
     for sample in sample_list:
@@ -28,4 +28,9 @@ if __name__ == '__main__':
         lw = LumiWeight(sample, chain)
         chain.GetEntry(5)
         chain.year = 2016
-        print sample, sample.hcount, lw.total_hcount
+        print sample.name
+        print lw.getLumiWeight() 
+        print 'chain._weight: ', chain._weight, lw.chain._weight
+        print 'xsec ', sample.xsec, lw.sample.xsec
+        print 'luminosity ', LUMINOSITY_MAP[chain.year]
+        print 'hCount ', sample.hcount, lw.total_hcount

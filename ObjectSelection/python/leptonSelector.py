@@ -18,7 +18,7 @@ def isGoodGenLepton(chain, index):
 from HNL.ObjectSelection.electronSelector import isLooseElectron
 from HNL.ObjectSelection.muonSelector import isLooseMuon
 
-def isLooseLightLepton(chain, index, algo = 'cutbased'):
+def isLooseLightLepton(chain, index, algo = 'leptonMVAtZq'):
     
     if chain._lFlavor[index] == 0:
         return isLooseElectron(chain, index, algo)
@@ -33,7 +33,7 @@ def isLooseLightLepton(chain, index, algo = 'cutbased'):
 from HNL.ObjectSelection.electronSelector import isFOElectron
 from HNL.ObjectSelection.muonSelector import isFOMuon
 
-def isFOLightLepton(chain, index, algo = 'cutbased'):
+def isFOLightLepton(chain, index, algo = 'leptonMVAtZq'):
     
     if chain._lFlavor[index] == 0:
         return isFOElectron(chain, index, algo)
@@ -47,7 +47,7 @@ def isFOLightLepton(chain, index, algo = 'cutbased'):
 from HNL.ObjectSelection.electronSelector import isTightElectron
 from HNL.ObjectSelection.muonSelector import isTightMuon
 
-def isTightLightLepton(chain, index, algo ='cutbased'):
+def isTightLightLepton(chain, index, algo ='leptonMVAtZq'):
     
     if chain._lFlavor[index] == 0:    
         return isTightElectron(chain, index, algo)

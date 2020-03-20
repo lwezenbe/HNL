@@ -52,7 +52,6 @@ for eff_name in ['efficiency', 'fakerate']:
             sample = f.split('/')[-2]
             fk_name = fk.split('/')[1]
             wp_list = []
-            efficiency = []
             for k in key_names:
                 print k
                 if not fk_name in k: continue
@@ -60,9 +59,9 @@ for eff_name in ['efficiency', 'fakerate']:
                 wp = k.rsplit('-', 1)[-1]
                 wp_list.append(wp)
                 for v in var:
-                    efficiency.append(Efficiency(eff_name+'_'+v, None, None, f, subdirs = [k, eff_name+'_'+v]))
-            p = Plot([eff.getEfficiency() for eff in efficiency], wp_list)
-            p.drawHist(output_dir = os.getcwd()+'/data/Results/compareLightLeptonId/'+algo+'/var/'+sample, draw_option = 'Hist')
+                    efficiency = Efficiency(eff_name+'_'+v, None, None, f, subdirs = [k, eff_name+'_'+v])
+                    p = Plot(efficiency.getEfficiency(), wp_list,  eff_name+'_'+args.flavor+'_'+v)
+                    p.drawHist(output_dir = os.getcwd()+'/data/Results/compareLightLeptonId/'+algo+'/var/'+sample, draw_option = 'Hist')
         
  
 #graph = roc_curve.return_graph()
