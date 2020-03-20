@@ -5,7 +5,6 @@
 #
 
 import numpy as np
-lumi = 36000
 l1 = 0
 l2 = 1
 l3 = 2
@@ -31,6 +30,7 @@ argParser.add_argument('--bkgrOnly',   action='store_true', default=False,  help
 argParser.add_argument('--lowMass',   action='store_true', default=False,  help='Only run or plot samples with mass below or equal to 80 GeV')
 argParser.add_argument('--highMass',   action='store_true', default=False,  help='Only run or plot samples with mass below or equal to 80 GeV')
 argParser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
+argParser.add_argument('--coupling', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', ''])
 #argParser.add_argument('--triggerTest', type=str, default=None,  help='Some settings to perform pt cuts for triggers')
 args = argParser.parse_args()
 
@@ -59,11 +59,14 @@ else:
             'mtOther':      (lambda c : c.mtOther,  np.arange(0., 300., 15.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
             'l1pt':      (lambda c : c.l_pt[l1],       np.arange(0., 300., 15.),       ('p_{T} (l1) [GeV]', 'Events')),
             'l2pt':      (lambda c : c.l_pt[l2],       np.arange(0., 300., 15.),       ('p_{T} (l2) [GeV]', 'Events')),
-            'l3pt':      (lambda c : c.l_pt[l3],       np.arange(0., 300., 15.),       ('p_{T} (l3) [GeV]', 'Events'))
+            'l3pt':      (lambda c : c.l_pt[l3],       np.arange(0., 300., 15.),       ('p_{T} (l3) [GeV]', 'Events')),
+            'NJet':      (lambda c : c.njets,       np.arange(0., 12., 1.),       ('#Jets', 'Events')),
+            'NbJet':      (lambda c : c.nbjets,       np.arange(0., 12., 1.),       ('#B Jets', 'Events'))
         }
 
 import HNL.EventSelection.eventCategorization as cat
-categories = cat.CATEGORIES
+#categories = cat.CATEGORIES
+categories = cat.SUPER_CATEGORIES
 reco_or_gen_str = 'reco' if not args.genLevel else 'gen'
 
 from ROOT import TFile, TLorentzVector
@@ -86,6 +89,7 @@ if not args.makePlots:
     from HNL.Samples.sample import createSampleList
     gen_name = 'Gen' if args.genLevel else 'Reco'
     list_location = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/sampleList_'+str(args.year)+'_'+gen_name+'.conf')
+    #list_location = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/sampleList_'+str(args.year)+'_noskim.conf')
     sample_list = createSampleList(list_location)
 
 
@@ -125,7 +129,8 @@ if not args.makePlots:
 
         for c in categories:
             for v in var:
-                list_of_hist[c][v][signal_str][sample.name] = Histogram(cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v+'-'+sample.output, var[v][0], var[v][2], var[v][1])
+                #list_of_hist[c][v][signal_str][sample.name] = Histogram(cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v+'-'+sample.output, var[v][0], var[v][2], var[v][1])
+                list_of_hist[c][v][signal_str][sample.name] = Histogram(str(c)+'-'+v+'-'+sample.output, var[v][0], var[v][2], var[v][1])
         
         #
         # Set event range
@@ -151,7 +156,7 @@ if not args.makePlots:
         #
         from HNL.Tools.helpers import progress, makeDirIfNeeded
         from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
-        from HNL.EventSelection.eventSelection import calculateKinematicVariables
+        from HNL.EventSelection.eventSelection import select3Leptons, calculateKinematicVariables
         from HNL.EventSelection.eventCategorization import EventCategory
         ec = EventCategory(chain)
         for entry in event_range:
@@ -163,7 +168,12 @@ if not args.makePlots:
                 slm = SignalLeptonMatcher(chain)
                 if not slm.saveNewOrder(): continue
                 calculateKinematicVariables(chain, chain, is_reco_level=False)
+           
+            if not select3Leptons(chain, chain):    continue 
+            calculateKinematicVariables(chain, chain, is_reco_level=not args.genLevel)
+
             chain.event_category, chain.event_subcategory = ec.returnCategory()
+            chain.event_supercategory = ec.returnSuperCategory()
             if chain.event_category == 2:       chain.event_category = 1
 
             #Add here any additional cuts
@@ -175,14 +185,17 @@ if not args.makePlots:
             chain.Ml13 = (l1Vec+l3Vec).M()         
 
             for v in var.keys():
-                if chain.event_category < len(cat.CATEGORY_NAMES)+1 and chain.event_subcategory < len(cat.SUBCATEGORY_NAMES[cat.CATEGORY_SUBCATEGORY_LINK[chain.event_category]])+1: 
-                    list_of_hist[(chain.event_category, chain.event_subcategory)][v][signal_str][sample.name].fill(chain, chain.lumiweight)
-                    #list_of_hist[(chain.event_category, 4)][v][signal_str][sample.name].fill(chain, chain.lumiweight)
+                #if chain.event_category < len(cat.CATEGORY_NAMES)+1 and chain.event_subcategory < len(cat.SUBCATEGORY_NAMES[cat.CATEGORY_SUBCATEGORY_LINK[chain.event_category]])+1: 
+                    #list_of_hist[(chain.event_category, chain.event_subcategory)][v][signal_str][sample.name].fill(chain, chain.lumiweight)
+                if chain.event_supercategory < len(cat.SUPER_CATEGORY_NAMES)+1: 
                     
-                #list_of_hist[(len(cat.CATEGORY_NAMES), chain.event_subcategory)][v][signal_str][sample.name].fill(chain, chain.lumiweight)
-            if chain.event_category == 1 and chain.event_subcategory == 3: 
-                print list_of_hist[(chain.event_category, chain.event_subcategory)]['l1pt'][signal_str][sample.name].getHist().GetSumOfWeights()
-                print len(cat.SUBCATEGORY_NAMES[cat.CATEGORY_SUBCATEGORY_LINK[chain.event_category]])                
+                    list_of_hist[chain.event_supercategory][v][signal_str][sample.name].fill(chain, chain.lumiweight)
+                    
+                #list_of_hist[(len(cat.CATEGORY_NAMES)+1, len(cat.SUBCATEGORY_NAMES[cat.CATEGORY_SUBCATEGORY_LINK[len(cat.CATEGORY_NAMES)+1]])+1)][v][signal_str][sample.name].fill(chain, chain.lumiweight)
+                list_of_hist[len(cat.SUPER_CATEGORY_NAMES)+1][v][signal_str][sample.name].fill(chain, chain.lumiweight)
+            #if chain.event_category == 1 and chain.event_subcategory == 3: 
+            #    print list_of_hist[(chain.event_category, chain.event_subcategory)]['l1pt'][signal_str][sample.name].getHist().GetSumOfWeights()
+            #    print len(cat.SUBCATEGORY_NAMES[cat.CATEGORY_SUBCATEGORY_LINK[chain.event_category]])                
 
         #
         # Save histograms
@@ -216,10 +229,10 @@ else:
     
     # Collect signal file locations
     if args.genLevel and args.signalOnly:
-        signal_list = glob.glob(os.getcwd()+'/data/plotVariables/'+reco_or_gen_str+'/signal/signalOrdering/*')
+        signal_list = glob.glob(os.getcwd()+'/data/plotVariables/'+reco_or_gen_str+'/signal/signalOrdering/*'+args.coupling+'*')
         
     elif not args.bkgrOnly:
-        signal_list = glob.glob(os.getcwd()+'/data/plotVariables/'+reco_or_gen_str+'/signal/*')
+        signal_list = glob.glob(os.getcwd()+'/data/plotVariables/'+reco_or_gen_str+'/signal/*'+args.coupling+'*')
         for i, s in enumerate(signal_list):
             if 'signalOrdering' in s:
                 signal_list.pop(i)
@@ -246,11 +259,13 @@ else:
                     if args.lowMass and sample_mass > 80: continue
                     if args.highMass and sample_mass < 80: continue
                     if args.masses is not None and sample_mass not in args.masses: continue
-                    list_of_hist[c][v]['signal'][sample_name] = Histogram(getObjFromFile(s+'/variables.root', v+'/'+cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v+'-'+sample_name)) 
+                    #list_of_hist[c][v]['signal'][sample_name] = Histogram(getObjFromFile(s+'/variables.root', v+'/'+cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v+'-'+sample_name)) 
+                    list_of_hist[c][v]['signal'][sample_name] = Histogram(getObjFromFile(s+'/variables.root', v+'/'+str(c)+'-'+v+'-'+sample_name)) 
             if not args.signalOnly:
                 for b in bkgr_list:
                     sample_name = b.split('/')[-1]
-                    list_of_hist[c][v]['bkgr'][sample_name] = Histogram(getObjFromFile(b+'/variables.root', v+'/'+cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v+'-'+sample_name)) 
+                    #list_of_hist[c][v]['bkgr'][sample_name] = Histogram(getObjFromFile(b+'/variables.root', v+'/'+cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v+'-'+sample_name)) 
+                    list_of_hist[c][v]['bkgr'][sample_name] = Histogram(getObjFromFile(b+'/variables.root', v+'/'+str(c)+'-'+v+'-'+sample_name)) 
 
 #
 #       Plot!
@@ -309,12 +324,16 @@ for c in categories:
 
         # Create plot object (if signal and background are displayed, also show the ratio)
         if not args.signalOnly:
-            p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, extra_text = extra_text, draw_ratio=True)
+            #p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, extra_text = extra_text, draw_ratio=True)
+            #p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, str(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = False, extra_text = extra_text, draw_ratio=True)
+            p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, str(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, draw_ratio=True)
         else:
-            p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, extra_text = extra_text)
+            #p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, extra_text = extra_text)
+            p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, str(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, extra_text = extra_text)
 
         # Draw
-        p.drawHist(output_dir = os.path.join(output_dir, cat.categoryName(c), cat.subcategoryName(c)), normalize_signal=False, signal_style=True, draw_option='EHist')
+        #p.drawHist(output_dir = os.path.join(output_dir, cat.categoryName(c), cat.subcategoryName(c)), normalize_signal=False, signal_style=True, draw_option='EHist')
+        p.drawHist(output_dir = os.path.join(output_dir, str(c)), normalize_signal=False, signal_style=True, draw_option='EHist')
     
     # If looking at signalOnly, also makes plots that compares the three lepton pt's for every mass point
     if args.signalOnly:
@@ -339,5 +358,7 @@ for c in categories:
                 else:
                     draw_cuts = None
                 # Create plot object and draw
-                p = Plot(h, legend_names, cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-pt-'+n, extra_text=extra_text)
-                p.drawHist(output_dir = os.path.join(output_dir, cat.categoryName(c), cat.subcategoryName(c), 'pt', 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])), normalize_signal=False, draw_option='EHist', draw_cuts=draw_cuts)
+                #p = Plot(h, legend_names, cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-pt-'+n, extra_text=extra_text)
+                p = Plot(h, legend_names, str(c)+'-pt-'+n, extra_text=extra_text)
+                #p.drawHist(output_dir = os.path.join(output_dir, cat.categoryName(c), cat.subcategoryName(c), 'pt', 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])), normalize_signal=False, draw_option='EHist', draw_cuts=draw_cuts)
+                p.drawHist(output_dir = os.path.join(output_dir, str(c), 'pt', 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])), normalize_signal=False, draw_option='EHist', draw_cuts=draw_cuts)

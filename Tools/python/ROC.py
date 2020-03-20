@@ -27,6 +27,7 @@ class ROC:
 
             #Use different file for misid in case you split the jobs for signal and bkgr up
             tmp_path = misid_path if misid_path is not None else self.path
+            print tmp_path
             self.misid_numerator = Histogram(getObjFromFile(tmp_path, name+'/'+name + '_misid_numerator'))
             self.misid_denominator = Histogram(getObjFromFile(tmp_path, name+'/'+name + '_misid_denominator'))
     
