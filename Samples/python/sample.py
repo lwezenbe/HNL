@@ -99,7 +99,7 @@ class Sample:
         if not self.is_data and needhcount:   
             hcounter = self.getHist('hCounter')
             self.hcount = hcounter.GetSumOfWeights()
-        
+ 
         return self.chain
 
     #
@@ -150,7 +150,7 @@ def createSampleFileFromShortlist(file_name):
         name = split_path[-2]
         xsec = p[1] if p[1] else 0.
         if name in names: 
-            name += '_ext'+str(i)
+            name += '-ext'+str(i)
         names.append(name)
         output = split_path[-2]
         outfile.write(name + ' ' + p[0] + ' ' + output + '       Calc    '+ xsec  +'  \n')
