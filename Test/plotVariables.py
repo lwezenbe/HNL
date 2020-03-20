@@ -34,6 +34,10 @@ argParser.add_argument('--coupling', action='store', default='',  help='Which co
 #argParser.add_argument('--triggerTest', type=str, default=None,  help='Some settings to perform pt cuts for triggers')
 args = argParser.parse_args()
 
+if args.isTest:
+    args.year = '2016'
+    args.sample = 'DYJetsToLL-M-10to50'
+
 #
 # Create histograms
 #
@@ -150,7 +154,6 @@ if not args.makePlots:
         if args.lowMass and chain.HNLmass > 80: continue
         if args.highMass and chain.HNLmass < 80: continue
         if args.masses is not None and chain.HNLmass not in args.masses: continue
-        print sample.name, len(event_range)    
         #
         # Loop over all events
         #

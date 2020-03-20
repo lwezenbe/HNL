@@ -28,6 +28,10 @@ argParser.add_argument('--runOnCream',   action='store_true', default=False,  he
 argParser.add_argument('--genLevel',   action='store_true', default=False,  help='Use gen level variables')
 args = argParser.parse_args()
 
+if args.isTest:
+    args.year = '2016'
+    args.sample = 'DY'
+
 #
 # Create histograms
 #

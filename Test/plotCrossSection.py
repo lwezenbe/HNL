@@ -4,9 +4,11 @@
 import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+argParser.add_argument('--isTest',     action='store_true',      default=False,   help='Is this a test?')
 args = argParser.parse_args()
 
-
+if args.isTest:
+    args.year = '2016'
 
 #
 # Load in the sample list 
