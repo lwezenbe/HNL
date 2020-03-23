@@ -3,34 +3,32 @@ LUMINOSITY_MAP = {2016 : 35546.}
 
 class LumiWeight:
 
-    def __init__(self, sample, chain, input_file = None):
+    def __init__(self, sample, input_file):
         self.sample = sample
-        self.chain = chain
         self.lumi_weight = 1.  
 
         self.total_hcount = self.sample.hcount
-        if input_file is not None:
-            for path_name in getListOfPathsWithSameOutput(input_file, self.sample.name):
-                self.total_hcount += self.sample.getHist('hCounter', path_name).GetSumOfWeights()
+        for path_name in getListOfPathsWithSameOutput(input_file, self.sample.name):
+            self.total_hcount += self.sample.getHist('hCounter', path_name).GetSumOfWeights()
 
     def getLumiWeight(self):
-        self.lumi_weight = self.chain._weight*(self.sample.xsec*LUMINOSITY_MAP[self.chain.year])/self.total_hcount
+        self.lumi_weight = sample.chain._weight*(self.sample.xsec*LUMINOSITY_MAP[sample.chain.year])/self.total_hcount
         return self.lumi_weight 
 
 if __name__ == '__main__':
     from HNL.Samples.sample import createSampleList, getSampleFromList
     import os
-    input_file = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/sampleList_2016_noskim.conf')
+    input_file = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/samples_for_testing.conf')
     sample_list = createSampleList(input_file)
+    sample = getSampleFromList(sample_list, 'DYJetsToLL-M-10to50')
 
-    for sample in sample_list:
-        chain = sample.initTree()
-        lw = LumiWeight(sample, chain)
-        chain.GetEntry(5)
-        chain.year = 2016
-        print sample.name
-        print lw.getLumiWeight() 
-        print 'chain._weight: ', chain._weight, lw.chain._weight
-        print 'xsec ', sample.xsec, lw.sample.xsec
-        print 'luminosity ', LUMINOSITY_MAP[chain.year]
-        print 'hCount ', sample.hcount, lw.total_hcount
+    chain = sample.initTree()
+    lw = LumiWeight(sample, input_file)
+    chain.GetEntry(5)
+    chain.year = 2016
+    print sample.name
+    print lw.getLumiWeight() 
+    print 'chain._weight: ', chain._weight, 'expected -41444.199'
+    print 'xsec ', sample.xsec, lw.sample.xsec, 'expected 18610'
+    print 'luminosity ', LUMINOSITY_MAP[chain.year], 'expected 35546.'
+    print 'hCount ', sample.hcount, lw.total_hcount, 'more than 2.05023673303e+12'

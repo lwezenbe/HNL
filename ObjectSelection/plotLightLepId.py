@@ -26,7 +26,7 @@ bkgr_prefix = os.getcwd()+'/data/compareLightLeptonId/'+args.bkgr
 
 from HNL.Plotting.plot import Plot
 
-output_dir = makePathTimeStamped(os.getcwd()+'/data/Results/compareLightLeptonId/ROC/'+args.signal)
+output_dir = makePathTimeStamped(os.getcwd()+'/data/Results/compareLightLeptonId/ROC/'+args.signal+'-'+args.bkgr)
 curves = []
 ordered_f_names = []
 for f_path in input_signal:

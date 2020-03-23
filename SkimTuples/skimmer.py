@@ -78,7 +78,7 @@ chain.is_signal = 'HNL' in sample.name
 # Get lumiweight
 #
 from HNL.Weights.lumiweight import LumiWeight
-lw = LumiWeight(sample, chain, input_file)
+lw = LumiWeight(sample, input_file)
 
 #
 # Create new reduced tree (except if it already exists and overwrite option is not used)

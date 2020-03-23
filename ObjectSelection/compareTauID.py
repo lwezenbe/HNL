@@ -152,15 +152,14 @@ for algo in full_list:
     
     list_of_var_hist['efficiency'][algo] = {}
     list_of_var_hist['fakerate'][algo] = {}
-    print list_of_var_hist['fakerate'].keys()
     for v in var_hist.keys():
         list_of_var_hist['efficiency'][algo][v] = {}
         list_of_var_hist['fakerate'][algo][v] = {}
         for wp in algo_wp:
             tot_name = output_name+'/'+ sample.name + '_efficiency_' + args.subJob+'.root'
-            list_of_var_hist['efficiency'][algo][v][wp] = Efficiency('efficiency_'+v, var_hist[v][0], var_hist[v][2], tot_name, var_hist[v][1])
+            list_of_var_hist['efficiency'][algo][v][wp] = Efficiency('efficiency_'+v+algo[0] + '-' + algo[1] + '-' + algo[2]+wp, var_hist[v][0], var_hist[v][2], tot_name, var_hist[v][1])
             tot_name = output_name+'/'+ sample.name + '_fakerate_' + args.subJob+'.root'
-            list_of_var_hist['fakerate'][algo][v][wp] = Efficiency('fakerate_'+v, var_hist[v][0], var_hist[v][2], tot_name, var_hist[v][1], subdirs = [algo[0] + '-' + algo[1] + '-' + algo[2], 'fakerate_'+v])
+            list_of_var_hist['fakerate'][algo][v][wp] = Efficiency('fakerate_'+v+algo[0] + '-' + algo[1] + '-' + algo[2]+wp, var_hist[v][0], var_hist[v][2], tot_name, var_hist[v][1])
 
 #Determine if testrun so it doesn't need to calculate the number of events in the getEventRange
 if args.isTest:
@@ -253,6 +252,6 @@ for eff in ['efficiency', 'fakerate']:
         for i, v in enumerate(list_of_var_hist['fakerate'][algo].keys()):
             for j, wp in enumerate(list_of_var_hist['fakerate'][algo][v].keys()):
                 if a == 0 and i == 0 and j == 0:
-                    list_of_var_hist[eff][algo][v][wp].write(append = False, subdirs = [algo[0] + '-' + algo[1] + '-' + algo[2] + '-' + wp, eff+'_'+v])
+                    list_of_var_hist[eff][algo][v][wp].write(append = False, name=eff+'_'+v, subdirs = [algo[0] + '-' + algo[1] + '-' + algo[2] + '-' + wp, eff+'_'+v])
                 else:
-                    list_of_var_hist[eff][algo][v][wp].write(append = True, subdirs = [algo[0] + '-' + algo[1] + '-' + algo[2] + '-' + wp, eff+'_'+v]) 
+                    list_of_var_hist[eff][algo][v][wp].write(append = True, name=eff+'_'+v, subdirs = [algo[0] + '-' + algo[1] + '-' + algo[2] + '-' + wp, eff+'_'+v]) 

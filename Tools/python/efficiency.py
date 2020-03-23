@@ -70,7 +70,7 @@ class Efficiency(object):
         return graph
     
 
-    def write(self, append = False, subdirs = None):
+    def write(self, append = False, name=None, subdirs = None):
         append_string = 'recreate'
         if append and isValidRootFile(self.path): append_string = 'update'
 
@@ -85,8 +85,13 @@ class Efficiency(object):
                 nomo += d + '/'
                 output_file.mkdir(nomo)
                 output_file.cd(nomo)
-        self.efficiency_num.getHist().Write()
-        self.efficiency_denom.getHist().Write()
-        self.getEfficiency().Write()
+        if name is not None:
+            self.efficiency_num.getHist().Write(name+'_num')
+            self.efficiency_denom.getHist().Write(name+'_denom')
+            self.getEfficiency().Write(name+'_efficiency')
+        else:
+            self.efficiency_num.getHist().Write()
+            self.efficiency_denom.getHist().Write()
+            self.getEfficiency().Write()
         output_file.Close()
 

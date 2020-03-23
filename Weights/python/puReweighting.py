@@ -1,13 +1,13 @@
-from ttg.tools.logger import getLogger
+from HNL.Tools.logger import getLogger
 log = getLogger()
 
 #
 # PU reweighting class
 #
 import ROOT, sys, os
-from ttg.tools.helpers import getObjFromFile
+from HNL.Tools.helpers import getObjFromFile
 
-dataDir = '$CMSSW_BASE/src/ttg/reduceTuple/data/puReweightingData/'
+dataDir = '$CMSSW_BASE/src/HNL/Weights/data/puReweightingData/'
 
 #Define a functio that returns a reweighting-function according to the data 
 def getReweightingFunction(year, variation='central', useMC=None):
@@ -42,3 +42,16 @@ def getReweightingFunction(year, variation='central', useMC=None):
   def reweightingFunc(nTrueInt):
     return reweightingHisto.GetBinContent(reweightingHisto.FindBin(nTrueInt))
   return reweightingFunc
+
+if __name__ == '__main__':
+    from HNL.Samples.sample import createSampleList, getSampleFromList
+    import os
+    input_file = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/samples_for_testing.conf')
+    sample_list = createSampleList(input_file)
+    sample = getSampleFromList(sample_list, 'DYJetsToLL-M-10to50')
+
+    chain = sample.initTree()
+    chain.GetEntry(5)
+    chain.year = '2016'
+    pu = getReweightingFunction(chain.year, 'central')
+    print pu(chain._nTrueInt)

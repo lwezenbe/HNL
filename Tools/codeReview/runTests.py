@@ -10,7 +10,7 @@ base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL')
 code_to_test = [line.strip() for line in open('codeToTest.conf')]
 for code in code_to_test:
     print '\x1b[6;30;42m' + 'RUNNING '+ code + ' \x1b[0m'
-    os.system('python '+os.path.join(base_path,code)+' --isTest')
+    os.system('python '+os.path.join(base_path,code))
 
 
 

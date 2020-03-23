@@ -110,7 +110,7 @@ if not args.makeTextFiles and not args.makeBarCharts and not args.makePieCharts:
     # Get luminosity weight
     #
     from HNL.Weights.lumiweight import LumiWeight
-    lw = LumiWeight(sample, chain, list_location)
+    lw = LumiWeight(sample, list_location)
 
     from HNL.EventSelection.eventCategorization import EventCategory
     ec = EventCategory(chain)

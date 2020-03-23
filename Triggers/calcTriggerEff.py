@@ -19,7 +19,7 @@ argParser.add_argument('--isTest',   action='store_true', default=False,  help='
 argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 argParser.add_argument('--useRef', action='store_true', default=False,  help='pass ref cuts')
-argParser.add_argument('--ignoreCategories', action='store_true', default=False,  help='do not split the events in different categories')
+# argParser.add_argument('--ignoreCategories', action='store_true', default=False,  help='do not split the events in different categories')
 argParser.add_argument('--detailedCategories', action='store_true', default=False,  help='Use detailed categories instead of the supercategories')
 argParser.add_argument('--separateTriggers', action='store', default=None,  help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', choices=['single', 'cumulative', 'full'])
 args = argParser.parse_args()
@@ -117,44 +117,43 @@ categories = ec.super_categories
 category_triggers = lambda chain, category : returnSuperCategoryTriggers(chain, category)
 
 #First if keeps old code for reference
-if args.ignoreCategories:
-    category_map = {('eee', '1D') : ['integral'], 
-                    ('eee', '2D') : ['integral'], 
-                    ('eemu', '1D') : ('15to30', '30to55'),
-                    ('eemu', '2D') : ('15to20', '20to25', '25to30', '30to40', '40to50', '55to100'),
-                    ('emumu', '1D') : ('15to30', '30to55'),
-                    ('emumu', '2D') : ('15to20', '20to25', '25to30', '30to40', '40to50', '55to100'),
-                    ('mumumu', '1D') : ['integral'],
-                    ('mumumu', '2D') : ['integral']}
+# if args.ignoreCategories:
+#     category_map = {('eee', '1D') : ['integral'], 
+#                     ('eee', '2D') : ['integral'], 
+#                     ('eemu', '1D') : ('15to30', '30to55'),
+#                     ('eemu', '2D') : ('15to20', '20to25', '25to30', '30to40', '40to50', '55to100'),
+#                     ('emumu', '1D') : ('15to30', '30to55'),
+#                     ('emumu', '2D') : ('15to20', '20to25', '25to30', '30to40', '40to50', '55to100'),
+#                     ('mumumu', '1D') : ['integral'],
+#                     ('mumumu', '2D') : ['integral']}
 
-    var = {('pt', '1D') : (lambda c : c._lPt[c.l3],                                 np.arange(5., 40., 5.),                 ('p_{T}(trailing) [GeV]', 'Events')),
-           ('eta', '1D') : (lambda c : abs(c._lEta[c.l1]),                          np.arange(0., 3., .5),                  ('|#eta|(leading) [GeV]', 'Events')),
-           ('pt', '2D') : (lambda c : (c._lPt[c.l3], c._lPt[c.l2]),                     (np.arange(5., 40., 5.), np.arange(5., 40., 5.)), ('p_{T}(trailing) [GeV]', 'p_{T}(subleading) [GeV]')),
-           ('eta', '2D') : (lambda c : (abs(c._lEta[c.l3]), abs(c._lEta[c.l2])),      (np.arange(0., 3., .5), np.arange(0., 3., .5)), ('|#eta|(trailing) [GeV]', '|#eta|(subleading) [GeV]'))}
+#     var = {('pt', '1D') : (lambda c : c._lPt[c.l3],                                 np.arange(5., 40., 5.),                 ('p_{T}(trailing) [GeV]', 'Events')),
+#            ('eta', '1D') : (lambda c : abs(c._lEta[c.l1]),                          np.arange(0., 3., .5),                  ('|#eta|(leading) [GeV]', 'Events')),
+#            ('pt', '2D') : (lambda c : (c._lPt[c.l3], c._lPt[c.l2]),                     (np.arange(5., 40., 5.), np.arange(5., 40., 5.)), ('p_{T}(trailing) [GeV]', 'p_{T}(subleading) [GeV]')),
+#            ('eta', '2D') : (lambda c : (abs(c._lEta[c.l3]), abs(c._lEta[c.l2])),      (np.arange(0., 3., .5), np.arange(0., 3., .5)), ('|#eta|(trailing) [GeV]', '|#eta|(subleading) [GeV]'))}
 
 # Use categorization as defined in eventCategorization.py
-else:
 
-    from HNL.Tools.helpers import getMassRange
+from HNL.Tools.helpers import getMassRange
 
-    mass_range = getMassRange(list_location)
+mass_range = getMassRange(list_location)
 
-    category_map = {}
-    for c in categories:
-        category_map[c] = ['integral']   
- 
-    var = {'l1pt' : (lambda c : c.l_pt[0],                          np.arange(0., 100., 15.),                 ('p_{T}(l1) [GeV]', 'Efficiency')),
-           'l2pt' : (lambda c : c.l_pt[1],                          np.arange(0., 100., 15.),                  ('p_{T}(l2) [GeV]', 'Efficiency')),
-           'l3pt' : (lambda c : c.l_pt[2],                          np.arange(0., 100., 15.),                  ('p_{T}(l3) [GeV]', 'Efficiency')),
-           'l1eta' : (lambda c : abs(c.l_eta[0]),                          np.arange(0., 3., .5),                  ('|#eta|(l1) [GeV]', 'Efficiency')),
-           'l2eta' : (lambda c : abs(c.l_eta[1]),                          np.arange(0., 3., .5),                  ('|#eta|(l2) [GeV]', 'Efficiency')),
-           'l3eta' : (lambda c : abs(c.l_eta[2]),                          np.arange(0., 3., .5),                  ('|#eta|(l3) [GeV]', 'Efficiency')),
-           'l1-2D' : (lambda c : (c.l_pt[0], abs(c.l_eta[0])),      (np.arange(0., 100., 15.), np.arange(0., 3., .5)), ('p_{T}(l1) [GeV]', '|#eta|(l1)')),
-           'l2-2D' : (lambda c : (c.l_pt[1], abs(c.l_eta[1])),      (np.arange(0., 100., 15.), np.arange(0., 3., .5)), ('p_{T}(l2) [GeV]', '|#eta|(subleading)')),
-           'l3-2D' : (lambda c : (c.l_pt[2], abs(c.l_eta[2])),      (np.arange(0., 100., 15.), np.arange(0., 3., .5)), ('p_{T}(l3) [GeV]', '|#eta|(subleading)'))}
+category_map = {}
+for c in categories:
+    category_map[c] = ['integral']   
 
-    if chain.is_signal:
-           var['HNLmass'] = (lambda c : c.HNLmass,        np.array(mass_range),   ('m_{N} [GeV]', 'Efficiency'))
+var = {'l1pt' : (lambda c : c.l_pt[0],                          np.arange(0., 100., 15.),                 ('p_{T}(l1) [GeV]', 'Efficiency')),
+        'l2pt' : (lambda c : c.l_pt[1],                          np.arange(0., 100., 15.),                  ('p_{T}(l2) [GeV]', 'Efficiency')),
+        'l3pt' : (lambda c : c.l_pt[2],                          np.arange(0., 100., 15.),                  ('p_{T}(l3) [GeV]', 'Efficiency')),
+        'l1eta' : (lambda c : abs(c.l_eta[0]),                          np.arange(0., 3., .5),                  ('|#eta|(l1) [GeV]', 'Efficiency')),
+        'l2eta' : (lambda c : abs(c.l_eta[1]),                          np.arange(0., 3., .5),                  ('|#eta|(l2) [GeV]', 'Efficiency')),
+        'l3eta' : (lambda c : abs(c.l_eta[2]),                          np.arange(0., 3., .5),                  ('|#eta|(l3) [GeV]', 'Efficiency')),
+        'l1-2D' : (lambda c : (c.l_pt[0], abs(c.l_eta[0])),      (np.arange(0., 100., 15.), np.arange(0., 3., .5)), ('p_{T}(l1) [GeV]', '|#eta|(l1)')),
+        'l2-2D' : (lambda c : (c.l_pt[1], abs(c.l_eta[1])),      (np.arange(0., 100., 15.), np.arange(0., 3., .5)), ('p_{T}(l2) [GeV]', '|#eta|(subleading)')),
+        'l3-2D' : (lambda c : (c.l_pt[2], abs(c.l_eta[2])),      (np.arange(0., 100., 15.), np.arange(0., 3., .5)), ('p_{T}(l3) [GeV]', '|#eta|(subleading)'))}
+
+if chain.is_signal:
+        var['HNLmass'] = (lambda c : c.HNLmass,        np.array(mass_range),   ('m_{N} [GeV]', 'Efficiency'))
 
 from HNL.Tools.efficiency import Efficiency
 from HNL.EventSelection.eventCategorization import returnCategoryTriggers
