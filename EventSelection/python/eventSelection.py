@@ -22,37 +22,7 @@ def getSortKeyHNLtruth(item):
     return item[2]
 
 
-#
-# TODO: remove this function and clean up any remaining remnants
-# Outdated
-#
-def select3LightLeptons(chain, new_chain):
-
-    chain.leptons = [(chain._lPt[l], l) for l in xrange(chain._nLight) if isTightLightLepton(chain, l)]
-    if len(chain.leptons) != 3:  return False
-
-    ptAndIndex = sorted(chain.leptons, reverse=True, key = getSortKey) 
-    new_chain.l1 = ptAndIndex[0][1]
-    new_chain.l2 = ptAndIndex[1][1]
-    new_chain.l3 = ptAndIndex[2][1]
-    new_chain.l_pt = [ptAndIndex[i][0] for i in xrange(3)]
-
-    new_chain.isEEE = (chain._lFlavor[chain.l1] == 0 and chain._lFlavor[chain.l2] == 0 and chain._lFlavor[chain.l3] == 0)
-    new_chain.isEEMu = ((chain._lFlavor[chain.l1] == 0 and chain._lFlavor[chain.l2] == 0 and chain._lFlavor[chain.l3] == 1)
-                    or (chain._lFlavor[chain.l1] == 0 and chain._lFlavor[chain.l2] == 1 and chain._lFlavor[chain.l3] == 0)
-                    or (chain._lFlavor[chain.l1] == 1 and chain._lFlavor[chain.l2] == 0 and chain._lFlavor[chain.l3] == 0))
-    new_chain.isEMuMu = ((chain._lFlavor[chain.l1] == 0 and chain._lFlavor[chain.l2] == 1 and chain._lFlavor[chain.l3] == 1)
-                    or (chain._lFlavor[chain.l1] == 1 and chain._lFlavor[chain.l2] == 1 and chain._lFlavor[chain.l3] == 0)
-                    or (chain._lFlavor[chain.l1] == 1 and chain._lFlavor[chain.l2] == 0 and chain._lFlavor[chain.l3] == 1))
-    new_chain.isMuMuMu = (chain._lFlavor[chain.l1] == 1 and chain._lFlavor[chain.l2] == 1 and chain._lFlavor[chain.l3] == 1)
-    
-    if bVeto(chain, 'AN2017-014'):      return False
-
-    #if not passesPtCuts(chain):         return False
-    return True   
-
 from HNL.ObjectSelection.leptonSelector import isTightLepton
-
 #
 # Function to select 3 good leptons and save their variables in the chain
 # no_tau: turn on to only accept 3 light leptons
@@ -88,20 +58,13 @@ def select3Leptons(chain, new_chain, no_tau=False, light_algo = 'leptonMVAtZq', 
         new_chain.l_e[i] = chain._lE[ptAndIndex[i][1]]
         new_chain.l_charge[i] = chain._lCharge[ptAndIndex[i][1]]
         new_chain.l_flavor[i] = chain._lFlavor[ptAndIndex[i][1]]
-
-
-#    if not passesPtCuts(chain):         return False
-    
-   #if bVeto(chain, 'Deep'):      return False
-#    print 'passed bVeto'
-
     return True  
 
 def passBaseCuts(chain, new_chain, cutter):
     
     if not cutter.cut(not bVeto(chain, 'Deep'), 'b-veto'):              return False
     if not cutter.cut(abs(new_chain.M3l-90) > 15, 'M3l_Z_veto'):        return False 
-    if not cutter.cut(Zveto(chain, new_chain), 'M2l_OS_Z_veto'):        return False
+    if not cutter.cut(passesZcuts(chain, new_chain), 'M2l_OS_Z_veto'):        return False
     return True
 
 from HNL.ObjectSelection.leptonSelector import isGoodGenLepton
@@ -140,45 +103,64 @@ def select3GenLeptons(chain, new_chain):
  
 
 from HNL.ObjectSelection.jetSelector import isGoodJet, isBJet
-def bVeto(chain, algo):
+def bVeto(chain, algo, uncleaned = False):
     for jet in xrange(chain._nJets):
-        if not isGoodJet(chain, jet): continue
+        if not isGoodJet(chain, jet, uncleaned): continue
         if isBJet(chain, jet, algo, 'loose'): return True    
     return False
 
-def Zveto(chain, new_chain):
+def passesZcuts(chain, new_chain, same_flavor=False):
     for fl in xrange(2):
         l1Vec = getFourVec(new_chain.l_pt[fl], new_chain.l_eta[fl], new_chain.l_phi[fl], new_chain.l_e[fl])
         for sl in xrange(1, 3):
             if fl == sl: continue
             if new_chain.l_charge[fl] == new_chain.l_charge[sl]: continue
+            if same_flavor and new_chain.l_flavor[fl] != new_chain.l_flavor[sl]: continue 
             l2Vec = getFourVec(new_chain.l_pt[sl], new_chain.l_eta[sl], new_chain.l_phi[sl], new_chain.l_e[sl])
             if abs((l1Vec + l2Vec).M() - 90) < 15: return False
     return True
 
-def passesPtCuts(chain):
-    
+#TODO: include taus?
+from HNL.ObjectSelection.leptonSelector import isFOLightLepton
+def fourthFOVeto(chain, selection='cutbased'):
+    for lepton in xrange(chain._nLight):
+        if lepton in [chain.l1, chain.l2, chain.l3]: continue
+        if isFOLightLepton(chain, lepton, selection): return True
+    return False
+
+from HNL.EventSelection.eventCategorization import CATEGORY_FROM_NAME
+def passesPtCutsAN2017014(chain):
     if chain.l_pt[l1] < 15: return False
     if chain.l_pt[l2] < 10: return False
     if chain._lFlavor[chain.l3] == 1 and chain.l_pt[l3] < 5:      return False    
     if chain._lFlavor[chain.l3] == 0 and chain.l_pt[l3] < 10:      return False    
 
-    #TODO: Update 
-    if chain.isEEE:
-        if (chain.l_pt[l1] > 19 and chain.l_pt[l2] > 15) or chain.l_pt[l1] > 30:  return True
-
-    if chain.isEEMu:
-        if chain._lFlavor[chain.l3] == 0 and chain.l_pt[l3] < 15:  return (chain.l_pt[l1] > 23)
-        if chain._lFlavor[chain.l3] == 1 and chain.l_pt[l3] < 8:   return (chain.l_pt[l1] > 25 and chain.l_pt[l2] > 15)
-        if chain._lFlavor[chain.l3] == 1 and chain.l_pt[l3] > 8:   return (chain.l_pt[l1] > 23 or chain.l_pt[l2] > 15)
-
-    if chain.isEMuMu:
-        if chain._lFlavor[chain.l3] == 1 and chain.l_pt[l3] < 9:  return (chain.l_pt[l1] > 23)
+    if chain.category == CATEGORY_FROM_NAME['EEE']:
+        return (chain.l_pt[l1] > 19 and chain.l_pt[l2] > 15) or chain.l_pt[l1] > 30
+    elif chain.category == CATEGORY_FROM_NAME['SS-EEMu'] or chain.category == CATEGORY_FROM_NAME['SS-EEMu']:
+        if chain.l_flavor[l3] == 0 and chain.l_pt[l3] < 15:
+            return chain.l_pt[l1] > 23
+        elif chain.l_flavor[l3] == 1:
+            if chain.l_pt[l3] < 8:
+                return chain.l_pt[l1] > 25 and chain.l_pt[l2] > 15
+            else:
+                return chain.l_pt[l1] > 23 or chain.l_pt[l2] > 15
+    elif chain.category == CATEGORY_FROM_NAME['SS-EMuMu'] or chain.category == CATEGORY_FROM_NAME['OS-EMuMu']:
+        if chain.l_flavor[l3] == 1 and chain.l_pt[l3] < 9:
+            return chain.l_pt[l1] > 23
 
     return True
 
-from HNL.EventSelection.eventCategorization import returnCategoryPtCuts 
+def threeSameSignVeto(chain):
+    return chain.l_charge[l1] == chain.l_charge[l2] and chain.l_charge[l2] == chain.l_charge[l3]
 
+def passBaseCutsAN2017014(chain, new_chain, cutter):
+   
+    if not cutter.cut(passesPtCutsAN2017014(chain), 'pt_cuts'):         return False 
+    if not cutter.cut(not bVeto(chain, 'AN2017-014', uncleaned=True), 'b-veto'):              return False
+    if not cutter.cut(not threeSameSignVeto(chain), 'three_same_sign_veto'):                    return False
+    if not cutter.cut(not fourthFOVeto(chain), '4th_l_veto'):   return False
+    return True
 
 def passedCustomPtCuts(chain, cuts):
     multiple_cut_collections = isinstance(cuts[0], (tuple,))   #cuts should always be an array of cuts for the three leptons, so no error expected
@@ -191,43 +173,6 @@ def passedCustomPtCuts(chain, cuts):
             if chain.l_pt[i] < c: return False
         return True
 
-def passedPtCutsByCategory(chain, cat):
-    cuts_collection = returnCategoryPtCuts(cat)
-    passed = [passedCustomPtCuts(chain, cut) for cut in cuts_collection]
-    return any(passed)
-
-#    if cat[0] == 1 or cat[0] == 2:
-#        if chain.l_flavor[2] == 0 and chain.l_pt[2] < 23:       return False
-#        elif chain.l_flavor[2] == 1 and chain.l_pt[2] < 22:       return False    
-#        elif chain.l_flavor[2] == 2 and (chain.l_pt[0] < 32 or chain.l_pt[0] < 32): return False
-#    elif cat[0] == 3:
-#        if chain.l_flavor[1] == 0 and chain.l_flavor[2] == 0:
-#            if chain.l_pt[1] < 23 or chain.l_pt[2] < 12: return False
-#        elif chain.l_flavor[1] == 1 and chain.l_flavor[2] == 0:
-#            if chain.l_pt[1] < 23 or chain.l_pt[2] < 8: return False
-#        elif chain.l_flavor[1] == 1 and chain.l_flavor[2] == 1:
-#            if chain.l_pt[1] < 17 or chain.l_pt[2] < 8: return False
-#        elif chain.l_flavor[1] == 0 and chain.l_flavor[2] == 1:
-#            if chain.l_pt[2] < 8: return False
-#    elif cat[0] == 4:
-#        if chain.l_flavor[0] == 0 and chain.l_flavor[2] == 0:
-#            if chain.l_pt[0] < 24 or chain.l_pt[2] < 20: return False
-#        elif chain.l_flavor[0] == 1 and chain.l_flavor[2] == 0:
-#            if chain.l_pt[0] < 22: return False
-#        elif chain.l_flavor[0] == 1 and chain.l_flavor[2] == 1:
-#            if chain.l_pt[0] < 17 or chain.l_pt[2] < 8: return False
-#        elif chain.l_flavor[0] == 0 and chain.l_flavor[2] == 1:
-#            if chain.l_pt[0] < 23 or chain.l_pt[2] < 12: return False
-#    else:
-#        return True
- 
-def passedCategory(chain, cat_name):
-    
-    if cat_name == 'eee' and not chain.isEEE: return False
-    if cat_name == 'eemu' and not chain.isEEMu: return False
-    if cat_name == 'emumu' and not chain.isEMuMu: return False
-    if cat_name == 'mumumu' and not chain.isMuMuMu: return False
-    return True
 
 from HNL.Tools.helpers import getFourVec, deltaPhi
 def calculateKinematicVariables(chain, new_chain, is_reco_level = True):
@@ -256,18 +201,20 @@ def calculateKinematicVariables(chain, new_chain, is_reco_level = True):
     new_chain.index_other = [item for item in [new_chain.l1, new_chain.l2, new_chain.l3] if item not in os][0]   
 
     #TODO: Seems like there must be a better way to do this
-#    if is_reco_level:    
-#        new_chain.mtOther = np.sqrt(2*chain._met*chain._lPt[new_chain.index_other]*(1-np.cos(deltaPhi(chain._lPhi[new_chain.index_other], chain._metPhi))))
-#        
-#        #ptCone
-#        for l in xrange(chain._nLight):
-#            new_chain.pt_cone[l] = chain._lPt[l]*(1+max(0., chain._miniIso[l]-0.4)) #TODO: is this the correct definition?
-#
-#    else:
-#        new_chain.mtOther = np.sqrt(2*chain._gen_met*chain._gen_lPt[new_chain.index_other]*(1-np.cos(deltaPhi(chain._gen_lPhi[new_chain.index_other], chain._gen_metPhi))))
-#        #ptCone
-#        for l in xrange(chain._nLight):
-#            new_chain.pt_cone[l] = chain._lPt[l] #TODO: is this the correct definition?
+    if is_reco_level:    
+        new_chain.mtOther = np.sqrt(2*chain._met*chain._lPt[new_chain.index_other]*(1-np.cos(deltaPhi(chain._lPhi[new_chain.index_other], chain._metPhi))))
+        
+        #ptCone
+        new_chain.pt_cone = []
+        for l in xrange(chain._nLight):
+            new_chain.pt_cone.append(chain._lPt[l]*(1+max(0., chain._miniIso[l]-0.4))) #TODO: is this the correct definition?
+
+    else:
+        new_chain.mtOther = np.sqrt(2*chain._gen_met*chain._gen_lPt[new_chain.index_other]*(1-np.cos(deltaPhi(chain._gen_lPhi[new_chain.index_other], chain._gen_metPhi))))
+        #ptCone
+        new_chain.pt_cone = []
+        for l in xrange(chain._nLight):
+            new_chain.pt_cone.append(chain._lPt[l]) #TODO: is this the correct definition?
    
     #calculate #jets and #bjets
     njets = 0
@@ -282,14 +229,26 @@ def calculateKinematicVariables(chain, new_chain, is_reco_level = True):
         
     return
 
+def containsOSSF(chain):
+    for first_lepton in [l1, l2]:
+        for second_lepton in [l2, l3]:
+            if first_lepton == second_lepton: continue
+            if chain.l_flavor[first_lepton] != chain.l_flavor[second_lepton]: continue
+            if chain.l_charge[first_lepton] == chain.l_charge[second_lepton]: return True  
+    return False
+
 def lowMassCuts(chain, new_chain, cutter):
     calculateKinematicVariables(chain, new_chain)
-    if not cutter.cut(new_chain._met < 75, 'MET'):         return False
-    if not cutter.cut(new_chain.m3l < 80, 'm3l<80'):          return False
-    if not cutter.cut(new_chain.l_pt[l1] < 55, 'l1pt<55'):        return False
+    if not cutter.cut(new_chain.l_pt[l1] < 55, 'l1pt<55'):      return False
+    if not cutter.cut(new_chain.M3l < 80, 'm3l<80'):            return False
+    if not cutter.cut(chain._met < 75, 'MET'):                  return False
     return True 
      
-def highMassCuts(chain, new_chain):
+def highMassCuts(chain, new_chain, cutter):
     calculateKinematicVariables(chain, new_chain)
     if not cutter.cut(new_chain.l_pt[l1] > 55, 'l1pt>55'):        return False
+    if not cutter.cut(new_chain.l_pt[l2] > 15, 'l2pt>15'):        return False
+    if not cutter.cut(new_chain.l_pt[l3] > 10, 'l3pt>10'):        return False
+    if not cutter.cut(passesZcuts(chain, new_chain, same_flavor=True), 'M2l_OSSF_Z_veto'):        return False
+    if not cutter.cut(abs(new_chain.M3l-90) > 15, 'M3l_Z_veto'):        return False 
     return True 

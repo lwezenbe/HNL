@@ -7,6 +7,8 @@
 # Is also used to check how many events on a generator level pass certain pt cuts
 #
 
+#TODO: THis code still uses the old categorization, this needs to be updated as well here
+
 import numpy as np
 
 #
@@ -22,12 +24,12 @@ argParser.add_argument('--isTest',   action='store_true', default=False,  help='
 argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 argParser.add_argument('--oldANcuts',   action='store_true', default=False,  help='do not launch subjobs, only show them')
+argParser.add_argument('--massRegion',   action='store', default=None,  help='apply the cuts of high or low mass regions', choices=['high', 'low'])
 argParser.add_argument('--FOcut',   action='store_true', default=False,  help='Perform baseline FO cut')
-argParser.add_argument('--onlyHadronic',   action='store_true', default=False,  help='Only allow hadronic final states')
 argParser.add_argument('--divideByCategory',   action='store_true', default=False,  help='Look at the efficiency per event category')
 argParser.add_argument('--genLevel',   action='store_true', default=False,  help='Check how many events pass cuts on gen level')
-argParser.add_argument('--triggerTest',   action='store_true', default=False,  help='Check pt cuts separately instead of or-ing them')
-argParser.add_argument('--compareTriggerCuts',   action='store_true', default=False,  help='Store signals for different cuts cumulatively')
+argParser.add_argument('--compareTriggerCuts', action='store', default=None,  help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', choices=['single', 'cumulative', 'full'])
+
 args = argParser.parse_args()
 
 
@@ -36,7 +38,7 @@ args = argParser.parse_args()
 #
 if args.isTest: 
     args.isChild = True
-    args.sample = 'HNLtau-80'
+    args.sample = 'HNL2l-200'
     args.subJob = '0'
     args.year = '2016'
 
@@ -69,14 +71,9 @@ sample = getSampleFromList(sample_list, args.sample)
 chain = sample.initTree()
 
 subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
-output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], sample.output)
-if args.divideByCategory:
-    output_name += '/divideByCategory'
-    if args.triggerTest: 
-        output_name += '/triggerTest'
-    if args.compareTriggerCuts:
-        output_name += '/compareTriggerCuts'
-        
+category_split_str = 'allCategories' if not args.divideByCategory else 'divideByCategory'
+trigger_str = args.compareTriggerCuts if args.compareTriggerCuts is not None else 'regularRun'
+output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], category_split_str, trigger_str, sample.output)
 
 if args.isChild:
     output_name += '/tmp_'+sample.output
@@ -100,35 +97,42 @@ mass_range = getMassRange(list_location)
 #
 var = {'HNLmass': (lambda c : c.HNLmass,        np.array(mass_range),   ('m_{N} [GeV]', 'Events'))}
 
-from HNL.EventSelection.eventCategorization import EventCategory, categoryName, subcategoryName
+from HNL.EventSelection.oldEventCategorization import EventCategory, categoryName, subcategoryName
 ec = EventCategory(chain)
 
 from HNL.Tools.efficiency import Efficiency
-from HNL.EventSelection.eventCategorization import returnCategoryPtCuts
+from HNL.EventSelection.oldEventCategorization import returnCategoryPtCuts
+
+efficiency = {}
+
 if not args.divideByCategory:
-    efficiency = Efficiency('efficiency', var['HNLmass'][0], var['HNLmass'][2], output_name, var['HNLmass'][1])
+    efficiency['noCategories'] = {}
 else:
-    efficiency = {}
-    if not args.triggerTest:
-        if not args.compareTriggerCuts:
-            for cat in ec.categories:
-                efficiency[cat] = Efficiency('efficiency_'+str(cat[0])+'_'+str(cat[1]), var['HNLmass'][0], var['HNLmass'][2], output_name, var['HNLmass'][1])        
-        else:
-            for cat in ec.categories:
-                efficiency[cat] = {}
-                for dink in returnCategoryPtCuts(cat):
-                    efficiency[cat][dink] = Efficiency('efficiency_'+str(cat[0])+'_'+str(cat[1])+'_l1_'+str(dink[0])+'_l2_'+str(dink[1])+'_l3_'+str(dink[2]), var['HNLmass'][0], var['HNLmass'][2], output_name, var['HNLmass'][1])        
-    else:
-        for cat in ec.categories:
-            efficiency[cat] = {}
-            for dink in returnCategoryPtCuts(cat):
-                efficiency[cat][dink] = Efficiency('efficiency_'+str(cat[0])+'_'+str(cat[1])+'_l1_'+str(dink[0])+'_l2_'+str(dink[1])+'_l3_'+str(dink[2]), var['HNLmass'][0], var['HNLmass'][2], output_name, var['HNLmass'][1])        
+    for c in ec.categories:
+        efficiency[c] = {}
+
+if args.compareTriggerCuts is None:
+    for k in efficiency.keys():
+        efficiency[k]['regularRun'] = Efficiency('efficiency_'+str(k), var['HNLmass'][0], var['HNLmass'][2], output_name, var['HNLmass'][1])
+elif args.compareTriggerCuts == 'full':
+    if not args.divideByCategory:
+        print "Inconsistent input: This mode is to be used together with divideByCategory. Exiting"
+        exit(0)
+    for k in efficiency.keys():
+        efficiency[k]['full'] = Efficiency('efficiency_'+str(k), var['HNLmass'][0], var['HNLmass'][2], output_name, var['HNLmass'][1])
+else: #'single' or 'cumulative'
+    if not args.divideByCategory:
+        print "Inconsistent input: This mode is to be used together with divideByCategory. Exiting"
+        exit(0)
+    for c in ec.categories:
+        for ptcuts in returnCategoryPtCuts(c):
+            efficiency[c][ptcuts] = Efficiency('efficiency_'+str(c)+'_l1_'+str(ptcuts[0])+'_l2_'+str(ptcuts[1])+'_l3_'+str(ptcuts[2]), var['HNLmass'][0], var['HNLmass'][2], output_name, var['HNLmass'][1])
 
 #
 # Set event range
 #
 if args.isTest:
-    event_range = xrange(50)
+    event_range = xrange(2000)
 else:
     event_range = sample.getEventRange(args.subJob)    
 
@@ -136,12 +140,31 @@ chain.HNLmass = float(sample.name.rsplit('-', 1)[1])
 chain.year = int(args.year)
 
 #
+# Get luminosity weight
+#
+from HNL.Weights.lumiweight import LumiWeight
+lw = LumiWeight(sample, list_location)
+
+#
+# Import and create cutter to provide cut flow
+#
+from HNL.EventSelection.cutter import Cutter
+cutter = Cutter(chain = chain)
+
+#
 # Loop over all events
 #
 from HNL.Tools.helpers import progress
-from HNL.EventSelection.eventSelection import select3Leptons, select3LightLeptons, select3GenLeptons, lowMassCuts, passedPtCutsByCategory, passedCustomPtCuts
+from HNL.EventSelection.eventSelection import select3Leptons, select3GenLeptons, lowMassCuts, highMassCuts, passedCustomPtCuts
 from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
 from HNL.ObjectSelection.leptonSelector import isFOLepton
+
+def passedPtCutsByCategory(chain, cat):
+    cuts_collection = returnCategoryPtCuts(cat)
+    passed = [passedCustomPtCuts(chain, cut) for cut in cuts_collection]
+    return any(passed)
+
+
 for entry in event_range:
     
     chain.GetEntry(entry)
@@ -154,58 +177,64 @@ for entry in event_range:
         slm.saveNewOrder()
 
     true_cat = ec.returnCategory()
-    if true_cat[0] == 2:        true_cat = (1, true_cat[1])         #Temporary to have OS and SS tau in 1 category
 
     if args.FOcut:
         tmp = [l for l in xrange(chain._nL) if isFOLepton(chain, l)]
         if len(tmp) < 3: continue   
    
-    if args.oldANcuts:
-        passed = select3LightLeptons(chain, chain)
-    elif not args.genLevel:
-        passed = select3Leptons(chain, chain)
-    elif args.triggerTest:
-        passed = False
-    elif args.compareTriggerCuts:
-        passed = False
+    if not args.genLevel:
+        if args.oldANcuts:
+            passed = False
+            if select3Leptons(chain, chain, no_tau=True, light_algo='cutbased', cutter = cutter):
+                if args.massRegion == 'low' and lowMassCuts(chain, chain, cutter):
+                    passed = True
+                elif args.massRegion == 'high' and highMassCuts(chain, chain, cutter):
+                    passed = True
+        else:
+            passed = select3Leptons(chain, chain, cutter = cutter)
     else:
-        #implement custom cuts here
-        passed = passedPtCutsByCategory(chain, true_cat)
+        passed = True
 
-    #if args.onlyHadronic and ec.returnCategory()[0] > 3: passed = False
 
-#    if not lowMassCuts:         continue
-    weight = chain._weight
+    weight = lw.getLumiWeight()
     if args.divideByCategory:
         if not args.genLevel and true_cat != ec.returnCategory(): passed = False
-        if args.triggerTest:
+
+        if args.compareTriggerCuts is None:
+            efficiency[true_cat]['regularRun'].fill(chain, weight, passed)   
+        elif args.compareTriggerCuts == 'single':
             for cuts in efficiency[true_cat].keys():
                 passed = passedCustomPtCuts(chain, cuts)
                 efficiency[true_cat][cuts].fill(chain, weight, passed)   
-        else:
-            if not args.compareTriggerCuts:
-                efficiency[true_cat].fill(chain, weight, passed)   
-            else:
-                for i, cuts in enumerate(returnCategoryPtCuts(true_cat)):
-                    passed = passedCustomPtCuts(chain, returnCategoryPtCuts(true_cat)[:i+1])
-                    efficiency[true_cat][cuts].fill(chain, weight, passedCustomPtCuts(chain, returnCategoryPtCuts(true_cat)[:i+1]))
-                
+        elif args.compareTriggerCuts == 'cumulative':
+            for i, cuts in enumerate(returnCategoryPtCuts(true_cat)):
+                passed = passedCustomPtCuts(chain, returnCategoryPtCuts(true_cat)[:i+1])
+                efficiency[true_cat][cuts].fill(chain, weight, passed) 
+        elif args.compareTriggerCuts == 'full':
+            passed = passedCustomPtCuts(chain, returnCategoryPtCuts(true_cat))
+            efficiency[true_cat]['full'].fill(chain, weight, passed)                
     else:
-        efficiency.fill(chain, weight, passed)   
+        efficiency['noCategories']['regularRun'].fill(chain, weight, passed)   
         
 if args.isTest: exit(0)
 
 #
 # Save all histograms
 #
-if args.divideByCategory:
-    for i, cat in enumerate(ec.categories):
-        if not args.triggerTest and not args.compareTriggerCuts:
-            if i == 0:       efficiency[cat].write()
-            else:            efficiency[cat].write(append=True)
-        else: 
-            for j, cuts in enumerate(efficiency[cat].keys()):
-                if i == 0 and j == 0:       efficiency[cat][cuts].write(subdirs=['efficiency_'+str(cat[0])+'_'+str(cat[1]), 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])])
-                else:                       efficiency[cat][cuts].write(append=True, subdirs=['efficiency_'+str(cat[0])+'_'+str(cat[1]), 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])])
-else:
-    efficiency.write()
+for i, c_key in enumerate(efficiency.keys()):
+    for j, t_key in enumerate(efficiency[c_key].keys()):
+        if i == 0 and j == 0:       efficiency[c_key][t_key].write(subdirs=['efficiency_'+str(c_key), 'l1_'+str(t_key[0])+'_l2_'+str(t_key[1])+'_l3_'+str(t_key[2])])
+        else:                       efficiency[c_key][t_key].write(append=True, subdirs=['efficiency_'+str(c_key), 'l1_'+str(t_key[0])+'_l2_'+str(t_key[1])+'_l3_'+str(t_key[2])])
+        
+
+# if args.divideByCategory:
+#     for i, c in enumerate(ec.categories):
+#         if not args.triggerTest and not args.compareTriggerCuts:
+#             if i == 0:       efficiency[cat].write()
+#             else:            efficiency[cat].write(append=True)
+#         else: 
+#             for j, cuts in enumerate(efficiency[cat].keys()):
+#                 if i == 0 and j == 0:       efficiency[cat][cuts].write(subdirs=['efficiency_'+str(cat[0])+'_'+str(cat[1]), 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])])
+#                 else:                       efficiency[cat][cuts].write(append=True, subdirs=['efficiency_'+str(cat[0])+'_'+str(cat[1]), 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])])
+# else:
+#     efficiency.write()

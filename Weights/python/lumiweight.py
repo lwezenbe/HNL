@@ -12,7 +12,7 @@ class LumiWeight:
             self.total_hcount += self.sample.getHist('hCounter', path_name).GetSumOfWeights()
 
     def getLumiWeight(self):
-        self.lumi_weight = sample.chain._weight*(self.sample.xsec*LUMINOSITY_MAP[sample.chain.year])/self.total_hcount
+        self.lumi_weight = self.sample.chain._weight*(self.sample.xsec*LUMINOSITY_MAP[self.sample.chain.year])/self.total_hcount
         return self.lumi_weight 
 
 if __name__ == '__main__':

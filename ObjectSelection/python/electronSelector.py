@@ -69,7 +69,7 @@ def isLooseElectronCutBased(chain, index):
     if not isCleanFromMuons(chain, index):      return False
     if abs(chain._dxy[index]) >= 0.05:          return False
     if abs(chain._dz[index]) >= 0.1:            return False
-    if chain._relIso[index] >= 0.6:                    return False
+    if chain._relIso[index] >= 0.6:             return False
     if not chain._lElectronPassConvVeto[index]: return False
     if chain._lElectronMissingHits[index] > 1:  return False
     return True

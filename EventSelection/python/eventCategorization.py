@@ -24,43 +24,64 @@ l3 = 2
 # 2: ele
 # 3: mu
 
-#
-# SuperCategories dont look at specific leptons like l1 matched to whatever, but in general how many tau, how many e, how many mu?
-#
+CATEGORY_NAMES = {1: 'SS-TauTauEle', 
+                    2: 'OS-TauTauEle', 
+                    3: 'SS-TauTauMu', 
+                    4: 'OS-TauTauMu', 
+                    5: 'SS-EleTauEle', 
+                    6: 'OS-TauEleEle', 
+                    7: 'SS-MuTauMu', 
+                    8: 'OS-TauMuMu', 
+                    9: 'EleTauMu', 
+                    10: 'MuTauEle', 
+                    11: 'EEE', 
+                    12: 'MuMuMu', 
+                    13: 'SS-EEMu', 
+                    14: 'OS-EEMu', 
+                    15: 'SS-EMuMu',
+                    16: 'OS-EMuMu'}
 
-SUPER_CATEGORY_NAMES = {1: 'TauTauEle', 2: 'TauTauMu', 3 : 'TauEleEle', 4: 'TauEleMu', 5: 'TauMuMu', 6: 'EEE', 7: 'MuMuMu', 8: 'EEMu', 9: 'EMuMu'}
-CATEGORY_NAMES = {1: 'SSTau', 2: 'OSTau', 3: 'SingleTau+OS-l', 4: 'SingleTau+SS-l', 5: 'eee', 6: 'mumumu', 7: 'eemu', 8: 'emumu'}
-CATEGORY_SUBCATEGORY_LINK = {1: 'DoubleTau', 2: 'DoubleTau', 3: 'SingleTau', 4: 'SingleTau', 5: 'NoTau', 6: 'NoTau', 7: 'NoTau', 8: 'NoTau', 9: 'SingleTau'}
-SUBCATEGORY_NAMES = {'DoubleTau' : {1: 'e', 2: 'mu', 3: 'tau'},
-                    'SingleTau' : {1: 'ee', 2: 'emu', 3:'mue', 4:'mumu'}, 
-                    'NoTau':    {1: 'All'}}
+CATEGORY_FROM_NAME = {'SS-TauTauEle' : 1, 
+                    'OS-TauTauEle' : 2, 
+                    'SS-TauTauMu' : 3, 
+                    'OS-TauTauMu': 4, 
+                    'SS-EleTauEle': 5, 
+                    'OS-TauEleEle':6, 
+                    'SS-MuTauMu':7, 
+                    'OS-TauMuMu':8, 
+                    'EleTauMu':9, 
+                    'MuTauEle':10, 
+                    'EEE':11, 
+                    'MuMuMu':12, 
+                    'SS-EEMu':13, 
+                    'OS-EEMu':14, 
+                    'SS-EMuMu':15,
+                    'OS-EMuMu':16}
 
-CATEGORIES = []
-SUPER_CATEGORIES = [c for c in xrange(1, len(SUPER_CATEGORY_NAMES)+2, 1)]
-#len(names) + 2 to add an extra bin where everything else goes
-for i in xrange(1, len(CATEGORY_NAMES) + 2, 1):
-    for j in xrange(1, len(SUBCATEGORY_NAMES[CATEGORY_SUBCATEGORY_LINK[i]]) + 2, 1):
-        CATEGORIES.append((i, j))
+SUPER_CATEGORIES = {'Ditau': [1, 2, 3, 4], 'SingleTau' : [5, 6, 7, 8, 9], 'NoTau' : [11, 12, 13, 14, 15, 16]}
+
+CATEGORIES_SIGNALTRUTH = [c for c in xrange(1, len(CATEGORY_NAMES)+2, 1)]
+CATEGORIES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16]
 
 
 CATEGORY_TEX_NAMES = {
-                       # 1: '#tau^{#pm}#tau^{#pm}',
-                       # 2: '#tau^{#pm}#tau^{#mp}',
-                        1: '#tau#tau',
-                        2: '#tau#tau',
-                        3: '#tau',
-                        4: '#tau',
-                        5: 'eee',
-                        6: '#mu#mu#mu',
-                        7: 'ee#mu',
-                        8: 'e#mu#mu'
+                        1: '#tau^{#pm}#tau^{#pm}e',
+                        2: '#tau^{#pm}#tau^{#mp}e',
+                        3: '#tau^{#pm}#tau^{#pm}mu',
+                        4: '#tau^{#pm}#tau^{#mp}mu',
+                        5: 'e^{#pm}e^{#pm}#tau',
+                        6: 'e^{#pm}e^{#mp}#tau',
+                        7: '#mu^{#pm}#mu^{#pm}#tau',
+                        8: '#mu^{#pm}#mu^{#mp}#tau',
+                        9: 'e#tau#mu',
+                        10: '#mu#tau e',
+                        11: 'eee',
+                        12: '#mu#mu#mu',
+                        13: 'e^{#pm}e^{#pm}#mu',
+                        14: 'e^{#pm}e^{#mp}#mu',
+                        15: 'e#mu^{#pm}#mu^{#pm}',
+                        16: 'e#mu^{#pm}#mu^{#mp}'
 }
-
-SUBCATEGORY_TEX_NAMES = {'DoubleTau' : {1: 'e', 2: '#mu', 3: '#tau'},
-                    'SingleTau' : {1: 'ee', 2: 'e#mu', 3:'#mu e', 4:'#mu#mu'},
-                    'NoTau' : {1: ''}}
-
-SUPERCATEGORY_TEX_NAMES = {1: '#tau#tau e', 2: '#tau#tau#mu', 3 : '#tau e e', 4: '#tau e #mu', 5: '#tau#mu#mu', 6: 'eee', 7: '#mu#mu#mu', 8: 'ee#mu', 9: 'e#mu#mu', 10: 'other'}
 
 class EventCategory():
     
@@ -69,11 +90,9 @@ class EventCategory():
         self.n_mu = 0
         self.n_ele = 0
         self.n_tau = 0
-        self.super_category = None
         self.category = None
-        self.sub_category = None
         self.categories = CATEGORIES
-        self.super_categories = SUPER_CATEGORIES
+        self.categories_signaltruth = CATEGORIES_SIGNALTRUTH
 
     def flavorContent(self):
 
@@ -87,271 +106,209 @@ class EventCategory():
             if f == 0:  self.n_ele += 1
             elif f == 1:  self.n_mu += 1
             elif f == 2:  self.n_tau += 1
+        
+        if self.n_l != 3: 
+            print "flavorContent in eventCategorization is seeing inconsistent entries"
+            exit(0)
 
-    def determineCategory(self):
+    def hasOSSFpair(self, flavor):
+        for first_lepton in [l1, l2]:
+            if self.chain.l_flavor[first_lepton] != flavor: continue
+            for second_lepton in [l2, l3]:
+                if self.chain.l_flavor[second_lepton] != flavor: continue
+                if first_lepton == second_lepton: continue
+
+                if self.chain.l_charge[first_lepton] != self.chain.l_charge[second_lepton]: return True
+
+        return False
+
+    def hasSSSFpair(self, flavor):
+        for first_lepton in [l1, l2]:
+            if self.chain.l_flavor[first_lepton] != flavor: continue
+            for second_lepton in [l2, l3]:
+                if self.chain.l_flavor[second_lepton] != flavor: continue
+                if first_lepton == second_lepton: continue
+
+                if self.chain.l_charge[first_lepton] == self.chain.l_charge[second_lepton]: return True
+
+        return False
+            
+
+    def returnCategory(self):
         self.flavorContent()
-        #Category 1 and 2:
-        if self.n_tau >= 2: 
-            if self.chain.l_flavor[l1] == 2 and self.chain.l_flavor[l2] == 2:
-                #Category 1:
-                if self.chain.l_charge[l1] == self.chain.l_charge[l2]:
-                    self.category = 1
-                #Category 2:
-                else:
-                    self.category = 2
+        if self.n_tau > 2:
+            self.category = len(CATEGORY_NAMES) + 1
+
+        #Category 1, 2, 3, 4:
+        if self.n_tau == 2: 
+            if self.n_ele == 1:
+                if self.hasSSSFpair(2): return 1
+                elif self.hasOSSFpair(2): return 2
+            elif self.n_mu == 1:
+                if self.hasSSSFpair(2): return 3
+                elif self.hasOSSFpair(2): return 4
             else:
                 self.category = len(CATEGORY_NAMES) + 1
 
-        #Category 3 and 4:
+        #Category 5, 6, 7, 8, 9:
         elif self.n_tau == 1:
-            #Category 3
-            if self.chain.l_flavor[l1] == 2:
-                if self.chain.l_charge[l2] != self.chain.l_charge[l3]:
-                    self.category = 3
-                else:
-                    self.category = len(CATEGORY_NAMES) + 1
-                
-            #Category 4:
-            elif self.chain.l_flavor[l2] == 2:
-                if self.chain.l_charge[l1] == self.chain.l_charge[l3]:
-                    self.category = 4
-                else:
-                    self.category = len(CATEGORY_NAMES) + 1 
-            
+            if self.n_ele == 2:
+                if self.hasSSSFpair(0): return 5
+                elif self.hasOSSFpair(0): return 6
+            elif self.n_mu == 2:
+                if self.hasSSSFpair(1): return 7
+                elif self.hasOSSFpair(1): return 8
+            elif self.n_mu == 1 and self.n_ele == 1:
+                return 9
             else:
                 self.category = len(CATEGORY_NAMES) + 1
 
         #All light lepton categories
         elif self.n_tau == 0:
             if self.n_ele == 3:
-                self.category = 5
+                self.category = 11
             elif self.n_ele == 0 and self.n_mu == 3:
-                self.category = 6
+                self.category = 12
             elif self.n_ele == 2 and self.n_mu == 1:
-                self.category = 7
+                if self.hasSSSFpair(0): return 13
+                elif self.hasOSSFpair(0): return 14            
             elif self.n_ele == 1 and self.n_mu == 2:
-                self.category = 8
+                if self.hasSSSFpair(1): return 15
+                elif self.hasOSSFpair(1): return 16
+            else:
+                self.category = len(CATEGORY_NAMES) + 1
 
         else:
             self.category = len(CATEGORY_NAMES) + 1
+        
+        return self.category
 
-
-    def determineSubCategory(self):
-        #Double Tau
-        if CATEGORY_SUBCATEGORY_LINK[self.category] == 'DoubleTau':
-            if self.chain.l_flavor[l3] == 0:
-                self.sub_category = 1 
-            elif self.chain.l_flavor[l3] == 1:
-                self.sub_category = 2 
-            elif self.chain.l_flavor[l3] == 2:
-                self.sub_category = 3 
-        elif CATEGORY_SUBCATEGORY_LINK[self.category] == 'SingleTau':
-            flavs = [self.chain.l_flavor[i] for i in xrange(3) if self.chain.l_flavor[i] != 2]
-            if len(flavs) != 2: 
-                self.sub_category = len(SUBCATEGORY_NAMES[CATEGORY_SUBCATEGORY_LINK[self.category]]) + 1
-            elif flavs[0] == 0 and flavs[1] == 0:
-                self.sub_category = 1
-            elif flavs[0] == 0 and flavs[1] == 1:
-                self.sub_category = 2
-            elif flavs[0] == 1 and flavs[1] == 0:
-                self.sub_category = 3
-            elif flavs[0] == 1 and flavs[1] == 1:
-                self.sub_category = 4
-        elif CATEGORY_SUBCATEGORY_LINK[self.category] == 'SingleTau':
-            self.sub_category = 1
-        else:
-#            print "No subcategory assigned"
-            self.sub_category = len(SUBCATEGORY_NAMES[CATEGORY_SUBCATEGORY_LINK[self.category]]) + 1
- 
-    def returnCategory(self):
-        self.determineCategory()
-        self.determineSubCategory()
-        return self.category, self.sub_category
-    
-    def returnSuperCategory(self):
+    def returnSignalTruthCategory(self):
         self.flavorContent()
-        if self.n_l != 3:
-            self.super_category = len(SUPER_CATEGORY_NAMES) + 1 
-        elif self.n_tau == 2:
-            if self.n_ele == 1: self.super_category = 1
-            elif self.n_mu == 1: self.super_category = 2
-        elif self.n_tau == 1:
-            if self.n_ele == 2: self.super_category = 3
-            elif self.n_ele == 1 and self.n_mu == 1:    self.super_category = 4
-            elif self.n_mu ==2: self.super_category = 5
+        #Category 1 and 2:
+        if self.chain.l_flavor[l1] == 2 and self.chain.l_flavor[l2] == 2:
+            if chain.l_flavor[l3] == 0:
+                #Category 1:
+                if self.chain.l_charge[l1] == self.chain.l_charge[l2]:
+                    self.category = 1
+                #Category 2:
+                else:
+                    self.category = 2
+            elif chain.l_flavor[l3] == 1:
+                #Category 1:
+                if self.chain.l_charge[l1] == self.chain.l_charge[l2]:
+                    self.category = 3
+                #Category 2:
+                else:
+                    self.category = 4
+            else:
+                self.category = len(CATEGORY_NAMES) + 1
+
+        elif self.chain.l_flavor[l1] == 2:
+            if self.chain.l_charge[l2] != self.chain.l_charge[l3]:
+                if self.chain.l_flavor[l2] == 0 and self.chain.l_flavor[l3] == 0: self.category = 6 
+                elif self.chain.l_flavor[l2] == 1 and self.chain.l_flavor[l3] == 1: self.category = 8
+                else:
+                    self.category = len(CATEGORY_NAMES) + 1 
+        elif self.chain.l_flavor[l2] == 2:
+            if self.chain.l_charge[l2] == self.chain.l_charge[l3]:
+                if self.chain.l_flavor[l1] == 0 and self.chain.l_flavor[l3] == 0: self.category = 5 
+                elif self.chain.l_flavor[l1] == 1 and self.chain.l_flavor[l3] == 1: self.category = 7
+                else:
+                    self.category = len(CATEGORY_NAMES) + 1  
+            if self.chain.l_flavor[l1] == 0 and self.chain.l_flavor[l3] == 1: self.category = 9 
+            if self.chain.l_flavor[l1] == 1 and self.chain.l_flavor[l3] == 0: self.category = 10 
+
+        #All light lepton categories
         elif self.n_tau == 0:
-            if self.n_ele == 3: self.super_category = 6
-            elif self.n_mu == 3: self.super_category = 7
-            if self.n_ele == 2 and self.n_mu == 1: self.super_category = 8
-            if self.n_ele == 1 and self.n_mu == 2: self.super_category = 9
-        else:
-            self.super_category = len(SUPER_CATEGORY_NAMES) + 1
+            if self.n_ele == 3:
+                self.category = 11
+            elif self.n_ele == 0 and self.n_mu == 3:
+                self.category = 12
+            elif self.n_ele == 2 and self.n_mu == 1:
+                if self.hasSSSFpair(0): return 13
+                elif self.hasOSSFpair(0): return 14            
+            elif self.n_ele == 1 and self.n_mu == 2:
+                if self.hasSSSFpair(1): return 15
+                elif self.hasOSSFpair(1): return 16
+            else:
+                self.category = len(CATEGORY_NAMES) + 1
 
-        return self.super_category
-
-#
-# Function mainly used for designing pt cuts, to be able to load the correct cuts to draw text on canvas
-# When all cuts are designed, this will no longer be used, or adapted
-#
-def returnCategoryPtCuts(cat):
-    if cat[0] == 1 or cat[0] == 2:
-        if cat[1] == 1:       
-            return [(None, None, 27), (20, None, 24), (35, 35, None)]    
-        elif cat[1] == 2:       
-            return [(None, None, 22), (20, None, 19), (35, 35, None)]    
-        elif cat[1] == 3: 
-            return [(35, 35, None)]
         else:
-            return [(None, None, None)]
-    elif cat[0] == 3:
-        if cat[1] == 1:
-            return [(None, 23, 12), (20, 24, None), (None, 27, None)]
-        elif cat[1] == 2:
-            return [(None, None, 22), (20, 24, None), (None, 23, 12), (None, 27, None)]
-        elif cat[1] == 3:
-            return [(None, 23, 8), (None, 22, None), (20, 19, None), (20, None, 24), (None, None, 27)]
-        elif cat[1] == 4:
-            return [(None, 17, 8), (20, 19, None), (None, 22, None)]
-        else:
-            return [(None, None, None)]
-    elif cat[0] == 4:
-        if cat[1] == 1:
-            return [(24, 20, None), (23, None, 12), (27, None, None)]
-        elif cat[1] == 2:
-            return [(23, None, 12), (24, 20, None), (27, None, None), (None, None, 22)]
-        elif cat[1] == 3:
-            return [(22, None, None), (23, None, 8), (19, 20, None), (None, None, 27)]
-        elif cat[1] == 4:
-            return [(17, None, 8), (20, None, 10), (22, None, None), (19, 20, None), (None, None, 22)]
-        else:
-            return [(None, None, None)]
-    
-    return [(None, None, None)]
+            self.category = len(CATEGORY_NAMES) + 1
+        return self.category
         
 #
 # Function to return triggers interesting to the specific category
 # Used to study triggers
 #
+def returnCategoryTriggers(chain, cat):
+    if cat == 1 or cat == 2:
+        return [chain._HLT_Ele27_WPTight_Gsf, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20, chain._HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg]
+    elif cat == 3 or cat == 4:        
+        return [chain._HLT_IsoMu24, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20, chain._HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg]
+    elif cat == 5 or cat == 6:
+        return [chain._HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ, chain._HLT_Ele27_WPTight_Gsf, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20]
+    elif cat == 9:
+        return [chain._HLT_IsoMu24, chain._HLT_Ele27_WPTight_Gsf, chain._HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ, chain._HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20]
+    elif cat == 7 or cat == 8:
+        return [chain._HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ, chain._HLT_IsoMu24, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20]
+    return [None]
 
 def returnCategoryTriggers(chain, cat):
-    if cat[0] == 1 or cat[0] == 2:
-        if cat[1] == 1:       
-            return [chain._HLT_Ele27_WPTight_Gsf, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20, chain._HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg]    
-        elif cat[1] == 2:       
-            return [chain._HLT_IsoMu22_eta2p1, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20, chain._HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg]    
-        elif cat[1] == 3: 
-            return [chain._HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg]
-        else:
-            return [None]
-    elif cat[0] == 3:
-        if cat[1] == 1:
-            return [chain._HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ, chain._HLT_Ele27_WPTight_Gsf, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20]
-        elif cat[1] == 2:
-            return [chain._HLT_IsoMu22_eta2p1, chain._HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ, chain._HLT_Ele27_WPTight_Gsf, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20]
-        elif cat[1] == 3:
-            return [chain._HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL, chain._HLT_IsoMu22_eta2p1, chain._HLT_Ele27_WPTight_Gsf, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20]
-        elif cat[1] == 4:
-            return [chain._HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ, chain._HLT_IsoMu22_eta2p1, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20]
-        else:
-            return [None]
-    elif cat[0] == 4:
-        if cat[1] == 1:
-            return [chain._HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ, chain._HLT_Ele27_WPTight_Gsf, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20]
-        elif cat[1] == 2:
-            return [chain._HLT_IsoMu22_eta2p1, chain._HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ, chain._HLT_Ele27_WPTight_Gsf, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20]
-        elif cat[1] == 3:
-            return [chain._HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL, chain._HLT_IsoMu22_eta2p1, chain._HLT_Ele27_WPTight_Gsf, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20]
-        elif cat[1] == 4:
-            return [chain._HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ, chain._HLT_IsoMu22_eta2p1, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20]
-        else:
-            return [None]
-    
-    return [None]
-    
-def returnCategoryTriggerNames(cat):
-    if cat[0] == 1 or cat[0] == 2:
-        if cat[1] == 1:
-            return ['HLT_Ele27_WPTight_Gsf', 'HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20', 'HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg']
-        elif cat[1] == 2:
-            return ['HLT_IsoMu22_eta2p1', 'HLT_IsoMu19_eta2p1_LooseIsoPFTau20', 'HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg']
-        elif cat[1] == 3:
-            return ['HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg']
-        else:
-            return [None]
-    elif cat[0] == 3:
-        if cat[1] == 1:
-            return ['HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ', 'HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20', 'HLT_Ele27_WPTight_Gsf']
-        elif cat[1] == 2:
-            return ['HLT_IsoMu22_eta2p1', 'HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20', 'HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ', 'HLT_Ele27_WPTight_Gsf']
-        elif cat[1] == 3:
-            return ['HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL', 'HLT_IsoMu22_eta2p1', 'HLT_IsoMu19_eta2p1_LooseIsoPFTau20', 'HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20', 'HLT_Ele27_WPTight_Gsf']
-        elif cat[1] == 4:
-            return ['HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ', 'HLT_IsoMu19_eta2p1_LooseIsoPFTau20', 'HLT_IsoMu22_eta2p1']
-        else:
-            return [None]
-    elif cat[0] == 4:
-        if cat[1] == 1:
-            return ['HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ', 'HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20', 'HLT_Ele27_WPTight_Gsf']
-        elif cat[1] == 2:
-            return ['HLT_IsoMu22_eta2p1', 'HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20', 'HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ', 'HLT_Ele27_WPTight_Gsf']
-        elif cat[1] == 3:
-            return ['HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL', 'HLT_IsoMu22_eta2p1', 'HLT_IsoMu19_eta2p1_LooseIsoPFTau20', 'HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20', 'HLT_Ele27_WPTight_Gsf']
-        elif cat[1] == 4:
-            return ['HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ', 'HLT_IsoMu19_eta2p1_LooseIsoPFTau20', 'HLT_IsoMu22_eta2p1']
-        else:
-            return [None]
-
-    return [None]
-
-def returnSuperCategoryTriggers(chain, cat):
-    if cat == 1:
+    if cat == 1 or cat == 2:
         return [chain._HLT_Ele27_WPTight_Gsf, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20, chain._HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg]
-    elif cat == 2:        
+    elif cat == 3 or cat == 4:        
         return [chain._HLT_IsoMu24, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20, chain._HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg]
-    elif cat == 3:
+    elif cat == 5 or cat == 6:
         return [chain._HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ, chain._HLT_Ele27_WPTight_Gsf, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20]
-    elif cat == 4:
+    elif cat == 9:
         return [chain._HLT_IsoMu24, chain._HLT_Ele27_WPTight_Gsf, chain._HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ, chain._HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20]
-    elif cat == 5:
+    elif cat == 7 or cat == 8:
         return [chain._HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ, chain._HLT_IsoMu24, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20]
     return [None]
 
 def returnSuperCategoryTriggerNames(cat):
-    if cat == 1:
+    if cat == 1 or cat == 2:
         return ['HLT_Ele27_WPTight_Gsf', 'HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20', 'HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg']
-    elif cat == 2:        
+    elif cat == 3 or cat == 4:        
         return ['HLT_IsoMu24', 'HLT_IsoMu19_eta2p1_LooseIsoPFTau20', 'HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg']
-    elif cat == 3:
+    elif cat == 5 or cat == 6:
         return ['HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ', 'HLT_Ele27_WPTight_Gsf', 'HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20']
-    elif cat == 4:
+    elif cat == 9:
         return ['HLT_IsoMu24', 'HLT_Ele27_WPTight_Gsf',  'HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ', 'HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL', 'HLT_IsoMu19_eta2p1_LooseIsoPFTau20', 'HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20']
-    elif cat == 5:
+    elif cat == 7 or cat == 8:
         return ['HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ', 'HLT_IsoMu24', 'HLT_IsoMu19_eta2p1_LooseIsoPFTau20']
     return [None]
 
-def categoryName(c):
-    if c[0] > len(CATEGORY_NAMES):      return 'all'
-    return CATEGORY_NAMES[c[0]]
+def returnCategoryPtCuts(cat):
 
-def subcategoryName(c):
-    if c[1] > len(SUBCATEGORY_NAMES[CATEGORY_SUBCATEGORY_LINK[c[0]]]): return 'all'
-    return SUBCATEGORY_NAMES[CATEGORY_SUBCATEGORY_LINK[c[0]]][c[1]]
+    if cat == 1 or cat == 2:       
+        return [(None, None, 27), (20, None, 24), (35, 35, None)]    
+    elif cat == 3 or cat == 4:       
+        return [(None, None, 22), (20, None, 19), (35, 35, None)]    
+    elif cat == 5:
+        return [(23, None, 12), (24, 20, None), (27, None, None)]
+    elif cat == 6:
+        return [(None, 23, 12), (20, 24, None), (None, 27, None)]
+    elif cat == 7:
+        return [(22, None, None), (17, None, 8), (19, 20, None)]
+    elif cat == 8:
+        return [(None, 22, None), (None, 17, 8), (20, 19, None)]
+    elif cat == 9:
+        return [(27, None, None), (None, None, 22), (23, None, 12), (24, 20, None)]
+    elif cat == 10:
+        return [(22, None, None), (None, None, 27), (12, None, 23), (None, 20, 19)]
+    
+    return [(None, None, None)]
+
+def categoryName(c):
+    if c > len(CATEGORY_NAMES):      return 'all'
+    return CATEGORY_NAMES[c]
 
 def returnTexName(c, super_cat = False):
-    if isinstance(c, list) or isinstance(c, tuple):
-        if c[0] > len(CATEGORY_TEX_NAMES):
-            name = 'All'
-        else:
-            name = CATEGORY_TEX_NAMES[c[0]]
-        
-        if c[1] <= len(SUBCATEGORY_TEX_NAMES[CATEGORY_SUBCATEGORY_LINK[c[0]]]):
-            name += SUBCATEGORY_TEX_NAMES[CATEGORY_SUBCATEGORY_LINK[c[0]]][c[1]]
-    else:
-        if c > len(SUPERCATEGORY_TEX_NAMES):
-            name = 'All'
-        else:
-            name = SUPERCATEGORY_TEX_NAMES[c]
+    if c > len(CATEGORY_NAMES):      return 'all'
+    return CATEGORY_TEX_NAMES[c]
 
-    return name 
  
             

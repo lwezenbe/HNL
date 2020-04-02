@@ -9,16 +9,15 @@ from HNL.EventSelection.eventCategorization import returnTexName, returnCategory
 #
 import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
+argParser.add_argument('--FOcut',   action='store_true', default=False,  help='Perform baseline FO cut')
 argParser.add_argument('--divideByCategory',   action='store_true', default=False,  help='Look at the efficiency per event category')
-argParser.add_argument('--triggerTest',   action='store_true', default=False,  help='Use special format with multiple test cuts in loading efficiencies')
-argParser.add_argument('--cumulativeCuts',   action='store_true', default=False,  help='Use special format with multiple test cuts in loading efficiencies')
+argParser.add_argument('--compareTriggerCuts', action='store', default=None,  help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', choices=['single', 'cumulative', 'full'])
 args = argParser.parse_args()
 
 #Merges subfiles if needed
-input_name  = os.getcwd()+'/data/calcSignalEfficiency/*'
-if args.divideByCategory:       input_name += '/divideByCategory'
-if args.triggerTest:                 input_name += '/triggerTest'
-if args.cumulativeCuts:                 input_name += '/compareTriggerCuts'
+category_split_str = 'allCategories' if not args.divideByCategory else 'divideByCategory'
+trigger_str = args.compareTriggerCuts if args.compareTriggerCuts is not None else 'regularRun'
+input_name  = os.path.join(os.getcwd(), 'data', 'calcSignalEfficiency', category_split_str, trigger_str, '*')
 merge_files = glob.glob(input_name)
 for mf in merge_files:
     if "Results" in mf: continue

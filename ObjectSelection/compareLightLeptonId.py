@@ -102,8 +102,8 @@ for algo in algos:
     list_of_roc.append(ROC(algo, var_roc, 'tmp', tot_name, algo_bin))   #TODO: Currently the way the var is implemented in Histogram class makes this a little cumbersome, change this
 
     #Efficiency histograms for variables
-    var_hist = {'pt': [lambda c : c.pt_l, np.arange(0., 200., 10.),  ('p_T^{#tau}(offline) [GeV]' , 'Efficiency')],
-                'eta': [lambda c : c.eta_l, np.arange(-2.5, 2.5, 0.5), ('#eta^{#tau}(offline) [GeV]' , 'Efficiency')]}
+    var_hist = {'pt': [lambda c : c.pt_l, np.arange(0., 210., 10.),  ('p_T^{#tau}(offline) [GeV]' , 'Efficiency')],
+                'eta': [lambda c : c.eta_l, np.arange(-2.5, 3., 0.5), ('#eta^{#tau}(offline) [GeV]' , 'Efficiency')]}
     
     list_of_var_hist['efficiency'][algo] = {}
     list_of_var_hist['fakerate'][algo] = {}

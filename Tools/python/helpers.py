@@ -160,8 +160,9 @@ def getSubDir(path):
 #
 # Read the content of a root file
 #
-def rootFileContent(d, basepath="/", getNested=False):
+def rootFileContent(d, basepath="/", getNested=False, starting_dir=None):
     #"Generator function to recurse into a ROOT file/dir and yield (path, obj) pairs"
+    if starting_dir is not None: d = d.Get(starting_dir)
     for key in d.GetListOfKeys():
         kname = key.GetName()
         if key.IsFolder() and getNested:
@@ -170,7 +171,10 @@ def rootFileContent(d, basepath="/", getNested=False):
             for i in rootFileContent(d.Get(kname), basepath+kname+"/", getNested):
                 yield i
         else:
-            yield basepath+kname, d.Get(kname)
+            if starting_dir is not None:
+                yield basepath+starting_dir+'/'+kname, d.Get(kname)
+            else:
+                yield basepath+kname, d.Get(kname)
 
 #
 # Get Maximum or Minimum value including the error on the bin. I could not find any

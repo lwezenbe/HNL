@@ -111,10 +111,8 @@ def getOutputName(var):
 #                (channel, dim) 
 from HNL.EventSelection.eventCategorization import EventCategory
 ec = EventCategory(chain)
-#categories = ec.categories
-#category_triggers = lambda chain, category : returnCategoryTriggers(chain, category)
-categories = ec.super_categories
-category_triggers = lambda chain, category : returnSuperCategoryTriggers(chain, category)
+categories = ec.categories
+category_triggers = lambda chain, category : returnCategoryTriggers(chain, category)
 
 #First if keeps old code for reference
 # if args.ignoreCategories:
@@ -157,7 +155,6 @@ if chain.is_signal:
 
 from HNL.Tools.efficiency import Efficiency
 from HNL.EventSelection.eventCategorization import returnCategoryTriggers
-from HNL.EventSelection.eventCategorization import returnSuperCategoryTriggers
 from HNL.Triggers.triggerSelection import applyCustomTriggers
 eff = {}
 for c in categories:
@@ -208,7 +205,7 @@ for entry in event_range:
     if args.separateTriggers is None:    
         passed = passTriggers(chain) 
     
-    true_cat = ec.returnCategory() if args.detailedCategories else ec.returnSuperCategory()
+    true_cat = ec.returnCategory()
 
     for c in categories:
         for v in {k for k in var.keys()}: 

@@ -50,7 +50,12 @@ class Plot:
         self.b_tex_names = self.tex_names[len(self.s):] 
         self.name = name if name else self.s[0].GetTitle()
         self.b = makeList(getHistList(bkgr_hist)) if bkgr_hist is not None else None
-        self.total_b = None
+        if self.b is not None:
+            self.total_b = self.b[0].Clone('total_bkgr')
+            for i, h in enumerate(self.b):
+                if i != 0:      self.total_b.Add(h)
+        else:
+            self.total_b = None
         self.hs = None  #hist stack for bkgr
         self.x_name = x_name if x_name is not None else self.s[0].GetXaxis().GetTitle()
         self.y_name = y_name if y_name is not None else self.s[0].GetYaxis().GetTitle()
@@ -62,12 +67,22 @@ class Plot:
         self.draw_ratio = draw_ratio
         self.draw_significance = draw_significance
 
-    def setAxisLog(self, is2D = False, bkgr_stacked = True):
-        to_check_max = [j for j in self.s]
+
+
+    def setAxisLog(self, is2D = False, stacked = True):
         to_check_min = [j for j in self.s]
+        if stacked and self.b is None: 
+            self.total_s = self.s[0].Clone('total_sig')
+            for i, h in enumerate(self.s):
+                if i != 0:      self.total_s.Add(h)
+            to_check_max = [self.total_s]
+        else:
+            to_check_max = [j for j in self.s]
         if self.b is not None:  
             to_check_min += self.b
-            to_check_max += [self.total_b]
+            if stacked: to_check_max += [self.total_b]
+            else: to_check_max += self.b
+
         if not is2D:
             overall_max = pt.getOverallMaximum(to_check_max)
             overall_min = pt.getOverallMinimum(to_check_min, zero_not_allowed=True)
@@ -79,11 +94,11 @@ class Plot:
             #self.canvas.SetLogy()
             self.plotpad.SetLogy()
             if not is2D:
-                if bkgr_stacked:
-                    # self.hs.SetMinimum(0.3*overall_min)
-                    # self.hs.SetMaximum(30*overall_max)
-                    self.hs.SetMinimum(0.3*pt.getOverallMinimum([self.s[0]], zero_not_allowed=True))
+                if stacked:
+                    self.hs.SetMinimum(0.3*overall_min)
                     self.hs.SetMaximum(30*overall_max)
+                    # self.hs.SetMinimum(0.3*pt.getOverallMinimum([self.s[0]], zero_not_allowed=True))
+                    # self.hs.SetMaximum(30*overall_max)
                 elif self.b is None: 
                     self.s[0].SetMinimum(0.3*overall_min)
                     self.s[0].SetMaximum(30*overall_max)
@@ -91,10 +106,22 @@ class Plot:
                     self.b[0].SetMinimum(0.3*overall_min)
                     self.b[0].SetMaximum(30*overall_max)
         else:
-            if not is2D: 
-                if self.b is None: self.s[0].GetYaxis().SetRangeUser(0.7*overall_min, 1.5*overall_max)
-                elif not bkgr_stacked: self.b[0].GetYaxis().SetRangeUser(0.7*overall_min, 1.5*overall_max)
-                else: self.hs.GetHistogram().GetYaxis().SetRangeUser(0.7*overall_min, 1.5*overall_max)
+            if not is2D:
+                if self.b is None: 
+                    if not stacked: self.s[0].GetYaxis().SetRangeUser(0.7*overall_min, 1.5*overall_max)
+                    else: 
+                        self.hs.SetMinimum(0.7*overall_min)
+                        self.hs.SetMaximum(1.5*overall_max)
+                        # self.hs.GetHistogram().GetYaxis().SetRangeUser(0.7*overall_min, 1.5*overall_max)
+                else: 
+                    if not stacked: self.b[0].GetYaxis().SetRangeUser(0.7*overall_min, 1.5*overall_max)
+                    else: 
+                        self.hs.SetMinimum(0.7*overall_min)
+                        self.hs.SetMaximum(1.5*overall_max)
+                        # self.hs.GetHistogram().GetYaxis().SetRangeUser(0.7*overall_min, 1.5*overall_max)
+
+
+        self.plotpad.Update()
 
     from HNL.Plotting.plottingTools import allBinsSameWidth
     def getYName(self):   
@@ -365,11 +392,12 @@ class Plot:
         for h, n in zip(self.s, self.tex_names):
             if signal_style:
                 h.SetLineColor(ps.getHNLColor(n))
-                h.SetLineWidth(3)
+                h.SetLineWidth(4)
             else:
+                # print self.s.index(h)
                 h.SetLineColor(ps.getHistDidar(self.s.index(h)))
                 #h.SetLineColor(ps.getLineColor(self.s.index(h)))
-                h.SetLineWidth(3)
+                h.SetLineWidth(4)
                 h.SetMarkerStyle(8)
                 h.SetMarkerColor(ps.getHistDidar(self.s.index(h)))
                 #h.SetMarkerColor(ps.getLineColor(self.s.index(h)))
@@ -389,7 +417,7 @@ class Plot:
             else:
                 h.Draw(draw_option+'Same')
            # h.Draw("EHistSAME")
-        self.setAxisLog(bkgr_stacked = self.b is not None and 'Stack' in bkgr_draw_option)
+        self.setAxisLog(stacked = self.b is not None and 'Stack' in bkgr_draw_option)
 
         #Option only used in plotVariables.py
         if draw_cuts is not None:
@@ -575,8 +603,10 @@ class Plot:
                     hist.Draw('BSame')
             self.s[0].SetTitle(title)
 
-        self.setAxisLog(bkgr_stacked = not parallel_bins)
-        
+        self.setAxisLog(stacked = not parallel_bins)
+        if not parallel_bins:
+            self.hs.Draw('B')                                                        
+            
         #Create Legend
         legend = ROOT.TLegend(0.7, .8, .95, .9)
         legend.SetNColumns(2)

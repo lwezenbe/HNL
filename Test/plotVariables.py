@@ -30,7 +30,8 @@ argParser.add_argument('--bkgrOnly',   action='store_true', default=False,  help
 argParser.add_argument('--lowMass',   action='store_true', default=False,  help='Only run or plot samples with mass below or equal to 80 GeV')
 argParser.add_argument('--highMass',   action='store_true', default=False,  help='Only run or plot samples with mass below or equal to 80 GeV')
 argParser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
-argParser.add_argument('--coupling', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', ''])
+argParser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l', ''])
+argParser.add_argument('--coupling', action='store', default=0.01, type=float,  help='How large is the coupling?' , choices=['tau', 'e', 'mu', '2l', ''])
 #argParser.add_argument('--triggerTest', type=str, default=None,  help='Some settings to perform pt cuts for triggers')
 args = argParser.parse_args()
 
@@ -64,13 +65,17 @@ else:
             'l1pt':      (lambda c : c.l_pt[l1],       np.arange(0., 300., 15.),       ('p_{T} (l1) [GeV]', 'Events')),
             'l2pt':      (lambda c : c.l_pt[l2],       np.arange(0., 300., 15.),       ('p_{T} (l2) [GeV]', 'Events')),
             'l3pt':      (lambda c : c.l_pt[l3],       np.arange(0., 300., 15.),       ('p_{T} (l3) [GeV]', 'Events')),
+            'l1eta':      (lambda c : c.l_eta[l1],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l1)', 'Events')),
+            'l2eta':      (lambda c : c.l_eta[l2],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l2)', 'Events')),
+            'l3eta':      (lambda c : c.l_eta[l3],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l3)', 'Events')),
             'NJet':      (lambda c : c.njets,       np.arange(0., 12., 1.),       ('#Jets', 'Events')),
             'NbJet':      (lambda c : c.nbjets,       np.arange(0., 12., 1.),       ('#B Jets', 'Events'))
         }
 
 import HNL.EventSelection.eventCategorization as cat
-#categories = cat.CATEGORIES
-categories = cat.SUPER_CATEGORIES
+categories = [c for c in cat.CATEGORIES]
+categories.append(len(cat.CATEGORIES)+2) #other
+print categories
 reco_or_gen_str = 'reco' if not args.genLevel else 'gen'
 
 from ROOT import TFile, TLorentzVector
@@ -93,7 +98,7 @@ if not args.makePlots:
     from HNL.Samples.sample import createSampleList
     gen_name = 'Gen' if args.genLevel else 'Reco'
     list_location = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/sampleList_'+str(args.year)+'_'+gen_name+'.conf')
-    #list_location = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/sampleList_'+str(args.year)+'_noskim.conf')
+    # list_location = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/sampleList_'+str(args.year)+'_noskim.conf')
     sample_list = createSampleList(list_location)
 
 
@@ -124,6 +129,9 @@ if not args.makePlots:
         #
         chain = sample.initTree(needhcount=False)
         sample_names.append(sample.name)
+
+        # from HNL.Weights.lumiweight import LumiWeight
+        # lw = LumiWeight(sample, list_location)
 
         is_signal = 'HNL' in sample.name
         signal_str = 'signal' if is_signal else 'bkgr'
@@ -159,7 +167,7 @@ if not args.makePlots:
         #
         from HNL.Tools.helpers import progress, makeDirIfNeeded
         from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
-        from HNL.EventSelection.eventSelection import select3Leptons, calculateKinematicVariables
+        from HNL.EventSelection.eventSelection import select3Leptons, select3GenLeptons, calculateKinematicVariables
         from HNL.EventSelection.eventCategorization import EventCategory
         ec = EventCategory(chain)
         for entry in event_range:
@@ -172,12 +180,13 @@ if not args.makePlots:
                 if not slm.saveNewOrder(): continue
                 calculateKinematicVariables(chain, chain, is_reco_level=False)
            
-            if not select3Leptons(chain, chain):    continue 
+            if not args.genLevel and not select3Leptons(chain, chain):    continue 
+            if args.genLevel and not select3GenLeptons(chain, chain):    continue 
             calculateKinematicVariables(chain, chain, is_reco_level=not args.genLevel)
 
-            chain.event_category, chain.event_subcategory = ec.returnCategory()
-            chain.event_supercategory = ec.returnSuperCategory()
-            if chain.event_category == 2:       chain.event_category = 1
+            chain.event_category = ec.returnCategory()
+
+            # chain.lumiweight = lw.getLumiWeight()
 
             #Add here any additional cuts
             l1Vec = TLorentzVector(chain.l_pt[0], chain.l_eta[0], chain.l_phi[0], chain.l_e[0])
@@ -190,12 +199,11 @@ if not args.makePlots:
             for v in var.keys():
                 #if chain.event_category < len(cat.CATEGORY_NAMES)+1 and chain.event_subcategory < len(cat.SUBCATEGORY_NAMES[cat.CATEGORY_SUBCATEGORY_LINK[chain.event_category]])+1: 
                     #list_of_hist[(chain.event_category, chain.event_subcategory)][v][signal_str][sample.name].fill(chain, chain.lumiweight)
-                if chain.event_supercategory < len(cat.SUPER_CATEGORY_NAMES)+1: 
-                    
-                    list_of_hist[chain.event_supercategory][v][signal_str][sample.name].fill(chain, chain.lumiweight)
+                if chain.event_category < len(cat.CATEGORY_NAMES)+1: 
+                    list_of_hist[chain.event_category][v][signal_str][sample.name].fill(chain, chain.lumiweight)
                     
                 #list_of_hist[(len(cat.CATEGORY_NAMES)+1, len(cat.SUBCATEGORY_NAMES[cat.CATEGORY_SUBCATEGORY_LINK[len(cat.CATEGORY_NAMES)+1]])+1)][v][signal_str][sample.name].fill(chain, chain.lumiweight)
-                list_of_hist[len(cat.SUPER_CATEGORY_NAMES)+1][v][signal_str][sample.name].fill(chain, chain.lumiweight)
+                list_of_hist[len(cat.CATEGORY_NAMES)+1][v][signal_str][sample.name].fill(chain, chain.lumiweight)
             #if chain.event_category == 1 and chain.event_subcategory == 3: 
             #    print list_of_hist[(chain.event_category, chain.event_subcategory)]['l1pt'][signal_str][sample.name].getHist().GetSumOfWeights()
             #    print len(cat.SUBCATEGORY_NAMES[cat.CATEGORY_SUBCATEGORY_LINK[chain.event_category]])                
@@ -232,10 +240,10 @@ else:
     
     # Collect signal file locations
     if args.genLevel and args.signalOnly:
-        signal_list = glob.glob(os.getcwd()+'/data/plotVariables/'+reco_or_gen_str+'/signal/signalOrdering/*'+args.coupling+'*')
+        signal_list = glob.glob(os.getcwd()+'/data/plotVariables/'+reco_or_gen_str+'/signal/signalOrdering/*'+args.flavor+'*')
         
     elif not args.bkgrOnly:
-        signal_list = glob.glob(os.getcwd()+'/data/plotVariables/'+reco_or_gen_str+'/signal/*'+args.coupling+'*')
+        signal_list = glob.glob(os.getcwd()+'/data/plotVariables/'+reco_or_gen_str+'/signal/*'+args.flavor+'*')
         for i, s in enumerate(signal_list):
             if 'signalOrdering' in s:
                 signal_list.pop(i)
@@ -283,7 +291,7 @@ from HNL.Plotting.plot import Plot
 from HNL.Plotting.plottingTools import extraTextFormat
 from HNL.Tools.helpers import makePathTimeStamped
 from HNL.Tools.efficiency import Efficiency
-from HNL.EventSelection.eventCategorization import returnCategoryPtCuts
+# from HNL.EventSelection.eventCategorization import returnCategoryPtCuts
 
 #
 # Set output directory, taking into account the different options
@@ -306,7 +314,8 @@ output_dir = makePathTimeStamped(output_dir)
 # Create plots for each category
 #
 for c in categories:
-    extra_text = [extraTextFormat(cat.returnTexName(c), xpos = 0.6, ypos = 0.75, textsize = None, align = 12)]  #Text to display event type in plot
+    extra_text = [extraTextFormat(cat.returnTexName(c), xpos = 0.33, ypos = 0.9, textsize = None, align = 12)]  #Text to display event type in plot
+    extra_text.append(extraTextFormat('V_{'+args.flavor+'N} = '+str(args.coupling)))  #Text to display event type in plot
 
     # Plots that displays chosen for chosen signal masses and backgrounds the distributions for the different variables
     # S and B in same canvas for each variable
@@ -326,42 +335,45 @@ for c in categories:
             signal_hist = list_of_hist[c][v]['signal'].values()
 
         # Create plot object (if signal and background are displayed, also show the ratio)
-        if not args.signalOnly:
+        # if not args.signalOnly:
             #p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, extra_text = extra_text, draw_ratio=True)
             #p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, str(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = False, extra_text = extra_text, draw_ratio=True)
-            p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, str(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, draw_ratio=True)
-        else:
+            # p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, str(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, draw_ratio=True)
+        # else:
             #p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, extra_text = extra_text)
-            p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, str(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, extra_text = extra_text)
+            # p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, str(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, extra_text = extra_text)
+        p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, str(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, extra_text = extra_text)
 
         # Draw
         #p.drawHist(output_dir = os.path.join(output_dir, cat.categoryName(c), cat.subcategoryName(c)), normalize_signal=False, signal_style=True, draw_option='EHist')
-        p.drawHist(output_dir = os.path.join(output_dir, str(c)), normalize_signal=False, signal_style=True, draw_option='EHist')
+        # p.drawHist(output_dir = os.path.join(output_dir, str(c)), normalize_signal=False, signal_style=True, draw_option='EHist')
+        p.drawHist(output_dir = os.path.join(output_dir, str(c)), normalize_signal=False, draw_option='EHist')
     
-    # If looking at signalOnly, also makes plots that compares the three lepton pt's for every mass point
-    if args.signalOnly:
+    #TODO: I broke this when changing the eventCategorization, fix this again
+    # # If looking at signalOnly, also makes plots that compares the three lepton pt's for every mass point
+    # if args.signalOnly:
 
-        all_cuts = returnCategoryPtCuts(c)
+    #     all_cuts = returnCategoryPtCuts(c)
         
-        for cuts in all_cuts:   
+    #     for cuts in all_cuts:   
  
-            # Load in efficiency to print on canvas if requested
-            if args.showCuts:
-                eff_file = os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/calcSignalEfficiency/HNLtau/divideByCategory/triggerTest/signalSelectionFull.root')
-                eff = Efficiency('efficiency_'+str(c[0])+'_'+str(c[1]) + '_l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2]), None, None, eff_file, subdirs=['efficiency_'+str(c[0])+'_'+str(c[1]), 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])])           
+    #         # Load in efficiency to print on canvas if requested
+    #         if args.showCuts:
+    #             eff_file = os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/calcSignalEfficiency/HNLtau/divideByCategory/triggerTest/signalSelectionFull.root')
+    #             eff = Efficiency('efficiency_'+str(c[0])+'_'+str(c[1]) + '_l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2]), None, None, eff_file, subdirs=['efficiency_'+str(c[0])+'_'+str(c[1]), 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])])           
  
-            # Loop over different signals and draw the pt
-            for n in list_of_hist[c][v]['signal'].keys():
-                h = [list_of_hist[c]['l1pt']['signal'][n], list_of_hist[c]['l2pt']['signal'][n], list_of_hist[c]['l3pt']['signal'][n]]
-                legend_names = ['l1', 'l2', 'l3']
+    #         # Loop over different signals and draw the pt
+    #         for n in list_of_hist[c][v]['signal'].keys():
+    #             h = [list_of_hist[c]['l1pt']['signal'][n], list_of_hist[c]['l2pt']['signal'][n], list_of_hist[c]['l3pt']['signal'][n]]
+    #             legend_names = ['l1', 'l2', 'l3']
                 
-                # Prepare to draw the pt cuts on the canvas if requested
-                if args.showCuts:
-                    draw_cuts = [cuts, eff.getEfficiency(inPercent=True).GetBinContent(eff.getEfficiency().FindBin(float(n.split('-')[1].split('M')[1])))]
-                else:
-                    draw_cuts = None
-                # Create plot object and draw
-                #p = Plot(h, legend_names, cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-pt-'+n, extra_text=extra_text)
-                p = Plot(h, legend_names, str(c)+'-pt-'+n, extra_text=extra_text)
-                #p.drawHist(output_dir = os.path.join(output_dir, cat.categoryName(c), cat.subcategoryName(c), 'pt', 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])), normalize_signal=False, draw_option='EHist', draw_cuts=draw_cuts)
-                p.drawHist(output_dir = os.path.join(output_dir, str(c), 'pt', 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])), normalize_signal=False, draw_option='EHist', draw_cuts=draw_cuts)
+    #             # Prepare to draw the pt cuts on the canvas if requested
+    #             if args.showCuts:
+    #                 draw_cuts = [cuts, eff.getEfficiency(inPercent=True).GetBinContent(eff.getEfficiency().FindBin(float(n.split('-')[1].split('M')[1])))]
+    #             else:
+    #                 draw_cuts = None
+    #             # Create plot object and draw
+    #             #p = Plot(h, legend_names, cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-pt-'+n, extra_text=extra_text)
+    #             p = Plot(h, legend_names, str(c)+'-pt-'+n, extra_text=extra_text)
+    #             #p.drawHist(output_dir = os.path.join(output_dir, cat.categoryName(c), cat.subcategoryName(c), 'pt', 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])), normalize_signal=False, draw_option='EHist', draw_cuts=draw_cuts)
+    #             p.drawHist(output_dir = os.path.join(output_dir, str(c), 'pt', 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])), normalize_signal=False, draw_option='EHist', draw_cuts=draw_cuts)

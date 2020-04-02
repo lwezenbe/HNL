@@ -70,12 +70,12 @@ def getHistColor(index):
     if index == 6:      return TColor.GetColor("#F4F1BB")
 
 def getHistDidar(index):        
-    if index == 0:      return ROOT.kBlack
-    if index == 1:      return ROOT.kRed
-    if index == 2:      return ROOT.kBlue
-    if index == 3:      return ROOT.kGreen
+    if index == 5:      return ROOT.kBlack
+    if index == 0:      return ROOT.kRed
+    if index == 1:      return ROOT.kBlue
+    if index == 2:      return ROOT.kGreen
     if index == 4:      return ROOT.kCyan
-    if index == 5:      return ROOT.kYellow
+    if index == 3:      return ROOT.kYellow
     if index == 6:      return ROOT.kMagenta
 
 def getHNLColor(name):

@@ -152,8 +152,6 @@ for entry in event_range:
     ec = EventCategory(new_vars)
     c, sc = ec.returnCategory()
     new_vars.event_category = c
-    new_vars.event_subcategory = sc
-    new_vars.event_supercategory = ec.returnSuperCategory()
 
     print 'calcing'
     calculateKinematicVariables(chain, new_vars, is_reco_level=not args.genSkim)

@@ -2,7 +2,7 @@ from HNL.Tools.ROC import ROC
 from HNL.Tools.mergeFiles import merge
 import os
 import glob
-from HNL.Tools.helpers import makePathTimeStamped
+from HNL.Tools.helpers import makePathTimeStamped, getObjFromFile
 
 #
 # Argument parser and logging
@@ -41,27 +41,31 @@ from HNL.Tools.efficiency import Efficiency
 from HNL.Tools.helpers import rootFileContent
 from ROOT import TFile
 var = ['pt', 'eta']
-inputFiles = {'efficiency' : glob.glob(os.getcwd()+'/data/compareLightLeptonId/'+args.signal+'/*efficiency*'), 'fakerate': glob.glob(os.getcwd()+'/data/compareLightLeptonId/'+args.bkgr+'/*fakerate*')}
+inputFiles = {'efficiency' : glob.glob(os.getcwd()+'/data/compareLightLeptonId/'+args.signal+'/efficiency-'+str(args.flavor)+'.root'), 'fakerate': glob.glob(os.getcwd()+'/data/compareLightLeptonId/'+args.bkgr+'/fakerate-'+str(args.flavor)+'.root')}
 for eff_name in ['efficiency', 'fakerate']:
     for f in inputFiles[eff_name]:
         print f
         rf = TFile(f)
         key_names = [k[0] for k in rootFileContent(rf)]
-        filtered_key_names = {fk.rsplit('-', 1)[0] for fk in key_names}
-        for fk in filtered_key_names:
+        filtered_key_names = {fk.rsplit('-', 1)[0].split('/')[-1] for fk in key_names}
+        list_of_eff = {}
+        for fk in filtered_key_names: #algo
+            list_of_eff[fk] = {}
             sample = f.split('/')[-2]
-            fk_name = fk.split('/')[1]
-            wp_list = []
-            for k in key_names:
-                print k
-                if not fk_name in k: continue
-                algo = k.rsplit('-', 1)[0]
-                wp = k.rsplit('-', 1)[-1]
-                wp_list.append(wp)
+            for k in [i.split('-', 1)[1] for i in key_names if fk in i]: #wps
+                list_of_eff[fk][k] = {}
                 for v in var:
-                    efficiency = Efficiency(eff_name+'_'+v, None, None, f, subdirs = [k, eff_name+'_'+v])
-                    p = Plot(efficiency.getEfficiency(), wp_list,  eff_name+'_'+args.flavor+'_'+v)
-                    p.drawHist(output_dir = os.getcwd()+'/data/Results/compareLightLeptonId/'+algo+'/var/'+sample, draw_option = 'Hist')
+                    list_of_eff[fk][k][v] = Efficiency(eff_name+'_'+v, None, None, f, subdirs = [fk+'-'+k, eff_name+'_'+v])
+                
+        for fk in filtered_key_names: #algo
+            for v in var:
+                bkgr_hist = getObjFromFile(f, fk+'-'+k+'/'+eff_name+'_'+v+'/'+eff_name+'_'+v+'_denom')
+                tmp_list = [list_of_eff[fk][i][v] for i in list_of_eff[fk].keys()]
+                scale_factor = 0.25 if v == 'pt' else 1.
+                bkgr_hist.Scale(scale_factor*tmp_list[0].getEfficiency().GetSumOfWeights()/bkgr_hist.GetSumOfWeights())
+                p = Plot([efficiency.getEfficiency() for efficiency in tmp_list], [i+' '+fk for i in list_of_eff[fk].keys()]+['lepton distribution'],  eff_name+'_'+args.flavor+'_'+v, bkgr_hist = bkgr_hist)
+                p.drawHist(output_dir = os.getcwd()+'/data/Results/compareLightLeptonId/'+fk+'/var/'+sample, draw_option = 'Hist')
+                
         
  
 #graph = roc_curve.return_graph()
