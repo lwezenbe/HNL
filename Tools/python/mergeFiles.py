@@ -15,14 +15,20 @@ def getListOfGroupID(path):
 
 def checkForMerge(paths):
     
-    for i, p in enumerate(paths):
-        if not 'tmp' in p:      paths.pop(i)
-    return paths 
+    # for i, p in enumerate(paths):
+    #     if not 'tmp' in p:      paths[i] = None
+    # return [p for p in paths if p is not None] 
+    return [p for p in paths if 'tmp' in p]
 
+#
+#   Function to do the actual merging
+#   Input path = path up to but not including the tmp folders
+#
 def merge(path):
     
     merge_paths = getSubDir(path)
     merge_paths = checkForMerge(merge_paths)
+
     if not merge_paths:
         return
 
