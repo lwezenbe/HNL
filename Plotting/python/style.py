@@ -31,6 +31,13 @@ def getStackColorTauPOG(index):
     if index == 3:      return TColor.GetColor("#4496c8")
     if index == 4:      return TColor.GetColor("#e5b7e5")
     if index == 5:      return TColor.GetColor("#ffcc66")
+    if index == 6:      return TColor.GetColor("#87F1FF")
+    if index == 7:      return TColor.GetColor("#AAFAC8")
+    if index == 8:      return TColor.GetColor("#6B717E")
+    if index == 9:      return TColor.GetColor("#360568")
+    if index == 10:      return TColor.GetColor("#F7C59F")
+    if index == 11:      return TColor.GetColor("#9F4A54")
+    if index == 12:      return TColor.GetColor("#51A3A3")
 
 def getStackColorTauPOGbyName(name):
     if 'triboson' in name:           return TColor.GetColor("#87F1FF")
@@ -77,6 +84,9 @@ def getHistDidar(index):
     if index == 4:      return ROOT.kCyan
     if index == 3:      return ROOT.kYellow
     if index == 6:      return ROOT.kMagenta
+    if index == 7:      return ROOT.kPink
+    if index == 8:      return ROOT.kOrange
+    if index == 9:      return ROOT.kAzure
 
 def getHNLColor(name):
     if '200' in name:   return TColor.GetColor("#9F4A54")

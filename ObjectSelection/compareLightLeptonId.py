@@ -92,14 +92,10 @@ list_of_var_hist = {'efficiency' : {}, 'fakerate' : {}}
 for algo in algos:
 
     algo_wp = algos[algo]
- 
-    algo_bin = np.arange(0., len(algo_wp)+1., 1)
-    var_roc = lambda c, i : c.var_roc[i]
-    
 
     tot_name = output_name+'/'+ sample.name + '_'+algo+'-ROC-'+str(args.flavor)+'_' + args.subJob+'.root'
     makeDirIfNeeded(tot_name)
-    list_of_roc.append(ROC(algo, var_roc, 'tmp', tot_name, algo_bin))   #TODO: Currently the way the var is implemented in Histogram class makes this a little cumbersome, change this
+    list_of_roc.append(ROC(algo, tot_name, working_points = algo_wp))
 
     #Efficiency histograms for variables
     var_hist = {'pt': [lambda c : c.pt_l, np.arange(0., 210., 10.),  ('p_T^{#tau}(offline) [GeV]' , 'Efficiency')],
@@ -122,8 +118,6 @@ if args.isTest:
 else:
     event_range = sample.getEventRange(int(args.subJob))
 
-chain.var_roc = np.arange(0.5, 1.5, 1)
-
 from HNL.Tools.helpers import progress
 from HNL.ObjectSelection.electronSelector import isBaseElectron
 from HNL.ObjectSelection.muonSelector import isBaseMuon
@@ -140,16 +134,19 @@ for entry in event_range:
         chain.pt_l = chain.l_pt[0]
         chain.eta_l = chain.l_eta[0]   
         matched_l = matchGenToReco(chain, chain.l1)
-        for i, algo in enumerate(full_list): 
+        for i, algo in enumerate(full_list):
+            passed_tot = []
             for index, wp in enumerate(getWP(algo)):
                 passed = False
                 if args.onlyReco: 
                     passed=matched_l is not None
                 else:
                     passed = matched_l is not None and isGeneralTau(chain, matched_l, algo[0], wp, algo[1], wp, algo[2], wp)
-                list_of_roc[i].fillEfficiency(chain, index, passed)
+                passed_tot.append(passed)
                 for v in list_of_var_hist['efficiency'][algo].keys():
                     list_of_var_hist['efficiency'][algo][v][wp].fill(chain, 1., passed)
+            list_of_roc[i].fillEfficiency(passed_tot)
+
 
 #        for lepton in xrange(chain._gen_nL):
 #            chain.pt_l = chain._gen_lPt[lepton]
@@ -180,20 +177,24 @@ for entry in event_range:
             for i, algo in enumerate(algos): 
                 # if algo[0] != 'none' and not isGeneralTau(chain, lepton, algo[0], 'none', 'againstElectron', 'none', 'againstMuon', 'none', needDMfinding=False): continue
 
-                if chain._lIsPrompt[lepton]: 
+                if chain._lIsPrompt[lepton]:
+                    passed_tot = []
                     for index, wp in enumerate(algos[algo]):
                         passed = isTightLightLepton(chain, lepton, algo)
-                        list_of_roc[i].fillEfficiency(chain, index, passed)
+                        passed_tot.append(passed)
                         for v in list_of_var_hist['efficiency'][algo].keys():
                             list_of_var_hist['efficiency'][algo][v][wp].fill(chain, 1., passed)
+                    list_of_roc[i].fillEfficiency(passed_tot)
+
 
                 else:
+                    passed_tot = []
                     for index, wp in enumerate(algos[algo]):
                         passed = isTightLightLepton(chain, lepton, algo)
-                        list_of_roc[i].fillMisid(chain, index, passed)
                         for v in list_of_var_hist['fakerate'][algo].keys():
                             list_of_var_hist['fakerate'][algo][v][wp].fill(chain, 1., passed)
-
+                        passed_tot.append(passed)
+                    list_of_roc[i].fillMisid(passed_tot)
 
 #
 # Write

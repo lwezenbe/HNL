@@ -8,21 +8,21 @@ from HNL.Tools.helpers import deltaR
 # After you select one particular algorithm to use, put correct string in default_algo var
 #
 #            algo, WP
-tau_id_WP = {('MVA2017v2', 'none') : lambda c : np.ones(c._nL, dtype=bool),  
+tau_id_WP = {('MVA2017v2', None) : lambda c : np.ones(c._nL, dtype=bool),  
             ('MVA2017v2', 'vloose') : lambda c : c._lPOGVeto,
             ('MVA2017v2', 'loose') : lambda c : c._lPOGLoose,
             ('MVA2017v2', 'medium') : lambda c : c._lPOGMedium,
             ('MVA2017v2', 'tight') : lambda c : c._lPOGTight,
             ('MVA2017v2', 'vtight') : lambda c : c._tauPOGVTight2017v2,
 
-            ('MVA2017v2New', 'none') : lambda c : np.ones(c._nL, dtype=bool),
+            ('MVA2017v2New', None) : lambda c : np.ones(c._nL, dtype=bool),
             ('MVA2017v2New', 'vloose') : lambda c : c._tauVLooseMvaNew2017v2,
             ('MVA2017v2New', 'loose') : lambda c : c._tauLooseMvaNew2017v2,
             ('MVA2017v2New', 'medium') : lambda c : c._tauMediumMvaNew2017v2,
             ('MVA2017v2New', 'tight') : lambda c : c._tauTightMvaNew2017v2,
             ('MVA2017v2New', 'vtight') : lambda c : c._tauVTightMvaNew2017v2,
 
-            ('deeptauVSjets', 'none') : lambda c : np.ones(c._nL, dtype=bool),
+            ('deeptauVSjets', None) : lambda c : np.ones(c._nL, dtype=bool),
             ('deeptauVSjets', 'vvvloose') : lambda c : c._tauVVVLooseDeepTauVsJets,
             ('deeptauVSjets', 'vvloose') : lambda c : c._tauVVLooseDeepTauVsJets,
             ('deeptauVSjets', 'vloose') : lambda c : c._tauVLooseDeepTauVsJets,
@@ -33,14 +33,14 @@ tau_id_WP = {('MVA2017v2', 'none') : lambda c : np.ones(c._nL, dtype=bool),
             ('deeptauVSjets', 'vvtight') : lambda c : c._tauVVTightDeepTauVsJets,
 
             #From here on very outdated WP, purely there for showing that the new ones are much better
-            ('MVA2015', 'none') : lambda c : np.ones(c._nL, dtype=bool),
+            ('MVA2015', None) : lambda c : np.ones(c._nL, dtype=bool),
             ('MVA2015', 'vloose') : lambda c : c._tauPOGVLoose2015,
             ('MVA2015', 'loose') : lambda c : c._tauPOGLoose2015,
             ('MVA2015', 'medium') : lambda c : c._tauPOGMedium2015,
             ('MVA2015', 'tight') : lambda c : c._tauPOGTight2015,
             ('MVA2015', 'vtight') : lambda c : c._tauPOGVTight2015,
             
-            ('MVA2015New', 'none') : lambda c : np.ones(c._nL, dtype=bool),
+            ('MVA2015New', None) : lambda c : np.ones(c._nL, dtype=bool),
             ('MVA2015New', 'vloose') : lambda c : c._tauVLooseMvaNew2015,
             ('MVA2015New', 'loose') : lambda c : c._tauLooseMvaNew2015,
             ('MVA2015New', 'medium') : lambda c : c._tauMediumMvaNew2015,
@@ -48,11 +48,11 @@ tau_id_WP = {('MVA2017v2', 'none') : lambda c : np.ones(c._nL, dtype=bool),
             ('MVA2015New', 'vtight') : lambda c : c._tauVTightMvaNew2015,
             }
 
-tau_eleDiscr_WP = {('againstElectron', 'none') : lambda c : np.ones(c._nL, dtype=bool),
+tau_eleDiscr_WP = {('againstElectron', None) : lambda c : np.ones(c._nL, dtype=bool),
                 ('againstElectron', 'loose') : lambda c : c._tauEleVetoLoose,
                 ('againstElectron', 'tight') : lambda c : c._tauEleVetoTight,
             
-            ('deeptauVSe', 'none') : lambda c : np.ones(c._nL, dtype=bool),
+            ('deeptauVSe', None) : lambda c : np.ones(c._nL, dtype=bool),
             ('deeptauVSe', 'vvvloose') : lambda c : c._tauVVVLooseDeepTauVsEle,
             ('deeptauVSe', 'vvloose') : lambda c : c._tauVVLooseDeepTauVsEle,
             ('deeptauVSe', 'vloose') : lambda c : c._tauVLooseDeepTauVsEle,
@@ -63,10 +63,11 @@ tau_eleDiscr_WP = {('againstElectron', 'none') : lambda c : np.ones(c._nL, dtype
             ('deeptauVSe', 'vvtight') : lambda c : c._tauVVTightDeepTauVsEle,
                 }
             
-tau_muonDiscr_WP = {('againstMuon', 'none') : lambda c : np.ones(c._nL, dtype=bool),
+tau_muonDiscr_WP = {('againstMuon', None) : lambda c : np.ones(c._nL, dtype=bool),
                 ('againstMuon', 'loose') : lambda c : c._tauMuonVetoLoose,
                 ('againstMuon', 'tight') : lambda c : c._tauMuonVetoTight,
            
+            ('deeptauVSmu', None) : lambda c : np.ones(c._nL, dtype=bool),
             ('deeptauVSmu', 'vloose') : lambda c : c._tauVLooseDeepTauVsMu,
             ('deeptauVSmu', 'loose') : lambda c : c._tauLooseDeepTauVsMu,
             ('deeptauVSmu', 'medium') : lambda c : c._tauMediumDeepTauVsMu,
@@ -82,14 +83,55 @@ tau_DMfinding = {'MVA2017v2' : lambda c : c._decayModeFinding,
 }
 
 default_id_algo = 'deeptauVSjets'
-default_eleDiscr_algo = 'deeptauVSe'
-default_muonDiscr_algo = 'deeptauVSmu'
+#Reference order since the working points are in a dictionary without order
+order_of_workingpoints = { None: 0, 'vvvloose' : 1, 'vvloose' : 2, 'vloose':3, 'loose': 4, 'medium' : 5, 'tight':6, 'vtight': 7, 'vvtight':8, 'vvvtight': 9}
+
+def getIsoWorkingPoints(algorithm):
+    all_wp = []
+    for key in tau_id_WP.keys():
+        if key[0] == algorithm: all_wp.append(key[1])
+    sorted_wp = sorted(all_wp, key = lambda k: order_of_workingpoints[k])
+    return sorted_wp
+
+def getMuWorkingPoints(algorithm):
+    all_wp = []
+    for key in tau_muonDiscr_WP.keys():
+        if key[0] == algorithm: all_wp.append(key[1])
+    sorted_wp = sorted(all_wp, key = lambda k: order_of_workingpoints[k])
+    return sorted_wp
+
+def getEleWorkingPoints(algorithm):
+    all_wp = []
+    for key in tau_eleDiscr_WP.keys():
+        if key[0] == algorithm: all_wp.append(key[1])
+    sorted_wp = sorted(all_wp, key = lambda k: order_of_workingpoints[k])
+    return sorted_wp
+
+def passedElectronDiscr(chain, index, iso_algorithm_name, WP):
+    if 'deeptau' in iso_algorithm_name:
+        ele_discr_name = 'deeptauVSe'
+    elif 'MVA' in iso_algorithm_name:
+        ele_discr_name = 'againstElectron'
+    else:
+        print 'Error: inconsistent iso_algorithm_name in tauSelector.applyElectronDiscr'
+        exit(0)
+    return tau_eleDiscr_WP[(ele_discr_name, WP)](chain)[index]
+
+def passedMuonDiscr(chain, index, iso_algorithm_name, WP):
+    if 'deeptau' in iso_algorithm_name:
+        mu_discr_name = 'deeptauVSmu'
+    elif 'MVA' in iso_algorithm_name:
+        mu_discr_name = 'againstMuon'
+    else:
+        print 'Error: inconsistent iso_algorithm_name in tauSelector.applyMuonDiscr'
+        exit(0)
+    return tau_muonDiscr_WP[(mu_discr_name, WP)](chain)[index]
 
 def isGoodGenTau(chain, index):
     if chain._gen_lFlavor[index] != 2:          return False
     if not chain._gen_lIsPrompt[index]:         return False
     if not chain._gen_lDecayedHadr[index]:      return False
-    if abs(chain._gen_lEta[index]) > 2.1:            return False
+    if abs(chain._gen_lEta[index]) > 2.3:            return False
     return True             
 
 def isCleanFromLightLeptons(chain, index):
@@ -100,46 +142,48 @@ def isCleanFromLightLeptons(chain, index):
     return True
         
 
-def isLooseTau(chain, index, algo_iso = default_id_algo, algo_ele = default_eleDiscr_algo, algo_mu = default_muonDiscr_algo):
+def isLooseTau(chain, index, algo_iso = default_id_algo):
     
     if chain._lFlavor[index] != 2:              return False
     if chain._lPt[index] < 20:                  return False
-    if chain._lEta[index] > 2.1:                return False
+    if chain._lEta[index] > 2.3:                return False
+    if chain._tauDecayMode[index] == 5 or chain._tauDecayMode[index] == 6: return False
     if not tau_DMfinding[algo_iso](chain)[index]:   return False
     if not tau_id_WP[(algo_iso, 'vloose')](chain)[index]:   return False
     if not isCleanFromLightLeptons(chain, index):       return False
-    if not tau_eleDiscr_WP[(algo_ele, 'loose')](chain)[index]:    return False
-    if not tau_muonDiscr_WP[(algo_mu, 'loose')](chain)[index]:    return False
+    if not passedElectronDiscr(chain, index, algo_iso, 'loose'): return False
+    if not passedMuonDiscr(chain, index, algo_iso, 'loose'): return False
     return True
 
-def isFOTau(chain, index, algo = default_id_algo, algo_ele = default_eleDiscr_algo, algo_mu = default_muonDiscr_algo):
+def isFOTau(chain, index, algo = default_id_algo):
     
-    if not isLooseTau(chain, index, algo, algo_ele, algo_mu):              return False
+    if not isLooseTau(chain, index, algo):              return False
     if not tau_id_WP[(algo, 'medium')](chain)[index]:   return False
     return True
 
-def isTightTau(chain, index, algo = default_id_algo, algo_ele = default_eleDiscr_algo, algo_mu = default_muonDiscr_algo): 
+def isTightTau(chain, index, algo = default_id_algo): 
    
     if algo == 'gen_truth': 
         return chain._tauGenStatus[index] == 5
     else:
         #if not isLooseTau(chain, index, algo, algo_ele, algo_mu):       return False
-        if not isFOTau(chain, index, algo, algo_ele, algo_mu):              return False
+        if not isFOTau(chain, index, algo):              return False
         if not tau_id_WP[(algo, 'tight')](chain)[index]:   return False
         return True
 
 
 # Test function only used in compareTauID
-def isGeneralTau(chain, index, algo_iso, iso_WP, algo_ele, ele_WP, algo_mu, mu_WP, needDMfinding = True):
+def isGeneralTau(chain, index, algo_iso, iso_WP, ele_algo, ele_WP, mu_algo, mu_WP, needDMfinding = True):
     
     if chain._lFlavor[index] != 2:              return False
-    if algo_iso != 'none' and not tau_id_WP[(algo_iso, iso_WP)](chain)[index]:   return False
+    if chain._lPt[index] < 20:                  return False
+    if chain._lEta[index] > 2.3:                return False
+    if algo_iso is not None and not tau_id_WP[(algo_iso, iso_WP)](chain)[index]:   return False
     if needDMfinding:
-        if algo_iso == 'none': algo_iso = default_id_algo
         if not tau_DMfinding[algo_iso](chain)[index]:   return False
     if not isCleanFromLightLeptons(chain, index):       return False
-    if algo_ele != 'none' and not tau_eleDiscr_WP[(algo_ele, ele_WP)](chain)[index]:    return False
-    if algo_mu != 'none' and not tau_muonDiscr_WP[(algo_mu, mu_WP)](chain)[index]:    return False
+    if not tau_eleDiscr_WP[(ele_algo, ele_WP)](chain)[index]:    return False
+    if not tau_muonDiscr_WP[(mu_algo, mu_WP)](chain)[index]:    return False
     return True
 
 def matchGenToReco(chain, l):

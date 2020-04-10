@@ -1,4 +1,5 @@
 from ROOT import TMath
+import ROOT
 import numpy as np
 from HNL.Tools.helpers import sortByOtherList, getMaxWithErr, getMinWithErr
 
@@ -64,6 +65,10 @@ def orderHist(hist, names, lowest_first = False):
 
 def extraTextFormat(text, xpos = None, ypos = None, textsize = None, align = 12):
     return [text, xpos, ypos, textsize, align]
+
+def drawLineFormat(x0 = None, x1 = None, y0 = None, y1 = None, color = None, width = 3):
+    if color is None: color = ROOT.kBlack
+    return [x0, x1, y0, y1, color, width]
 
 def removeNegativeErrors(h):
     for xbin in xrange(1, th1.GetSize()-1):                     #GetSize returns nbins + 2 (for overflow and underflow bin)

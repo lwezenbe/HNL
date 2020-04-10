@@ -1,21 +1,26 @@
-from ROOT import TFile, TGraphErrors
+from ROOT import TFile, TGraphErrors, TChain
 from helpers import makeDirIfNeeded, getObjFromFile, isValidRootFile
 import numpy as np
 from HNL.Tools.histogram import Histogram
 
 class ROC:
-    def __init__(self, name, var, var_tex, path, bins=None, misid_path = None):
+    def __init__(self, name, path, working_points=None, misid_path = None):
         self.name = name
         self.path = path
-        self.var = var
-        self.var_tex = var_tex
-        self.bins = bins
+        self.working_points = working_points
+
+        if working_points is not None:
+            self.chain = TChain(name, name)
+            self.chain.var_roc = np.arange(0.5, len(working_points)+0.5, 1)
+            self.var = lambda c, i : c.var_roc[i]
+            self.var_tex = 'workingpoints'
+            self.bins = np.arange(0., len(working_points)+1., 1)
         self.eff_numerator = None
         self.eff_denominator = None
         self.misid_numerator = None
         self.misid_denominator = None
  
-        if self.bins is not None: 
+        if self.working_points is not None: 
             self.eff_numerator = Histogram(name + '_eff_numerator', self.var, self.var_tex, self.bins)
             self.misid_numerator = Histogram(name + '_misid_numerator', self.var, self.var_tex, self.bins)
             self.eff_denominator = Histogram(name + '_eff_denominator', self.var, self.var_tex, self.bins)
@@ -27,18 +32,27 @@ class ROC:
 
             #Use different file for misid in case you split the jobs for signal and bkgr up
             tmp_path = misid_path if misid_path is not None else self.path
-            print tmp_path
             self.misid_numerator = Histogram(getObjFromFile(tmp_path, name+'/'+name + '_misid_numerator'))
             self.misid_denominator = Histogram(getObjFromFile(tmp_path, name+'/'+name + '_misid_denominator'))
     
 
-    def fillEfficiency(self, chain, index, passed, weight=1.):
-        self.eff_denominator.fill(chain, weight, index)
-        if passed: self.eff_numerator.fill(chain, weight, index)
+    def fillEfficiency(self, passed, weight=None):
+        if len(passed) != len(self.working_points):
+            raise RuntimeError("In fillEfficiency in ROC.py: length of passed ("+len(passed)+") is not the same as number of working points ("+len(self.working_points)+")")
+        if weight is None: weight = [1.]*len(passed)
+
+        for i, wp in enumerate(self.working_points):
+            self.eff_denominator.fill(self.chain, weight[i], i)
+            if passed[i]: self.eff_numerator.fill(self.chain, weight[i], i)
     
-    def fillMisid(self, chain, index, passed, weight=1.):
-        self.misid_denominator.fill(chain, weight, index)
-        if passed: self.misid_numerator.fill(chain, weight, index)
+    def fillMisid(self, passed, weight=None):
+        if len(passed) != len(self.working_points):
+            raise RuntimeError("In fillMisid in ROC.py: length of passed ("+len(passed)+") is not the same as number of working points ("+len(self.working_points)+")")
+        if weight is None: weight = [1.]*len(passed)
+
+        for i, wp in enumerate(self.working_points):
+            self.misid_denominator.fill(self.chain, weight[i], i)
+            if passed[i]: self.misid_numerator.fill(self.chain, weight[i], i)
         
     def loadEfficiency(self, name, path):
         self.eff_numerator = getObjFromFile(path, name + '_eff_numerator')

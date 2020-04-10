@@ -16,15 +16,20 @@ def generalSettings(paintformat = "4.2f"):
     ROOT.gStyle.SetPaintTextFormat(paintformat)
     ROOT.gROOT.ProcessLine( "gErrorIgnoreLevel = 1001;")
 
+def isList(item):
+    if isinstance(item, (list,)) or isinstance(item, set): return True
+    return False
+
 def makeList(item):
-    if not isinstance(item, (list,)) and not isinstance(item, set):
+    # if not isinstance(item, (list,)) and not isinstance(item, set):
+    if not isList(item):
         item = [item]
     return item
 
 import HNL.Tools.histogram
 from  HNL.Tools.histogram import returnSqrt
 def getHistList(item):
-    if item is None or not isinstance(item[0], HNL.Tools.histogram.Histogram):
+    if item is None or (isList(item) and not isinstance(item[0], HNL.Tools.histogram.Histogram)) or (not isList(item) and not isinstance(item, HNL.Tools.histogram.Histogram)):
         return item
     else:
         try:
@@ -66,6 +71,8 @@ class Plot:
         self.extra_text = [i for i in extra_text] if extra_text is not None else None
         self.draw_ratio = draw_ratio
         self.draw_significance = draw_significance
+        self.overall_max = 0.
+        self.overall_min = 0.
 
 
 
@@ -84,8 +91,8 @@ class Plot:
             else: to_check_max += self.b
 
         if not is2D:
-            overall_max = pt.getOverallMaximum(to_check_max)
-            overall_min = pt.getOverallMinimum(to_check_min, zero_not_allowed=True)
+            self.overall_max = pt.getOverallMaximum(to_check_max)
+            self.overall_min = pt.getOverallMinimum(to_check_min, zero_not_allowed=True)
 
         if self.x_log:
             #self.canvas.SetLogx()
@@ -93,32 +100,33 @@ class Plot:
         if self.y_log:
             #self.canvas.SetLogy()
             self.plotpad.SetLogy()
+
             if not is2D:
                 if stacked:
-                    self.hs.SetMinimum(0.3*overall_min)
-                    self.hs.SetMaximum(30*overall_max)
+                    self.hs.SetMinimum(0.3*self.overall_min)
+                    self.hs.SetMaximum(3000*self.overall_max)
                     # self.hs.SetMinimum(0.3*pt.getOverallMinimum([self.s[0]], zero_not_allowed=True))
-                    # self.hs.SetMaximum(30*overall_max)
+                    # self.hs.SetMaximum(30*self.overall_max)
                 elif self.b is None: 
-                    self.s[0].SetMinimum(0.3*overall_min)
-                    self.s[0].SetMaximum(30*overall_max)
+                    self.s[0].SetMinimum(0.3*self.overall_min)
+                    self.s[0].SetMaximum(3000*self.overall_max)
                 else:
-                    self.b[0].SetMinimum(0.3*overall_min)
-                    self.b[0].SetMaximum(30*overall_max)
+                    self.b[0].SetMinimum(0.3*self.overall_min)
+                    self.b[0].SetMaximum(3000*self.overall_max)
         else:
             if not is2D:
                 if self.b is None: 
-                    if not stacked: self.s[0].GetYaxis().SetRangeUser(0.7*overall_min, 1.5*overall_max)
+                    if not stacked: self.s[0].GetYaxis().SetRangeUser(0.7*self.overall_min, 1.5*self.overall_max)
                     else: 
-                        self.hs.SetMinimum(0.7*overall_min)
-                        self.hs.SetMaximum(1.5*overall_max)
-                        # self.hs.GetHistogram().GetYaxis().SetRangeUser(0.7*overall_min, 1.5*overall_max)
+                        self.hs.SetMinimum(0.7*self.overall_min)
+                        self.hs.SetMaximum(1.5*self.overall_max)
+                        # self.hs.GetHistogram().GetYaxis().SetRangeUser(0.7*self.overall_min, 1.5*self.overall_max)
                 else: 
-                    if not stacked: self.b[0].GetYaxis().SetRangeUser(0.7*overall_min, 1.5*overall_max)
+                    if not stacked: self.b[0].GetYaxis().SetRangeUser(0.7*self.overall_min, 1.5*self.overall_max)
                     else: 
-                        self.hs.SetMinimum(0.7*overall_min)
-                        self.hs.SetMaximum(1.5*overall_max)
-                        # self.hs.GetHistogram().GetYaxis().SetRangeUser(0.7*overall_min, 1.5*overall_max)
+                        self.hs.SetMinimum(0.7*self.overall_min)
+                        self.hs.SetMaximum(1.5*self.overall_max)
+                        # self.hs.GetHistogram().GetYaxis().SetRangeUser(0.7*self.overall_min, 1.5*self.overall_max)
 
 
         self.plotpad.Update()
@@ -228,6 +236,9 @@ class Plot:
             ratios[0].SetTitle('; ; S/B')
         else:
             ratios[0].SetTitle(';'+ self.x_name+'; S/B')
+            if custom_labels is not None:
+                for i, n in enumerate(custom_labels):
+                    ratios[0].GetXaxis().SetBinLabel(i+1, n)
         ratios[0].SetMinimum(0.3)
         ratios[0].SetMaximum(1.7)
         ratios[0].GetXaxis().SetTitleSize(.12)
@@ -265,13 +276,17 @@ class Plot:
     def calculateSignificance(self):
         significances = []
         for i, s in enumerate(self.s):
+            num = s.Clone('num')
             tot = s.Clone('tot')
             tot.Add(self.total_b)
-            significances.append(returnSqrt(tot))
+            sqrtTot = returnSqrt(tot)
+            num.Divide(sqrtTot)
+
+            significances.append(num)
 
         return significances
     
-    def drawSignificance(self, significances):
+    def drawSignificance(self, significances, custom_labels = None):
         self.sig_pad.cd()
 
         #Set axis: if significance is also drawn, no x-axis
@@ -283,6 +298,10 @@ class Plot:
         significances[0].GetXaxis().SetLabelSize(.12)
         significances[0].GetYaxis().SetLabelSize(.12)
         significances[0].GetYaxis().SetTitleOffset(0.6)
+
+        if custom_labels is not None:
+            for i, n in enumerate(custom_labels):
+                significances[0].GetXaxis().SetBinLabel(i+1, n)
         
         for r in significances:
             r.SetMarkerStyle(20)
@@ -331,7 +350,7 @@ class Plot:
     # Functions to do actual plotting
     #
 
-    def drawHist(self, output_dir = None, normalize_signal = False, signal_style = False, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None, message = None):
+    def drawHist(self, output_dir = None, normalize_signal = False, signal_style = False, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None, custom_labels = None, draw_lines = None, message = None):
 
         setDefault()
         #Create Canvas
@@ -342,8 +361,10 @@ class Plot:
         self.plotpad.cd()
 
         if isinstance(self.x_name, list):
-            print 'invalid x_names'
-            return
+            raise RuntimeError('invalid x_names')
+
+        if custom_labels is not None and len(custom_labels) != self.s[0].GetNbinsX():
+            raise RuntimeError("Inconsistent number of bins ("+str(self.s[0].GetNbinsX())+") compared to number of labels given ("+len(custom_labels)+")")
         
         if self.draw_ratio or self.draw_significance:
             title = " ; ; "+self.y_name
@@ -375,6 +396,9 @@ class Plot:
                 self.hs.SetTitle(title)
                 if self.draw_ratio or self.draw_significance: 
                     self.hs.GetHistogram().GetXaxis().SetLabelOffset(9999999)
+                elif custom_labels is not None:
+                    for i, n in enumerate(custom_labels):
+                        self.hs.GetHistogram().GetXaxis().SetBinLabel(i+1, n)
 
             else:
                 for i, b in enumerate(self.b):
@@ -383,6 +407,9 @@ class Plot:
                         b.SetTitle(title)
                         if self.draw_ratio or self.draw_significance: 
                             b.GetXaxis().SetLabelOffset(9999999)
+                        elif custom_labels is not None:
+                            for i, n in enumerate(custom_labels):
+                                b.GetXaxis().SetBinLabel(i+1, n)
                     else:
                         b.Draw(bkgr_draw_option + 'Same')
             #self.hs.GetHistogram().SetMaximum(1)   
@@ -394,14 +421,17 @@ class Plot:
                 h.SetLineColor(ps.getHNLColor(n))
                 h.SetLineWidth(4)
             else:
-                # print self.s.index(h)
                 h.SetLineColor(ps.getHistDidar(self.s.index(h)))
                 #h.SetLineColor(ps.getLineColor(self.s.index(h)))
                 h.SetLineWidth(4)
                 h.SetMarkerStyle(8)
                 h.SetMarkerColor(ps.getHistDidar(self.s.index(h)))
                 #h.SetMarkerColor(ps.getLineColor(self.s.index(h)))
-        if self.b is None:      self.s[0].SetTitle(title)       #If no bkgr was given, the SetTitle was not done yet
+        if self.b is None:      
+            self.s[0].SetTitle(title)       #If no bkgr was given, the SetTitle was not done yet
+            if custom_labels is not None:
+                for i, n in enumerate(custom_labels):
+                    self.s[0].GetXaxis().SetBinLabel(i+1, n)
         
         #print 'e'
         #Start Drawing
@@ -412,8 +442,7 @@ class Plot:
 
             if(self.s.index(h) == 0 and self.b is None):
                 h.Draw(draw_option)
-                if self.draw_ratio or self.draw_significance: 
-                    h.GetXaxis().SetLabelOffset(9999999)
+                raise RuntimeError("Cannot ask ratio or significance if no background is given")
             else:
                 h.Draw(draw_option+'Same')
            # h.Draw("EHistSAME")
@@ -435,6 +464,23 @@ class Plot:
                     i += 1
             self.extra_text.append(pt.extraTextFormat('Eff: %.4g' % draw_cuts[1]+'%'))
 
+        if draw_lines is not None:
+            line_collection = []
+            #Multiple lines
+            if isinstance(draw_lines[0], list):
+                for il, l in enumerate(draw_lines):
+                    x0 = l[0] if l[0] is not None else self.overall_min*0.001
+                    x1 = l[1] if l[1] is not None else self.overall_max*3000
+                    y0 = l[2] if l[2] is not None else self.overall_min*0.001
+                    y1 = l[3] if l[3] is not None else self.overall_max*3000
+                    color = l[4] if l[4] is not None else ROOT.kBlack
+                    line_collection.append(ROOT.TLine(x0, y0, x1, y1))
+                    line_collection[il].SetLineColor(color)
+                    line_collection[il].SetLineWidth(l[5])
+
+            for l in line_collection:
+                l.Draw('same')
+
         #Write extra text
         if self.extra_text is not None:
             self.drawExtraText()
@@ -442,7 +488,7 @@ class Plot:
         
         self.canvas.cd()
         #Create Legend
-        legend = ROOT.TLegend(0.5, .8, .9, .9)
+        legend = ROOT.TLegend(0.5, .7, .9, .9)
         legend.SetNColumns(3)
        
         loop_obj = [item for item in self.s]
@@ -455,11 +501,11 @@ class Plot:
 
         if self.draw_ratio:
             ratios = self.calculateRatio()
-            self.drawRatio(ratios)
+            self.drawRatio(ratios, custom_labels)
             self.ratio_pad.Update()
         if self.draw_significance:
             significances = self.calculateSignificance()
-            self.drawSignificance(significances)
+            self.drawSignificance(significances, custom_labels)
             self.sig_pad.Update()
 
         ROOT.gPad.Update() 
@@ -560,7 +606,7 @@ class Plot:
         self.savePlot(output_dir +'/'+ self.name, message = None)
         ROOT.SetOwnership(self.canvas, False)
         
-    def drawBarChart(self, output_dir = None, parallel_bins=False, message = None):
+    def drawBarChart(self, output_dir = None, parallel_bins=False, message = None, index_colors = False):
         
         setDefault()
         #Create Canvas
@@ -580,9 +626,11 @@ class Plot:
         if not parallel_bins:
             self.hs = ROOT.THStack("hs", "hs")
             #Set style
-            for hist, name in zip(self.s, self.tex_names):
-                hist.SetFillColor(ps.getStackColorTauPOGbyName(name))
-                hist.SetLineColor(ps.getStackColorTauPOGbyName(name))
+            for i, (hist, name) in enumerate(zip(self.s, self.tex_names)):
+                if index_colors: color = ps.getStackColorTauPOG(i)
+                else: color = ps.getStackColorTauPOGbyName(name)
+                hist.SetFillColor(color)
+                hist.SetLineColor(color)
                 hist.SetBarWidth(0.8)
                 hist.SetBarOffset(0.1)
                 self.hs.Add(hist)
@@ -592,9 +640,12 @@ class Plot:
 
         else:
             for i, (hist, name) in enumerate(zip(self.s, self.tex_names)):
-                hist.SetFillColor(ps.getStackColorTauPOGbyName(name))
-                hist.SetLineColor(ps.getStackColorTauPOGbyName(name))
-                hist.SetMarkerColor(ps.getStackColorTauPOGbyName(name))
+                if index_colors: color = ps.getStackColorTauPOG(i)
+                else: color = ps.getStackColorTauPOGbyName(name)
+                print color
+                hist.SetFillColor(color)
+                hist.SetLineColor(color)
+                hist.SetMarkerColor(color)
                 hist.SetBarWidth(0.8/len(self.s))
                 hist.SetBarOffset(0.1+i*hist.GetBarWidth())
                 if i == 0:
@@ -608,7 +659,7 @@ class Plot:
             self.hs.Draw('B')                                                        
             
         #Create Legend
-        legend = ROOT.TLegend(0.7, .8, .95, .9)
+        legend = ROOT.TLegend(0.5, .75, .95, .9)
         legend.SetNColumns(2)
        
         loop_obj = [item for item in self.s]

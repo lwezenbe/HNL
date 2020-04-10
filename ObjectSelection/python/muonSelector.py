@@ -7,7 +7,7 @@ def isGoodGenMuon(chain, index):
 
 def isBaseMuon(chain, index):
     if abs(chain._lEta[index]) >= 2.4:          return False
-    if chain._lPt[index] < 5:                   return False
+    if chain._lPt[index] <= 5:                   return False
     return True
 
 def isLooseMuonCutBased(chain, index):

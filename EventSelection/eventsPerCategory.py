@@ -158,7 +158,7 @@ if not args.makeTextFiles and not args.makeBarCharts and not args.makePieCharts:
             if not cutter.cut(select3Leptons(chain, chain, light_algo = 'leptonMVAtZq', cutter=cutter), '3_tight_leptons'):   continue   
         else:            
             selected3FO = [(chain._lPt[l], l) for l in xrange(chain._nLight) if isFOLepton(chain, l, algo = 'cutbased')]
-            if not cutter.cut(len(selected3FO) == 3, '3 FO'): continue
+            if not cutter.cut(len(selected3FO) >= 3, '3 FO'): continue
             if not cutter.cut(select3Leptons(chain, chain, no_tau=True, light_algo = 'cutbased', cutter=cutter), '3_tight_leptons'):   continue   
 
         if args.massRegion == 'low':
