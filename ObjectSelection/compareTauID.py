@@ -50,6 +50,7 @@ argParser.add_argument('--runLocal', action='store_true', default=False,  help='
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 argParser.add_argument('--includeReco',   action='store', default=None,  help='look at the efficiency for a gen tau to be both reconstructed and identified. Currently just fills the efficiency for isolation', choices = ['iso', 'noIso'])
 argParser.add_argument('--discriminators', nargs='*', default=['iso', 'ele','mu'],  help='Which discriminators do you want to test?', choices = ['iso', 'ele', 'mu'])
+argParser.add_argument('--makeCombinations', action='store_true', default=False,  help='Makes combinations of iso with different electron and muon working points. Turned off by default because large hadd times for large samples.')
 args = argParser.parse_args()
 
 #
@@ -87,6 +88,10 @@ if args.discriminators.count('mu'):
     print '\n', 'Muon discriminators:'
     for f in mu_algo: print f
 print '\n', "If you want to change any of these, do so in compareTauID.py \n"
+
+if args.makeCombinations:
+    print '\n', 'Will make combinations of iso discriminators with corresponding electron and muon discriminator working points.', '\n'
+    print 'Be aware that the merge step in plotTauId.py will take a long time for large backgrounds. Consider running this in screen.'
 
 #
 # All ID's and WP we want to test
@@ -205,7 +210,7 @@ for discr in args.discriminators:
     for algo in algos[discr]:
         algo_bins = np.arange(0., len(algos[discr][algo])+1., 1)
         out_path = output_name(discr, algo, 'all')+'/'+ sample.name +'_ROC' +subjobAppendix+ '.root'
-        if discr != 'iso':
+        if discr != 'iso' or not args.makeCombinations:
             list_of_roc[discr][algo] = ROC(algo, out_path, working_points=algos[discr][algo])
         else:
             list_of_roc[discr][algo] = {}
@@ -225,7 +230,7 @@ for discr in args.discriminators:
             list_of_var_hist[eff_or_fake][discr][algo] = {}
             for v in var_hist.keys():
                 list_of_var_hist[eff_or_fake][discr][algo][v] = {}
-                if discr != 'iso' or args.includeReco == 'noIso':
+                if discr != 'iso' or args.includeReco == 'noIso' or not args.makeCombinations:
                     for wp in algos[discr][algo]:
                         out_path = output_name(discr, algo, wp)+'/'+ sample.name +'_'+eff_or_fake +subjobAppendix+ '.root'
                         list_of_var_hist[eff_or_fake][discr][algo][v][wp] = Efficiency('-'.join([eff_or_fake, v, algo, str(wp)]), var_hist[v][0], var_hist[v][2], out_path, var_hist[v][1])
@@ -269,7 +274,7 @@ for entry in event_range:
 
             for discr in args.discriminators:
                 for algo in algos[discr]: 
-                    if args.includeReco == 'noIso':
+                    if args.includeReco == 'noIso' or not args.makeCombinations:
                         wp = None
                         for v in list_of_var_hist['efficiency'][discr][algo].keys():
                             list_of_var_hist['efficiency'][discr][algo][v][wp].fill(chain, 1., matched_l is not None)
@@ -299,7 +304,7 @@ for entry in event_range:
                     # Real taus
                     #
                     if chain._tauGenStatus[lepton] == 5:
-                        if discr != 'iso':
+                        if discr != 'iso' or not args.makeCombinations:
                             passed = []
                             for index, wp in enumerate(algos[discr][algo]):
                                 wp_passed = None
@@ -335,22 +340,31 @@ for entry in event_range:
                         elif discr == 'mu' and chain._tauGenStatus[lepton] in allowedGenstatus(None, None, algo):
                             passed = []
                             for index, wp in enumerate(algos[discr][algo]):
-                                wp_passed = isGeneralTau(chain, lepton, default_iso_algo, None, default_ele_algo, None, algo, None)
+                                wp_passed = isGeneralTau(chain, lepton, default_iso_algo, None, default_ele_algo, None, algo, wp)
                                 passed.append(wp_passed)
                                 for v in list_of_var_hist['fakerate'][discr][algo].keys():
                                     list_of_var_hist['fakerate'][discr][algo][v][wp].fill(chain, 1., wp_passed)
                             list_of_roc[discr][algo].fillMisid(passed)
                         elif discr == 'iso':
-                            for ele_wp in algos['ele'][linkIsoToLep('ele', algo)]:
-                                for mu_wp in algos['mu'][linkIsoToLep('mu', algo)]:
-                                    if chain._tauGenStatus[lepton] not in allowedGenstatus(algo, ele_wp, mu_wp): continue
-                                    passed = []
-                                    for index, wp in enumerate(algos[discr][algo]):
-                                        wp_passed = isGeneralTau(chain, lepton, algo, wp, linkIsoToLep('ele', algo), ele_wp, linkIsoToLep('mu', algo), mu_wp, needDMfinding=False)
-                                        passed.append(wp_passed)
-                                        for v in list_of_var_hist['fakerate'][discr][algo].keys():
-                                            list_of_var_hist['fakerate'][discr][algo][v][wp][ele_wp][mu_wp].fill(chain, 1., wp_passed)
-                                    list_of_roc[discr][algo][ele_wp][mu_wp].fillMisid(passed)
+                            if args.makeCombinations:
+                                for ele_wp in algos['ele'][linkIsoToLep('ele', algo)]:
+                                    for mu_wp in algos['mu'][linkIsoToLep('mu', algo)]:
+                                        if chain._tauGenStatus[lepton] not in allowedGenstatus(algo, ele_wp, mu_wp): continue
+                                        passed = []
+                                        for index, wp in enumerate(algos[discr][algo]):
+                                            wp_passed = isGeneralTau(chain, lepton, algo, wp, linkIsoToLep('ele', algo), ele_wp, linkIsoToLep('mu', algo), mu_wp, needDMfinding=False)
+                                            passed.append(wp_passed)
+                                            for v in list_of_var_hist['fakerate'][discr][algo].keys():
+                                                list_of_var_hist['fakerate'][discr][algo][v][wp][ele_wp][mu_wp].fill(chain, 1., wp_passed)
+                                        list_of_roc[discr][algo][ele_wp][mu_wp].fillMisid(passed)
+                            else:
+                                passed = []
+                                for index, wp in enumerate(algos[discr][algo]):
+                                    wp_passed = isGeneralTau(chain, lepton, algo, wp, default_ele_algo, None, default_mu_algo, None)
+                                    passed.append(wp_passed)
+                                    for v in list_of_var_hist['fakerate'][discr][algo].keys():
+                                        list_of_var_hist['fakerate'][discr][algo][v][wp].fill(chain, 1., wp_passed)
+                                list_of_roc[discr][algo].fillMisid(passed)
 
 
 #
@@ -365,7 +379,7 @@ for discr in args.discriminators:
     # Save ROC
     #
     if args.includeReco is None:
-        if discr != 'iso':
+        if discr != 'iso'  or not args.makeCombinations:
             for ir, r in enumerate(list_of_roc[discr].values()):
                 append_roc = ir != 0
                 r.write(append_roc)
@@ -387,7 +401,7 @@ for discr in args.discriminators:
             for i, v in enumerate(list_of_var_hist[eff][discr][algo].keys()):
                 for j, wp in enumerate(list_of_var_hist[eff][discr][algo][v].keys()):
                     if args.includeReco == 'noIso' and wp is not None: continue
-                    if discr != 'iso' or args.includeReco == 'noIso':
+                    if discr != 'iso' or args.includeReco == 'noIso' or not args.makeCombinations:
                         if a == 0 and i == 0 and j == 0:
                             list_of_var_hist[eff][discr][algo][v][wp].write(append = False, name = eff, subdirs = [v, algo + '-' + str(wp)])
                         else:
