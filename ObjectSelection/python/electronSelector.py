@@ -159,22 +159,22 @@ def isLooseElectronttH(chain, index):
     if chain._miniIso[index] >= 0.4:                    return False
     if chain._3dIPSig[index] >= 8:              return False
     if chain._lElectronMissingHits[index] > 1:  return False
-    if not passMVAloose(chain, index):  return False
+    # if not passMVAloose(chain, index):  return False
     return True
 
 def isFOElectronttH(chain, index):
     
     if not isLooseElectronttH(chain, index):    return False
     if chain._lPt[index] < 10:                  return False
-    if chain._lElectronMissingHits[index] != 0: return False
-    if not chain._lElectronPassEmu[index]:      return False
-    if chain._closestJetDeepFlavor[index] >= getBTagWP(chain.year, 'medium', 'Deep'): return False
-    if chain._leptonMvaTTH[index] <= 0.8:
-        if not passMVAWP80(chain, index):       return False
-        if chain._ptRatio[index] <= .7:           return False
-    else:
-       if not passMVAloose(chain, index):      return False
-    if not chain._lElectronPassConvVeto[index]:          return False
+    # if chain._lElectronMissingHits[index] != 0: return False
+    # if not chain._lElectronPassEmu[index]:      return False
+    # if chain._closestJetDeepFlavor[index] >= getBTagWP(chain.year, 'medium', 'Deep'): return False
+    # if chain._leptonMvaTTH[index] <= 0.8:
+    #     if not passMVAWP80(chain, index):       return False
+    #     if chain._ptRatio[index] <= .7:           return False
+    # else:
+    #    if not passMVAloose(chain, index):      return False
+    # if not chain._lElectronPassConvVeto[index]:          return False
     return True
 
 def isTightElectronttH(chain, index):
@@ -193,22 +193,22 @@ def isLooseElectrontZq(chain, index):
     if chain._miniIso[index] >= 0.4:                    return False
     if chain._3dIPSig[index] >= 8:              return False
     if chain._lElectronMissingHits[index] > 1:  return False
-    if not passMVAloose(chain, index):  return False
+    # if not passMVAloose(chain, index):  return False
     return True
 
 def isFOElectrontZq(chain, index):
     
     if not isLooseElectrontZq(chain, index):    return False
     if chain._lPt[index] < 10:                  return False
-    if chain._lElectronMissingHits[index] != 0: return False
-    if not chain._lElectronPassEmu[index]:      return False
-    if chain._closestJetDeepFlavor[index] >= getBTagWP(chain.year, 'medium', 'Deep'): return False
-    if chain._leptonMvatZq[index] <= 0.4:
-        if not passMVAWP80(chain, index):       return False
-        if chain._ptRatio[index] <= .4:           return False
-    else:
-        if not passMVAloose(chain, index):      return False
-    if not chain._lElectronPassConvVeto[index]:          return False
+    # if chain._lElectronMissingHits[index] != 0: return False
+    # if not chain._lElectronPassEmu[index]:      return False
+    # if chain._closestJetDeepFlavor[index] >= getBTagWP(chain.year, 'medium', 'Deep'): return False
+    # if chain._leptonMvatZq[index] <= 0.4:
+    #     if not passMVAWP80(chain, index):       return False
+    #     if chain._ptRatio[index] <= .4:           return False
+    # else:
+    #     if not passMVAloose(chain, index):      return False
+    # if not chain._lElectronPassConvVeto[index]:          return False
     return True
 
 def isTightElectrontZq(chain, index):

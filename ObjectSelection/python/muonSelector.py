@@ -46,10 +46,10 @@ def isLooseMuonttH(chain, index):
 def isFOMuonttH(chain, index):
     if not isLooseMuonttH(chain, index):        return False
     if chain._lPt[index] < 10:                  return False
-    if chain._leptonMvaTTH[index] <= 0.85:      
-        if chain._ptRatio[index] <= 0.65: return False
-    if chain._closestJetDeepFlavor[index] >= slidingDeepFlavorThreshold(chain.year, chain._lPt[index]):
-        return False
+    # if chain._leptonMvaTTH[index] <= 0.85:      
+    #     if chain._ptRatio[index] <= 0.65: return False
+    # if chain._closestJetDeepFlavor[index] >= slidingDeepFlavorThreshold(chain.year, chain._lPt[index]):
+    #     return False
     return True
 
 def isTightMuonttH(chain, index):
@@ -72,10 +72,10 @@ def isLooseMuontZq(chain, index):
    
 def isFOMuontZq(chain, index):
     if not isLooseMuonttH(chain, index):        return False
-    if chain._leptonMvaTTH[index] <= 0.4:      
-        if chain._ptRatio[index] <= 0.4: return False
-    if chain._closestJetDeepFlavor[index] >= slidingDeepFlavorThreshold(chain.year, chain._lPt[index]):
-        return False
+    # if chain._leptonMvaTTH[index] <= 0.4:      
+    #     if chain._ptRatio[index] <= 0.4: return False
+    # if chain._closestJetDeepFlavor[index] >= slidingDeepFlavorThreshold(chain.year, chain._lPt[index]):
+    #     return False
     return True
 
 def isTightMuontZq(chain, index):
