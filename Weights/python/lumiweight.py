@@ -1,5 +1,9 @@
 from HNL.Samples.sample import getListOfPathsWithSameOutput 
-LUMINOSITY_MAP = {2016 : 35546.}
+LUMINOSITY_MAP = {
+                    2016 : 35546.,
+                    2017 : 41529.548819,
+                    2018 : 59688.059536,
+                    }
 
 class LumiWeight:
 
