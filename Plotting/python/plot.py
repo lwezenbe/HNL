@@ -74,9 +74,7 @@ class Plot:
         self.overall_max = 0.
         self.overall_min = 0.
 
-
-
-    def setAxisLog(self, is2D = False, stacked = True):
+    def setAxisLog(self, is2D = False, stacked = True, upper_factor=3000):
         to_check_min = [j for j in self.s]
         if stacked and self.b is None: 
             self.total_s = self.s[0].Clone('total_sig')
@@ -104,15 +102,15 @@ class Plot:
             if not is2D:
                 if stacked:
                     self.hs.SetMinimum(0.3*self.overall_min)
-                    self.hs.SetMaximum(3000*self.overall_max)
+                    self.hs.SetMaximum(upper_factor*self.overall_max)
                     # self.hs.SetMinimum(0.3*pt.getOverallMinimum([self.s[0]], zero_not_allowed=True))
                     # self.hs.SetMaximum(30*self.overall_max)
                 elif self.b is None: 
                     self.s[0].SetMinimum(0.3*self.overall_min)
-                    self.s[0].SetMaximum(3000*self.overall_max)
+                    self.s[0].SetMaximum(upper_factor*self.overall_max)
                 else:
                     self.b[0].SetMinimum(0.3*self.overall_min)
-                    self.b[0].SetMaximum(3000*self.overall_max)
+                    self.b[0].SetMaximum(upper_factor*self.overall_max)
         else:
             if not is2D:
                 if self.b is None: 
@@ -141,8 +139,9 @@ class Plot:
 
         return
 
-    def drawExtraText(self):
-        self.canvas.cd()
+    def drawExtraText(self, pad = None):
+        if pad is None: pad = self.canvas
+        pad.cd()
 
         #Write extra text
         if self.extra_text is not None:
@@ -286,7 +285,7 @@ class Plot:
 
         return significances
     
-    def drawSignificance(self, significances, custom_labels = None):
+    def drawSignificance(self, significances, custom_labels = None, line=None):
         self.sig_pad.cd()
 
         #Set axis: if significance is also drawn, no x-axis
@@ -307,9 +306,22 @@ class Plot:
             r.SetMarkerStyle(20)
             r.SetMarkerColor(r.GetLineColor())
 
+
+
         significances[0].Draw('EP')
         for r in significances[1:]:
             r.Draw('EPSame')
+
+        if line is not None:
+            max_significance = pt.getOverallMaximum(significances, include_error = False)
+            line.SetY1(max_significance)
+            line.SetY2(max_significance)
+            line.SetLineColor(ROOT.kRed)
+            line.SetLineWidth(2)
+            line.SetLineStyle(9)
+            line.Draw('same')
+
+            
 
         self.sig_pad.Update()
         self.canvas.cd()
@@ -433,7 +445,6 @@ class Plot:
                 for i, n in enumerate(custom_labels):
                     self.s[0].GetXaxis().SetBinLabel(i+1, n)
         
-        #print 'e'
         #Start Drawing
         for h in self.s:
             if h.GetSumOfWeights() == 0: continue
@@ -442,11 +453,11 @@ class Plot:
 
             if(self.s.index(h) == 0 and self.b is None):
                 h.Draw(draw_option)
-                raise RuntimeError("Cannot ask ratio or significance if no background is given")
             else:
                 h.Draw(draw_option+'Same')
            # h.Draw("EHistSAME")
-        self.setAxisLog(stacked = self.b is not None and 'Stack' in bkgr_draw_option)
+
+        self.setAxisLog(stacked = self.b is not None and 'Stack' in bkgr_draw_option, upper_factor = 10.)
 
         #Option only used in plotVariables.py
         if draw_cuts is not None:
@@ -500,12 +511,15 @@ class Plot:
         legend.Draw()
 
         if self.draw_ratio:
+            if self.b is None:                 raise RuntimeError("Cannot ask ratio or significance if no background is given")
             ratios = self.calculateRatio()
             self.drawRatio(ratios, custom_labels)
             self.ratio_pad.Update()
         if self.draw_significance:
+            if self.b is None:                 raise RuntimeError("Cannot ask ratio or significance if no background is given")
             significances = self.calculateSignificance()
-            self.drawSignificance(significances, custom_labels)
+            significance_line = ROOT.TLine(self.s[0].GetBinLowEdge(1), 0, self.s[0].GetBinLowEdge(self.s[0].GetNbinsX()+1), 0)
+            self.drawSignificance(significances, custom_labels, significance_line)
             self.sig_pad.Update()
 
         ROOT.gPad.Update() 
@@ -720,4 +734,5 @@ class Plot:
         ROOT.SetOwnership(self.canvas, False)
         return
 
-         
+    def close(self):
+        del self.canvas         

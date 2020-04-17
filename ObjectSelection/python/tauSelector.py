@@ -178,6 +178,7 @@ def isGeneralTau(chain, index, algo_iso, iso_WP, ele_algo, ele_WP, mu_algo, mu_W
     if chain._lFlavor[index] != 2:              return False
     if chain._lPt[index] < 20:                  return False
     if chain._lEta[index] > 2.3:                return False
+    if chain._tauDecayMode[index] == 5 or chain._tauDecayMode[index] == 6: return False
     if algo_iso is not None and not tau_id_WP[(algo_iso, iso_WP)](chain)[index]:   return False
     if needDMfinding:
         if not tau_DMfinding[algo_iso](chain)[index]:   return False

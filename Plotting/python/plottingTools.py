@@ -3,17 +3,23 @@ import ROOT
 import numpy as np
 from HNL.Tools.helpers import sortByOtherList, getMaxWithErr, getMinWithErr
 
-def getOverallMaximum(hist):
+def getOverallMaximum(hist, include_error = True):
     current_max = 0
     for h in hist:
-        loc_max = getMaxWithErr(h)
+        if include_error:
+            loc_max = getMaxWithErr(h)
+        else:
+            loc_max = h.GetMaximum()
         if loc_max > current_max :    current_max = loc_max
     return current_max
 
-def getOverallMinimum(hist, zero_not_allowed = False):
+def getOverallMinimum(hist, zero_not_allowed = False, include_error = True):
     current_min = 999999
     for h in hist:
-        loc_min = getMinWithErr(h, zero_not_allowed)
+        if include_error:
+            loc_min = getMinWithErr(h, zero_not_allowed)
+        else:
+            loc_min = h.GetMinimum()
         if loc_min < current_min:    current_min = loc_min
     return current_min
 

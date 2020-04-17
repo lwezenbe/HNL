@@ -58,9 +58,9 @@ args = argParser.parse_args()
 #
 if args.isTest:
     args.isChild = True
-    args.sample = 'WZ'
     args.subJob = '0'
-    args.year = '2016'
+    if args.year is None: args.year = '2016'
+    if args.sample is None: args.sample = 'WZ'
 
 #
 # Make sure we only run over iso when running reco efficiency
@@ -185,7 +185,7 @@ def allowedGenstatus(isoAlgo, eleAlgo, muAlgo):
 #
 reco_names = {None:'NoReco', 'iso': 'IncludeReco', 'noIso': 'OnlyReco'}
 
-base_path = os.path.join(os.getcwd(), 'data', os.path.basename(__file__).split('.')[0], reco_names[args.includeReco])
+base_path = os.path.join(os.getcwd(), 'data', os.path.basename(__file__).split('.')[0], str(args.year), reco_names[args.includeReco])
 subjobAppendix = '_subJob' + args.subJob if args.subJob else ''
 
 if args.isChild: output_name = lambda d, a, wp: os.path.join(base_path, d, sample.output, a, str(wp), 'tmp_'+sample.output)
@@ -247,7 +247,7 @@ for discr in args.discriminators:
 # Determine if testrun so it doesn't need to calculate the number of events in the getEventRange
 #
 if args.isTest:
-    event_range = xrange(150)
+    event_range = xrange(500)
 else:
     event_range = sample.getEventRange(int(args.subJob))
 
@@ -309,7 +309,8 @@ for entry in event_range:
                             for index, wp in enumerate(algos[discr][algo]):
                                 wp_passed = None
                                 if discr == 'ele': wp_passed = isGeneralTau(chain, lepton, default_iso_algo, None, algo, wp, default_mu_algo, None)
-                                elif discr == 'mu': wp_passed = isGeneralTau(chain, lepton, default_iso_algo, None, default_ele_algo, None, algo, None)
+                                elif discr == 'mu': wp_passed = isGeneralTau(chain, lepton, default_iso_algo, None, default_ele_algo, None, algo, wp)
+                                else: wp_passed = isGeneralTau(chain, lepton, algo, wp, default_ele_algo, None, default_mu_algo, None)
                                 passed.append(wp_passed)
                                 for v in list_of_var_hist['efficiency'][discr][algo].keys():
                                     list_of_var_hist['efficiency'][discr][algo][v][wp].fill(chain, 1., wp_passed)
@@ -319,7 +320,7 @@ for entry in event_range:
                                 for mu_wp in algos['mu'][linkIsoToLep('mu', algo)]:
                                     passed = []
                                     for index, wp in enumerate(algos[discr][algo]):
-                                        wp_passed = isGeneralTau(chain, lepton, algo, wp, linkIsoToLep('ele', algo), ele_wp, linkIsoToLep('mu', algo), mu_wp, needDMfinding=False)
+                                        wp_passed = isGeneralTau(chain, lepton, algo, wp, linkIsoToLep('ele', algo), ele_wp, linkIsoToLep('mu', algo), mu_wp)
                                         passed.append(wp_passed)
                                         for v in list_of_var_hist['efficiency'][discr][algo].keys():
                                             list_of_var_hist['efficiency'][discr][algo][v][wp][ele_wp][mu_wp].fill(chain, 1., wp_passed)
@@ -352,12 +353,13 @@ for entry in event_range:
                                         if chain._tauGenStatus[lepton] not in allowedGenstatus(algo, ele_wp, mu_wp): continue
                                         passed = []
                                         for index, wp in enumerate(algos[discr][algo]):
-                                            wp_passed = isGeneralTau(chain, lepton, algo, wp, linkIsoToLep('ele', algo), ele_wp, linkIsoToLep('mu', algo), mu_wp, needDMfinding=False)
+                                            wp_passed = isGeneralTau(chain, lepton, algo, wp, linkIsoToLep('ele', algo), ele_wp, linkIsoToLep('mu', algo), mu_wp)
                                             passed.append(wp_passed)
                                             for v in list_of_var_hist['fakerate'][discr][algo].keys():
                                                 list_of_var_hist['fakerate'][discr][algo][v][wp][ele_wp][mu_wp].fill(chain, 1., wp_passed)
                                         list_of_roc[discr][algo][ele_wp][mu_wp].fillMisid(passed)
                             else:
+                                if chain._tauGenStatus[lepton] != 6: continue
                                 passed = []
                                 for index, wp in enumerate(algos[discr][algo]):
                                     wp_passed = isGeneralTau(chain, lepton, algo, wp, default_ele_algo, None, default_mu_algo, None)
@@ -370,7 +372,7 @@ for entry in event_range:
 #
 # Write
 #
-if args.isTest: exit(0)
+# if args.isTest: exit(0)
 print 'Saving output'
 
 for discr in args.discriminators:

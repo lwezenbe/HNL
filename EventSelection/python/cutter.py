@@ -84,7 +84,7 @@ def printCutFlow(in_file_paths, out_file_path, in_file_path_names):
 
 from HNL.Plotting.plot import Plot
 import ROOT
-def plotCutFlow(in_file_paths, out_file_path, in_file_path_names):
+def plotCutFlow(in_file_paths, out_file_path, in_file_path_names, ignore_weights=False):
     in_file_paths = makeList(in_file_paths)
     in_file_path_names = makeList(in_file_path_names)
     if len(in_file_paths) != len(in_file_path_names):
@@ -101,7 +101,10 @@ def plotCutFlow(in_file_paths, out_file_path, in_file_path_names):
         in_file.Close()
         list_of_cut_hist.append(ROOT.TH1D('cutflow', 'cutflow', len(key_names), 0, len(key_names)))
         for i, k in enumerate(key_names):
-            list_of_cut_hist[0].SetBinContent(i+1, getObjFromFile(in_file_paths[0], 'cutflow/'+k).GetSumOfWeights())
+            if ignore_weights:
+                list_of_cut_hist[0].SetBinContent(i+1, getObjFromFile(in_file_paths[0], 'cutflow/'+k).GetEntries())
+            else:
+                list_of_cut_hist[0].SetBinContent(i+1, getObjFromFile(in_file_paths[0], 'cutflow/'+k).GetSumOfWeights())
         tex_names = in_file_path_names
         x_name = key_names
     #Plot samples on x
@@ -112,11 +115,14 @@ def plotCutFlow(in_file_paths, out_file_path, in_file_path_names):
         for j, k in enumerate(key_names):
             list_of_cut_hist.append(ROOT.TH1D('cutflow_'+k, 'cutflow_'+k, len(in_file_paths), 0, len(in_file_paths)))
             for i, (ifp, infp) in enumerate(zip(in_file_paths, in_file_path_names)):
-                list_of_cut_hist[j].SetBinContent(i+1, getObjFromFile(ifp, 'cutflow/'+k).GetSumOfWeights())
+                if ignore_weights:
+                    list_of_cut_hist[j].SetBinContent(i+1, getObjFromFile(ifp, 'cutflow/'+k).GetEntries())
+                else:
+                    list_of_cut_hist[j].SetBinContent(i+1, getObjFromFile(ifp, 'cutflow/'+k).GetSumOfWeights())
         tex_names = [k.split('/')[-1] for k in key_names]
         x_name = in_file_path_names
 
-    p = Plot(list_of_cut_hist, tex_names, name = 'cutflow', x_name = x_name)
+    p = Plot(list_of_cut_hist, tex_names, name = 'cutflow', x_name = x_name, y_log = True)
     p.drawBarChart(out_file_path, index_colors=True, parallel_bins=True)
         
 

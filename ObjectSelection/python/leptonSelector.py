@@ -60,7 +60,7 @@ def isTightLightLepton(chain, index, algo ='leptonMVAtZq'):
 #
 from HNL.ObjectSelection.tauSelector import isLooseTau, isFOTau, isTightTau
 
-def isLooseLepton(chain, index, algo = 'cutbased'):
+def isLooseLepton(chain, index, algo = 'leptonMVAtZq'):
    
     if chain._lFlavor[index] != 2: return isLooseLightLepton(chain, index, algo) 
     if chain._lFlavor[index] == 2: return isLooseTau(chain, index)
@@ -69,7 +69,7 @@ def isLooseLepton(chain, index, algo = 'cutbased'):
 #
 # FO WP for leptons
 #
-def isFOLepton(chain, index, algo = 'cutbased'):
+def isFOLepton(chain, index, algo = 'leptonMVAtZq'):
     
     if chain._lFlavor[index] != 2: return isFOLightLepton(chain, index, algo)
     if chain._lFlavor[index] == 2: return isFOTau(chain, index)
@@ -78,7 +78,7 @@ def isFOLepton(chain, index, algo = 'cutbased'):
 #
 # Tight WP for leptons
 #
-def isTightLepton(chain, index, algo ='cutbased', tau_algo = None):
+def isTightLepton(chain, index, algo ='leptonMVAtZq', tau_algo = None):
     
     if chain._lFlavor[index] != 2: return isTightLightLepton(chain, index, algo)
     if chain._lFlavor[index] == 2: 

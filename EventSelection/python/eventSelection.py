@@ -61,10 +61,10 @@ def select3Leptons(chain, new_chain, no_tau=False, light_algo = 'leptonMVAtZq', 
     return True  
 
 def passBaseCuts(chain, new_chain, cutter):
-    
+    calculateKinematicVariables(chain, new_chain, is_reco_level = True)
     if not cutter.cut(not bVeto(chain, 'Deep'), 'b-veto'):              return False
-    if not cutter.cut(abs(new_chain.M3l-90) > 15, 'M3l_Z_veto'):        return False 
-    if not cutter.cut(passesZcuts(chain, new_chain), 'M2l_OS_Z_veto'):        return False
+    if not cutter.cut(abs(new_chain.M3l-91) > 15, 'M3l_Z_veto'):        return False 
+    if not cutter.cut(passesZcuts(chain, new_chain, True), 'M2l_OS_Z_veto'):        return False
     return True
 
 from HNL.ObjectSelection.leptonSelector import isGoodGenLepton
@@ -103,16 +103,16 @@ def select3GenLeptons(chain, new_chain):
  
 
 from HNL.ObjectSelection.jetSelector import isGoodJet, isBJet
-def bVeto(chain, algo, uncleaned = False):
+def bVeto(chain, algo, cleaned = True):
     for jet in xrange(chain._nJets):
-        if not isGoodJet(chain, jet, uncleaned): continue
+        if not isGoodJet(chain, jet, cleaned): continue
         if isBJet(chain, jet, algo, 'loose'): return True    
     return False
 
 def passesZcuts(chain, new_chain, same_flavor=False):
-    for fl in xrange(2):
+    for fl in [0, 1]:
         l1Vec = getFourVec(new_chain.l_pt[fl], new_chain.l_eta[fl], new_chain.l_phi[fl], new_chain.l_e[fl])
-        for sl in xrange(1, 3):
+        for sl in [1, 2]:
             if fl == sl: continue
             if new_chain.l_charge[fl] == new_chain.l_charge[sl]: continue
             if same_flavor and new_chain.l_flavor[fl] != new_chain.l_flavor[sl]: continue 

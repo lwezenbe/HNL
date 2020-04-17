@@ -31,7 +31,8 @@ def getBTagWP(year, working_point, algo = 'Deep'):
 
 def readBTagValue(chain, jet, algo = 'Deep'):
     if algo == 'Deep':
-        return chain._jetDeepCsv_b[jet] + chain._jetDeepCsv_bb[jet]
+        # return chain._jetDeepCsv_b[jet] + chain._jetDeepCsv_bb[jet]
+        return chain._jetDeepFlavor[jet]
     elif algo == 'CSV':
         return chain._jetDeepCsv[jet]
     elif algo == 'AN2017-014':
