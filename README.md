@@ -1,35 +1,45 @@
 # HNL
 
-Code for the ULB-UGent Legacy prompt HNL search 
+Code for the ULB-UGent Legacy prompt HNL search
 
-# EventSelection
+** installation **
+```
+wget https://raw.githubusercontent.com/lwezenbe/HNL/master/setup.sh
+./setup.sh
+``` 
+
+## EventSelection
 
 Contains code to perform all event selection
 
-# ObjectSelection
+## ObjectSelection
 
 Contains code to perform all object selection
 
-# Plotting
+## Plotting
 
 All the plotting tools you need
 
-# Triggers
+## Triggers
 
 Code to obtain trigger efficiencies
 
-# Tools
+## Tools
 
 Code review tools, helper tools and scripts
 
-# Samples
+## Samples
 
 sample object used in all code and all sample lists
 
-# SkimTuples
+## SkimTuples
 
 Scripts to skim tuples
 
-# Test
+## Weights
+
+All the code pertaining weights
+
+## Test
 
 Testcode used to perform comparison to old AN
