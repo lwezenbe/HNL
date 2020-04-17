@@ -9,7 +9,7 @@ YEARLIB = {2016 : '2016Legacy',
             2017: '2017ReReco',
             2018: '2018ReReco'}
 
-class tauEnergyScale:
+class TauEnergyScale:
     
     def __init__(self, year, algorithm):
         self.testool = TauESTool(YEARLIB[year], algorithm)
