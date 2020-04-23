@@ -39,7 +39,8 @@ def launchCream02(command, logfile, checkQueue=False, wallTimeInHours='12', queu
 def runLocal(command, logfile):
     while(int(system('ps uaxw | grep python | grep $USER |grep -c -v grep')) > 8): time.sleep(20)
     log.info('Launching ' + command + ' on local machine')
-    system(command + ' &> ' + logfile + ' &')
+    print command
+    system('python '+command + ' &> ' + logfile + ' &')
 
 def submitJobs(script, subJobArgs, subJobList, argParser, dropArgs=None, subLog=None, wallTime='15', queue='localgrid', cores=1, jobLabel=''):
     args         = argParser.parse_args()
