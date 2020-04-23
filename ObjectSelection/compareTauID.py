@@ -54,7 +54,7 @@ argParser.add_argument('--makeCombinations', action='store_true', default=False,
 args = argParser.parse_args()
 
 #
-# Change some settings if this is a test
+# Changing some settings if this is a test
 #
 if args.isTest:
     args.isChild = True
@@ -185,7 +185,10 @@ def allowedGenstatus(isoAlgo, eleAlgo, muAlgo):
 #
 reco_names = {None:'NoReco', 'iso': 'IncludeReco', 'noIso': 'OnlyReco'}
 
-base_path = os.path.join(os.getcwd(), 'data', os.path.basename(__file__).split('.')[0], str(args.year), reco_names[args.includeReco])
+if not args.isTest:
+    base_path = os.path.join(os.getcwd(), 'data', os.path.basename(__file__).split('.')[0], str(args.year), reco_names[args.includeReco])
+else:
+    base_path = os.path.join(os.getcwd(), 'data', 'testArea', os.path.basename(__file__).split('.')[0], str(args.year), reco_names[args.includeReco])
 subjobAppendix = '_subJob' + args.subJob if args.subJob else ''
 
 if args.isChild: output_name = lambda d, a, wp: os.path.join(base_path, d, sample.output, a, str(wp), 'tmp_'+sample.output)
@@ -372,7 +375,6 @@ for entry in event_range:
 #
 # Write
 #
-# if args.isTest: exit(0)
 print 'Saving output'
 
 for discr in args.discriminators:

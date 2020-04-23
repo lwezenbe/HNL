@@ -86,6 +86,12 @@ default_id_algo = 'deeptauVSjets'
 #Reference order since the working points are in a dictionary without order
 order_of_workingpoints = { None: 0, 'vvvloose' : 1, 'vvloose' : 2, 'vloose':3, 'loose': 4, 'medium' : 5, 'tight':6, 'vtight': 7, 'vvtight':8, 'vvvtight': 9}
 
+def getCorrespondingLightLepDiscr(algorithm):
+    if 'deeptau' in algorithm:
+        return 'deeptauVSe', 'deeptauVSmu'
+    else:
+        return 'againstElectron', 'againstMuon'
+
 def getIsoWorkingPoints(algorithm):
     all_wp = []
     for key in tau_id_WP.keys():

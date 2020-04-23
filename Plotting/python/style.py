@@ -16,6 +16,28 @@ def setDefault2D():
     gStyle.SetPadRightMargin(0.15) 
     #gROOT.ForceStyle()
 
+def getColor(palette, index):
+    if palette == 'Stack':
+        return getStackColor(index)
+    elif palette == 'StackTauPOG':
+        return getStackColorTauPOG(index)
+    elif palette == 'StackTauPOGbyName':
+        return getStackColorTauPOGbyName(index)
+    elif palette == 'Didar':
+        return getHistDidar(index)
+    elif palette == "Lines":
+        return getHNLColor(index)
+    elif palette == 'WorkingPoints':
+        return getWPcolor(index)
+    else:
+        return getHistColor(index)
+
+def getPaletteIndex(palette, index, tex_name):
+    if palette == 'StackTauPOGbyName' or palette == 'WorkingPoints':
+        return tex_name
+    else:
+        return index
+
 def getStackColor(index):
     if index == 0:      return TColor.GetColor("#4C5760")
     if index == 1:      return TColor.GetColor("#93A8AC")
@@ -75,6 +97,18 @@ def getHistColor(index):
     if index == 4:      return TColor.GetColor("#ffe119")
     if index == 5:      return TColor.GetColor("#87F1FF")
     if index == 6:      return TColor.GetColor("#F4F1BB")
+
+def getWPcolor(index):        
+    if index == 'medium':      return ROOT.kBlack
+    if index == 'None':      return ROOT.kRed
+    if index == 'vvvloose':      return ROOT.kBlue
+    if index == 'vvloose':      return ROOT.kGreen
+    if index == 'loose':      return ROOT.kCyan
+    if index == 'vloose':      return ROOT.kYellow
+    if index == 'tight':      return ROOT.kMagenta
+    if index == 'vtight':      return ROOT.kPink
+    if index == 'vvtight':      return ROOT.kOrange
+    if index == 'vvvtight':      return ROOT.kAzure
 
 def getHistDidar(index):        
     if index == 5:      return ROOT.kBlack

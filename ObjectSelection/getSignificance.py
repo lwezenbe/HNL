@@ -30,7 +30,8 @@ args = argParser.parse_args()
 #
 if args.isTest:
     args.isChild = True
-    args.sample = 'WZTo3LNu'
+    # args.sample = 'WZTo3LNu'
+    args.sample = 'HNLtau-60'
     args.subJob = '0'
     args.year = '2016'
 
@@ -149,7 +150,6 @@ if args.processExistingFiles is None:
                 v1 = getFourVec(chain._lPt[lepton_indices[1]], chain._lEta[lepton_indices[1]], chain._lPhi[lepton_indices[1]], chain._lE[lepton_indices[1]])
                 if abs((v0+v1).M()-91.19) < 15 :  continue
 
-
         #pre-filtering tau with common cuts to decrease time later on
         base_tau_indices_per_algo = {}
         for algo in algos.keys():
@@ -174,6 +174,9 @@ if args.processExistingFiles is None:
                             if not passedElectronDiscr(chain, t, algo, ele_wp):     continue
                             if not passedMuonDiscr(chain, t, algo, mu_wp):          continue
                             tau_indices.append(t)
+
+
+
                         if not passCuts(chain, lepton_indices+tau_indices): continue
                         if len(tau_indices) == 2:
                             list_of_hist[algo][iso_wp][ele_wp][mu_wp]['Ditau'].Fill(.5, lw.getLumiWeight())
@@ -184,7 +187,7 @@ if args.processExistingFiles is None:
     #
     # Write
     #
-    # if args.isTest: exit(0)
+    if args.isTest: exit(0)
         
     subjobAppendix = '_subJob' + args.subJob if args.subJob else ''
     signalOrBkgr = 'Signal' if 'HNL' in sample.name else 'Background'
@@ -210,23 +213,40 @@ if args.processExistingFiles is None:
 else:
 
     from HNL.Tools.mergeFiles import merge
+    from HNL.ObjectSelection.tauSelector import getCorrespondingLightLepDiscr
     import glob
     list_to_merge =   glob.glob(os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.year, '*', '*'))  
     for f in list_to_merge:
         if 'TextResults' in f: continue
         merge(f)
 
-    list_of_input = {'Signal': glob.glob(os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.year, 'Signal', '*', 'events.root')),
+    def sortkey(c):
+        mass_dir = c.split('/')[-2]
+        return int(mass_dir.split('-M')[-1])
+
+    list_of_input = {'Signal': sorted(glob.glob(os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.year, 'Signal', '*', 'events.root')), key=sortkey),
                     'Background': glob.glob(os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.year, 'Background', '*', 'events.root'))
     }
 
     from math import sqrt
     from HNL.Tools.helpers import getObjFromFile, makeDirIfNeeded
+    # def calcSignificance(S, B):
+    #     try:
+    #         return S/sqrt(S+B)
+    #     except:
+    #         return 0.
+
+    from  HNL.Tools.histogram import returnSqrt
     def calcSignificance(S, B):
-        try:
-            return S/sqrt(S+B)
-        except:
-            return 0.
+
+        num = S.Clone('num')
+        tot = S.Clone('tot')
+        tot.Add(B)
+        sqrtTot = returnSqrt(B)
+        num.Divide(sqrtTot)
+
+
+        return num.GetBinContent(1), num.GetBinError(1)
 
     #
     #  Make Text Files with significance
@@ -249,24 +269,57 @@ else:
                                 else: list_of_tot_bkgr[algo][iso_wp][ele_wp][mu_wp][channel].Add(getObjFromFile(bkgr, channel+'/'+channel+'_'+algo+'_'+iso_wp+'_'+ele_wp+'_'+mu_wp))
 
 
-        for signal in list_of_input['Signal']:
-            for channel in ['Ditau', 'SingleTau']:
-                out_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.year, 'TextResults', signal.split('/')[-2]+'_'+channel+'.txt')
-                makeDirIfNeeded(out_name)
-                out_file = open(out_name, 'w')
-                list_of_significances = []
-                for algo in algos.keys():
-                    for iso_wp in algos[algo]:
-                        for ele_wp in getEleWPs(algo):
+        # for signal in list_of_input['Signal']:
+        #     for channel in ['Ditau', 'SingleTau']:
+        #         out_name = os.path.join(os.getcwd(), 'data', 'Results', __file__.split('.')[0], args.year, 'TextResults', signal.split('/')[-2]+'_'+channel+'.txt')
+        #         makeDirIfNeeded(out_name)
+        #         out_file = open(out_name, 'w')
+        #         list_of_significances = []
+        #         for algo in algos.keys():
+        #             for iso_wp in algos[algo]:
+        #                 for ele_wp in getEleWPs(algo):
+        #                     for mu_wp in getMuWPs(algo):
+        #                         h = getObjFromFile(signal, channel+'/'+channel+'_'+algo+'_'+iso_wp+'_'+ele_wp+'_'+mu_wp)
+        #                         v = h.GetSumOfWeights()
+        #                         sig = calcSignificance(v, list_of_tot_bkgr[algo][iso_wp][ele_wp][mu_wp][channel].GetSumOfWeights())
+        #                         list_of_significances.append((algo+'_'+iso_wp+'_'+ele_wp+'_'+mu_wp, sig))
+        #                         out_file.write(algo+'_'+iso_wp+'_'+ele_wp+'_'+mu_wp + '\t' + str(sig) +'\n')
+        #         out_file.write('\n')
+        #         ordered_cuts = sorted(list_of_significances, key=lambda c:c[1], reverse=True)
+        #         out_file.write('OPTIMAL: '+ ordered_cuts[0][0]+ '\t'+ str(ordered_cuts[0][1]))
+        
+        #shortlists
+        for channel in ['Ditau', 'SingleTau']:
+            for algo in algos.keys():
+                out_name_tex = os.path.join(os.getcwd(), 'data', 'Results', __file__.split('.')[0], args.year, 'TextResults', 'tex', '-'.join([str(m) for m in args.masses]),  channel+'_'+algo+'.txt')
+                makeDirIfNeeded(out_name_tex)
+                out_file_tex = open(out_name_tex, 'w')
+                out_file_tex.write('\\begin{table}[] \n')
+                column_str = '|'.join(['c' for _ in args.masses])
+                out_file_tex.write("\\begin{tabular}{|c|"+column_str+"|} \n")
+                out_file_tex.write("\hline \n")
+                out_file_tex.write('& '+'&'.join(['$M_N = $'+str(m)+ ' GeV' for m in args.masses])+' \\\\ \n')
+                out_file_tex.write("\hline \n")
+                print channel, algo
+                for ele_wp in getEleWPs(algo):
+                    out_file_tex.write(ele_wp)
+                    for signal in list_of_input['Signal']:
+                        if not any(['M'+str(m)+'/' in signal for m in args.masses]): continue
+                        list_of_significances = []
+                        for iso_wp in algos[algo]:
                             for mu_wp in getMuWPs(algo):
                                 h = getObjFromFile(signal, channel+'/'+channel+'_'+algo+'_'+iso_wp+'_'+ele_wp+'_'+mu_wp)
-                                v = h.GetSumOfWeights()
-                                sig = calcSignificance(v, list_of_tot_bkgr[algo][iso_wp][ele_wp][mu_wp][channel].GetSumOfWeights())
-                                list_of_significances.append((algo+'_'+iso_wp+'_'+ele_wp+'_'+mu_wp, sig))
-                                out_file.write(algo+'_'+iso_wp+'_'+ele_wp+'_'+mu_wp + '\t' + str(sig) +'\n')
-                out_file.write('\n')
-                ordered_cuts = sorted(list_of_significances, key=lambda c:c[1], reverse=True)
-                out_file.write('OPTIMAL: '+ ordered_cuts[0][0]+ '\t'+ str(ordered_cuts[0][1]))
+                                sig, err = calcSignificance(h, list_of_tot_bkgr[algo][iso_wp][ele_wp][mu_wp][channel])
+                                list_of_significances.append((iso_wp+'_'+mu_wp, sig, err))
+                        ordered_cuts = sorted(list_of_significances, key=lambda c:c[1], reverse=True)
+                        out_file_tex.write(' & %.2E'%ordered_cuts[0][1] +' $\pm$ %.2E'%ordered_cuts[0][2])
+                        # out_file_tex.write(' & %.3f'%ordered_cuts[0][1] +' $\pm$ %.3f'%float('%.1g' % ordered_cuts[0][2]))
+                        # out_file_tex.write(' & '+ str(ordered_cuts[0][1]) +' $\pm$ '+str(ordered_cuts[0][2]))
+                    out_file_tex.write('\\\\ \hline \n')
+                out_file_tex.write('\end{tabular} \n')
+                out_file_tex.write('\end{table} \n')
+                out_file_tex.close()
+
 
 
     #
@@ -304,7 +357,10 @@ else:
                             for mu, mu_wp in enumerate(getMuWPs(algo)):
                                 for iso, iso_wp in enumerate(algos[algo]):
                                     h = getObjFromFile(signal, channel+'/'+channel+'_'+algo+'_'+iso_wp+'_'+ele_wp+'_'+mu_wp)
-                                    list_of_hist[channel][algo][ele_wp][hist_key][global_index].SetBinContent(iso+1+(mu*sub_bins), h.GetBinContent(1))
+                                    # if hist_key == 'Signal':
+                                    #     list_of_hist[channel][algo][ele_wp][hist_key][global_index].SetBinContent(iso+1+(mu*sub_bins), h.GetEntries())
+                                    # else:
+                                    list_of_hist[channel][algo][ele_wp][hist_key][global_index].SetBinContent(iso+1+(mu*sub_bins), h.GetBinContent(1)) #h only has 1 bin
                                     list_of_hist[channel][algo][ele_wp][hist_key][global_index].SetBinError(iso+1+(mu*sub_bins), h.GetBinError(1))
                             global_index += 1
                     custom_labels = algos[algo]*main_bins
@@ -316,10 +372,15 @@ else:
                     main_bin_length = plot_size_hor/(2*main_bins)
                     for l in xrange(main_bins):
                         tx = tdrStyle_Left_Margin + main_bin_length*(1+2*l)
-                        extra_text.append(extraTextFormat(getMuWPs(algo)[l], tx, 0.3, None, 22) )
+                        extra_text.append(extraTextFormat(getMuWPs(algo)[l], tx, 0.32, None, 22) )
+                        extra_text.append(extraTextFormat(getCorrespondingLightLepDiscr(algo)[1], tx, None, None, 22))
+
+                    extra_text.append(extraTextFormat(algo, 0.2, 0.8))
+                    extra_text.append(extraTextFormat(ele_wp + ' ' + getCorrespondingLightLepDiscr(algo)[0]))
 
                     p = Plot(list_of_hist[channel][algo][ele_wp]['Signal'], tex_names, name = '_'.join([channel, algo, ele_wp]), bkgr_hist = list_of_hist[channel][algo][ele_wp]['Background'], y_log = True, draw_significance = True, extra_text = extra_text)   
                     out_dir = os.path.join(os.getcwd(), 'data', 'Results', __file__.split('.')[0], args.year, 'Plots') 
+                    if args.masses: out_dir = os.path.join(out_dir, '-'.join([str(m) for m in args.masses]))
                     p.drawHist(output_dir = out_dir, signal_style = True, custom_labels = custom_labels, draw_lines = lines_to_draw)                
 
 
