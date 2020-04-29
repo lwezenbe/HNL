@@ -44,7 +44,7 @@ args = argParser.parse_args()
 if args.isTest:
     args.isChild = True
 
-    args.sample = 'DYJetsToLL-M-50' if not args.signalOnly else 'HNLe-60'
+    args.sample = 'DYJetsToLL-M-50' if not args.signalOnly else 'HNLtau-40'
     args.subJob = '0'
     args.year = '2016'
 
@@ -52,12 +52,9 @@ if args.isTest:
 #
 # Load in the sample list 
 #
-from HNL.Samples.sample import createSampleList, getSampleFromList
-if args.noskim:
-    list_location = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/sampleList_'+args.year+'_noskim.conf')
-else:
-    list_location = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/sampleList_'+args.year+'_Reco.conf')
-sample_list = createSampleList(list_location)
+from HNL.Samples.sampleManager import SampleManager
+skim_str = 'noskim' if args.noskim else 'Reco'
+sample_manager = SampleManager(args.year, skim_str, 'fulllist_'+str(args.year))
 
 #
 # function to have consistent categories in running and plotting
@@ -65,7 +62,7 @@ sample_list = createSampleList(list_location)
 from HNL.EventSelection.eventCategorization import CATEGORIES, SUPER_CATEGORIES
 from HNL.EventSelection.eventCategorization import CATEGORY_TEX_NAMES
 def listOfCategories():
-    return CATEGORIES + [15, 'total']
+    return CATEGORIES + [17, 'total']
 
 if not args.makeTextFiles and not args.makeBarCharts and not args.makePieCharts:
     #
@@ -74,7 +71,8 @@ if not args.makeTextFiles and not args.makeBarCharts and not args.makePieCharts:
     if not args.isChild:
         from HNL.Tools.jobSubmitter import submitJobs
         jobs = []
-        for sample in sample_list:
+        for sample_name in sample_manager.sample_names:
+            sample = sample_manager.getSample(sample_name)
             if args.sample and args.sample not in sample.name: continue
             if args.signalOnly and not 'HNL' in sample.name: continue
             if args.backgroundOnly and 'HNL' in sample.name: continue
@@ -89,8 +87,8 @@ if not args.makeTextFiles and not args.makeBarCharts and not args.makePieCharts:
     #
     # Load in sample and chain
     #
-    sample = getSampleFromList(sample_list, args.sample)
-    chain = sample.initTree(needhcount=args.noskim)
+    sample = sample_manager.getSample(args.sample)
+    chain = sample.initTree(needhcount = False)
 
     #
     # Import and create cutter to provide cut flow
@@ -99,19 +97,20 @@ if not args.makeTextFiles and not args.makeBarCharts and not args.makePieCharts:
     cutter = Cutter(chain = chain)
 
     if args.isTest:
-        event_range = xrange(50)
+        event_range = xrange(500)
     else:
         event_range = sample.getEventRange(args.subJob)    
 
-    if 'HNL' in sample.name:
-        chain.HNLmass = float(sample.name.rsplit('-', 1)[1])
+    chain.HNLmass = sample.getMass()
     chain.year = int(args.year)
 
     #
     # Get luminosity weight
     #
     from HNL.Weights.lumiweight import LumiWeight
-    lw = LumiWeight(sample, list_location)
+    if args.noskim:
+        lw = LumiWeight(sample, sample_manager)
+        
 
     from HNL.EventSelection.eventCategorization import EventCategory
     ec = EventCategory(chain)
@@ -134,7 +133,7 @@ if not args.makeTextFiles and not args.makeBarCharts and not args.makePieCharts:
     # Loop over all events
     #
     from HNL.Tools.helpers import progress
-    from HNL.EventSelection.eventSelection import select3Leptons, select3GenLeptons, passBaseCutsAN2017014, lowMassCuts, highMassCuts, calculateKinematicVariables, containsOSSF
+    from HNL.EventSelection.eventSelection import select3Leptons, select3GenLeptons, passBaseCutsAN2017014, passBaseCuts, lowMassCuts, highMassCuts, calculateKinematicVariables, containsOSSF
     from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
     from HNL.Triggers.triggerSelection import applyCustomTriggers, listOfTriggersAN2017014
     from HNL.ObjectSelection.leptonSelector import isFOLepton, isTightLepton
@@ -156,6 +155,7 @@ if not args.makeTextFiles and not args.makeBarCharts and not args.makePieCharts:
         #Selecting 3 leptons
         if not args.oldAnalysisCuts:
             if not cutter.cut(select3Leptons(chain, chain, light_algo = 'leptonMVAtZq', cutter=cutter), '3_tight_leptons'):   continue   
+            if not passBaseCuts(chain, chain, cutter): continue
         else:            
             selected3FO = [(chain._lPt[l], l) for l in xrange(chain._nLight) if isFOLepton(chain, l, algo = 'cutbased')]
             if not cutter.cut(len(selected3FO) >= 3, '3 FO'): continue
@@ -220,12 +220,13 @@ else:
     for sample in sample_list:
         path_name = os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/eventsPerCategory/'+selection_str+'/'+mass_str+'/'+sample.output+'/events.root')
         is_signal = 'signal' if 'HNL' in sample.output else 'bkgr'
+        if args.signalOnly and is_signal == 'bkgr': continue
+        if args.backgroundOnly and is_signal == 'signal': continue
         if 'HNL' in sample.name and not 'HNL'+args.coupling in sample.name: continue
         if args.masses is not None and is_signal=='signal' and not any([str(m) == sample.output.rsplit('-M')[-1] for m in args.masses]): continue
         list_of_numbers[is_signal][sample.output] = {}
         for c in listOfCategories():
             if c not in accepted_categories: continue
-            print sample.name, path_name, c
             list_of_numbers[is_signal][sample.output][c]= Histogram(getObjFromFile(path_name, str(c)+'/'+str(c)))
             
 from HNL.Tools.helpers import makePathTimeStamped
@@ -336,4 +337,14 @@ if args.makePieCharts:
         p = Plot(hist_to_plot_pie, list_of_numbers['bkgr'].keys(), name = 'Events_'+str(c), x_name = CATEGORY_TEX_NAMES, y_name = 'Events', extra_text = extra_text)
         p.drawPieChart(output_dir = destination, draw_percent=True, message = args.message)
 
+if args.cutflow:
+    import glob
+    all_files = glob.glob(os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/eventsPerCategory/'+selection_str+'/'+mass_str+'/HNLtau*/events.root'))
+
+    all_files = sorted(all_files, key = lambda k : int(k.split('/')[-2].split('.')[0].split('-M')[1]))
+    all_names = [k.split('/')[-1].split('.')[0] for k in all_files]
+
+    from HNL.EventSelection.cutter import plotCutFlow
+    out_name = os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/Results/eventsPerCategory/'+selection_str+'/'+mass_str) +'/CutFlow/Output'
+    plotCutFlow(all_files, out_name, all_names, ignore_weights=True)
 

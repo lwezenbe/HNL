@@ -31,7 +31,8 @@ args = argParser.parse_args()
 if args.isTest:
     args.isChild = True
     # args.sample = 'WZTo3LNu'
-    args.sample = 'HNLtau-60'
+    # args.sample = 'HNLtau-60'
+    args.sample = 'HNLtau-m60'
     args.subJob = '0'
     args.year = '2016'
 
@@ -60,9 +61,8 @@ def getMuWPs(iso_algo):
 #
 # Load in the sample list 
 #
-from HNL.Samples.sample import createSampleList, getSampleFromList
-list_location = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/sampleList_'+str(args.year)+'_noskim.conf')
-sample_list = createSampleList(list_location)
+from HNL.Samples.sampleManager import SampleManager
+sample_manager = SampleManager(args.year, 'noskim', 'compareTauIdList_'+str(args.year))
 
 from HNL.Tools.helpers import getFourVec
 
@@ -74,7 +74,8 @@ if args.processExistingFiles is None:
 
         from HNL.Tools.jobSubmitter import submitJobs
         jobs = []
-        for sample in sample_list:
+        for sample_name in sample_manager.sample_names:
+            sample = sample_manager.getSample(sample_name)
             for njob in xrange(sample.split_jobs):
                 jobs += [(sample.name, str(njob))]
 
@@ -84,7 +85,7 @@ if args.processExistingFiles is None:
     #
     #Initialize chain
     #
-    sample = getSampleFromList(sample_list, args.sample)
+    sample = sample_manager.getSample(args.sample)
     chain = sample.initTree()
     chain.year = int(args.year)
     isBkgr = not 'HNL' in sample.name
@@ -109,7 +110,7 @@ if args.processExistingFiles is None:
     # Get luminosity weight
     #
     from HNL.Weights.lumiweight import LumiWeight
-    lw = LumiWeight(sample, list_location)
+    lw = LumiWeight(sample, sample_manager)
 
     from HNL.EventSelection.eventSelection import bVeto
     def passCuts(chain, indices):
@@ -222,7 +223,8 @@ else:
 
     def sortkey(c):
         mass_dir = c.split('/')[-2]
-        return int(mass_dir.split('-M')[-1])
+        # return int(mass_dir.split('-M')[-1])
+        return int(mass_dir.split('-m')[-1])
 
     list_of_input = {'Signal': sorted(glob.glob(os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.year, 'Signal', '*', 'events.root')), key=sortkey),
                     'Background': glob.glob(os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.year, 'Background', '*', 'events.root'))
@@ -291,7 +293,8 @@ else:
         #shortlists
         for channel in ['Ditau', 'SingleTau']:
             for algo in algos.keys():
-                out_name_tex = os.path.join(os.getcwd(), 'data', 'Results', __file__.split('.')[0], args.year, 'TextResults', 'tex', '-'.join([str(m) for m in args.masses]),  channel+'_'+algo+'.txt')
+                mass_str = '-'.join([str(m) for m in args.masses])
+                out_name_tex = os.path.join(os.getcwd(), 'data', 'Results', __file__.split('.')[0], args.year, 'TextResults', 'tex', mass_str,  channel+'_'+algo+'.txt')
                 makeDirIfNeeded(out_name_tex)
                 out_file_tex = open(out_name_tex, 'w')
                 out_file_tex.write('\\begin{table}[] \n')
@@ -350,7 +353,8 @@ else:
                         global_index = 0
                         for signal in list_of_input[hist_key]:
                             s_name = signal.split('/')[-2]
-                            if args.masses is not None and 'HNL' in s_name and int(s_name.split('_')[0].split('-M')[1]) not in args.masses: continue
+                            # if args.masses is not None and 'HNL' in s_name and int(s_name.split('_')[0].split('-M')[1]) not in args.masses: continue
+                            if args.masses is not None and 'HNL' in s_name and int(s_name.split('_')[0].split('-m')[1]) not in args.masses: continue
                             tex_names.append(signal.split('/')[-2])
 
                             list_of_hist[channel][algo][ele_wp][hist_key].append(ROOT.TH1D('_'.join([signal.split('/')[-2], channel, algo, ele_wp]), '_'.join([signal.split('/')[-2], channel, algo, ele_wp]), total_bins, 0, total_bins))

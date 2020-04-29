@@ -5,7 +5,7 @@
 import ROOT
 import glob
 import os
-from HNL.Tools.helpers import getObjFromFile
+from HNL.Tools.helpers import getObjFromFile, isValidRootFile
 
 class Sample:
     
@@ -13,13 +13,13 @@ class Sample:
     #   Added last variable due to t2b pnfs problems that took too long to get solved
     #
 
-    def __init__(self, name, path, output, split_jobs, xsec, max_filesize = 500):           
+    def __init__(self, name, path, output, split_jobs, xsec, max_filesize = 1000, is_test=False):           
         self.name               = name
         self.path               = path
         self.is_data            = (xsec == 'data')
         self.xsec               = eval(xsec) if not self.is_data else None
         self.max_filesize       = max_filesize
-        self.split_jobs         = self.calcSplitJobs(split_jobs)
+        self.split_jobs         = self.calcSplitJobs(split_jobs) if not is_test else 1
         self.hcount             = None
         self.chain              = None
         self.output             = output
@@ -33,7 +33,14 @@ class Sample:
         file_size = file_info.st_size
         file_size_MB = 0.000001*file_size
         return file_size_MB
-    
+
+    def shavedName(self):
+        if 'ext' in self.name:
+            tmp_sample_name = self.name.rsplit('-', 1)[0]
+        else:
+            tmp_sample_name = self.name
+        return tmp_sample_name
+
     #
     #   Function to calculate the number of subjobs
     #   If the option to calculate was given in inputfile,
@@ -50,7 +57,7 @@ class Sample:
                 for f in glob.glob(self.path + '/*/*/*.root'):
                     tot_size += self.fileSize(f)
                 if tot_size == 0: 
-                    print "No file loaded, check the input path again."
+                    print "No file loaded, check the input path of "+self.name+" again."
             split_jobs = int(round((tot_size/self.max_filesize)+0.5))
             if '*' in init_value:       
                 split_jobs *= int(init_value.split('*')[-1])
@@ -91,6 +98,8 @@ class Sample:
         else:
             list_of_files         = sorted(glob.glob(self.path + '/*/*/*.root'))
     
+        assert len(list_of_files) > 0 and isValidRootFile(list_of_files[0])
+
         for f in list_of_files:
             if 'pnfs' in f:
                 f = 'root://maite.iihe.ac.be'+f
@@ -109,10 +118,16 @@ class Sample:
         limits = [entry*self.chain.GetEntries()/self.split_jobs for entry in range(self.split_jobs)] + [self.chain.GetEntries()]
         return xrange(limits[int(subjob)], limits[int(subjob)+1])
 
+    def getMass(self):
+        if 'HNL' in self.name:
+            return float(self.name.rsplit('-m', 1)[-1])
+        else:
+            return None
+
 #
 #       create list of samples from input file
 #
-def createSampleList(file_name):
+def createSampleList(file_name, is_test=False):
     sample_infos = [line.split('%')[0].strip() for line in open(file_name)]                     # Strip % comments and \n charachters
     sample_infos = [line.split() for line in sample_infos if line]                              # Get lines into tuples
     for name, path, output, split_jobs, xsec in sample_infos:
@@ -120,7 +135,7 @@ def createSampleList(file_name):
             split_jobs
         except:
             continue
-        yield Sample(name, path, output, split_jobs, xsec)
+        yield Sample(name, path, output, split_jobs, xsec, is_test=is_test)
 
 #
 #       Load in a specific sample from the list

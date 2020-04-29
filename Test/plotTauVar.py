@@ -56,11 +56,8 @@ if not args.makePlots:
     #
     # Load in the sample list 
     #
-    from HNL.Samples.sample import createSampleList
-    gen_name = 'Gen' if args.genLevel else 'Reco'
-    list_location = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/compareTauIdList_'+str(args.year)+'.conf')
-    sample_list = createSampleList(list_location)
-
+    from HNL.Samples.sampleManager import SampleManager
+    sample_manager = SampleManager(args.year, 'noskim', 'compareTauIdList_'+str(args.year))
 
     #
     # Submit subjobs
@@ -68,7 +65,8 @@ if not args.makePlots:
     if args.runOnCream and not args.isChild:
         from HNL.Tools.jobSubmitter import submitJobs
         jobs = []
-        for sample in sample_list:
+        for sample_name in sample_manager.sample_names:
+            sample = sample_manager.getSample(sample_name)
             for njob in xrange(sample.split_jobs): 
                 jobs += [(sample.name, str(njob))]
 
@@ -78,7 +76,8 @@ if not args.makePlots:
 
     #Start a loop over samples
     sample_names = []
-    for sample in sample_list:
+    for sample in sample_manager.sample_list:
+        if sample.name not in sample_manager.sample_names: continue
        
         if args.runOnCream and sample.name != args.sample: continue
         if args.sample and sample.name != args.sample: continue
@@ -111,7 +110,7 @@ if not args.makePlots:
         else:
             event_range = xrange(chain.GetEntries())
 
-        chain.HNLmass = float(sample.name.rsplit('-', 1)[1].rsplit('m', 1)[1]) if is_signal else None
+        chain.HNLmass = sample.getMass()
         chain.year = int(args.year)
         
         print sample.name

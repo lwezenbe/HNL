@@ -1,10 +1,32 @@
 #! /usr/bin/env python
 
-#
-# Code to plot basic variables that are already contained in a tree that was skimmed for baseline events
-#
+#########################################################################
+#                                                                       #
+#   Code to plot basic variables that are already contained in a tree   # 
+#   that was skimmed for baseline events                                #
+#                                                                       #                                   
+#########################################################################
 
+#
+# General imports
+#
 import numpy as np
+import os
+from ROOT import TFile, TLorentzVector
+from HNL.Tools.histogram import Histogram
+from HNL.Tools.mergeFiles import merge
+from HNL.Tools.helpers import getObjFromFile, progress, makeDirIfNeeded
+from HNL.Samples.sample import createSampleList
+from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
+from HNL.EventSelection.eventSelection import select3Leptons, select3GenLeptons, calculateKinematicVariables
+from HNL.EventSelection.eventSelection import passBaseCuts, lowMassCuts, highMassCuts
+from HNL.EventSelection.eventCategorization import EventCategory
+from HNL.EventSelection.cutter import Cutter
+
+
+#
+# Some constants to make referring to signal leptons more readable
+#
 l1 = 0
 l2 = 1
 l3 = 2
@@ -12,32 +34,31 @@ l3 = 2
 #
 # Argument parser and logging
 #
-import os, argparse
+import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
-argParser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
-argParser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
-argParser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
-argParser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
-argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
-argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
-argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-argParser.add_argument('--makePlots',   action='store_true', default=False,  help='Use existing root files to make the plots')
-argParser.add_argument('--showCuts',   action='store_true', default=False,  help='Show what the pt cuts were for the category in the plots')
-argParser.add_argument('--runOnCream',   action='store_true', default=False,  help='Submit jobs on the cluster')
-argParser.add_argument('--genLevel',   action='store_true', default=False,  help='Use gen level variables')
-argParser.add_argument('--signalOnly',   action='store_true', default=False,  help='Run or plot a only the signal')
-argParser.add_argument('--bkgrOnly',   action='store_true', default=False,  help='Run or plot a only the background')
-argParser.add_argument('--lowMass',   action='store_true', default=False,  help='Only run or plot samples with mass below or equal to 80 GeV')
-argParser.add_argument('--highMass',   action='store_true', default=False,  help='Only run or plot samples with mass below or equal to 80 GeV')
+argParser.add_argument('--isChild',  action='store_true',       default=False,  help='mark as subjob, will never submit subjobs by itself')
+argParser.add_argument('--year',     action='store',            default=None,   help='Select year', choices=['2016', '2017', '2018'], required=True)
+argParser.add_argument('--sample',   action='store',            default=None,   help='Select sample by entering the name as defined in the conf file')
+argParser.add_argument('--subJob',   action='store',            default=None,   help='The number of the subjob for this sample')
+argParser.add_argument('--isTest',   action='store_true',       default=False,  help='Run a small test')
+argParser.add_argument('--runLocal', action='store_true',       default=False,  help='use local resources instead of Cream02')
+argParser.add_argument('--dryRun',   action='store_true',       default=False,  help='do not launch subjobs, only show them')
+argParser.add_argument('--makePlots',   action='store_true',    default=False,  help='Use existing root files to make the plots')
+argParser.add_argument('--showCuts',   action='store_true',     default=False,  help='Show what the pt cuts were for the category in the plots')
+argParser.add_argument('--runOnCream',   action='store_true',   default=False,  help='Submit jobs on the cluster')
+argParser.add_argument('--genLevel',   action='store_true',     default=False,  help='Use gen level variables')
+argParser.add_argument('--signalOnly',   action='store_true',   default=False,  help='Run or plot a only the signal')
+argParser.add_argument('--bkgrOnly',   action='store_true',     default=False,  help='Run or plot a only the background')
+argParser.add_argument('--massRegion', action='store',          default = None, choices =['low', 'high'], help='Run with low mass region cuts or high mass region cuts')
 argParser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
 argParser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l', ''])
-argParser.add_argument('--coupling', action='store', default=0.01, type=float,  help='How large is the coupling?' , choices=['tau', 'e', 'mu', '2l', ''])
+argParser.add_argument('--coupling', action='store', default=0.01, type=float,  help='How large is the coupling?')
 #argParser.add_argument('--triggerTest', type=str, default=None,  help='Some settings to perform pt cuts for triggers')
 args = argParser.parse_args()
 
 if args.isTest:
-    args.year = '2016'
-    args.sample = 'DYJetsToLL-M-10to50'
+    if args.year is None: args.year = '2016'
+    if args.sample is None: args.sample = 'DYJetsToLL-M-10to50'
 
 #
 # Create histograms
@@ -74,14 +95,10 @@ else:
 
 import HNL.EventSelection.eventCategorization as cat
 categories = [c for c in cat.CATEGORIES]
-categories.append(len(cat.CATEGORIES)+2) #other
-print categories
+categories.append(len(cat.CATEGORIES)+1) #other
 reco_or_gen_str = 'reco' if not args.genLevel else 'gen'
 
-from ROOT import TFile, TLorentzVector
-from HNL.Tools.histogram import Histogram
-from HNL.Tools.mergeFiles import merge
-from HNL.Tools.helpers import getObjFromFile
+
 list_of_hist = {}
 for c in categories:
     list_of_hist[c] = {}
@@ -95,12 +112,9 @@ if not args.makePlots:
     #
     # Load in the sample list 
     #
-    from HNL.Samples.sample import createSampleList
+    from HNL.Samples.sampleManager import SampleManager
     gen_name = 'Gen' if args.genLevel else 'Reco'
-    list_location = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/sampleList_'+str(args.year)+'_'+gen_name+'.conf')
-    # list_location = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/sampleList_'+str(args.year)+'_noskim.conf')
-    sample_list = createSampleList(list_location)
-
+    sample_manager = SampleManager(args.year, gen_name, 'fulllist_'+str(args.year))
 
     #
     # Submit subjobs
@@ -108,7 +122,8 @@ if not args.makePlots:
     if args.runOnCream and not args.isChild:
         from HNL.Tools.jobSubmitter import submitJobs
         jobs = []
-        for sample in sample_list:
+        for sample_name in sample_manager.sample_names:
+            sample = sample_manager.getSample(sample_name)
             if args.signalOnly and not 'HNL' in sample.name: continue
             if args.bkgrOnly and 'HNL' in sample.name: continue
             for njob in xrange(sample.split_jobs): 
@@ -120,28 +135,32 @@ if not args.makePlots:
 
     #Start a loop over samples
     sample_names = []
-    for sample in sample_list:
+    for sample in sample_manager.sample_list:
+        if sample.name not in sample_manager.sample_names: continue
        
         if args.runOnCream and sample.name != args.sample: continue
         if args.sample and sample.name != args.sample: continue
+
         #
         # Load in sample and chain
         #
         chain = sample.initTree(needhcount=False)
         sample_names.append(sample.name)
 
-        # from HNL.Weights.lumiweight import LumiWeight
-        # lw = LumiWeight(sample, list_location)
-
+        #
+        # Check if sample is a signal or background sample
+        #
         is_signal = 'HNL' in sample.name
         signal_str = 'signal' if is_signal else 'bkgr'
 
         if args.signalOnly and not is_signal:   continue
         if args.bkgrOnly and is_signal:         continue
 
+        #
+        # Create histogram for all categories and variables
+        #
         for c in categories:
             for v in var:
-                #list_of_hist[c][v][signal_str][sample.name] = Histogram(cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v+'-'+sample.output, var[v][0], var[v][2], var[v][1])
                 list_of_hist[c][v][signal_str][sample.name] = Histogram(str(c)+'-'+v+'-'+sample.output, var[v][0], var[v][2], var[v][1])
         
         #
@@ -157,63 +176,70 @@ if not args.makePlots:
         else:
             event_range = xrange(chain.GetEntries())
 
-        chain.HNLmass = float(sample.name.rsplit('-', 1)[1]) if is_signal else None
+        #
+        # Some basic variables about the sample to store in the chain
+        #
+        chain.HNLmass = sample.getMass()
         chain.year = int(args.year)
-        if args.lowMass and chain.HNLmass > 80: continue
-        if args.highMass and chain.HNLmass < 80: continue
+
+        #
+        # Skip HNL masses that were not defined
+        #
         if args.masses is not None and chain.HNLmass not in args.masses: continue
+
+        #
+        # Create cutter to provide cut flow
+        #
+        cutter = Cutter(chain = chain)
+
         #
         # Loop over all events
         #
-        from HNL.Tools.helpers import progress, makeDirIfNeeded
-        from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
-        from HNL.EventSelection.eventSelection import select3Leptons, select3GenLeptons, calculateKinematicVariables
-        from HNL.EventSelection.eventCategorization import EventCategory
         ec = EventCategory(chain)
         for entry in event_range:
             
             chain.GetEntry(entry)
             progress(entry - event_range[0], len(event_range))
  
+            cutter.cut(True, 'Total')
+
             if args.genLevel and args.signalOnly:
                 slm = SignalLeptonMatcher(chain)
                 if not slm.saveNewOrder(): continue
                 calculateKinematicVariables(chain, chain, is_reco_level=False)
            
-            if not args.genLevel and not select3Leptons(chain, chain):    continue 
-            if args.genLevel and not select3GenLeptons(chain, chain):    continue 
+            if not args.genLevel:
+                if not cutter.cut(select3Leptons(chain, chain), 'select_3_leptons'):    continue 
+            else:
+                if not cutter.cut(select3GenLeptons(chain, chain), 'select_3_genleptons'):    continue 
             calculateKinematicVariables(chain, chain, is_reco_level=not args.genLevel)
-
             chain.event_category = ec.returnCategory()
 
-            # chain.lumiweight = lw.getLumiWeight()
-
-            #Add here any additional cuts
-            l1Vec = TLorentzVector(chain.l_pt[0], chain.l_eta[0], chain.l_phi[0], chain.l_e[0])
-            l2Vec = TLorentzVector(chain.l_pt[1], chain.l_eta[1], chain.l_phi[1], chain.l_e[1])
-            l3Vec = TLorentzVector(chain.l_pt[2], chain.l_eta[2], chain.l_phi[2], chain.l_e[2])
-            chain.Ml12 = (l1Vec+l2Vec).M()         
-            chain.Ml23 = (l2Vec+l3Vec).M()         
-            chain.Ml13 = (l1Vec+l3Vec).M()         
-
+            #
+            # Event selection
+            #
+            if not passBaseCuts(chain, chain, cutter): continue
+            if args.massRegion == 'low' and not lowMassCuts(chain, chain, cutter): continue
+            if args.massRegion == 'high' and not highMassCuts(chain, chain, cutter): continue
+            
+            #
+            # Fill the histograms
+            #
             for v in var.keys():
-                #if chain.event_category < len(cat.CATEGORY_NAMES)+1 and chain.event_subcategory < len(cat.SUBCATEGORY_NAMES[cat.CATEGORY_SUBCATEGORY_LINK[chain.event_category]])+1: 
-                    #list_of_hist[(chain.event_category, chain.event_subcategory)][v][signal_str][sample.name].fill(chain, chain.lumiweight)
                 if chain.event_category < len(cat.CATEGORY_NAMES)+1: 
-                    list_of_hist[chain.event_category][v][signal_str][sample.name].fill(chain, chain.lumiweight)
-                    
-                #list_of_hist[(len(cat.CATEGORY_NAMES)+1, len(cat.SUBCATEGORY_NAMES[cat.CATEGORY_SUBCATEGORY_LINK[len(cat.CATEGORY_NAMES)+1]])+1)][v][signal_str][sample.name].fill(chain, chain.lumiweight)
+                    list_of_hist[chain.event_category][v][signal_str][sample.name].fill(chain, chain.lumiweight)  
                 list_of_hist[len(cat.CATEGORY_NAMES)+1][v][signal_str][sample.name].fill(chain, chain.lumiweight)
-            #if chain.event_category == 1 and chain.event_subcategory == 3: 
-            #    print list_of_hist[(chain.event_category, chain.event_subcategory)]['l1pt'][signal_str][sample.name].getHist().GetSumOfWeights()
-            #    print len(cat.SUBCATEGORY_NAMES[cat.CATEGORY_SUBCATEGORY_LINK[chain.event_category]])                
-
+             
         #
         # Save histograms
         #
-        if args.isTest:  continue
         subjobAppendix = '_subJob' + args.subJob if args.subJob else ''
-        output_name = os.path.join(os.getcwd(), 'data', 'plotVariables', reco_or_gen_str, signal_str)
+        mass_str = 'All' if args.massRegion is None else args.massRegion+'Mass'
+
+        if not args.isTest:
+            output_name = os.path.join(os.getcwd(), 'data', 'plotVariables', reco_or_gen_str, mass_str, signal_str)
+        else:
+            output_name = os.path.join(os.getcwd(), 'data', 'testArea', 'plotVariables', reco_or_gen_str, mass_str, signal_str)
         
         if args.signalOnly and args.genLevel:       output_name = os.path.join(output_name, 'signalOrdering', sample.output)
         else:      output_name = os.path.join(output_name, sample.output) 
@@ -233,6 +259,8 @@ if not args.makePlots:
                 list_of_hist[c][v][signal_str][sample.name].getHist().Write()
         
         output_file.Close()
+
+        cutter.saveCutFlow(output_name +'variables'+subjobAppendix+ '.root')
 
 #If the option to not run over the events again is made, load in the already created histograms here
 else:
@@ -267,8 +295,6 @@ else:
                 for s in signal_list:
                     sample_name = s.split('/')[-1]
                     sample_mass = int(sample_name.split('-M')[-1])
-                    if args.lowMass and sample_mass > 80: continue
-                    if args.highMass and sample_mass < 80: continue
                     if args.masses is not None and sample_mass not in args.masses: continue
                     #list_of_hist[c][v]['signal'][sample_name] = Histogram(getObjFromFile(s+'/variables.root', v+'/'+cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v+'-'+sample_name)) 
                     list_of_hist[c][v]['signal'][sample_name] = Histogram(getObjFromFile(s+'/variables.root', v+'/'+str(c)+'-'+v+'-'+sample_name)) 
@@ -291,17 +317,16 @@ from HNL.Plotting.plot import Plot
 from HNL.Plotting.plottingTools import extraTextFormat
 from HNL.Tools.helpers import makePathTimeStamped
 from HNL.Tools.efficiency import Efficiency
-# from HNL.EventSelection.eventCategorization import returnCategoryPtCuts
 
 #
 # Set output directory, taking into account the different options
 #
 output_dir = os.path.join(os.getcwd(), 'data', 'Results', 'plotVariables', reco_or_gen_str)
 
-if args.masses is not None:        output_dir = os.path.join(output_dir, 'customMasses')
-if args.lowMass:        output_dir = os.path.join(output_dir, 'lowMass')
-elif args.highMass:        output_dir = os.path.join(output_dir, 'highMass')
-else:                           output_dir = os.path.join(output_dir, 'allMass')
+if args.masses is not None:         output_dir = os.path.join(output_dir, 'customMasses')
+
+if args.massRegion is not None:     output_dir = os.path.join(output_dir, args.massRegion+'Mass')
+else:                               output_dir = os.path.join(output_dir, 'allMass')
 
 if args.signalOnly:
     output_dir = os.path.join(output_dir, 'signalOnly')
@@ -317,36 +342,27 @@ for c in categories:
     extra_text = [extraTextFormat(cat.returnTexName(c), xpos = 0.33, ypos = 0.9, textsize = None, align = 12)]  #Text to display event type in plot
     extra_text.append(extraTextFormat('V_{'+args.flavor+'N} = '+str(args.coupling)))  #Text to display event type in plot
 
-    # Plots that displays chosen for chosen signal masses and backgrounds the distributions for the different variables
+    # Plots that display chosen for chosen signal masses and backgrounds the distributions for the different variables
     # S and B in same canvas for each variable
     for v in var:
         legend_names = list_of_hist[c][v]['signal'].keys()+list_of_hist[c][v]['bkgr'].keys()
         
         # Make list of background histograms for the plot object (or None if no background)
-        if not list_of_hist[c][v]['bkgr'].values(): 
+        if not list_of_hist[c][v]['bkgr'].values() or args.signalOnly: 
             bkgr_hist = None
         else:
             bkgr_hist = list_of_hist[c][v]['bkgr'].values()
        
         # Make list of signal histograms for the plot object
-        if not list_of_hist[c][v]['signal'].values(): 
+        if not list_of_hist[c][v]['signal'].values() or args.bkgrOnly: 
             signal_hist = None
         else:
             signal_hist = list_of_hist[c][v]['signal'].values()
 
         # Create plot object (if signal and background are displayed, also show the ratio)
-        # if not args.signalOnly:
-            #p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, extra_text = extra_text, draw_ratio=True)
-            #p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, str(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = False, extra_text = extra_text, draw_ratio=True)
-            # p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, str(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, draw_ratio=True)
-        # else:
-            #p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, extra_text = extra_text)
-            # p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, str(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, extra_text = extra_text)
-        p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, str(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, extra_text = extra_text)
+        p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, str(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, extra_text = extra_text, draw_ratio = (not args.signalOnly and not args.bkgrOnly))
 
         # Draw
-        #p.drawHist(output_dir = os.path.join(output_dir, cat.categoryName(c), cat.subcategoryName(c)), normalize_signal=False, signal_style=True, draw_option='EHist')
-        # p.drawHist(output_dir = os.path.join(output_dir, str(c)), normalize_signal=False, signal_style=True, draw_option='EHist')
         p.drawHist(output_dir = os.path.join(output_dir, str(c)), normalize_signal=False, draw_option='EHist')
     
     #TODO: I broke this when changing the eventCategorization, fix this again

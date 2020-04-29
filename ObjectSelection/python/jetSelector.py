@@ -18,6 +18,7 @@ def isGoodJet(chain, index, cleaned = True):
 
 from bTagWP import getBTagWP, readBTagValue
 def isBJet(chain, index, algo, wp):
+    if not isGoodJet(chain, index): return False
     if readBTagValue(chain, index, algo) < getBTagWP(chain.year, wp, algo): return False
     return True
     

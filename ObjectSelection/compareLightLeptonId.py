@@ -28,7 +28,8 @@ args = argParser.parse_args()
 #
 if args.isTest:
     args.isChild = True
-    args.sample = 'DY-ext1'
+    #args.sample = 'DY-ext1'
+    args.sample = 'HNLtau-m60'
     args.subJob = '0'
     args.year = '2016'
 
@@ -44,8 +45,8 @@ algos = {'cutbased': ['tight'],
 #
 # Load in the sample list 
 #
-from HNL.Samples.sample import createSampleList, getSampleFromList
-sample_list = createSampleList(os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/compareTauIdList_'+str(args.year)+'.conf'))
+from HNL.Samples.sampleManager import SampleManager
+sample_manager = SampleManager(args.year, 'noskim', 'compareTauIdList_'+str(args.year))
 
 #
 # Submit Jobs
@@ -55,8 +56,8 @@ if not args.isChild:
 
     from HNL.Tools.jobSubmitter import submitJobs
     jobs = []
-    for sample in sample_list:
-        if args.sample and args.sample != sample.name: continue
+    for sample_name in sample_manager.sample_names:
+        sample = sample_manager.getSample(sample_name)
         for njob in xrange(sample.split_jobs):
             jobs += [(sample.name, str(njob))]
 
@@ -66,7 +67,7 @@ if not args.isChild:
 #
 #Initialize chain
 #
-sample = getSampleFromList(sample_list, args.sample)
+sample = sample_manager.getSample(args.sample)
 chain = sample.initTree(False)
 chain.year = int(args.year)
 isBkgr = not 'HNL' in sample.name

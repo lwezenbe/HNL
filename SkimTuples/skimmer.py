@@ -11,7 +11,7 @@ import os
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
-argParser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+argParser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'], required = True)
 argParser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 argParser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -23,6 +23,7 @@ argParser.add_argument('--lightLeptonSelection', action='store', default='lepton
 argParser.add_argument('--tauSelection',  action='store',      default='deeptauVSjets', help='selection algorithm for taus', choices=['deeptauVSjets', 'MVA2017v2'])
 argParser.add_argument('--summaryFile', action='store_true', default=False,  help='Create text file that shows all selected arguments')
 argParser.add_argument('--genSkim',  action='store_true',      default=False,               help='skim on generator level leptons')
+argParser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
 
 args = argParser.parse_args()
 
@@ -33,17 +34,17 @@ log = getLogger(args.logLevel)
 # Set some args for when performing a test
 #
 if args.isTest:
-    args.sample = 'DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8'
-    args.year = '2016'
+    if args.sample is None: args.sample = 'DYJetsToLL-M-50'
+    if args.year is None: args.year = '2016'
     args.subJob = 0
     args.isChild = True
 
 #
 #Load in samples
 #
-from HNL.Samples.sample import createSampleList, getSampleFromList
-input_file = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Samples', 'InputFiles', 'skimList_'+args.year+'_sampleList.conf'))
-sample_list = createSampleList(input_file)
+from HNL.Samples.sampleManager import SampleManager
+file_list = 'fulllist_'+str(args.year) if args.customList is None else args.customList
+sample_manager = SampleManager(args.year, 'noskim', file_list)
 
 #
 # Submit subjobs
@@ -51,7 +52,8 @@ sample_list = createSampleList(input_file)
 if not args.isChild and not args.isTest:
     from HNL.Tools.jobSubmitter import submitJobs
     jobs = []
-    for sample in sample_list:
+    for sample_name in sample_manager.sample_names:
+        sample = sample_manager.getSample(sample_name)
         for njob in xrange(sample.split_jobs):
             jobs += [(sample.name, str(njob))]
 
@@ -64,12 +66,14 @@ if not args.isChild and not args.isTest:
             if not getattr(args, arg): continue
             f.write(arg + '    ' + str(getattr(args, arg)) +  '\n')
         f.close()
+
+    print "Submitted "+str(len(jobs))+" jobs to cream"
     exit(0)
 
 #
 #Get specific sample for this subjob
 #
-sample = getSampleFromList(sample_list, args.sample)
+sample = sample_manager.getSample(args.sample)
 chain = sample.initTree()
 chain.year = int(args.year)
 chain.is_signal = 'HNL' in sample.name
@@ -78,14 +82,19 @@ chain.is_signal = 'HNL' in sample.name
 # Get lumiweight
 #
 from HNL.Weights.lumiweight import LumiWeight
-lw = LumiWeight(sample, input_file)
+lw = LumiWeight(sample, sample_manager)
 
 #
 # Create new reduced tree (except if it already exists and overwrite option is not used)
 #
 from HNL.Tools.helpers import isValidRootFile, makeDirIfNeeded
 gen_name = 'Reco' if not args.genSkim else 'Gen'
-output_name = os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL', str(args.year), gen_name, 'tmp_'+sample.output, sample.name + '_' + str(args.subJob) + '.root'))
+if chain.is_signal: 
+    output_file_name = sample.path.split('/')[-1].split('.')[0]
+else:
+    output_file_name = sample.path.split('/')[-2]
+
+output_name = os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL', str(args.year), gen_name, 'tmp_'+output_file_name, sample.name + '_' + str(args.subJob) + '.root'))
 makeDirIfNeeded(output_name)
 
 if not args.isTest and not args.overwrite and isValidRootFile(output_name):
@@ -117,7 +126,8 @@ output_tree = chain.CloneTree(0)
 # Make new branches
 #
 new_branches = []
-new_branches.extend(['M3l/F', 'minMos/F', 'pt_cone[20]/F', 'mtOther/F'])
+# new_branches.extend(['M3l/F', 'minMos/F', 'pt_cone[20]/F', 'mtOther/F'])
+new_branches.extend(['M3l/F', 'minMos/F', 'mtOther/F'])
 new_branches.extend(['l1/I', 'l2/I', 'l3/I', 'index_other/I'])
 new_branches.extend(['l_pt[3]/F', 'l_eta[3]/F', 'l_phi[3]/F', 'l_e[3]/F', 'l_charge[3]/F', 'l_flavor[3]/I'])
 new_branches.extend(['lumiweight/F'])
@@ -150,7 +160,7 @@ for entry in event_range:
         if len(chain.leptons) < 3:       continue
     
     ec = EventCategory(new_vars)
-    c, sc = ec.returnCategory()
+    c = ec.returnCategory()
     new_vars.event_category = c
 
     print 'calcing'

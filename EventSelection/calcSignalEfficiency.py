@@ -38,7 +38,7 @@ args = argParser.parse_args()
 #
 if args.isTest: 
     args.isChild = True
-    args.sample = 'HNL2l-200'
+    args.sample = 'HNLtau-m200'
     args.subJob = '0'
     args.year = '2016'
 
@@ -46,9 +46,8 @@ if args.isTest:
 #
 # Load in the sample list 
 #
-from HNL.Samples.sample import createSampleList, getSampleFromList
-list_location = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/signallist_'+str(args.year)+'.conf')
-sample_list = createSampleList(list_location)
+from HNL.Samples.sampleManager import SampleManager
+sample_manager = SampleManager(args.year, 'noskim', 'signallist_'+str(args.year))
 
 #
 # Submit subjobs
@@ -56,7 +55,8 @@ sample_list = createSampleList(list_location)
 if not args.isChild:
     from HNL.Tools.jobSubmitter import submitJobs
     jobs = []
-    for sample in sample_list:
+    for sample_name in sample_manager.sample_names:
+        sample = sample_manager.getSample(sample_name)
         for njob in xrange(sample.split_jobs): 
             jobs += [(sample.name, str(njob))]
 
@@ -67,7 +67,7 @@ if not args.isChild:
 #
 # Load in sample and chain
 #
-sample = getSampleFromList(sample_list, args.sample)
+sample = sample_manager.getSample(args.sample)
 chain = sample.initTree()
 
 subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
@@ -90,7 +90,7 @@ else:
 #
 from HNL.Tools.helpers import getMassRange
 
-mass_range = getMassRange(list_location)
+mass_range = getMassRange(sample_manager.sample_names)
 
 #
 # Define the variables and axis name of the variable to fill and create efficiency objects
@@ -136,14 +136,14 @@ if args.isTest:
 else:
     event_range = sample.getEventRange(args.subJob)    
 
-chain.HNLmass = float(sample.name.rsplit('-', 1)[1])
+chain.HNLmass = sample.getMass()
 chain.year = int(args.year)
 
 #
 # Get luminosity weight
 #
 from HNL.Weights.lumiweight import LumiWeight
-lw = LumiWeight(sample, list_location)
+lw = LumiWeight(sample, sample_manager)
 
 #
 # Import and create cutter to provide cut flow

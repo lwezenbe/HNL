@@ -1,29 +1,20 @@
+#############################################################
+#                                                           #
+#   Class that keeps track of the correct event category    #    
+#                                                           #
+#############################################################
 
 #
-# Class that keeps track of the correct event category
+# Define constants to keep track of leptons more easily
 #
-
 l1 = 0
 l2 = 1
 l3 = 2
 
 #
-# Structure of Categorization
-# Categories according to l1 and l2
-# 1: l1 and l2 SS tau, l3 any lepton (N to W decay)
-# 2: l1, l2 OS tau, l3 any lepton (N to W decay)
-# 3: l1 tau, l2l3 OSSF pair (N to Z decay)
-# 4: l2 tau, l1l3 SSSF pair (second tau to lepton decay)
-# 5: eee
-# 6: mumumu
-# 7: eemu
-# 8: emumu    
+# All categories in this analysis. This is where you add more categories if wanted
+# CATEGORY_FROM_NAME is just the inverse for easier use
 #
-# subcategories show what the remaining lepton(s) are (l3 when N to W decay and l2l3 in case of N to Z)
-# 1: tau
-# 2: ele
-# 3: mu
-
 CATEGORY_NAMES = {1: 'SS-TauTauEle', 
                     2: 'OS-TauTauEle', 
                     3: 'SS-TauTauMu', 
@@ -58,12 +49,6 @@ CATEGORY_FROM_NAME = {'SS-TauTauEle' : 1,
                     'SS-EMuMu':15,
                     'OS-EMuMu':16}
 
-SUPER_CATEGORIES = {'Ditau': [1, 2, 3, 4], 'SingleTau' : [5, 6, 7, 8, 9], 'NoTau' : [11, 12, 13, 14, 15, 16]}
-
-CATEGORIES_SIGNALTRUTH = [c for c in xrange(1, len(CATEGORY_NAMES)+2, 1)]
-CATEGORIES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16]
-
-
 CATEGORY_TEX_NAMES = {
                         1: '#tau^{#pm}#tau^{#pm}e',
                         2: '#tau^{#pm}#tau^{#mp}e',
@@ -83,6 +68,29 @@ CATEGORY_TEX_NAMES = {
                         16: 'e#mu^{#pm}#mu^{#mp}'
 }
 
+CATEGORIES = sorted(CATEGORY_NAMES.keys())
+                
+#
+# Super categories are a super collection of categories
+# Accompanying function to filter more easily than messing around with these dictionaries
+#
+SUPER_CATEGORIES = {'Ditau': [1, 2, 3, 4], 'SingleTau' : [5, 6, 7, 8, 9], 'NoTau' : [11, 12, 13, 14, 15, 16]}
+
+def filterSuperCategory(super_category_name, category):
+    if category in SUPER_CATEGORIES[super_category_name]: return True
+    return False
+
+
+
+#
+# Signal truth categories are experimental
+#
+CATEGORIES_SIGNALTRUTH = [c for c in xrange(1, len(CATEGORY_NAMES)+2, 1)]
+
+
+#
+# Actual class
+#
 class EventCategory():
     
     def __init__(self, chain):

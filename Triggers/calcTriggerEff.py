@@ -30,7 +30,7 @@ args = argParser.parse_args()
 #
 if args.isTest: 
     args.isChild = True
-    args.sample = 'HNLtau-200'
+    args.sample = 'HNLtau-m200'
     args.subJob = '0'
     args.year = '2016'
 
@@ -38,9 +38,8 @@ if args.isTest:
 #
 # Load in the sample list 
 #
-from HNL.Samples.sample import createSampleList, getSampleFromList
-list_location = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/triggerlist_'+str(args.year)+'.conf')
-sample_list = createSampleList(list_location)
+from HNL.Samples.sampleManager import SampleManager
+sample_manager = SampleManager(args.year, 'noskim', 'triggerlist_'+str(args.year))
 
 #
 # Submit subjobs
@@ -48,7 +47,8 @@ sample_list = createSampleList(list_location)
 if not args.isChild:
     from HNL.Tools.jobSubmitter import submitJobs
     jobs = []
-    for sample in sample_list:
+    for sample_name in sample_manager.sample_names:
+        sample = sample_manager.getSample(sample_name)
         for njob in xrange(sample.split_jobs): 
             jobs += [(sample.name, str(njob))]
 
@@ -59,11 +59,11 @@ if not args.isChild:
 #
 # Load in sample and chain
 #
-sample = getSampleFromList(sample_list, args.sample)
+sample = sample_manager.getSample(args.sample)
 chain = sample.initTree()
 chain.year = int(args.year)
 chain.is_signal = 'HNL' in sample.name
-if chain.is_signal: chain.HNLmass = float(sample.name.rsplit('-', 1)[1])
+chain.HNLmass = sample.getMass()
 
 #
 # Does an event pass the triggers
@@ -134,7 +134,7 @@ category_triggers = lambda chain, category : returnCategoryTriggers(chain, categ
 
 from HNL.Tools.helpers import getMassRange
 
-mass_range = getMassRange(list_location)
+mass_range = getMassRange(sample_manager.sample_names)
 
 category_map = {}
 for c in categories:

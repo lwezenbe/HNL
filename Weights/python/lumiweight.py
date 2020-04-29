@@ -7,13 +7,19 @@ LUMINOSITY_MAP = {
 
 class LumiWeight:
 
-    def __init__(self, sample, input_file):
+    def __init__(self, sample, sample_manager):
         self.sample = sample
         self.lumi_weight = 1.  
 
-        self.total_hcount = self.sample.hcount
-        for path_name in getListOfPathsWithSameOutput(input_file, self.sample.name):
-            self.total_hcount += self.sample.getHist('hCounter', path_name).GetSumOfWeights()
+        self.lumi_cluster = sample_manager.makeLumiClusters()[sample.shavedName()]
+        self.total_hcount = 0
+
+        for cl_name in self.lumi_cluster:
+            tmp_path = sample_manager.getPath(cl_name)
+            self.total_hcount += self.sample.getHist('hCounter', tmp_path).GetSumOfWeights()
+
+        # for path_name in getListOfPathsWithSameOutput(input_file, self.sample.name):
+        #     self.total_hcount += self.sample.getHist('hCounter', path_name).GetSumOfWeights()
 
     def getLumiWeight(self):
         self.lumi_weight = self.sample.chain._weight*(self.sample.xsec*LUMINOSITY_MAP[self.sample.chain.year])/self.total_hcount
@@ -21,13 +27,15 @@ class LumiWeight:
 
 if __name__ == '__main__':
     from HNL.Samples.sample import createSampleList, getSampleFromList
+    from HNL.Samples.sampleManager import *
     import os
-    input_file = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/samples_for_testing.conf')
-    sample_list = createSampleList(input_file)
-    sample = getSampleFromList(sample_list, 'DYJetsToLL-M-10to50')
+
+    sample_manager = SampleManager(2016, 'noskim', 'test')
+
+    sample = sample_manager.getSample('DYJetsToLL-M-10to50')
 
     chain = sample.initTree()
-    lw = LumiWeight(sample, input_file)
+    lw = LumiWeight(sample, sample_manager)
     chain.GetEntry(5)
     chain.year = 2016
     print sample.name

@@ -229,10 +229,8 @@ def getMinWithErr(hist, zero_not_allowed=False):
     return min_val  
 
 
-def getMassRange(sample_list_location):
-    from HNL.Samples.sample import getListOfSampleNames
-    list_of_names = getListOfSampleNames(sample_list_location)
-    all_masses = [float(name.rsplit('-', 1)[-1]) for name in list_of_names]
+def getMassRange(list_of_names):
+    all_masses = [float(name.rsplit('-m', 1)[-1]) for name in list_of_names if 'HNL' in name]
     m_range = []
     if len(all_masses) == 1:
         m_range = [all_masses[0]/2, all_masses[0]*1.5]

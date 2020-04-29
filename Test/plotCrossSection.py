@@ -13,9 +13,9 @@ if args.isTest:
 #
 # Load in the sample list 
 #
-from HNL.Samples.sample import createSampleList, getSampleFromList
-list_location = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/signallist_'+str(args.year)+'.conf')
-sample_list = createSampleList(list_location)
+from HNL.Samples.sampleManager import SampleManager
+sample_manager = SampleManager(args.year, 'noskim', 'signallist_'+str(args.year))
+
 
 #
 # Calculate the range for the histograms. These are as a function of the mass of the signal samples.
@@ -25,7 +25,7 @@ sample_list = createSampleList(list_location)
 from HNL.Tools.helpers import getMassRange
 from HNL.Tools.histogram import Histogram
 
-mass_range = getMassRange(list_location)
+mass_range = getMassRange(sample_manager.sample_names)
 
 #
 # Define the variables and axis name of the variable to fill and create efficiency objects
@@ -35,13 +35,14 @@ var = {'HNLmass': (lambda c : c.HNLmass,        np.array(mass_range),   ('m_{N} 
 
 hist = Histogram('xsec', var['HNLmass'][0], var['HNLmass'][2], var['HNLmass'][1])
 
-for sample in sample_list:
+for sample in sample_manager.sample_list:
+    if sample.name not in sample_manager.sample_names: continue
     #
     # Load in sample and chain
     #
     chain = sample.initTree()
 
-    chain.HNLmass = float(sample.name.rsplit('-', 1)[1])
+    chain.HNLmass = sample.getMass
     chain.year = int(args.year)
     hist.fill(chain, sample.xsec)
 
