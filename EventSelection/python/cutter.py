@@ -1,4 +1,4 @@
-from HNL.Tools.helpers import isValidRootFile, rootFileContent, getObjFromFile
+from HNL.Tools.helpers import isValidRootFile, rootFileContent, getObjFromFile, makeDirIfNeeded
 from ROOT import TFile, TH1F
 from HNL.Tools.makeBranches import makeBranches
 
@@ -81,6 +81,16 @@ def printCutFlow(in_file_paths, out_file_path, in_file_path_names):
     # for n in in_file_path_names:
     #     out_file.write(n +'\t \t \t ' + '\t'.join([str(list_of_cut_values[n][k]) for k in key_names]) + '\n')
     out_file.close()
+
+def printSelections(in_file_path, out_file_path):
+    in_file = TFile(in_file_path)
+    key_names = [k[0] for k in rootFileContent(in_file, '/', starting_dir = 'cutflow')]
+    makeDirIfNeeded(out_file_path)
+    out_file = open(out_file_path, 'w')
+    for k in key_names:
+        if 'Total' in k: continue
+        out_file.write(k.split('/')[-1] + '\n')
+    return
 
 from HNL.Plotting.plot import Plot
 import ROOT

@@ -30,7 +30,8 @@ CATEGORY_NAMES = {1: 'SS-TauTauEle',
                     13: 'SS-EEMu', 
                     14: 'OS-EEMu', 
                     15: 'SS-EMuMu',
-                    16: 'OS-EMuMu'}
+                    16: 'OS-EMuMu',
+                    17: 'Other'}
 
 CATEGORY_FROM_NAME = {'SS-TauTauEle' : 1, 
                     'OS-TauTauEle' : 2, 
@@ -47,7 +48,8 @@ CATEGORY_FROM_NAME = {'SS-TauTauEle' : 1,
                     'SS-EEMu':13, 
                     'OS-EEMu':14, 
                     'SS-EMuMu':15,
-                    'OS-EMuMu':16}
+                    'OS-EMuMu':16,
+                    'Other':17}
 
 CATEGORY_TEX_NAMES = {
                         1: '#tau^{#pm}#tau^{#pm}e',
@@ -65,7 +67,8 @@ CATEGORY_TEX_NAMES = {
                         13: 'e^{#pm}e^{#pm}#mu',
                         14: 'e^{#pm}e^{#mp}#mu',
                         15: 'e#mu^{#pm}#mu^{#pm}',
-                        16: 'e#mu^{#pm}#mu^{#mp}'
+                        16: 'e#mu^{#pm}#mu^{#mp}',
+                        17: 'Other'
 }
 
 CATEGORIES = sorted(CATEGORY_NAMES.keys())
@@ -145,7 +148,7 @@ class EventCategory():
     def returnCategory(self):
         self.flavorContent()
         if self.n_tau > 2:
-            self.category = len(CATEGORY_NAMES) + 1
+            self.category = CATEGORY_FROM_NAME['Other']
 
         #Category 1, 2, 3, 4:
         if self.n_tau == 2: 
@@ -156,7 +159,7 @@ class EventCategory():
                 if self.hasSSSFpair(2): return 3
                 elif self.hasOSSFpair(2): return 4
             else:
-                self.category = len(CATEGORY_NAMES) + 1
+                self.category = CATEGORY_FROM_NAME['Other']
 
         #Category 5, 6, 7, 8, 9:
         elif self.n_tau == 1:
@@ -169,7 +172,7 @@ class EventCategory():
             elif self.n_mu == 1 and self.n_ele == 1:
                 return 9
             else:
-                self.category = len(CATEGORY_NAMES) + 1
+                self.category = CATEGORY_FROM_NAME['Other']
 
         #All light lepton categories
         elif self.n_tau == 0:
@@ -184,10 +187,10 @@ class EventCategory():
                 if self.hasSSSFpair(1): return 15
                 elif self.hasOSSFpair(1): return 16
             else:
-                self.category = len(CATEGORY_NAMES) + 1
+                self.category = CATEGORY_FROM_NAME['Other']
 
         else:
-            self.category = len(CATEGORY_NAMES) + 1
+            self.category = CATEGORY_FROM_NAME['Other']
         
         return self.category
 
@@ -210,20 +213,20 @@ class EventCategory():
                 else:
                     self.category = 4
             else:
-                self.category = len(CATEGORY_NAMES) + 1
+                self.category = CATEGORY_FROM_NAME['Other']
 
         elif self.chain.l_flavor[l1] == 2:
             if self.chain.l_charge[l2] != self.chain.l_charge[l3]:
                 if self.chain.l_flavor[l2] == 0 and self.chain.l_flavor[l3] == 0: self.category = 6 
                 elif self.chain.l_flavor[l2] == 1 and self.chain.l_flavor[l3] == 1: self.category = 8
                 else:
-                    self.category = len(CATEGORY_NAMES) + 1 
+                    self.category = CATEGORY_FROM_NAME['Other'] 
         elif self.chain.l_flavor[l2] == 2:
             if self.chain.l_charge[l2] == self.chain.l_charge[l3]:
                 if self.chain.l_flavor[l1] == 0 and self.chain.l_flavor[l3] == 0: self.category = 5 
                 elif self.chain.l_flavor[l1] == 1 and self.chain.l_flavor[l3] == 1: self.category = 7
                 else:
-                    self.category = len(CATEGORY_NAMES) + 1  
+                    self.category = CATEGORY_FROM_NAME['Other']  
             if self.chain.l_flavor[l1] == 0 and self.chain.l_flavor[l3] == 1: self.category = 9 
             if self.chain.l_flavor[l1] == 1 and self.chain.l_flavor[l3] == 0: self.category = 10 
 
@@ -240,10 +243,10 @@ class EventCategory():
                 if self.hasSSSFpair(1): return 15
                 elif self.hasOSSFpair(1): return 16
             else:
-                self.category = len(CATEGORY_NAMES) + 1
+                self.category = CATEGORY_FROM_NAME['Other']
 
         else:
-            self.category = len(CATEGORY_NAMES) + 1
+            self.category = CATEGORY_FROM_NAME['Other']
         return self.category
         
 #

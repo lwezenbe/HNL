@@ -170,8 +170,11 @@ def calculateKinematicVariables(chain, new_chain, is_reco_level = True):
     #calculate #jets and #bjets
     njets = 0
     nbjets = 0
+    # print 'start'
     for jet in xrange(chain._nJets):
-        if isGoodJet(chain, jet):       
+        if isGoodJet(chain, jet): 
+            # print 'new good jet with index : ', jet
+            # print 'Is good b jet? ', isBJet(chain, jet, 'Deep', 'loose')    
             njets += 1        
             if isBJet(chain, jet, 'Deep', 'loose'): nbjets += 1
 
@@ -192,6 +195,15 @@ def calculateKinematicVariables(chain, new_chain, is_reco_level = True):
 def passBaseCuts(chain, new_chain, cutter):
     calculateKinematicVariables(chain, new_chain, is_reco_level = True)
     if not cutter.cut(not bVeto(chain, 'Deep'), 'b-veto'):              return False
+    if not cutter.cut(abs(new_chain.M3l-91) > 15, 'M3l_Z_veto'):        return False 
+    if not cutter.cut(passesZcuts(chain, new_chain, True), 'M2l_OS_Z_veto'):        return False
+    return True
+    
+#
+# Basic cuts every event has to pass
+#
+def passBaseCutsNoBVeto(chain, new_chain, cutter):
+    calculateKinematicVariables(chain, new_chain, is_reco_level = True)
     if not cutter.cut(abs(new_chain.M3l-91) > 15, 'M3l_Z_veto'):        return False 
     if not cutter.cut(passesZcuts(chain, new_chain, True), 'M2l_OS_Z_veto'):        return False
     return True
@@ -226,7 +238,7 @@ def highMassCuts(chain, new_chain, cutter):
     if not cutter.cut(new_chain.l_pt[l2] > 15, 'l2pt>15'):        return False
     if not cutter.cut(new_chain.l_pt[l3] > 10, 'l3pt>10'):        return False
     if not cutter.cut(passesZcuts(chain, new_chain, same_flavor=True), 'M2l_OSSF_Z_veto'):        return False
-    if not cutter.cut(abs(new_chain.M3l-90) > 15, 'M3l_Z_veto'):        return False 
+    if not cutter.cut(abs(new_chain.M3l-91) > 15, 'M3l_Z_veto'):        return False 
     return True 
 
 

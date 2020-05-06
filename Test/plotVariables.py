@@ -19,9 +19,9 @@ from HNL.Tools.helpers import getObjFromFile, progress, makeDirIfNeeded
 from HNL.Samples.sample import createSampleList
 from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
 from HNL.EventSelection.eventSelection import select3Leptons, select3GenLeptons, calculateKinematicVariables
-from HNL.EventSelection.eventSelection import passBaseCuts, lowMassCuts, highMassCuts
+from HNL.EventSelection.eventSelection import passBaseCutsNoBVeto, lowMassCuts, highMassCuts, bVeto
 from HNL.EventSelection.eventCategorization import EventCategory
-from HNL.EventSelection.cutter import Cutter
+from HNL.EventSelection.cutter import Cutter, printSelections
 
 
 #
@@ -95,9 +95,13 @@ else:
 
 import HNL.EventSelection.eventCategorization as cat
 categories = [c for c in cat.CATEGORIES]
-categories.append(len(cat.CATEGORIES)+1) #other
 reco_or_gen_str = 'reco' if not args.genLevel else 'gen'
+mass_str = 'noMassCuts' if args.massRegion is None else args.massRegion+'MassCuts'
 
+if not args.isTest:
+    output_name = lambda st : os.path.join(os.getcwd(), 'data', 'plotVariables', args.year, reco_or_gen_str, mass_str, st)
+else:
+    output_name = lambda st : os.path.join(os.getcwd(), 'data', 'testArea', 'plotVariables', args.year, reco_or_gen_str, mass_str, st)
 
 list_of_hist = {}
 for c in categories:
@@ -213,44 +217,53 @@ if not args.makePlots:
             else:
                 if not cutter.cut(select3GenLeptons(chain, chain), 'select_3_genleptons'):    continue 
             calculateKinematicVariables(chain, chain, is_reco_level=not args.genLevel)
+            # print var['NbJet'][0](chain)
+            # print 'final', chain.nbjets, var['NbJet'][0](chain)
             chain.event_category = ec.returnCategory()
+
+            if chain.event_category == cat.CATEGORY_FROM_NAME['Other']: continue
 
             #
             # Event selection
             #
-            if not passBaseCuts(chain, chain, cutter): continue
+            if not passBaseCutsNoBVeto(chain, chain, cutter): continue
             if args.massRegion == 'low' and not lowMassCuts(chain, chain, cutter): continue
             if args.massRegion == 'high' and not highMassCuts(chain, chain, cutter): continue
             
             #
+            # Fill b veto
+            # Done separately here because otherwise basic cuts remove all b's
+            #
+            if chain.event_category < len(cat.CATEGORY_NAMES)+1: 
+                list_of_hist[chain.event_category]['NbJet'][signal_str][sample.name].fill(chain, chain.lumiweight)  
+            list_of_hist[cat.CATEGORY_FROM_NAME['Other']]['NbJet'][signal_str][sample.name].fill(chain, chain.lumiweight)
+
+            if not cutter.cut(not bVeto(chain, 'Deep'), 'b-veto'):              continue
+
+            #
             # Fill the histograms
             #
             for v in var.keys():
+                if v == 'NbJet': continue
                 if chain.event_category < len(cat.CATEGORY_NAMES)+1: 
                     list_of_hist[chain.event_category][v][signal_str][sample.name].fill(chain, chain.lumiweight)  
-                list_of_hist[len(cat.CATEGORY_NAMES)+1][v][signal_str][sample.name].fill(chain, chain.lumiweight)
+                list_of_hist[cat.CATEGORY_FROM_NAME['Other']][v][signal_str][sample.name].fill(chain, chain.lumiweight)
              
         #
         # Save histograms
         #
         subjobAppendix = '_subJob' + args.subJob if args.subJob else ''
-        mass_str = 'All' if args.massRegion is None else args.massRegion+'Mass'
-
-        if not args.isTest:
-            output_name = os.path.join(os.getcwd(), 'data', 'plotVariables', reco_or_gen_str, mass_str, signal_str)
-        else:
-            output_name = os.path.join(os.getcwd(), 'data', 'testArea', 'plotVariables', reco_or_gen_str, mass_str, signal_str)
         
-        if args.signalOnly and args.genLevel:       output_name = os.path.join(output_name, 'signalOrdering', sample.output)
-        else:      output_name = os.path.join(output_name, sample.output) 
+        if args.signalOnly and args.genLevel:       output_name_full = os.path.join(output_name(signal_str), 'signalOrdering', sample.output)
+        else:      output_name_full = os.path.join(output_name(signal_str), sample.output) 
 
         if args.isChild:
-            output_name += '/tmp_'+sample.output+ '/'+sample.name+'_'
+            output_name_full += '/tmp_'+sample.output+ '/'+sample.name+'_'
         else:
-            output_name += '/'
+            output_name_full += '/'
         
-        makeDirIfNeeded(output_name +'variables'+subjobAppendix+ '.root')
-        output_file = TFile(output_name + 'variables' +subjobAppendix+ '.root', 'RECREATE')
+        makeDirIfNeeded(output_name_full +'variables'+subjobAppendix+ '.root')
+        output_file = TFile(output_name_full + 'variables' +subjobAppendix+ '.root', 'RECREATE')
         
         for v in var.keys():
             output_file.mkdir(v)
@@ -260,18 +273,18 @@ if not args.makePlots:
         
         output_file.Close()
 
-        cutter.saveCutFlow(output_name +'variables'+subjobAppendix+ '.root')
+        cutter.saveCutFlow(output_name_full +'variables'+subjobAppendix+ '.root')
 
 #If the option to not run over the events again is made, load in the already created histograms here
 else:
     import glob
-    
+
     # Collect signal file locations
     if args.genLevel and args.signalOnly:
-        signal_list = glob.glob(os.getcwd()+'/data/plotVariables/'+reco_or_gen_str+'/signal/signalOrdering/*'+args.flavor+'*')
+        signal_list = glob.glob(output_name('signal')+'/signalOrdering/*'+args.flavor+'-*')
         
     elif not args.bkgrOnly:
-        signal_list = glob.glob(os.getcwd()+'/data/plotVariables/'+reco_or_gen_str+'/signal/*'+args.flavor+'*')
+        signal_list = glob.glob(output_name('signal')+'/*'+args.flavor+'-*')
         for i, s in enumerate(signal_list):
             if 'signalOrdering' in s:
                 signal_list.pop(i)
@@ -280,12 +293,13 @@ else:
 
     # Collect background file locations
     if not args.signalOnly:
-        bkgr_list = glob.glob(os.getcwd()+'/data/plotVariables/'+reco_or_gen_str+'/bkgr/*')
+        bkgr_list = glob.glob(output_name('bkgr')+'/*')
     else:
         bkgr_list = []
 
     # Merge files if necessary
-    for n in signal_list + bkgr_list:
+    mixed_list = signal_list + bkgr_list
+    for n in mixed_list:
         merge(n)
 
     # Load in the histograms from the files
@@ -294,10 +308,11 @@ else:
             if not args.bkgrOnly:
                 for s in signal_list:
                     sample_name = s.split('/')[-1]
-                    sample_mass = int(sample_name.split('-M')[-1])
+                    sample_mass = int(sample_name.split('-m')[-1])
                     if args.masses is not None and sample_mass not in args.masses: continue
                     #list_of_hist[c][v]['signal'][sample_name] = Histogram(getObjFromFile(s+'/variables.root', v+'/'+cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v+'-'+sample_name)) 
                     list_of_hist[c][v]['signal'][sample_name] = Histogram(getObjFromFile(s+'/variables.root', v+'/'+str(c)+'-'+v+'-'+sample_name)) 
+                    list_of_hist[c][v]['signal'][sample_name].hist.Scale(1000.)
             if not args.signalOnly:
                 for b in bkgr_list:
                     sample_name = b.split('/')[-1]
@@ -321,26 +336,37 @@ from HNL.Tools.efficiency import Efficiency
 #
 # Set output directory, taking into account the different options
 #
-output_dir = os.path.join(os.getcwd(), 'data', 'Results', 'plotVariables', reco_or_gen_str)
+output_dir = os.path.join(os.getcwd(), 'data', 'Results', 'plotVariables', args.year, reco_or_gen_str)
 
-if args.masses is not None:         output_dir = os.path.join(output_dir, 'customMasses')
-
-if args.massRegion is not None:     output_dir = os.path.join(output_dir, args.massRegion+'Mass')
-else:                               output_dir = os.path.join(output_dir, 'allMass')
 
 if args.signalOnly:
     output_dir = os.path.join(output_dir, 'signalOnly')
-if args.bkgrOnly:
+elif args.bkgrOnly:
     output_dir = os.path.join(output_dir, 'bkgrOnly')
+else:
+    output_dir = os.path.join(output_dir, 'signalAndBackground')
+
+if args.flavor:         output_dir = os.path.join(output_dir, args.flavor+'_coupling')
+else:                   output_dir = os.path.join(output_dir, 'all_coupling')
+
+if args.massRegion is not None:     output_dir = os.path.join(output_dir, args.massRegion+'MassCuts')
+else:                               output_dir = os.path.join(output_dir, 'noMassCuts')
+
+if args.masses is not None:         output_dir = os.path.join(output_dir, 'customMasses', '-'.join([str(m) for m  in args.masses]))
+else:         output_dir = os.path.join(output_dir, 'allMasses')
 
 output_dir = makePathTimeStamped(output_dir)
-
 #
 # Create plots for each category
 #
+from HNL.EventSelection.eventCategorization import CATEGORY_NAMES, CATEGORY_FROM_NAME
 for c in categories:
-    extra_text = [extraTextFormat(cat.returnTexName(c), xpos = 0.33, ypos = 0.9, textsize = None, align = 12)]  #Text to display event type in plot
+    printSelections(mixed_list[0]+'/variables.root', os.path.join(output_dir, CATEGORY_NAMES[c], 'Selections.txt'))
+
+    extra_text = [extraTextFormat(cat.returnTexName(c), xpos = 0.2, ypos = 0.82, textsize = None, align = 12)]  #Text to display event type in plot
     extra_text.append(extraTextFormat('V_{'+args.flavor+'N} = '+str(args.coupling)))  #Text to display event type in plot
+    # extra_text.append(extraTextFormat('Signal scaled by factor 100', xpos = 0.2, ypos = 0.8, textsize = 0.7))  #Text to display event type in plot
+    extra_text.append(extraTextFormat('Signal scaled by factor 1000', textsize = 0.7))  #Text to display event type in plot
 
     # Plots that display chosen for chosen signal masses and backgrounds the distributions for the different variables
     # S and B in same canvas for each variable
@@ -360,10 +386,11 @@ for c in categories:
             signal_hist = list_of_hist[c][v]['signal'].values()
 
         # Create plot object (if signal and background are displayed, also show the ratio)
-        p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, str(c)+'-'+v, bkgr_hist = bkgr_hist, y_log = True, extra_text = extra_text, draw_ratio = (not args.signalOnly and not args.bkgrOnly))
+        p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, CATEGORY_NAMES[c]+'-'+v, bkgr_hist = bkgr_hist, y_log = True, extra_text = extra_text, draw_ratio = (not args.signalOnly and not args.bkgrOnly))
+
 
         # Draw
-        p.drawHist(output_dir = os.path.join(output_dir, str(c)), normalize_signal=False, draw_option='EHist')
+        p.drawHist(output_dir = os.path.join(output_dir, CATEGORY_NAMES[c]), normalize_signal=False, draw_option='EHist', min_cutoff = 0.1)
     
     #TODO: I broke this when changing the eventCategorization, fix this again
     # # If looking at signalOnly, also makes plots that compares the three lepton pt's for every mass point
