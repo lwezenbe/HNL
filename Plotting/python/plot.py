@@ -48,7 +48,7 @@ from HNL.Tools.helpers import isTimeStampFormat, makeDirIfNeeded
 from HNL.Plotting.style import setDefault, setDefault2D
 class Plot:
     
-    def __init__(self, signal_hist, tex_names, name = None, x_name = None, y_name = None, bkgr_hist = None, extra_text = None, x_log = None, y_log = None, draw_ratio = False, draw_significance = False):
+    def __init__(self, signal_hist, tex_names, name = None, x_name = None, y_name = None, bkgr_hist = None, extra_text = None, x_log = None, y_log = None, draw_ratio = False, draw_significance = False, color_palette = 'Didar', color_palette_bkgr = 'StackTauPOGbyName'):
         self.s = makeList(getHistList(signal_hist))
         self.tex_names = makeList(tex_names)
         self.s_tex_names = self.tex_names[:len(self.s)] 
@@ -61,6 +61,9 @@ class Plot:
                 if i != 0:      self.total_b.Add(h)
         else:
             self.total_b = None
+        self.total_s = self.s[0].Clone('total_sig')
+        for i, h in enumerate(self.s):
+            if i != 0:      self.total_s.Add(h)
         self.hs = None  #hist stack for bkgr
         self.x_name = x_name if x_name is not None else self.s[0].GetXaxis().GetTitle()
         self.y_name = y_name if y_name is not None else self.s[0].GetYaxis().GetTitle()
@@ -74,63 +77,60 @@ class Plot:
         self.overall_max = 0.
         self.overall_min = 0.
 
-    def setAxisLog(self, is2D = False, stacked = True, upper_factor=3000):
+        self.color_palette = color_palette
+        self.color_palette_bkgr = color_palette_bkgr
+
+    def setAxisLog(self, is2D = False, stacked = True, min_cutoff = None):
+
+        #
+        # Calculate range
+        #
         to_check_min = [j for j in self.s]
-        if stacked and self.b is None: 
-            self.total_s = self.s[0].Clone('total_sig')
-            for i, h in enumerate(self.s):
-                if i != 0:      self.total_s.Add(h)
+        if stacked and self.b is None:
             to_check_max = [self.total_s]
         else:
             to_check_max = [j for j in self.s]
-        if self.b is not None:  
-            to_check_min += self.b
-            if stacked: to_check_max += [self.total_b]
-            else: to_check_max += self.b
+            if self.b is not None:
+                if stacked:
+                    to_check_max += [self.total_b]
+                else:
+                    to_check_max += [k for k in self.b]
 
         if not is2D:
             self.overall_max = pt.getOverallMaximum(to_check_max)
             self.overall_min = pt.getOverallMinimum(to_check_min, zero_not_allowed=True)
 
         if self.x_log:
-            #self.canvas.SetLogx()
             self.plotpad.SetLogx()
+
+        # 
+        # Set y log and calculate min and max
         if self.y_log:
-            #self.canvas.SetLogy()
             self.plotpad.SetLogy()
 
-            max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*3
+            if min_cutoff is None:
+                max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*3
+            else:
+                max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(min_cutoff))/2)*3
 
-            if not is2D:
-                if stacked:
-                    self.hs.SetMinimum(0.3*self.overall_min)
-                    self.hs.SetMaximum(max_to_set)
-                    # self.hs.SetMaximum(upper_factor*self.overall_max)
-                    # self.hs.SetMinimum(0.3*pt.getOverallMinimum([self.s[0]], zero_not_allowed=True))
-                    # self.hs.SetMaximum(30*self.overall_max)
-                elif self.b is None: 
-                    self.s[0].SetMinimum(0.3*self.overall_min)
-                    self.s[0].SetMaximum(max_to_set)
-                    # self.s[0].SetMaximum(upper_factor*self.overall_max)
-                else:
-                    self.b[0].SetMinimum(0.3*self.overall_min)
-                    self.b[0].SetMaximum(upper_factor*self.overall_max)
-                    self.b[0].SetMaximum(max_to_set)
+            min_to_set = min_cutoff if min_cutoff is not None else 0.3*self.overall_min
         else:
-            if not is2D:
-                if self.b is None: 
-                    if not stacked: self.s[0].GetYaxis().SetRangeUser(0.7*self.overall_min, 1.5*self.overall_max)
-                    else: 
-                        self.hs.SetMinimum(0.7*self.overall_min)
-                        self.hs.SetMaximum(1.5*self.overall_max)
-                        # self.hs.GetHistogram().GetYaxis().SetRangeUser(0.7*self.overall_min, 1.5*self.overall_max)
-                else: 
-                    if not stacked: self.b[0].GetYaxis().SetRangeUser(0.7*self.overall_min, 1.5*self.overall_max)
-                    else: 
-                        self.hs.SetMinimum(0.7*self.overall_min)
-                        self.hs.SetMaximum(1.5*self.overall_max)
-                        # self.hs.GetHistogram().GetYaxis().SetRangeUser(0.7*self.overall_min, 1.5*self.overall_max)
+            max_to_set = 1.5*self.overall_max
+            min_to_set = min_cutoff if min_cutoff is not None else 0.7*self.overall_min
 
+        #
+        # Set min and max
+        #
+        if not is2D:
+                if stacked:
+                    self.hs.SetMinimum(min_to_set)
+                    self.hs.SetMaximum(max_to_set)
+                elif self.b is None: 
+                    self.s[0].SetMinimum(min_to_set)
+                    self.s[0].SetMaximum(max_to_set)
+                else:
+                    self.b[0].SetMinimum(min_to_set)
+                    self.b[0].SetMaximum(max_to_set)
 
         self.plotpad.Update()
 
@@ -232,7 +232,7 @@ class Plot:
 
         return ratios
 
-    def drawRatio(self, ratios):
+    def drawRatio(self, ratios, custom_labels = None):
         self.ratio_pad.cd()        
 
         #Set axis: if significance is also drawn, no x-axis
@@ -351,6 +351,7 @@ class Plot:
         self.canvas.SaveAs(destination + ".pdf")
         self.canvas.SaveAs(destination + ".png")
         self.canvas.SaveAs(destination + ".root")
+
         #Clean out the php directory you want to write to if it is already filled, otherwise things go wrong with updating the file on the website
         #os.system("rm "+php_destination.rsplit('/')[0]+"/*")
 
@@ -359,6 +360,7 @@ class Plot:
             self.canvas.SaveAs(php_destination + ".png")
             self.canvas.SaveAs(php_destination + ".root")
 
+
         if message is not None:
             pt.writeMessage(destination.rsplit('/', 1)[0], message)
     
@@ -366,106 +368,180 @@ class Plot:
     # Functions to do actual plotting
     #
 
-    def drawHist(self, output_dir = None, normalize_signal = False, signal_style = False, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None, custom_labels = None, draw_lines = None, color_palette = 'Didar', message = None):
+    def drawHist(self, output_dir = None, normalize_signal = False, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None, custom_labels = None, draw_lines = None, message = None, min_cutoff = None):
 
+        #
+        # Some default settings
+        #
         setDefault()
-        #Create Canvas
+
+        #
+        # Create Canvas and pads
+        #
         self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
         self.setPads()
-        #self.plotpad = ROOT.TPad('plotpad', 'plotpad', 0, 0.01, 1, 0.98)
         self.plotpad.Draw()
         self.plotpad.cd()
 
+        #
+        # Throw some errors in case of faulty input
+        #
         if isinstance(self.x_name, list):
             raise RuntimeError('invalid x_names')
 
         if custom_labels is not None and len(custom_labels) != self.s[0].GetNbinsX():
             raise RuntimeError("Inconsistent number of bins ("+str(self.s[0].GetNbinsX())+") compared to number of labels given ("+len(custom_labels)+")")
+
+        if draw_option == 'Stack' and self.b is not None:
+            raise RuntimeError('The "Stack" option for signal is meant to be used when there is no background. In case of background, input the hist to stack as background.')
         
-        if self.draw_ratio or self.draw_significance:
-            title = " ; ; "+self.y_name
-        else:
-            title = " ;" +self.x_name+ " ; "+self.y_name
-        
-        #Set Bkgr Histogram Styles
-        #Do this first so it is not overlapping the signal
+        #
+        # Set Signal Histogram Styles
+        #
+        for h, n in zip(self.s, self.tex_names):
+
+            # Prepare for stacked signal
+            if draw_option == "Stack":
+                # Order signals from lowest to highest
+                self.s, self.s_tex_names = pt.orderHist(self.s, self.s_tex_names, lowest_first=True)       
+
+                self.hs = ROOT.THStack("hs", "hs")
+                for i, (h, n) in enumerate(zip(self.s, self.s_tex_names)):
+                    color_index = ps.getPaletteIndex(self.color_palette, self.s.index(h), n)
+                    h.SetFillColor(ps.getColor(self.color_palette, color_index))
+                    h.SetLineColor(ps.getColor(self.color_palette, color_index))
+                    self.hs.Add(h)
+            
+            # Prepare for very basic signal
+            elif draw_option == "HNL":
+                # Order signals so those with 0 sum of weights come last and arent skipped (which causes the axis to not be updated)
+                self.s, self.s_tex_names = pt.orderHist(self.s, self.s_tex_names)       
+
+                h.SetLineColor(ps.getHNLColor(n))
+                h.SetLineWidth(4)
+
+            # Otherwise generic settings
+            else:
+                # Order signals so those with 0 sum of weights come last and arent skipped (which causes the axis to not be updated)
+                self.s, self.s_tex_names = pt.orderHist(self.s, self.s_tex_names)       
+
+                color_index = ps.getPaletteIndex(self.color_palette, self.s.index(h), n)
+                h.SetLineColor(ps.getColor(self.color_palette, color_index))
+                h.SetLineWidth(4)
+                h.SetMarkerStyle(0)
+                h.SetMarkerColor(ps.getColor(self.color_palette, color_index))
+
+        #
+        # Set Bkgr Histogram Styles
+        #
         if self.b is not None:
             self.total_b = self.b[0].Clone('total_bkgr')
+
+            # Generic settings
             for i, (h, n) in enumerate(zip(self.b, self.b_tex_names)):
-                h.SetLineColor(ps.getStackColorTauPOGbyName(n))
+                color_index = ps.getPaletteIndex(self.color_palette_bkgr, i, n)
+                h.SetLineColor(ps.getColor(self.color_palette_bkgr, color_index))
                 h.SetLineWidth(3)
                 if i != 0:      self.total_b.Add(h)
             
+            # Prepare for stacking (Can not conflict with signal stacks due to runtimeError raise at the beginning)
             if bkgr_draw_option == 'Stack':
                 self.b, self.b_tex_names = pt.orderHist(self.b, self.b_tex_names, lowest_first = True)
                 self.hs = ROOT.THStack("hs", "hs")
                 for i, (h, n) in enumerate(zip(self.b, self.b_tex_names)):
-                    h.SetFillColor(ps.getStackColorTauPOGbyName(n))
+                    color_index = ps.getPaletteIndex(self.color_palette_bkgr, i, n)
+                    h.SetFillColor(ps.getColor(self.color_palette_bkgr, color_index))
                     self.hs.Add(h)
-        
-        self.s, self.s_tex_names = pt.orderHist(self.s, self.s_tex_names) #Order signals so those with 0 sum of weights come last and arent skipped (which cause the axis to not be updated)
+
         self.tex_names = self.s_tex_names + self.b_tex_names
-     
+
+        #
+        # Set title (background is drawn first so it gets dibs)
+        #
+        if self.draw_ratio or self.draw_significance:
+            title = " ; ; "+self.y_name
+        else:
+            title = " ;" +self.x_name+ " ; "+self.y_name   
+
         if self.b is not None:
             if bkgr_draw_option == 'Stack':
-                self.hs.Draw(draw_option)                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
                 self.hs.SetTitle(title)
-                if self.draw_ratio or self.draw_significance: 
-                    self.hs.GetHistogram().GetXaxis().SetLabelOffset(9999999)
-                elif custom_labels is not None:
+            else:
+                self.b[0].SetTitle(title)
+        else:
+            if draw_option == "Stack":
+                self.hs.SetTitle(title)
+            else:
+                self.s[0].SetTitle(title)
+
+        #
+        # Set custom labels if needed
+        #
+        if custom_labels is not None and not self.draw_ratio and not self.draw_significance:
+            if self.b is not None:
+                if bkgr_draw_option == 'Stack':
                     for i, n in enumerate(custom_labels):
                         self.hs.GetHistogram().GetXaxis().SetBinLabel(i+1, n)
-
+                else:
+                    for i, n in enumerate(custom_labels):
+                        self.b[0].GetXaxis().SetBinLabel(i+1, n)
+            else:
+                if draw_option == "Stack":
+                    for i, n in enumerate(custom_labels):
+                        self.hs.GetHistogram().GetXaxis().SetBinLabel(i+1, n)
+                else:
+                    for i, n in enumerate(custom_labels):
+                        self.s[0].GetXaxis().SetBinLabel(i+1, n)
+        
+        #
+        # Draw background first
+        #
+        if self.b is not None:
+            if bkgr_draw_option == 'Stack':
+                self.hs.Draw("EHist")                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
+                if self.draw_ratio or self.draw_significance: 
+                    self.hs.GetHistogram().GetXaxis().SetLabelOffset(9999999)
             else:
                 for i, b in enumerate(self.b):
                     if i == 0:
                         b.Draw(bkgr_draw_option)
-                        b.SetTitle(title)
                         if self.draw_ratio or self.draw_significance: 
                             b.GetXaxis().SetLabelOffset(9999999)
-                        elif custom_labels is not None:
-                            for i, n in enumerate(custom_labels):
-                                b.GetXaxis().SetBinLabel(i+1, n)
                     else:
                         b.Draw(bkgr_draw_option + 'Same')
-            #self.hs.GetHistogram().SetMaximum(1)   
+
+
+        #
+        # Draw signal
+        #
+        if draw_option == "Stack":
+            self.hs.Draw("EHist")                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
+            if self.draw_ratio or self.draw_significance: 
+                self.hs.GetHistogram().GetXaxis().SetLabelOffset(9999999)
+        else:
+            for h in self.s:
+                if h.GetSumOfWeights() == 0: continue
+                if normalize_signal:
+                    if self.b is None:
+                        raise RuntimeError("Trying to normalize a signal to a nonexisting background in drawHist")
+                    else:
+                        h.Scale(self.total_b.GetSumOfWeights()/h.GetSumOfWeights())
+
+                if(self.s.index(h) == 0 and self.b is None):
+                    h.Draw(draw_option)
+                else:
+                    h.Draw(draw_option+'Same')
+
         tdr.setTDRStyle()                       #TODO: Find out why we need a setTDRStyle after drawing the stack
- 
-        #Set Signal Histogram Styles
-        for h, n in zip(self.s, self.tex_names):
-            if signal_style:
-                h.SetLineColor(ps.getHNLColor(n))
-                h.SetLineWidth(4)
-            else:
-                color_index = ps.getPaletteIndex(color_palette, self.s.index(h), n)
-                h.SetLineColor(ps.getColor(color_palette, color_index))
-                #h.SetLineColor(ps.getLineColor(self.s.index(h)))
-                h.SetLineWidth(4)
-                h.SetMarkerStyle(8)
-                h.SetMarkerColor(ps.getColor(color_palette, color_index))
-                #h.SetMarkerColor(ps.getLineColor(self.s.index(h)))
-        if self.b is None:      
-            self.s[0].SetTitle(title)       #If no bkgr was given, the SetTitle was not done yet
-            if custom_labels is not None:
-                for i, n in enumerate(custom_labels):
-                    self.s[0].GetXaxis().SetBinLabel(i+1, n)
-        
-        #Start Drawing
-        for h in self.s:
-            if h.GetSumOfWeights() == 0: continue
-            if normalize_signal and self.b is not None:
-                h.Scale(self.total_b.GetSumOfWeights()/h.GetSumOfWeights())
 
-            if(self.s.index(h) == 0 and self.b is None):
-                h.Draw(draw_option)
-            else:
-                h.Draw(draw_option+'Same')
-           # h.Draw("EHistSAME")
+        #
+        # Calculate ranges of axis and set to log if requested
+        #
+        self.setAxisLog(stacked = (self.b is not None and 'Stack' in bkgr_draw_option) or 'Stack' in draw_option, min_cutoff = min_cutoff)
 
-        # self.setAxisLog(stacked = self.b is not None and 'Stack' in bkgr_draw_option, upper_factor = 10.)
-        self.setAxisLog(stacked = self.b is not None and 'Stack' in bkgr_draw_option)
-
-        #Option only used in plotVariables.py
+        #
+        # Option only used in plotVariables.py
+        #
         if draw_cuts is not None:
             if self.extra_text is None: self.extra_text = []
             lines = []

@@ -70,7 +70,9 @@ def orderHist(hist, names, lowest_first = False):
     return sortByOtherList(hist, sof), sortByOtherList(names, sof)
 
 def extraTextFormat(text, xpos = None, ypos = None, textsize = None, align = 12):
-    return [text, xpos, ypos, textsize, align]
+    tmp_textsize = 0.03
+    if textsize is not None: tmp_textsize *= textsize 
+    return [text, xpos, ypos, tmp_textsize, align]
 
 def drawLineFormat(x0 = None, x1 = None, y0 = None, y1 = None, color = None, width = 3):
     if color is None: color = ROOT.kBlack

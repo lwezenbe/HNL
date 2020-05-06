@@ -112,16 +112,16 @@ def getWPcolor(index):
 
 def getHistDidar(index):        
     if index == 5:      return ROOT.kBlack
-    if index == 0:      return ROOT.kRed
+    if index == 0:      return ROOT.kGreen
     if index == 1:      return ROOT.kBlue
-    if index == 2:      return ROOT.kGreen
+    if index == 2:      return ROOT.kOrange
     if index == 4:      return ROOT.kCyan
     if index == 3:      return ROOT.kYellow
     if index == 6:      return ROOT.kMagenta
     if index == 7:      return ROOT.kPink
-    if index == 8:      return ROOT.kOrange
+    if index == 8:      return ROOT.kRed
     if index == 9:      return ROOT.kAzure
-
+    else:               return ROOT.kBlack
 def getHNLColor(name):
     if '200' in name:   return TColor.GetColor("#9F4A54")
     elif '150' in name:   return TColor.GetColor("#51A3A3")
