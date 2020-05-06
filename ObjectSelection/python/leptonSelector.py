@@ -97,6 +97,8 @@ def isTightLepton(chain, index, algo = None, tau_algo = None):
     
     if chain._lFlavor[index] != 2: return isTightLightLepton(chain, index, algo)
     if chain._lFlavor[index] == 2: 
-        if tau_algo:    return isTightTau(chain, index, tau_algo)
-        else:           return isTightTau(chain, index)
+        # if tau_algo:    return isTightTau(chain, index, tau_algo)
+        # else:           return isTightTau(chain, index)
+        if tau_algo:    return isLooseTau(chain, index, tau_algo)
+        else:           return isLooseTau(chain, index)
     return False

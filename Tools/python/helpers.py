@@ -138,6 +138,10 @@ def getFourVec(pt, eta, phi, e):
     vec.SetPtEtaPhiE(pt, eta, phi, e)
     return vec
 
+def getLeptonFourVecFromChain(chain, index):
+    vec = getFourVec(chain._lPt[index], chain._lEta[index], chain._lPhi[index], chain._lE[index])
+    return vec
+
 #
 # Delta phi and R function
 #

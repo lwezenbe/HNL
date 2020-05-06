@@ -90,7 +90,7 @@ lw = LumiWeight(sample, sample_manager)
 from HNL.Tools.helpers import isValidRootFile, makeDirIfNeeded
 gen_name = 'Reco' if not args.genSkim else 'Gen'
 if chain.is_signal: 
-    output_file_name = sample.path.split('/')[-1].split('.')[0]
+    output_file_name = sample.path.split('/')[-1].rsplit('.', 1)[0]
 else:
     output_file_name = sample.path.split('/')[-2]
 
@@ -112,7 +112,7 @@ if not args.isTest:
 
 #delete_branches = ['lhe', 'Lhe', 'ttg', '_ph']
 delete_branches = ['ttg', '_ph']
-delete_branches.extend(['HLT']) #TODO: For now using pass_trigger, this may need to change
+#delete_branches.extend(['HLT']) #TODO: For now using pass_trigger, this may need to change
 delete_branches.extend(['tauPOG*2015', 'tau*MvaNew']) #Outdated tau
 delete_branches.extend(['lMuon', 'Smeared', 'prefire'])
 #delete_branches.extend(['_met'])
@@ -141,7 +141,7 @@ new_vars = makeBranches(output_tree, new_branches)
 # Start event loop
 #
 if args.isTest:
-    event_range = range(50)
+    event_range = range(2000)
 else:
     event_range = sample.getEventRange(args.subJob)    
 
