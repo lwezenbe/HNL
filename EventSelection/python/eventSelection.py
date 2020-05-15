@@ -14,7 +14,7 @@ from HNL.ObjectSelection.leptonSelector import isFOLepton
 from HNL.ObjectSelection.leptonSelector import isTightLightLepton, isTightLepton
 from HNL.ObjectSelection.leptonSelector import isGoodGenLepton
 from HNL.ObjectSelection.jetSelector import isGoodJet, isBJet
-from HNL.Tools.helpers import getFourVec, deltaPhi
+from HNL.Tools.helpers import getFourVec, deltaPhi, deltaR
 
 
 
@@ -135,21 +135,84 @@ def calculateKinematicVariables(chain, new_chain, is_reco_level = True):
     new_chain.Ml23 = (l2Vec+l3Vec).M()         
     new_chain.Ml13 = (l1Vec+l3Vec).M()
 
-    #min(M_OS)
-    min_mos = 9999999.
-    os = [10, 10]
+    #
+    # Get OS, OSSF, SS, SSSF variables
+    #
+    min_os = [None, None]
+    max_os = [None, None]
+    min_ss = [None, None]
+    max_ss = [None, None]
+    min_ossf = [None, None]
+    max_ossf = [None, None]
+    min_sssf = [None, None]
+    max_sssf = [None, None]
+
+    tmp_minos = 99999999.
+    tmp_minss = 99999999.
+    tmp_minossf = 99999999.
+    tmp_minsssf = 99999999.
+    tmp_maxos = 0
+    tmp_maxss = 0
+    tmp_maxossf = 0
+    tmp_maxsssf = 0
     for i1, l in enumerate([new_chain.l1, new_chain.l2, new_chain.l3]):
         for i2, sl in enumerate([new_chain.l1, new_chain.l2, new_chain.l3]):
             if i2 <= i1:        continue
-            if new_chain.l_charge[i1] == new_chain.l_charge[i2]: continue
-            tmp_mos = (lVec[i1]+lVec[i2]).M()
-            if tmp_mos < min_mos:       
-                min_mos = tmp_mos
-                os = [l, sl]
-    new_chain.minMos = min_mos        
+            tmp_mass = (lVec[i1]+lVec[i2]).M()
+            if new_chain.l_charge[i1] == new_chain.l_charge[i2]:
+                if tmp_mass < tmp_minss: 
+                    min_ss = [i1, i2]
+                    tmp_minss = tmp_mass
+                if tmp_mass > tmp_maxss: 
+                    max_ss = [i1, i2]
+                    tmp_maxss = tmp_mass
+                if new_chain.l_flavor[i1] == new_chain.l_flavor[i2]:
+                    if tmp_mass < tmp_minsssf: 
+                        min_sssf = [i1, i2]
+                        tmp_minsssf = tmp_mass
+                    if tmp_mass > tmp_maxsssf: 
+                        max_sssf = [i1, i2]
+                        tmp_maxsssf = tmp_mass
+            else:
+                if tmp_mass < tmp_minos: 
+                    min_os = [i1, i2]
+                    tmp_minos = tmp_mass
+                if tmp_mass > tmp_maxos: 
+                    max_os = [i1, i2]
+                    tmp_maxos = tmp_mass
+                if new_chain.l_flavor[i1] == new_chain.l_flavor[i2]:
+                    if tmp_mass < tmp_minossf: 
+                        min_ossf = [i1, i2]
+                        tmp_minossf = tmp_mass
+                    if tmp_mass > tmp_maxossf: 
+                        max_ossf = [i1, i2]
+                        tmp_maxossf = tmp_mass
+
+
+    #Mass variables
+    chain.minMos = (lVec[min_os[0]]+lVec[min_os[1]]).M() if all(min_os) else 0
+    chain.maxMos = (lVec[max_os[0]]+lVec[max_os[1]]).M() if all(max_os) else 0
+    chain.minMss = (lVec[min_ss[0]]+lVec[min_ss[1]]).M() if all(min_ss) else 0
+    chain.maxMss = (lVec[max_ss[0]]+lVec[max_ss[1]]).M() if all(max_ss) else 0
+    chain.minMossf = (lVec[min_ossf[0]]+lVec[min_ossf[1]]).M() if all(min_ossf) else 0
+    chain.maxMossf = (lVec[max_ossf[0]]+lVec[max_ossf[1]]).M() if all(max_ossf) else 0
+    chain.minMsssf = (lVec[min_sssf[0]]+lVec[min_sssf[1]]).M() if all(min_sssf) else 0
+    chain.maxMsssf = (lVec[max_sssf[0]]+lVec[max_sssf[1]]).M() if all(max_sssf) else 0
+
+    # min_mos = 9999999.
+    # min_os = [10, 10]
+    # for i1, l in enumerate([new_chain.l1, new_chain.l2, new_chain.l3]):
+    #     for i2, sl in enumerate([new_chain.l1, new_chain.l2, new_chain.l3]):
+    #         if i2 <= i1:        continue
+    #         if new_chain.l_charge[i1] == new_chain.l_charge[i2]: continue
+    #         tmp_mos = (lVec[i1]+lVec[i2]).M()
+    #         if tmp_mos < min_mos:       
+    #             min_mos = tmp_mos
+    #             min_os = [l, sl]
+    # new_chain.minMos = min_mos        
 
     #MTother
-    new_chain.index_other = [item for item in [new_chain.l1, new_chain.l2, new_chain.l3] if item not in os][0]   
+    new_chain.index_other = [item for item in [new_chain.l1, new_chain.l2, new_chain.l3] if item not in min_os][0]   
 
     #TODO: Seems like there must be a better way to do this
     if is_reco_level:    
@@ -181,6 +244,31 @@ def calculateKinematicVariables(chain, new_chain, is_reco_level = True):
     new_chain.njets = njets
     new_chain.nbjets = nbjets
         
+    new_chain.hasOSSF = containsOSSF(new_chain)
+
+    #
+    # dR variables
+    # 
+    new_chain.dr_l1l2 = l1Vec.DeltaR(l2Vec)
+    new_chain.dr_l1l3 = l1Vec.DeltaR(l2Vec)
+    new_chain.dr_l2l3 = l1Vec.DeltaR(l2Vec)
+
+    new_chain.dr_minOS = lVec[min_os[0]].DeltaR(lVec[min_os[1]]) if all(min_os) else -999.
+    new_chain.dr_maxOS = lVec[max_os[0]].DeltaR(lVec[max_os[1]]) if all(max_os) else -999.
+    new_chain.dr_minSS = lVec[min_ss[0]].DeltaR(lVec[min_ss[1]]) if all(min_ss) else -999.
+    new_chain.dr_maxSS = lVec[max_ss[0]].DeltaR(lVec[max_ss[1]]) if all(max_ss) else -999.
+    new_chain.dr_minOSSF = lVec[min_ossf[0]].DeltaR(lVec[min_ossf[1]]) if all(min_ossf) else -999.
+    new_chain.dr_maxOSSF = lVec[max_ossf[0]].DeltaR(lVec[max_ossf[1]]) if all(max_ossf) else -999.
+    new_chain.dr_minSSSF = lVec[min_sssf[0]].DeltaR(lVec[min_sssf[1]]) if all(min_sssf) else -999.
+    new_chain.dr_maxSSSF = lVec[max_sssf[0]].DeltaR(lVec[max_sssf[1]]) if all(max_sssf) else -999.
+
+    new_chain.mindr_l1 = min(new_chain.dr_l1l2, new_chain.dr_l1l3)
+    new_chain.maxdr_l1 = max(new_chain.dr_l1l2, new_chain.dr_l1l3)
+    new_chain.mindr_l2 = min(new_chain.dr_l1l2, new_chain.dr_l2l3)
+    new_chain.maxdr_l2 = max(new_chain.dr_l1l2, new_chain.dr_l2l3)
+    new_chain.mindr_l3 = min(new_chain.dr_l1l3, new_chain.dr_l2l3)
+    new_chain.maxdr_l3 = max(new_chain.dr_l1l3, new_chain.dr_l2l3)
+
     return
 
 ######################################
@@ -194,9 +282,11 @@ def calculateKinematicVariables(chain, new_chain, is_reco_level = True):
 #
 def passBaseCuts(chain, new_chain, cutter):
     calculateKinematicVariables(chain, new_chain, is_reco_level = True)
+    if not cutter.cut(not fourthFOVeto(chain), 'Fourth FO veto'):        return False 
+    if not cutter.cut(not threeSameSignVeto(chain), 'No three same sign'):        return False
     if not cutter.cut(not bVeto(chain, 'Deep'), 'b-veto'):              return False
-    if not cutter.cut(abs(new_chain.M3l-91) > 15, 'M3l_Z_veto'):        return False 
-    if not cutter.cut(passesZcuts(chain, new_chain, True), 'M2l_OS_Z_veto'):        return False
+    # if not cutter.cut(abs(new_chain.M3l-91) > 15, 'M3l_Z_veto'):        return False 
+    # if not cutter.cut(passesZcuts(chain, new_chain, True), 'M2l_OS_Z_veto'):        return False
     return True
     
 #
@@ -204,8 +294,10 @@ def passBaseCuts(chain, new_chain, cutter):
 #
 def passBaseCutsNoBVeto(chain, new_chain, cutter):
     calculateKinematicVariables(chain, new_chain, is_reco_level = True)
-    if not cutter.cut(abs(new_chain.M3l-91) > 15, 'M3l_Z_veto'):        return False 
-    if not cutter.cut(passesZcuts(chain, new_chain, True), 'M2l_OS_Z_veto'):        return False
+    if not cutter.cut(not fourthFOVeto(chain), 'Fourth FO veto'):        return False 
+    if not cutter.cut(not threeSameSignVeto(chain), 'No three same sign'):        return False 
+    # if not cutter.cut(abs(new_chain.M3l-91) > 15, 'M3l_Z_veto'):        return False 
+    # if not cutter.cut(passesZcuts(chain, new_chain, True), 'M2l_OS_Z_veto'):        return False
     return True
 
 #
@@ -214,7 +306,7 @@ def passBaseCutsNoBVeto(chain, new_chain, cutter):
 def passBaseCutsAN2017014(chain, new_chain, cutter):
    
     if not cutter.cut(passesPtCutsAN2017014(chain), 'pt_cuts'):         return False 
-    if not cutter.cut(not bVeto(chain, 'AN2017-014', uncleaned=True), 'b-veto'):              return False
+    if not cutter.cut(not bVeto(chain, 'AN2017-014', cleaned=False), 'b-veto'):              return False
     if not cutter.cut(not threeSameSignVeto(chain), 'three_same_sign_veto'):                    return False
     if not cutter.cut(not fourthFOVeto(chain), '4th_l_veto'):   return False
     return True
@@ -226,7 +318,8 @@ def lowMassCuts(chain, new_chain, cutter):
     calculateKinematicVariables(chain, new_chain)
     if not cutter.cut(new_chain.l_pt[l1] < 55, 'l1pt<55'):      return False
     if not cutter.cut(new_chain.M3l < 80, 'm3l<80'):            return False
-    if not cutter.cut(chain._met < 75, 'MET'):                  return False
+    if not cutter.cut(chain._met < 75, 'MET < 75'):             return False
+    if not cutter.cut(not containsOSSF(chain), 'no OSSF'):      return False
     return True 
 
 #
@@ -314,5 +407,5 @@ def containsOSSF(chain):
         for second_lepton in [l2, l3]:
             if first_lepton == second_lepton: continue
             if chain.l_flavor[first_lepton] != chain.l_flavor[second_lepton]: continue
-            if chain.l_charge[first_lepton] == chain.l_charge[second_lepton]: return True  
+            if chain.l_charge[first_lepton] != chain.l_charge[second_lepton]: return True  
     return False

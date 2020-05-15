@@ -26,9 +26,13 @@ def getColor(palette, index):
     elif palette == 'Didar':
         return getHistDidar(index)
     elif palette == "Lines":
+        return getLineColor(index)
+    elif palette == "HNL":
         return getHNLColor(index)
     elif palette == 'WorkingPoints':
         return getWPcolor(index)
+    elif palette == 'Black':
+        return getBlackColor(index)
     else:
         return getHistColor(index)
 
@@ -114,13 +118,13 @@ def getHistDidar(index):
     if index == 5:      return ROOT.kBlack
     if index == 0:      return ROOT.kGreen
     if index == 1:      return ROOT.kBlue
-    if index == 2:      return ROOT.kOrange
+    if index == 2:      return ROOT.kMagenta
     if index == 4:      return ROOT.kCyan
-    if index == 3:      return ROOT.kYellow
-    if index == 6:      return ROOT.kMagenta
+    if index == 3:      return ROOT.kRed
+    if index == 6:      return ROOT.kOrange
     if index == 7:      return ROOT.kPink
-    if index == 8:      return ROOT.kRed
-    if index == 9:      return ROOT.kAzure
+    if index == 8:      return ROOT.kAzure
+    if index == 9:      return ROOT.kYellow
     else:               return ROOT.kBlack
 def getHNLColor(name):
     if '200' in name:   return TColor.GetColor("#9F4A54")
@@ -142,6 +146,9 @@ def getLineColor(index):
     if index == 0:      return TColor.GetColor("#B9BAA3")
     if index == 1:      return TColor.GetColor("#685762")
     if index == 2:      return TColor.GetColor("#E8C547")
+
+def getBlackColor(index):
+    return ROOT.kBlack
 
 def getMarker(index):
     if index == 0:      return 20

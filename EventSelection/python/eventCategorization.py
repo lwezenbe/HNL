@@ -78,6 +78,7 @@ CATEGORIES = sorted(CATEGORY_NAMES.keys())
 # Accompanying function to filter more easily than messing around with these dictionaries
 #
 SUPER_CATEGORIES = {'Ditau': [1, 2, 3, 4], 'SingleTau' : [5, 6, 7, 8, 9], 'NoTau' : [11, 12, 13, 14, 15, 16]}
+ANALYSIS_CATEGORIES = {'Ditau': [1, 2, 3, 4], 'SingleTau-OS': [6, 8], 'Single-Tau-SS': [5, 7], 'EEE': [11], 'MuMuMu': [12], 'EEMu': [13, 14], 'EMuMu': [15, 16]}
 
 def filterSuperCategory(super_category_name, category):
     if category in SUPER_CATEGORIES[super_category_name]: return True
@@ -148,7 +149,7 @@ class EventCategory():
     def returnCategory(self):
         self.flavorContent()
         if self.n_tau > 2:
-            self.category = CATEGORY_FROM_NAME['Other']
+            return CATEGORY_FROM_NAME['Other']
 
         #Category 1, 2, 3, 4:
         if self.n_tau == 2: 
@@ -159,7 +160,7 @@ class EventCategory():
                 if self.hasSSSFpair(2): return 3
                 elif self.hasOSSFpair(2): return 4
             else:
-                self.category = CATEGORY_FROM_NAME['Other']
+                return CATEGORY_FROM_NAME['Other']
 
         #Category 5, 6, 7, 8, 9:
         elif self.n_tau == 1:
@@ -172,14 +173,14 @@ class EventCategory():
             elif self.n_mu == 1 and self.n_ele == 1:
                 return 9
             else:
-                self.category = CATEGORY_FROM_NAME['Other']
+                return CATEGORY_FROM_NAME['Other']
 
         #All light lepton categories
         elif self.n_tau == 0:
             if self.n_ele == 3:
-                self.category = 11
+                return 11
             elif self.n_ele == 0 and self.n_mu == 3:
-                self.category = 12
+                return 12
             elif self.n_ele == 2 and self.n_mu == 1:
                 if self.hasSSSFpair(0): return 13
                 elif self.hasOSSFpair(0): return 14            
@@ -187,10 +188,10 @@ class EventCategory():
                 if self.hasSSSFpair(1): return 15
                 elif self.hasOSSFpair(1): return 16
             else:
-                self.category = CATEGORY_FROM_NAME['Other']
+                return CATEGORY_FROM_NAME['Other']
 
         else:
-            self.category = CATEGORY_FROM_NAME['Other']
+            return CATEGORY_FROM_NAME['Other']
         
         return self.category
 
@@ -237,11 +238,11 @@ class EventCategory():
             elif self.n_ele == 0 and self.n_mu == 3:
                 self.category = 12
             elif self.n_ele == 2 and self.n_mu == 1:
-                if self.hasSSSFpair(0): return 13
-                elif self.hasOSSFpair(0): return 14            
+                if self.hasSSSFpair(0): self.category = 13
+                elif self.hasOSSFpair(0): self.category = 14            
             elif self.n_ele == 1 and self.n_mu == 2:
-                if self.hasSSSFpair(1): return 15
-                elif self.hasOSSFpair(1): return 16
+                if self.hasSSSFpair(1): self.category = 15
+                elif self.hasOSSFpair(1): self.category = 16
             else:
                 self.category = CATEGORY_FROM_NAME['Other']
 

@@ -7,29 +7,6 @@
 #                                                                       #                                   
 #########################################################################
 
-#
-# General imports
-#
-import numpy as np
-import os
-from ROOT import TFile, TLorentzVector
-from HNL.Tools.histogram import Histogram
-from HNL.Tools.mergeFiles import merge
-from HNL.Tools.helpers import getObjFromFile, progress, makeDirIfNeeded
-from HNL.Samples.sample import createSampleList
-from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
-from HNL.EventSelection.eventSelection import select3Leptons, select3GenLeptons, calculateKinematicVariables
-from HNL.EventSelection.eventSelection import passBaseCutsNoBVeto, lowMassCuts, highMassCuts, bVeto
-from HNL.EventSelection.eventCategorization import EventCategory
-from HNL.EventSelection.cutter import Cutter, printSelections
-
-
-#
-# Some constants to make referring to signal leptons more readable
-#
-l1 = 0
-l2 = 1
-l3 = 2
 
 #
 # Argument parser and logging
@@ -56,6 +33,31 @@ argParser.add_argument('--coupling', action='store', default=0.01, type=float,  
 #argParser.add_argument('--triggerTest', type=str, default=None,  help='Some settings to perform pt cuts for triggers')
 args = argParser.parse_args()
 
+
+#
+# General imports
+#
+import numpy as np
+import os
+from ROOT import TFile, TLorentzVector
+from HNL.Tools.histogram import Histogram
+from HNL.Tools.mergeFiles import merge
+from HNL.Tools.helpers import getObjFromFile, progress, makeDirIfNeeded
+from HNL.Samples.sample import createSampleList
+from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
+from HNL.EventSelection.eventSelection import select3Leptons, select3GenLeptons, calculateKinematicVariables
+from HNL.EventSelection.eventSelection import passBaseCutsNoBVeto, lowMassCuts, highMassCuts, bVeto
+from HNL.EventSelection.eventCategorization import EventCategory
+from HNL.EventSelection.cutter import Cutter, printSelections
+
+
+#
+# Some constants to make referring to signal leptons more readable
+#
+l1 = 0
+l2 = 1
+l3 = 2
+
 if args.isTest:
     if args.year is None: args.year = '2016'
     if args.sample is None: args.sample = 'DYJetsToLL-M-10to50'
@@ -76,7 +78,15 @@ if args.genLevel:
             'l3pt':      (lambda c : c.l_pt[l3],       np.arange(0., 300., 5.),       ('p_{T} (l3) [GeV]', 'Events'))
             }
 else:
-    var = {'minMos':        (lambda c : c.minMos,   np.arange(0., 120., 12.),         ('min(M_{OS}) [GeV]', 'Events')),
+    var = {
+            'minMos':        (lambda c : c.minMos,   np.arange(0., 240., 12.),         ('min(M_{OS}) [GeV]', 'Events')),
+            'maxMos':        (lambda c : c.maxMos,   np.arange(0., 240., 12.),         ('max(M_{OS}) [GeV]', 'Events')),
+            'minMss':        (lambda c : c.minMss,   np.arange(0., 240., 12.),         ('min(M_{SS}) [GeV]', 'Events')),
+            'maxMss':        (lambda c : c.maxMss,   np.arange(0., 240., 12.),         ('max(M_{SS}) [GeV]', 'Events')),
+            'minMossf':        (lambda c : c.minMossf,   np.arange(0., 240., 12.),         ('min(M_{OSSF}) [GeV]', 'Events')),
+            'maxMossf':        (lambda c : c.maxMossf,   np.arange(0., 240., 12.),         ('max(M_{OSSF}) [GeV]', 'Events')),
+            'minMsssf':        (lambda c : c.minMsssf,   np.arange(0., 240., 12.),         ('min(M_{SSSF}) [GeV]', 'Events')),
+            'maxMsssf':        (lambda c : c.maxMsssf,   np.arange(0., 240., 12.),         ('max(M_{SSSF}) [GeV]', 'Events')),
             'm3l':          (lambda c : c.M3l,      np.arange(0., 240., 15.),         ('M_{3l} [GeV]', 'Events')),
             'ml12':          (lambda c : c.Ml12,      np.arange(0., 240., 5.),         ('M_{l1l2} [GeV]', 'Events')),
             'ml23':          (lambda c : c.Ml23,      np.arange(0., 240., 5.),         ('M_{l2l3} [GeV]', 'Events')),
@@ -90,7 +100,24 @@ else:
             'l2eta':      (lambda c : c.l_eta[l2],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l2)', 'Events')),
             'l3eta':      (lambda c : c.l_eta[l3],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l3)', 'Events')),
             'NJet':      (lambda c : c.njets,       np.arange(0., 12., 1.),       ('#Jets', 'Events')),
-            'NbJet':      (lambda c : c.nbjets,       np.arange(0., 12., 1.),       ('#B Jets', 'Events'))
+            'NbJet':      (lambda c : c.nbjets,       np.arange(0., 12., 1.),       ('#B Jets', 'Events')),
+            'drl1l2':      (lambda c : c.dr_l1l2,       np.arange(0., 5.5, .25),       ('#Delta R(l1, l2)', 'Events')),
+            'drl1l3':      (lambda c : c.dr_l1l3,       np.arange(0., 5.5, .25),       ('#Delta R(l1, l3)', 'Events')),
+            'drl2l3':      (lambda c : c.dr_l2l3,       np.arange(0., 5.5, .25),       ('#Delta R(l2, l3)', 'Events')),
+            'drminOS':      (lambda c : c.dr_minOS,       np.arange(0., 5.5, .25),       ('#Delta R(min(OS))', 'Events')),
+            'drmaxOS':      (lambda c : c.dr_maxOS,       np.arange(0., 5.5, .25),       ('#Delta R(max(OS))', 'Events')),
+            'drminSS':      (lambda c : c.dr_minSS,       np.arange(0., 5.5, .25),       ('#Delta R(min(SS))', 'Events')),
+            'drmaxSS':      (lambda c : c.dr_maxSS,       np.arange(0., 5.5, .25),       ('#Delta R(max(SS))', 'Events')),
+            'drminOSSF':      (lambda c : c.dr_minOSSF,       np.arange(0., 5.5, .25),       ('#Delta R(min(OSSF))', 'Events')),
+            'drmaxOSSF':      (lambda c : c.dr_maxOSSF,       np.arange(0., 5.5, .25),       ('#Delta R(max(OSSF))', 'Events')),
+            'drminSSSF':      (lambda c : c.dr_minSSSF,       np.arange(0., 5.5, .25),       ('#Delta R(min(SSSF))', 'Events')),
+            'drmaxSSSF':      (lambda c : c.dr_maxSSSF,       np.arange(0., 5.5, .25),       ('#Delta R(max(SSSF))', 'Events')),
+            'mindrl1':      (lambda c : c.mindr_l1,       np.arange(0., 5.5, .25),       ('min(#Delta R(l1ln))', 'Events')),
+            'maxdrl1':      (lambda c : c.maxdr_l1,       np.arange(0., 5.5, .25),       ('max(#Delta R(l1ln))', 'Events')),
+            'mindrl2':      (lambda c : c.mindr_l2,       np.arange(0., 5.5, .25),       ('min(#Delta R(l2ln))', 'Events')),
+            'maxdrl2':      (lambda c : c.maxdr_l2,       np.arange(0., 5.5, .25),       ('max(#Delta R(l2ln))', 'Events')),
+            'mindrl3':      (lambda c : c.mindr_l3,       np.arange(0., 5.5, .25),       ('min(#Delta R(l3ln))', 'Events')),
+            'maxdrl3':      (lambda c : c.maxdr_l3,       np.arange(0., 5.5, .25),       ('max(#Delta R(l3ln))', 'Events'))
         }
 
 import HNL.EventSelection.eventCategorization as cat
@@ -279,6 +306,7 @@ if not args.makePlots:
 else:
     import glob
 
+    print 'glob'
     # Collect signal file locations
     if args.genLevel and args.signalOnly:
         signal_list = glob.glob(output_name('signal')+'/signalOrdering/*'+args.flavor+'-*')
@@ -291,12 +319,14 @@ else:
     else:
         signal_list = []
 
+    print 'bkgr location'
     # Collect background file locations
     if not args.signalOnly:
         bkgr_list = glob.glob(output_name('bkgr')+'/*')
     else:
         bkgr_list = []
 
+    print 'check merge'
     # Merge files if necessary
     mixed_list = signal_list + bkgr_list
     for n in mixed_list:
@@ -304,6 +334,7 @@ else:
 
     # Load in the histograms from the files
     for c in categories: 
+        print 'loading', c
         for v in var.keys():
             if not args.bkgrOnly:
                 for s in signal_list:
@@ -312,10 +343,11 @@ else:
                     if args.masses is not None and sample_mass not in args.masses: continue
                     #list_of_hist[c][v]['signal'][sample_name] = Histogram(getObjFromFile(s+'/variables.root', v+'/'+cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v+'-'+sample_name)) 
                     list_of_hist[c][v]['signal'][sample_name] = Histogram(getObjFromFile(s+'/variables.root', v+'/'+str(c)+'-'+v+'-'+sample_name)) 
-                    list_of_hist[c][v]['signal'][sample_name].hist.Scale(1000.)
+                    # list_of_hist[c][v]['signal'][sample_name].hist.Scale(1000.)
             if not args.signalOnly:
                 for b in bkgr_list:
                     sample_name = b.split('/')[-1]
+                    if sample_name == 'XG': continue
                     #list_of_hist[c][v]['bkgr'][sample_name] = Histogram(getObjFromFile(b+'/variables.root', v+'/'+cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v+'-'+sample_name)) 
                     list_of_hist[c][v]['bkgr'][sample_name] = Histogram(getObjFromFile(b+'/variables.root', v+'/'+str(c)+'-'+v+'-'+sample_name)) 
 
@@ -361,16 +393,20 @@ output_dir = makePathTimeStamped(output_dir)
 #
 from HNL.EventSelection.eventCategorization import CATEGORY_NAMES, CATEGORY_FROM_NAME
 for c in categories:
+    print CATEGORY_NAMES[c]
+
     printSelections(mixed_list[0]+'/variables.root', os.path.join(output_dir, CATEGORY_NAMES[c], 'Selections.txt'))
 
     extra_text = [extraTextFormat(cat.returnTexName(c), xpos = 0.2, ypos = 0.82, textsize = None, align = 12)]  #Text to display event type in plot
     extra_text.append(extraTextFormat('V_{'+args.flavor+'N} = '+str(args.coupling)))  #Text to display event type in plot
     # extra_text.append(extraTextFormat('Signal scaled by factor 100', xpos = 0.2, ypos = 0.8, textsize = 0.7))  #Text to display event type in plot
-    extra_text.append(extraTextFormat('Signal scaled by factor 1000', textsize = 0.7))  #Text to display event type in plot
+    # extra_text.append(extraTextFormat('Signal scaled by factor 1000', textsize = 0.7))  #Text to display event type in plot
+    extra_text.append(extraTextFormat('Signal scaled to background', textsize = 0.7))  #Text to display event type in plot
 
     # Plots that display chosen for chosen signal masses and backgrounds the distributions for the different variables
     # S and B in same canvas for each variable
     for v in var:
+        print v
         legend_names = list_of_hist[c][v]['signal'].keys()+list_of_hist[c][v]['bkgr'].keys()
         
         # Make list of background histograms for the plot object (or None if no background)
@@ -386,11 +422,10 @@ for c in categories:
             signal_hist = list_of_hist[c][v]['signal'].values()
 
         # Create plot object (if signal and background are displayed, also show the ratio)
-        p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, CATEGORY_NAMES[c]+'-'+v, bkgr_hist = bkgr_hist, y_log = True, extra_text = extra_text, draw_ratio = (not args.signalOnly and not args.bkgrOnly))
-
+        p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, CATEGORY_NAMES[c]+'-'+v, bkgr_hist = bkgr_hist, y_log = False, extra_text = extra_text, draw_ratio = (not args.signalOnly and not args.bkgrOnly), year = args.year)
 
         # Draw
-        p.drawHist(output_dir = os.path.join(output_dir, CATEGORY_NAMES[c]), normalize_signal=False, draw_option='EHist', min_cutoff = 0.1)
+        p.drawHist(output_dir = os.path.join(output_dir, CATEGORY_NAMES[c]), normalize_signal=True, draw_option='Hist', min_cutoff = 1)
     
     #TODO: I broke this when changing the eventCategorization, fix this again
     # # If looking at signalOnly, also makes plots that compares the three lepton pt's for every mass point

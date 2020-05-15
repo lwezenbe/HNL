@@ -74,14 +74,24 @@ def extraTextFormat(text, xpos = None, ypos = None, textsize = None, align = 12)
     if textsize is not None: tmp_textsize *= textsize 
     return [text, xpos, ypos, tmp_textsize, align]
 
-def drawLineFormat(x0 = None, x1 = None, y0 = None, y1 = None, color = None, width = 3):
+def drawLineFormat(x0 = None, x1 = None, y0 = None, y1 = None, color = None, width = 3, style = 1):
     if color is None: color = ROOT.kBlack
-    return [x0, x1, y0, y1, color, width]
+    if x0 is not None and x1 is None: x1 = x0
+    if y0 is not None and y1 is None: y1 = y0
+    return [x0, x1, y0, y1, color, width, style]
 
 def removeNegativeErrors(h):
     for xbin in xrange(1, th1.GetSize()-1):                     #GetSize returns nbins + 2 (for overflow and underflow bin)
         if (h.GetBinContent(xbin) - h.GetBinErrorLow(xbin)) < 0:
             h.SetBinError
+
+def getCumulativeValue(hist, bin):
+    out_val = 0.
+    out_err = 0.
+    for b in xrange(bin, hist.GetNbinsX() + 1):
+        out_val += hist.GetBinContent(b)
+        out_err += hist.GetBinError(b) ** 2
+    return out_val, np.sqrt(out_err)
 
 def getUnit(x):
     if x.find('[') == -1:

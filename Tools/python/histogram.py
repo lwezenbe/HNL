@@ -106,6 +106,13 @@ class Histogram:
         self.hist.Write()
         output_file.Close()
 
+    def clone(self, out_name):
+        hist_clone = self.hist.Clone(out_name)
+        return Histogram(hist_clone)
+
+    def add(self, other_histogram):
+        self.hist.Add(other_histogram.getHist())
+
 def returnSqrt(th1):
     sqrt = th1.Clone('sqrt')
     for xbin in xrange(1, th1.GetSize()-1):                     #GetSize returns nbins + 2 (for overflow and underflow bin)

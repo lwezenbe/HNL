@@ -5,7 +5,7 @@ from HNL.ObjectSelection.leptonSelector import isLooseLepton, isTightLepton
 #
 def isCleanFromLeptons(chain, index):
     for l in xrange(chain._nL):
-        if not isLooseLepton(chain, l): continue
+        if not isTightLepton(chain, l): continue
         if deltaR(chain._lEta[l], chain._jetEta[index], chain._lPhi[l], chain._jetPhi[index]) < 0.4: return False
     return True
 

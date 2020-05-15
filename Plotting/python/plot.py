@@ -48,39 +48,54 @@ from HNL.Tools.helpers import isTimeStampFormat, makeDirIfNeeded
 from HNL.Plotting.style import setDefault, setDefault2D
 class Plot:
     
-    def __init__(self, signal_hist, tex_names, name = None, x_name = None, y_name = None, bkgr_hist = None, extra_text = None, x_log = None, y_log = None, draw_ratio = False, draw_significance = False, color_palette = 'Didar', color_palette_bkgr = 'StackTauPOGbyName'):
-        self.s = makeList(getHistList(signal_hist))
-        self.tex_names = makeList(tex_names)
-        self.s_tex_names = self.tex_names[:len(self.s)] 
-        self.b_tex_names = self.tex_names[len(self.s):] 
+    def __init__(self, signal_hist, tex_names, name = None, x_name = None, y_name = None, bkgr_hist = None, extra_text = None, x_log = None, y_log = None, draw_ratio = False, draw_significance = False, color_palette = 'Didar', color_palette_bkgr = 'StackTauPOGbyName', year = 2016):
         self.name = name if name else self.s[0].GetTitle()
+        self.year = int(year)
+
+        self.s = makeList(getHistList(signal_hist))
+        self.total_s = self.s[0].Clone('total_sig')
+        for i, h in enumerate(self.s):
+            if i != 0:      self.total_s.Add(h)
+
         self.b = makeList(getHistList(bkgr_hist)) if bkgr_hist is not None else None
+        self.total_b = None
         if self.b is not None:
             self.total_b = self.b[0].Clone('total_bkgr')
             for i, h in enumerate(self.b):
                 if i != 0:      self.total_b.Add(h)
-        else:
-            self.total_b = None
-        self.total_s = self.s[0].Clone('total_sig')
-        for i, h in enumerate(self.s):
-            if i != 0:      self.total_s.Add(h)
-        self.hs = None  #hist stack for bkgr
+
+        self.tex_names = makeList(tex_names)
+        self.s_tex_names = self.tex_names[:len(self.s)] 
+        self.b_tex_names = self.tex_names[len(self.s):] 
+
+        self.hs = None  #hist stack
+
         self.x_name = x_name if x_name is not None else self.s[0].GetXaxis().GetTitle()
         self.y_name = y_name if y_name is not None else self.s[0].GetYaxis().GetTitle()
         self.canvas = None #Can not be created until gROOT and gStyle settings are set
         self.plotpad = None
         self.x_log = x_log
         self.y_log = y_log
+
         self.extra_text = [i for i in extra_text] if extra_text is not None else None
+
         self.draw_ratio = draw_ratio
         self.draw_significance = draw_significance
-        self.overall_max = 0.
-        self.overall_min = 0.
+
+        self.overall_max = None
+        self.overall_min = None
 
         self.color_palette = color_palette
         self.color_palette_bkgr = color_palette_bkgr
 
-    def setAxisLog(self, is2D = False, stacked = True, min_cutoff = None):
+    def createErrorHist(self):
+        self.stat_signal_errors = [s.Clone(s.GetName()+'_statError') for s in self.s]
+        self.stat_totsignal_error = self.total_s.Clone('totalSignalStatError')
+        self.stat_bkgr_errors = [b.Clone(b.GetName()+'_statError') for b in self.b] if self.b is not None else None
+        self.stat_totbkgr_error = self.total_b.Clone('totalSignalStatError') if self.total_b is not None else None
+
+
+    def setAxisLog(self, is2D = False, stacked = True, min_cutoff = None, include_errors = True):
 
         #
         # Calculate range
@@ -95,9 +110,10 @@ class Plot:
                     to_check_max += [self.total_b]
                 else:
                     to_check_max += [k for k in self.b]
+        
 
         if not is2D:
-            self.overall_max = pt.getOverallMaximum(to_check_max)
+            self.overall_max = max([pt.getOverallMaximum(to_check_max), 1])
             self.overall_min = pt.getOverallMinimum(to_check_min, zero_not_allowed=True)
 
         if self.x_log:
@@ -109,28 +125,28 @@ class Plot:
             self.plotpad.SetLogy()
 
             if min_cutoff is None:
-                max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*3
+                self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*3
             else:
-                max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(min_cutoff))/2)*3
+                self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(min_cutoff))/2)*3
 
-            min_to_set = min_cutoff if min_cutoff is not None else 0.3*self.overall_min
+            self.min_to_set = min_cutoff if min_cutoff is not None else 0.3*self.overall_min
         else:
-            max_to_set = 1.5*self.overall_max
-            min_to_set = min_cutoff if min_cutoff is not None else 0.7*self.overall_min
+            self.max_to_set = 1.25*self.overall_max
+            self.min_to_set = min_cutoff if min_cutoff is not None else 0.7*self.overall_min
 
         #
         # Set min and max
         #
         if not is2D:
                 if stacked:
-                    self.hs.SetMinimum(min_to_set)
-                    self.hs.SetMaximum(max_to_set)
+                    self.hs.SetMinimum(self.min_to_set)
+                    self.hs.SetMaximum(self.max_to_set)
                 elif self.b is None: 
-                    self.s[0].SetMinimum(min_to_set)
-                    self.s[0].SetMaximum(max_to_set)
+                    self.s[0].SetMinimum(self.min_to_set)
+                    self.s[0].SetMaximum(self.max_to_set)
                 else:
-                    self.b[0].SetMinimum(min_to_set)
-                    self.b[0].SetMaximum(max_to_set)
+                    self.b[0].SetMinimum(self.min_to_set)
+                    self.b[0].SetMaximum(self.max_to_set)
 
         self.plotpad.Update()
 
@@ -277,16 +293,32 @@ class Plot:
         self.canvas.Update() 
         return self.ratio_pad
    
-    def calculateSignificance(self):
+    def calculateSignificance(self, cumulative=False):
         significances = []
-        for i, s in enumerate(self.s):
-            num = s.Clone('num')
-            tot = s.Clone('tot')
-            tot.Add(self.total_b)
-            sqrtTot = returnSqrt(tot)
-            num.Divide(sqrtTot)
+        if cumulative:
+            significances = [s.Clone(s.GetName()+'_significance') for s in self.s]
+            nbins = self.total_b.GetNbinsX() + 1
+            for b in xrange(nbins):
+                bkgr_val, bkgr_err = pt.getCumulativeValue(self.total_b, b)
+                for i, s in enumerate(self.s):
+                    signal_val, signal_err = pt.getCumulativeValue(s, b)
+                    if signal_val+ bkgr_val > 0:
+                        significances[i].SetBinContent(b, signal_val / np.sqrt(signal_val + bkgr_val))
+                        # significances[i].SetBinError(b, 0.5 * (np.sqrt(signal_err ** 2 + bkgr_err ** 2))/np.sqrt(signal_val + bkgr_val))
+                        significances[i].SetBinError(b, 0)
+                    else:
+                        significances[i].SetBinContent(b, 0.)
+                        # sig.SetBinError(b, 0.5 * (np.sqrt(signal_err ** 2 + bkgr_err ** 2))/np.sqrt(signal_val + bkgr_val))
+                        significances[i].SetBinError(b, 0)
+        else:
+            for i, s in enumerate(self.s):
+                num = s.Clone('num')
+                tot = s.Clone('tot')
+                tot.Add(self.total_b)
+                sqrtTot = returnSqrt(tot)
+                num.Divide(sqrtTot)
 
-            significances.append(num)
+                significances.append(num)
 
         return significances
     
@@ -296,6 +328,7 @@ class Plot:
         #Set axis: if significance is also drawn, no x-axis
         significances[0].SetTitle(';'+ self.x_name+'; S/#sqrt{S+B}')
         significances[0].SetMinimum(0.)
+        significances[0].SetMaximum(1.3*pt.getOverallMaximum(significances))
         significances[0].GetXaxis().SetTitleSize(.12)
         significances[0].GetYaxis().SetTitleSize(.12)
         significances[0].GetXaxis().SetTitleOffset(1.0)
@@ -311,21 +344,19 @@ class Plot:
             r.SetMarkerStyle(20)
             r.SetMarkerColor(r.GetLineColor())
 
-
-
-        significances[0].Draw('EP')
+        significances[0].Draw('Hist')
         for r in significances[1:]:
-            r.Draw('EPSame')
+            r.Draw('HistSame')
 
-        if line is not None:
-            for l, s in zip(line, significances):
-                max_significance = pt.getOverallMaximum([s], include_error = False)
-                l.SetY1(max_significance)
-                l.SetY2(max_significance)
-                l.SetLineColor(s.GetLineColor())
-                l.SetLineWidth(2)
-                l.SetLineStyle(9)
-                l.Draw('same')
+        # if line is not None:
+        #     for l, s in zip(line, significances):
+        #         max_significance = pt.getOverallMaximum([s], include_error = False)
+        #         l.SetY1(max_significance)
+        #         l.SetY2(max_significance)
+        #         l.SetLineColor(s.GetLineColor())
+        #         l.SetLineWidth(2)
+        #         l.SetLineStyle(9)
+        #         l.Draw('same')
 
         self.sig_pad.Update()
         self.canvas.cd()
@@ -364,9 +395,33 @@ class Plot:
         if message is not None:
             pt.writeMessage(destination.rsplit('/', 1)[0], message)
     
-    #Width
+    #
     # Functions to do actual plotting
     #
+
+    def drawErrors(self, signal_draw_option, bkgr_draw_option):
+        self.createErrorHist()
+
+        if signal_draw_option == 'Stack':
+            self.stat_totsignal_error.SetFillStyle(3013)
+            self.stat_totsignal_error.SetFillColor(ROOT.kGray+2)
+            self.stat_totsignal_error.SetMarkerStyle(0)
+            self.stat_totsignal_error.Draw("E2 Same")
+        elif 'E' in signal_draw_option:
+            for i, s in enumerate(self.s):
+                self.stat_signal_errors[i].Draw("E Same")
+
+
+        if self.b is not None:
+            if bkgr_draw_option == 'Stack':
+                self.stat_totbkgr_error.SetFillStyle(3013)
+                self.stat_totbkgr_error.SetFillColor(ROOT.kGray+2)
+                self.stat_totbkgr_error.SetMarkerStyle(0)
+                self.stat_totbkgr_error.Draw("E2 Same")
+            elif 'E' in bkgr_draw_option:
+                for i, s in enumerate(self.s):
+                    self.stat_bkgr_errors[i].Draw("E Same")
+
 
     def drawHist(self, output_dir = None, normalize_signal = False, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None, custom_labels = None, draw_lines = None, message = None, min_cutoff = None):
 
@@ -474,48 +529,33 @@ class Plot:
             else:
                 self.s[0].SetTitle(title)
 
-        #
-        # Set custom labels if needed
-        #
-        if custom_labels is not None and not self.draw_ratio and not self.draw_significance:
-            if self.b is not None:
-                if bkgr_draw_option == 'Stack':
-                    for i, n in enumerate(custom_labels):
-                        self.hs.GetHistogram().GetXaxis().SetBinLabel(i+1, n)
-                else:
-                    for i, n in enumerate(custom_labels):
-                        self.b[0].GetXaxis().SetBinLabel(i+1, n)
-            else:
-                if draw_option == "Stack":
-                    for i, n in enumerate(custom_labels):
-                        self.hs.GetHistogram().GetXaxis().SetBinLabel(i+1, n)
-                else:
-                    for i, n in enumerate(custom_labels):
-                        self.s[0].GetXaxis().SetBinLabel(i+1, n)
-        
+
         #
         # Draw background first
         #
+        tmp_bkgr_draw_option = bkgr_draw_option.split('E')[-1]
         if self.b is not None:
             if bkgr_draw_option == 'Stack':
-                self.hs.Draw("EHist")                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
+                self.hs.Draw("Hist")                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
                 if self.draw_ratio or self.draw_significance: 
                     self.hs.GetHistogram().GetXaxis().SetLabelOffset(9999999)
             else:
                 for i, b in enumerate(self.b):
                     if i == 0:
-                        b.Draw(bkgr_draw_option)
+                        b.Draw(tmp_bkgr_draw_option)
                         if self.draw_ratio or self.draw_significance: 
                             b.GetXaxis().SetLabelOffset(9999999)
                     else:
-                        b.Draw(bkgr_draw_option + 'Same')
+                        b.Draw(tmp_bkgr_draw_option + 'Same')
 
 
         #
         # Draw signal
         #
+        tmp_draw_option = draw_option.split('E')[-1]
+
         if draw_option == "Stack":
-            self.hs.Draw("EHist")                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
+            self.hs.Draw("Hist")                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
             if self.draw_ratio or self.draw_significance: 
                 self.hs.GetHistogram().GetXaxis().SetLabelOffset(9999999)
         else:
@@ -528,9 +568,11 @@ class Plot:
                         h.Scale(self.total_b.GetSumOfWeights()/h.GetSumOfWeights())
 
                 if(self.s.index(h) == 0 and self.b is None):
-                    h.Draw(draw_option)
+                    h.Draw(tmp_draw_option)
                 else:
-                    h.Draw(draw_option+'Same')
+                    h.Draw(tmp_draw_option+'Same')
+
+        self.drawErrors(draw_option, bkgr_draw_option)
 
         tdr.setTDRStyle()                       #TODO: Find out why we need a setTDRStyle after drawing the stack
 
@@ -538,6 +580,25 @@ class Plot:
         # Calculate ranges of axis and set to log if requested
         #
         self.setAxisLog(stacked = (self.b is not None and 'Stack' in bkgr_draw_option) or 'Stack' in draw_option, min_cutoff = min_cutoff)
+
+        #
+        # Set custom labels if needed
+        #
+        if custom_labels is not None and not self.draw_ratio and not self.draw_significance:
+            if self.b is not None:
+                if bkgr_draw_option == 'Stack':
+                    for i, n in enumerate(custom_labels):
+                        self.hs.GetHistogram().GetXaxis().SetBinLabel(i+1, n)
+                else:
+                    for i, n in enumerate(custom_labels):
+                        self.b[0].GetXaxis().SetBinLabel(i+1, n)
+            else:
+                if draw_option == "Stack": 
+                    for i, n in enumerate(custom_labels):
+                        self.hs.GetHistogram().GetXaxis().SetBinLabel(i+1, n)
+                else:
+                    for i, n in enumerate(custom_labels):
+                        self.s[0].GetXaxis().SetBinLabel(i+1, n)
 
         #
         # Option only used in plotVariables.py
@@ -564,12 +625,13 @@ class Plot:
                 for il, l in enumerate(draw_lines):
                     x0 = l[0] if l[0] is not None else self.overall_min*0.001
                     x1 = l[1] if l[1] is not None else self.overall_max*3000
-                    y0 = l[2] if l[2] is not None else self.overall_min*0.001
-                    y1 = l[3] if l[3] is not None else self.overall_max*3000
+                    y0 = l[2] if l[2] is not None else self.min_to_set*0.01
+                    y1 = l[3] if l[3] is not None else self.max_to_set*300
                     color = l[4] if l[4] is not None else ROOT.kBlack
                     line_collection.append(ROOT.TLine(x0, y0, x1, y1))
                     line_collection[il].SetLineColor(color)
                     line_collection[il].SetLineWidth(l[5])
+                    line_collection[il].SetLineStyle(l[6])
 
             for l in line_collection:
                 l.Draw('same')
@@ -602,14 +664,14 @@ class Plot:
             significance_lines = []
             for s in self.s:
                 significance_lines.append(ROOT.TLine(s.GetBinLowEdge(1), 0, s.GetBinLowEdge(self.s[0].GetNbinsX()+1), 0))
-            significances = self.calculateSignificance()
+            significances = self.calculateSignificance(cumulative=True)
             self.drawSignificance(significances, custom_labels, significance_lines)
             self.sig_pad.Update()
 
         ROOT.gPad.Update() 
         self.canvas.Update()
         #CMS lumi
-        cl.CMS_lumi(self.canvas, 4, 11, 'Preliminary', False)
+        cl.CMS_lumi(self.canvas, 4, 11, 'Preliminary', self.year)
 
         #Save everything
         self.savePlot(output_dir +'/'+ self.name, message)
@@ -631,7 +693,7 @@ class Plot:
             h.SetTitle(';'+self.x_name+';'+self.y_name) 
             h.Draw(option)
             output_name = output_dir +'/'+h.GetName() #Not using name here because loop over things with different names
-            cl.CMS_lumi(self.canvas, 4, 0, 'Preliminary', True)
+            cl.CMS_lumi(self.canvas, 4, 0, 'Preliminary', self.year)
             self.savePlot(output_name, message)
             self.canvas.Clear()
         return
@@ -698,7 +760,7 @@ class Plot:
  
         ROOT.gPad.Update() 
         self.canvas.Update()
-        cl.CMS_lumi(self.canvas, 4, 11, 'Simulation', False)
+        cl.CMS_lumi(self.canvas, 4, 11, 'Simulation', self.year)
 
         #Save everything
         self.savePlot(output_dir +'/'+ self.name, message = None)
@@ -740,7 +802,6 @@ class Plot:
             for i, (hist, name) in enumerate(zip(self.s, self.tex_names)):
                 if index_colors: color = ps.getStackColorTauPOG(i)
                 else: color = ps.getStackColorTauPOGbyName(name)
-                print color
                 hist.SetFillColor(color)
                 hist.SetLineColor(color)
                 hist.SetMarkerColor(color)
@@ -773,7 +834,7 @@ class Plot:
         ROOT.gPad.Update() 
         self.canvas.Update()
         #CMS lumi
-        cl.CMS_lumi(self.canvas, 4, 11, 'Preliminary', False)
+        cl.CMS_lumi(self.canvas, 4, 11, 'Preliminary', self.year)
 
         #Save everything
         self.savePlot(output_dir +'/'+ self.name, message)
@@ -815,7 +876,7 @@ class Plot:
 
         #Save everything
         self.savePlot(output_dir +'/'+ self.name, message)
-        ROOT.SetOwnership(self.canvas, False)
+        ROOT.SetOwnership(self.canvas, self.year)
         return
 
     def close(self):

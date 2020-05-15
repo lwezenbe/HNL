@@ -229,7 +229,7 @@ def getMinWithErr(hist, zero_not_allowed=False):
               
     else:
         print "Wrong type in getMaxWithErr. Returning 0."
-        return 0.
+        return 0.01
     return min_val  
 
 
