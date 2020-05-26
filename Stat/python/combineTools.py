@@ -9,6 +9,13 @@ import os
 from HNL.Tools.helpers import makeDirIfNeeded
 
 #
+# Information about Combine release
+#
+release        = 'CMSSW_10_2_13'
+arch           = 'slc7_amd64_gcc700'
+version        = 'v8.0.1'
+
+#
 # Function to write out a data card, these data cards all contain 1 bin to be clear, readable and flexible
 # and should be combined later on
 #
