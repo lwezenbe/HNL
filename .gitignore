@@ -1,6 +1,7 @@
 __init__.py
 **/*.pyc
 **/*.swp
+**/data
 **/log
 **/*.log
 **/Results
