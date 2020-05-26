@@ -21,4 +21,6 @@ cd -
 git clone https://github.com/lwezenbe/HNL
 cd HNL
 scram b -j 10
+python Stat/python/combineSetup.py
+
 echo "Setup finished"
