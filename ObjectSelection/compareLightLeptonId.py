@@ -6,6 +6,8 @@
 
 import numpy as np
 
+#TODO: NEEDS AN UPDATE BADLY
+
 #
 # Argument parser and logging
 #
@@ -29,7 +31,7 @@ args = argParser.parse_args()
 if args.isTest:
     args.isChild = True
     #args.sample = 'DY-ext1'
-    args.sample = 'HNLtau-m60'
+    args.sample = 'HNL-tau-m60'
     args.subJob = '0'
     args.year = '2016'
 
@@ -124,6 +126,22 @@ from HNL.ObjectSelection.electronSelector import isBaseElectron
 from HNL.ObjectSelection.muonSelector import isBaseMuon
 from HNL.ObjectSelection.leptonSelector import isTightLightLepton
 from HNL.EventSelection.eventSelection import select3GenLeptons
+from HNL.Tools.helpers import deltaR
+
+def matchGenToReco(chain, l):
+   
+    min_dr = 0.3
+    matched_l = None
+    for lepton in xrange(chain._nLight):
+        if not chain._lIsPrompt[lepton]: continue
+        if chain._gen_lFlavor[l] != chain._lFlavor[lepton]: continue
+        dr = deltaR(chain._gen_lEta[l], chain._lEta[lepton], chain._gen_lPhi[l], chain._lPhi[lepton])
+        if dr < min_dr:
+            matched_l = lepton
+            min_dr = dr
+        
+    return matched_l
+
 for entry in event_range:
 
     chain.GetEntry(entry)
@@ -135,35 +153,18 @@ for entry in event_range:
         chain.pt_l = chain.l_pt[0]
         chain.eta_l = chain.l_eta[0]   
         matched_l = matchGenToReco(chain, chain.l1)
-        for i, algo in enumerate(full_list):
+        for i, algo in enumerate(algos):
             passed_tot = []
-            for index, wp in enumerate(getWP(algo)):
+            for wp in algos[algo]:
                 passed = False
                 if args.onlyReco: 
                     passed=matched_l is not None
                 else:
-                    passed = matched_l is not None and isGeneralTau(chain, matched_l, algo[0], wp, algo[1], wp, algo[2], wp)
+                    passed = matched_l is not None and isTightLightLepton(chain, matched_l, algo)
                 passed_tot.append(passed)
                 for v in list_of_var_hist['efficiency'][algo].keys():
                     list_of_var_hist['efficiency'][algo][v][wp].fill(chain, 1., passed)
             list_of_roc[i].fillEfficiency(passed_tot)
-
-
-#        for lepton in xrange(chain._gen_nL):
-#            chain.pt_l = chain._gen_lPt[lepton]
-#            chain.eta_l = chain._gen_lEta[lepton]   
-#            if not isGoodGenTau(chain, lepton):    continue
-#            matched_l = matchGenToReco(chain, lepton)
-#            for i, algo in enumerate(full_list): 
-#                for index, wp in enumerate(getWP(algo)):
-#                    passed = False
-#                    if args.onlyReco: 
-#                        passed=matched_l is not None
-#                    else:
-#                        passed = matched_l is not None and isGeneralTau(chain, matched_l, algo[0], wp, algo[1], wp, algo[2], wp)
-#                    list_of_roc[i].fillEfficiency(chain, index, passed)
-#                    for v in list_of_var_hist['efficiency'][algo].keys():
-#                        list_of_var_hist['efficiency'][algo][v][wp].fill(chain, 1., passed)
 
     else:
         #Loop over real taus for efficiency

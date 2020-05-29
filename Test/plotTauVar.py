@@ -49,6 +49,8 @@ from HNL.Tools.helpers import getObjFromFile
 list_of_hist = {}
 from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
 from HNL.EventSelection.eventCategorization import EventCategory
+
+
 #
 # Loop over samples and events
 #
@@ -101,10 +103,10 @@ if not args.makePlots:
         # Set event range
         #
         if args.isTest:
-            if len(sample.getEventRange(0)) < 500:
+            if len(sample.getEventRange(0)) < 1000:
                 event_range = sample.getEventRange(0)
             else:
-                event_range = xrange(500)
+                event_range = xrange(1000)
         elif args.runOnCream:
             event_range = sample.getEventRange(args.subJob)
         else:
@@ -112,6 +114,9 @@ if not args.makePlots:
 
         chain.HNLmass = sample.getMass()
         chain.year = int(args.year)
+
+        from HNL.Weights.lumiweight import LumiWeight
+        lw = LumiWeight(sample, sample_manager)
         
         print sample.name
         #
@@ -131,7 +136,7 @@ if not args.makePlots:
             chain.tau_pt = chain.l_pt[0]
             chain.tau_eta = chain.l_eta[0]
             for v in var.keys():
-                list_of_hist[sample.output][v].fill(chain, 1.)
+                list_of_hist[sample.output][v].fill(chain, lw.getLumiWeight())
 
 #            for tau in xrange(chain._gen_nL):
 #                if not isGoodGenTau(chain, tau):        continue                

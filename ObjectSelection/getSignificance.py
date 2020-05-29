@@ -19,8 +19,6 @@ argParser.add_argument('--sample',   action='store',      default=None,   help='
 argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
 argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-argParser.add_argument('--includeReco',   action='store_true', default=False,  help='look at the efficiency for a gen tau to be both reconstructed and identified. Currently just fills the efficiency for isolation')
-argParser.add_argument('--onlyReco',   action='store_true', default=False,  help='look at the efficiency for a gen tau to be reconstructed. Currently just fills the efficiency for isolation')
 argParser.add_argument('--processExistingFiles',   action='store', default=None,  help='Process the existing files. Leave empty for all choices', choices = ['', 'text', 'plots'])
 argParser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
 args = argParser.parse_args()
@@ -32,7 +30,7 @@ if args.isTest:
     args.isChild = True
     # args.sample = 'WZTo3LNu'
     # args.sample = 'HNLtau-60'
-    args.sample = 'HNLtau-m60'
+    args.sample = 'HNL-tau-m60'
     args.subJob = '0'
     args.year = '2016'
 

@@ -24,7 +24,7 @@ argParser.add_argument('--runOnCream',   action='store_true', default=False,  he
 args = argParser.parse_args()
 
 if args.isTest:
-    args.year = '2016'
+    args.year = '2018'
     args.sample = 'DYJetsToLL-M-50'
 
 #
@@ -133,6 +133,7 @@ if not args.makePlots:
             muon_index = None
             for mu in xrange(chain._nMu):
                 if not isTightMuon(chain, mu): continue
+                if not chain._lPt[mu] < 25: continue
                 if muon_index is not None:  
                     keep_event = False
                     break
@@ -159,6 +160,7 @@ if not args.makePlots:
             tau_candidates = []
             for tau in xrange(chain._nLight, chain._nL):
                 if not isGeneralTau(chain, tau, 'deeptauVSjets', 'tight', 'deeptauVSe', 'vvloose', 'deeptauVSmu', 'vloose'): continue
+                if chain._dz[tau] > 0.2: continue
                 if deltaR(chain._lEta[muon_index], chain._lEta[tau], chain._lPhi[muon_index], chain._lPhi[tau]) < 0.5: continue
                 tau_candidates.append(tau)
             
@@ -251,7 +253,7 @@ output_dir = makePathTimeStamped(output_dir)
 #
 for v in var:
     # Create plot object (if signal and background are displayed, also show the ratio)
-    p = Plot(list_of_hist[v], legend_names[v], v, y_log = False)
+    p = Plot(list_of_hist[v], legend_names[v], v, y_log = False, color_palette='StackTauPOGbyName', year = args.year)
 
     # Draw
-    p.drawHist(output_dir = output_dir, draw_option='Stack', color_palette='StackTauPOGbyName')
+    p.drawHist(output_dir = output_dir, draw_option='Stack')

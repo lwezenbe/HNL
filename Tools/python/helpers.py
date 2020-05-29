@@ -244,3 +244,6 @@ def getMassRange(list_of_names):
             if i == 0: m_range.append(mass - 0.5*distance_to_next)
             m_range.append(mass+0.5*distance_to_next)  #For last run, distance_to_next should still be the same
     return m_range
+
+def tab(entries, column='15'):
+    return ''.join(['%25s' % entries[0]] + [(('%'+column+'s') % i) for i in entries[1:]]) + '\n'

@@ -37,6 +37,7 @@ argParser.add_argument('--noSearchRegions',   action='store_true', default=False
 argParser.add_argument('--oldAnalysisCuts',   action='store_true', default=False,  help='apply the cuts as in AN 2017-014')
 argParser.add_argument('--massRegion',   action='store', default=None,  help='apply the cuts of high or low mass regions, use "all" to run both simultaniously', choices=['high', 'low', 'all'])
 argParser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
+argParser.add_argument('--makeDataCards', type = str, default=None,  help='Make data cards of the data you have', choices=['shapes', 'cutAndCount'])
 args = argParser.parse_args()
 
 #
@@ -90,7 +91,7 @@ elif args.massRegion == 'all':
 #
 #   Code to process events
 #
-if not args.makePlots:
+if not args.makePlots and args.makeDataCards is None:
     #
     # Submit subjobs
     #
@@ -235,63 +236,67 @@ else:
     import os
     from HNL.Tools.helpers import getObjFromFile
     from HNL.Plotting.plot import Plot
+    from HNL.EventSelection.eventCategorization import CATEGORY_NAMES, ANALYSIS_CATEGORIES
+
+
+    #
+    # Throw some exceptions if needed
+    #
+    if args.massRegion == 'all':
+        raise RuntimeError('The option "all" is not supported in plotting. Please make a choice between low, high or None')
+
+    mass_dict = {None: 'general', 'low':'lowMass', 'high': 'highMass'}
     selection_str = 'OldSel' if args.oldAnalysisCuts else 'NewCuts'
-    mass_str = 'allMass' if args.massRegion is None else args.massRegion
+    mass_str = mass_dict[args.massRegion]
+
     if not args.isTest:
-        in_files = glob.glob(os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/eventsPerCategory/'+selection_str+'/'+mass_str+'/*')) 
+        base_path = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], selection_str, mass_str)
     else:
-        in_files = glob.glob(os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/testArea/eventsPerCategory/'+selection_str+'/'+mass_str+'/*')) 
+        base_path = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0], selection_str, mass_str)
+    in_files = glob.glob(os.path.join(base_path, '*'))
     for f in in_files:
         if '.txt' in f: continue
         merge(f)
 
-    def mergeSearchRegions(regions_to_merge, values, errors, out_name):
-        if not regions_to_merge: 
-            raise RuntimeError('Illegal input for mergeSearchRegions in call with output name "'+out_name+'"')
-        out_val, out_err = (values[regions_to_merge[0]], errors[regions_to_merge[0]])
-        if len(regions_to_merge) > 1:
-            for reg in regions_to_merge[1:]:
-                out_val += values[reg]
-                out_err = np.sqrt(out_err ** 2 + errors[reg] ** 2)
+    def mergeValues(values_to_merge, errors_to_merge):
+        if len(values_to_merge) != len(errors_to_merge):
+            raise RuntimeError('length of both input arrays should be the same. Now they are: len(values) = '+str(len(values_to_merge)) + ' and len(errors) = '+str(len(errors_to_merge)))
+        out_val, out_err = (values_to_merge[0], errors_to_merge[0])
+        if len(values_to_merge) > 1:
+            for val, err in zip(values_to_merge[1:], errors_to_merge[1:]):
+                out_val += val
+                out_err = np.sqrt(out_err ** 2 + err ** 2)
         return out_val, out_err
-        # if not regions_to_merge: 
-        #     raise RuntimeError('Illegal input for mergeSearchRegions in call with output name "'+out_name+'"')
-        # out_hist = hist_collection[regions_to_merge[0]].clone(out_name)
-        # if len(regions_to_merge) > 1:
-        #     for reg in regions_to_merge[1:]:
-        #         out_hist.add(hist_collection[reg])
-        # return out_hist
-
 
     #
     # Gather all the files
     #
     list_of_values = {'signal' : {}, 'bkgr' : {}}
     list_of_errors = {'signal' : {}, 'bkgr' : {}}
-    accepted_categories = [i for i in CATEGORIES]
-    x_names = [CATEGORY_TEX_NAMES[i] for i in accepted_categories]
+    x_names = [CATEGORY_TEX_NAMES[i] for i in CATEGORIES]
+
     processed_outputs = set()
     for sample_name in sample_manager.sample_names:
         sample = sample_manager.getSample(sample_name)
-        if sample.output in processed_outputs: continue
+        if sample.output in processed_outputs: continue     #Current implementation of sample lists would cause double counting otherwise 
         processed_outputs.add(sample.output)
-        if not args.isTest: 
-            path_name = os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/eventsPerCategory/'+selection_str+'/'+mass_str+'/'+sample.output+'/events.root')
-        else:
-            path_name = os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/testArea/eventsPerCategory/'+selection_str+'/'+mass_str+'/'+sample.output+'/events.root')
+
+        print 'Loading', sample.output
+
+        path_name = os.path.join(base_path, sample.output, 'events.root')
+
         is_signal = 'signal' if 'HNL' in sample.output else 'bkgr'
         if args.signalOnly and is_signal == 'bkgr': continue
         if args.backgroundOnly and is_signal == 'signal': continue
         if 'HNL' in sample.name and not 'HNL-'+args.flavor in sample.name: continue
         if args.masses is not None and is_signal=='signal' and not any([str(m) == sample.output.rsplit('-m')[-1] for m in args.masses]): continue
+
         list_of_values[is_signal][sample.output] = {}
         list_of_errors[is_signal][sample.output] = {}
         for c in listOfCategories():
-            if c not in accepted_categories: continue
             list_of_values[is_signal][sample.output][c] = {}
             list_of_errors[is_signal][sample.output][c] = {}
-            for sr in xrange(1, srm.getNumberOfSearchRegions()+1):
-                #list_of_values[is_signal][sample.output][c][sr]= Histogram(getObjFromFile(path_name, '_'.join([str(c), str(sr)])+'/'+'_'.join([str(c), str(sr)])))
+            for sr in xrange(1, srm[mass_str].getNumberOfSearchRegions()+1):
                 tmp_hist = getObjFromFile(path_name, '_'.join([str(c), str(sr)])+'/'+'_'.join([str(c), str(sr)]))
                 list_of_values[is_signal][sample.output][c][sr]= tmp_hist.GetBinContent(1)
                 list_of_errors[is_signal][sample.output][c][sr]= tmp_hist.GetBinError(1)
@@ -299,205 +304,283 @@ else:
             #
             # Add some grouped search regions for easier access
             #
-            for group_name in srm.getListOfSearchRegionGroups():
-                list_of_values[is_signal][sample.output][c][group_name], list_of_errors[is_signal][sample.output][c][group_name] = mergeSearchRegions(srm.getGroupValues(group_name), list_of_values[is_signal][sample.output][c], list_of_errors[is_signal][sample.output][c], str(c)+'_'+str(group_name))
-            list_of_values[is_signal][sample.output][c]['total'], list_of_errors[is_signal][sample.output][c]['total'] = mergeSearchRegions(range(1, srm.getNumberOfSearchRegions()+1), list_of_values[is_signal][sample.output][c], list_of_errors[is_signal][sample.output][c], str(c)+'_'+str('total'))
+            for group_name in srm[mass_str].getListOfSearchRegionGroups():
+                values_to_merge = [list_of_values[is_signal][sample.output][c][v] for v in srm[mass_str].getGroupValues(group_name)]
+                errors_to_merge = [list_of_errors[is_signal][sample.output][c][v] for v in srm[mass_str].getGroupValues(group_name)]
+                list_of_values[is_signal][sample.output][c][group_name], list_of_errors[is_signal][sample.output][c][group_name] = mergeValues(values_to_merge, errors_to_merge)
+            values_to_merge = [list_of_values[is_signal][sample.output][c][v] for v in range(1, srm[mass_str].getNumberOfSearchRegions()+1)]
+            errors_to_merge = [list_of_errors[is_signal][sample.output][c][v] for v in range(1, srm[mass_str].getNumberOfSearchRegions()+1)]
+            list_of_values[is_signal][sample.output][c]['total'], list_of_errors[is_signal][sample.output][c]['total'] = mergeValues(values_to_merge, errors_to_merge)
 
-    search_region_names = range(1, srm.getNumberOfSearchRegions()+1) + srm.getListOfSearchRegionGroups() + ['total']
+        #
+        # Add some grouped categories for easier access
+        #
+        category_keys = [c for c in CATEGORIES]
+        for ac in SUPER_CATEGORIES.keys():
+            category_keys.append(ac)
+            list_of_values[is_signal][sample.output][ac] = {}
+            list_of_errors[is_signal][sample.output][ac] = {}
+            for sr in list_of_values[is_signal][sample.output][1].keys():
+                values_to_merge = [list_of_values[is_signal][sample.output][v][sr] for v in SUPER_CATEGORIES[ac]]
+                errors_to_merge = [list_of_errors[is_signal][sample.output][v][sr] for v in SUPER_CATEGORIES[ac]]
+                list_of_values[is_signal][sample.output][ac][sr], list_of_errors[is_signal][sample.output][ac][sr] = mergeValues(values_to_merge, errors_to_merge)
+        #Combine all categories into 1 giant bin
+        category_keys.append('total')
+        list_of_values[is_signal][sample.output]['total'] = {}
+        list_of_errors[is_signal][sample.output]['total'] = {}
+        for sr in list_of_values[is_signal][sample.output][1].keys():
+            values_to_merge = [list_of_values[is_signal][sample.output][v][sr] for v in CATEGORIES]
+            errors_to_merge = [list_of_errors[is_signal][sample.output][v][sr] for v in CATEGORIES]
+            list_of_values[is_signal][sample.output]['total'][sr], list_of_errors[is_signal][sample.output]['total'][sr] = mergeValues(values_to_merge, errors_to_merge)
+
+    search_region_keys = range(1, srm[mass_str].getNumberOfSearchRegions()+1) + srm[mass_str].getListOfSearchRegionGroups() + ['total']
 
     from HNL.Tools.helpers import makePathTimeStamped
     from HNL.Plotting.plottingTools import extraTextFormat
-
-    destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/Results/eventsPerCategory/'+selection_str+'/'+mass_str))
-
+    from HNL.Tools.helpers import getObjFromFile, rootFileContent, makeDirIfNeeded, tab
 
 
-    #
-    # Make text files if requested
-    #
-    if not args.noTextFiles:
-        from HNL.Tools.helpers import getObjFromFile, rootFileContent, makeDirIfNeeded
-        from ROOT import TFile
+    destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Analysis/data/Results/calcYields/'+selection_str+'/'+mass_str+'/'+args.flavor))
 
-        for sr in search_region_names:
-            makeDirIfNeeded(destination+'/Tables/table_'+str(sr)+'.txt')
-            out_file = open(destination+'/Tables/table_'+str(sr)+'.txt', 'w')
-            out_file.write('\t \t tte \t ttm \t tee \t tem \t tmm \t lll \t total \n')
+    if args.makeDataCards is not None:
+        from HNL.Stat.combineTools import makeDataCard
 
-            out_file_tex = open(destination+'/Tables/table_'+str(sr)+'_tex.txt', 'w')
-            out_file_tex.write('\\begin{table}[] \n')
-            out_file_tex.write("\\begin{tabular}{|l|l|l|l|l|l|l|l|} \n")
-            out_file_tex.write("\hline \n")
-            out_file_tex.write('& \\tau\\tau e & \\tau \\tau \\mu & \\tau e e & \\tau e \\mu & \\tau\\mu\\mu & lll & total \n')
-            out_file_tex.write("\hline \n")
+        #
+        # If we just want cut and count without shapes, simply write datacards for everything you have
+        #
+        if args.makeDataCards == 'cutAndCount':
+            for ac in ['total']+SUPER_CATEGORIES.keys():
+                for sr in search_region_keys:
+                    for s in list_of_values['signal'].keys():
+                        sig_yield = list_of_values['signal'][s][ac][sr]
+                        bkgr_yields = [list_of_values['bkgr'][b][ac][sr] for b in sorted(list_of_values['bkgr'].keys())]
+                        bkgr_names = [b for b in sorted(list_of_values['bkgr'].keys())]
+                        makeDataCard(str(ac)+'-'+str(sr), args.flavor, args.year, 0, s, bkgr_names, sig_yield, bkgr_yields)
+        #
+        # If we want to use shapes, first make shape histograms, then make datacards
+        #
+        else:
+            for ac in ['total']+SUPER_CATEGORIES.keys():
+                shape_hist = {}
+                n_search_regions = srm[mass_str].getNumberOfSearchRegions()
 
-            for sample_name in sorted(list_of_values['signal'].keys(), key=lambda n : int(n.split('-m')[-1])):
-                out_file.write(sample_name+'\t')
-                out_file_tex.write(sample_name+' & ')
+                shape_hist['data_obs'] = ROOT.TH1D('data_obs', 'data_obs', n_search_regions, 0.5, n_search_regions+0.5)
+                for sample_name in list_of_values['bkgr'].keys():
+                    shape_hist[sample_name] = ROOT.TH1D(sample_name, sample_name, n_search_regions, 0.5, n_search_regions+0.5)
+                    for sr in xrange(1, n_search_regions+1):
+                        shape_hist[sample_name].SetBinContent(sr, list_of_values['bkgr'][sample_name][ac][sr])
+                        shape_hist[sample_name].SetBinError(sr, list_of_errors['bkgr'][sample_name][ac][sr])
 
-                for c in sorted(list_of_values['signal'][sample_name].keys()):
-                    out_file.write('%4.3f' % list_of_values['signal'][sample_name][c][sr]+'\t')
-                    out_file_tex.write('%4.3f' % list_of_values['signal'][sample_name][c][sr])
-                    # out_file.write('%4.3f' % list_of_values['signal'][sample_name][c][sr].getHist().GetSumOfWeights()+'\t')
-                    # out_file_tex.write('%4.3f' % list_of_values['signal'][sample_name][c][sr].getHist().GetSumOfWeights())
-                    if not 'total' in str(c):
-                        out_file_tex.write(' & ')
+                for sample_name in list_of_values['signal'].keys():
+                    out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', str(args.year), args.flavor, sample_name, ac+'.shapes.root')
+                    makeDirIfNeeded(out_path)
+                    out_shape_file = ROOT.TFile(out_path, 'recreate')
+                    n_search_regions = srm[mass_str].getNumberOfSearchRegions()
+                    shape_hist[sample_name] = ROOT.TH1D(sample_name, sample_name, n_search_regions, 0.5, n_search_regions+0.5)
+                    for sr in xrange(1, n_search_regions+1):
+                        shape_hist[sample_name].SetBinContent(sr, list_of_values['signal'][sample_name][ac][sr])
+                        shape_hist[sample_name].SetBinError(sr, list_of_errors['signal'][sample_name][ac][sr])
+                    shape_hist[sample_name].Write(sample_name)
+                    for bkgr_sample_name in list_of_values['bkgr'].keys()+['data_obs']:
+                        shape_hist[bkgr_sample_name].Write(bkgr_sample_name)
+                    out_shape_file.Close()
+                    makeDataCard(str(ac), args.flavor, args.year, 0, sample_name, list_of_values['bkgr'].keys(), shapes=True)
 
-                out_file.write('\n')
+    if args.makePlots:
+
+        #
+        # Make text files if requested
+        #
+        if not args.noTextFiles:
+            from ROOT import TFile
+
+            for sr in search_region_keys:
+                makeDirIfNeeded(destination+'/Tables/table_allCategories_'+str(sr)+'.txt')
+                out_file = open(destination+'/Tables/table_allCategories_'+str(sr)+'.txt', 'w')
+
+                out_file.write(tab([CATEGORY_NAMES[i] for i in CATEGORIES]))
+
+                out_file_tex = open(destination+'/Tables/table_allCategories_'+str(sr)+'_tex.txt', 'w')
+                out_file_tex.write('\\begin{table}[] \n')
+                out_file_tex.write("\\begin{tabular}{|"+'|'.join(['l']*len(CATEGORIES))+"|} \n")
+                out_file_tex.write("\hline \n")
+                out_file_tex.write('& '+'&'.join([CATEGORY_NAMES[i] for i in CATEGORIES])+' \n')
+                # out_file_tex.write('& \\tau\\tau e & \\tau \\tau \\mu & \\tau e e & \\tau e \\mu & \\tau\\mu\\mu & lll & total \n')
+                out_file_tex.write("\hline \n")
+
+                for sample_name in sorted(list_of_values['signal'].keys(), key=lambda n : int(n.split('-m')[-1])):
+                    out_file.write(sample_name+'\t')
+                    out_file_tex.write(sample_name+' & ')
+
+                    for c in CATEGORIES:
+                        out_file.write('%4.3f' % list_of_values['signal'][sample_name][c][sr]+'\t')
+                        out_file_tex.write('%4.3f' % list_of_values['signal'][sample_name][c][sr])
+                        # out_file.write('%4.3f' % list_of_values['signal'][sample_name][c][sr].getHist().GetSumOfWeights()+'\t')
+                        # out_file_tex.write('%4.3f' % list_of_values['signal'][sample_name][c][sr].getHist().GetSumOfWeights())
+                        if not 'total' in str(c):
+                            out_file_tex.write(' & ')
+
+                    out_file.write('\n')
+                    out_file_tex.write('\\\\ \hline \n')
+
+                out_file.write('-------------------------------------------------------------------- \n')
                 out_file_tex.write('\\\\ \hline \n')
 
-            out_file.write('-------------------------------------------------------------------- \n')
-            out_file_tex.write('\\\\ \hline \n')
+                for sample_name in list_of_values['bkgr'].keys():
+                    out_file.write(sample_name+'\t')
+                    out_file_tex.write(sample_name+' & ')
 
-            for sample_name in list_of_values['bkgr'].keys():
-                out_file.write(sample_name+'\t')
-                out_file_tex.write(sample_name+' & ')
+                    for c in CATEGORIES:
+                        out_file.write('%4.1f' % list_of_values['bkgr'][sample_name][c][sr]+'\t')
+                        out_file_tex.write('%4.1f' % list_of_values['bkgr'][sample_name][c][sr])
+                        if not 'total' in str(c):
+                            out_file_tex.write(' & ')
 
-                for c in sorted(list_of_values['bkgr'][sample_name].keys()):
-                    out_file.write('%4.1f' % list_of_values['bkgr'][sample_name][c][sr]+'\t')
-                    out_file_tex.write('%4.1f' % list_of_values['bkgr'][sample_name][c][sr])
-                    if not 'total' in str(c):
-                        out_file_tex.write(' & ')
-
-                out_file.write('\n')
-                out_file_tex.write('\\\\ \hline \n')
+                    out_file.write('\n')
+                    out_file_tex.write('\\\\ \hline \n')
 
 
-            out_file.close()
+                out_file.close()
 
-            out_file_tex.write('\end{tabular} \n')
-            out_file_tex.write('\end{table} \n')
-            out_file_tex.close()
+                out_file_tex.write('\end{tabular} \n')
+                out_file_tex.write('\end{table} \n')
+                out_file_tex.close()
 
-    #
-    # For bar and pie charts, no split in search regions is considered for now
-    #
-    if not args.noBarCharts:
+        #
+        # For bar and pie charts, no split in search regions is considered for now
+        #
+        if not args.noBarCharts:
 
-        for supercat in SUPER_CATEGORIES.keys():
-            #
-            # Bkgr
-            #
-            hist_to_plot = {}
-            for sample_name in list_of_values['bkgr'].keys():
-                # hist_to_plot[sample_name] = ROOT.TH1D(sample_name, sample_name, len(list_of_values['bkgr'][sample_name]), 0, len(list_of_values['bkgr'][sample_name]))
-                hist_to_plot[sample_name] = ROOT.TH1D(sample_name+supercat, sample_name+supercat, len(SUPER_CATEGORIES[supercat]), 0, len(SUPER_CATEGORIES[supercat]))
-                for i, c in enumerate(SUPER_CATEGORIES[supercat]):
-                    # hist_to_plot[sample_name].SetBinContent(i+1, list_of_values['bkgr'][sample_name][c]['total'].getHist().GetSumOfWeights()) 
-                    hist_to_plot[sample_name].SetBinContent(i+1, list_of_values['bkgr'][sample_name][c]['total']) 
-                    hist_to_plot[sample_name].SetBinError(i+1, list_of_errors['bkgr'][sample_name][c]['total']) 
-            x_names = [CATEGORY_TEX_NAMES[n] for n in SUPER_CATEGORIES[supercat]]
-            p = Plot(hist_to_plot.values(), hist_to_plot.keys(), name = 'Events-bar-bkgr-'+supercat, x_name = x_names, y_name = 'Events', y_log='SingleTau' in supercat)
-            p.drawBarChart(output_dir = destination+'/BarCharts', message = args.message)
-            
-            #
-            # Signal
-            #   
-            hist_to_plot = []
-            hist_names = []
-            for sn, sample_name in enumerate(sorted(list_of_values['signal'].keys(), key=lambda k: int(k.split('-m')[-1]))):
-                # hist_to_plot.append(ROOT.TH1D(sample_name, sample_name, len(list_of_values['signal'][sample_name]), 0, len(list_of_values['signal'][sample_name])))
-                hist_to_plot.append(ROOT.TH1D(sample_name, sample_name, len(SUPER_CATEGORIES[supercat]), 0, len(SUPER_CATEGORIES[supercat])))
-                hist_names.append(sample_name)
-                for i, c in enumerate(SUPER_CATEGORIES[supercat]):
-                    # hist_to_plot[sn].SetBinContent(i+1, list_of_values['signal'][sample_name][c]['total'].getHist().GetSumOfWeights()) 
-                    hist_to_plot[sn].SetBinContent(i+1, list_of_values['signal'][sample_name][c]['total']) 
-                    hist_to_plot[sn].SetBinError(i+1, list_of_errors['signal'][sample_name][c]['total']) 
-            x_names = [CATEGORY_TEX_NAMES[n] for n in SUPER_CATEGORIES[supercat]]
-            p = Plot(hist_to_plot, hist_names, name = 'Events-bar-signal-'+supercat+'-'+args.flavor, x_name = x_names, y_name = 'Events', y_log=True)
-            p.drawBarChart(output_dir = destination+'/BarCharts', parallel_bins=True, message = args.message)
-    
-    if not args.noPieCharts:
-        example_sample = list_of_values['bkgr'].keys()[0]
-        for i, c in enumerate(sorted(list_of_values['bkgr'][example_sample].keys())):
-            hist_to_plot_pie = ROOT.TH1D(str(c)+'_pie', str(c), len(list_of_values['bkgr']), 0, len(list_of_values['bkgr']))
-            for j, s in enumerate(list_of_values['bkgr'].keys()):
-                # hist_to_plot_pie.SetBinContent(j+1, list_of_values['bkgr'][s][c]['total'].getHist().GetSumOfWeights())
-                hist_to_plot_pie.SetBinContent(j+1, list_of_values['bkgr'][s][c]['total'])
-                hist_to_plot_pie.SetBinError(j+1, list_of_errors['bkgr'][s][c]['total'])
+            for supercat in SUPER_CATEGORIES.keys():
+                #
+                # Bkgr
+                #
+                hist_to_plot = {}
+                for sample_name in list_of_values['bkgr'].keys():
+                    # hist_to_plot[sample_name] = ROOT.TH1D(sample_name, sample_name, len(list_of_values['bkgr'][sample_name]), 0, len(list_of_values['bkgr'][sample_name]))
+                    hist_to_plot[sample_name] = ROOT.TH1D(sample_name+supercat, sample_name+supercat, len(SUPER_CATEGORIES[supercat]), 0, len(SUPER_CATEGORIES[supercat]))
+                    for i, c in enumerate(SUPER_CATEGORIES[supercat]):
+                        # hist_to_plot[sample_name].SetBinContent(i+1, list_of_values['bkgr'][sample_name][c]['total'].getHist().GetSumOfWeights()) 
+                        hist_to_plot[sample_name].SetBinContent(i+1, list_of_values['bkgr'][sample_name][c]['total']) 
+                x_names = [CATEGORY_TEX_NAMES[n] for n in SUPER_CATEGORIES[supercat]]
+                p = Plot(hist_to_plot.values(), hist_to_plot.keys(), name = 'Events-bar-bkgr-'+supercat, x_name = x_names, y_name = 'Events', y_log='SingleTau' in supercat)            
+                p.drawBarChart(output_dir = destination+'/BarCharts', message = args.message)
+                
+                #
+                # Signal
+                #   
+                hist_to_plot = []
+                hist_names = []
+                for sn, sample_name in enumerate(sorted(list_of_values['signal'].keys(), key=lambda k: int(k.split('-m')[-1]))):
+                    # hist_to_plot.append(ROOT.TH1D(sample_name, sample_name, len(list_of_values['signal'][sample_name]), 0, len(list_of_values['signal'][sample_name])))
+                    hist_to_plot.append(ROOT.TH1D(sample_name, sample_name, len(SUPER_CATEGORIES[supercat]), 0, len(SUPER_CATEGORIES[supercat])))
+                    hist_names.append(sample_name)
+                    for i, c in enumerate(SUPER_CATEGORIES[supercat]):
+                        # hist_to_plot[sn].SetBinContent(i+1, list_of_values['signal'][sample_name][c]['total'].getHist().GetSumOfWeights()) 
+                        hist_to_plot[sn].SetBinContent(i+1, list_of_values['signal'][sample_name][c]['total']) 
+                x_names = [CATEGORY_TEX_NAMES[n] for n in SUPER_CATEGORIES[supercat]]
+                p = Plot(hist_to_plot, hist_names, name = 'Events-bar-signal-'+supercat+'-'+args.flavor, x_name = x_names, y_name = 'Events', y_log=True)
+                p.drawBarChart(output_dir = destination+'/BarCharts', parallel_bins=True, message = args.message)
+        
+        if not args.noPieCharts:
+            example_sample = list_of_values['bkgr'].keys()[0]
+            for i, c in enumerate(sorted(list_of_values['bkgr'][example_sample].keys())):
 
-            try:
-                extra_text = [extraTextFormat(SUPERCATEGORY_TEX_NAMES[c], ypos = 0.83)] if c is not None else None
-            except:
-                extra_text = [extraTextFormat('other', ypos = 0.83)] if c is not None else None
-            x_names = CATEGORY_TEX_NAMES.values()
-            x_names.append('total')
-            p = Plot(hist_to_plot_pie, list_of_values['bkgr'].keys(), name = 'Events_'+str(c), x_name = CATEGORY_TEX_NAMES, y_name = 'Events', extra_text = extra_text)
-            p.drawPieChart(output_dir = destination+'/PieCharts', draw_percent=True, message = args.message)
+                n_filled_hist = len([v for v in list_of_values['bkgr'].values() if v[c]['total'] > 0])    #Remove hist with 0 events, they will otherwise crash the plotting code
+                if n_filled_hist == 0: continue
+                hist_to_plot_pie = ROOT.TH1D(str(c)+'_pie', str(c), n_filled_hist, 0, n_filled_hist)
+                sample_names = []
+                j = 1
+                for s in list_of_values['bkgr'].keys():
+                    fill_val = list_of_values['bkgr'][s][c]['total']
+                    if fill_val > 0:
+                        hist_to_plot_pie.SetBinContent(j, fill_val)
+                        sample_names.append(s)
+                        j += 1
 
-    if not args.noCutFlow:
-        import glob
-        all_files = glob.glob(os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/eventsPerCategory/'+selection_str+'/'+mass_str+'/HNL-'+args.flavor+'*/events.root'))
+                try:
+                    extra_text = [extraTextFormat(SUPERCATEGORY_TEX_NAMES[c], ypos = 0.83)] if c is not None else None
+                except:
+                    extra_text = [extraTextFormat('other', ypos = 0.83)] if c is not None else None
+                x_names = CATEGORY_TEX_NAMES.values()
+                x_names.append('total')
+                p = Plot(hist_to_plot_pie, sample_names, name = 'Events_'+str(c), x_name = CATEGORY_TEX_NAMES, y_name = 'Events', extra_text = extra_text)
+                p.drawPieChart(output_dir = destination+'/PieCharts', draw_percent=True, message = args.message)
 
-        all_files = sorted(all_files, key = lambda k : int(k.split('/')[-2].split('.')[0].split('-m')[-1]))
-        all_names = [k.split('/')[-1].split('.')[0] for k in all_files]
+        # if not args.noCutFlow:
+        #     import glob
+        #     all_files = glob.glob(os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/eventsPerCategory/'+selection_str+'/'+mass_str+'/HNL-'+args.flavor+'*/events.root'))
 
-        from HNL.EventSelection.cutter import plotCutFlow
-        out_name = os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/Results/eventsPerCategory/'+selection_str+'/'+mass_str) +'/CutFlow/Output'
-        plotCutFlow(all_files, out_name, all_names, ignore_weights=True)
+        #     all_files = sorted(all_files, key = lambda k : int(k.split('/')[-2].split('.')[0].split('-m')[-1]))
+        #     all_names = [k.split('/')[-1].split('.')[0] for k in all_files]
 
-    #
-    # Produce search region plots
-    #
-    if not args.noSearchRegions:
-        from HNL.EventSelection.searchRegions import plotLowMassRegions, plotHighMassRegions
-        from HNL.EventSelection.eventCategorization import CATEGORY_NAMES, ANALYSIS_CATEGORIES
+        #     from HNL.EventSelection.cutter import plotCutFlow
+        #     out_name = os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/Results/eventsPerCategory/'+selection_str+'/'+mass_str) +'/CutFlow/Output'
+        #     plotCutFlow(all_files, out_name, all_names, ignore_weights=True)
 
-        #First we need to make histograms that have different search region on x-axis
-        list_of_sr_hist = {}
+        #
+        # Produce search region plots
+        #
+        if not args.noSearchRegions:
+            from HNL.EventSelection.searchRegions import plotLowMassRegions, plotHighMassRegions
 
-        for c in accepted_categories:
-            list_of_sr_hist[c] = {'signal':{}, 'bkgr':{}}
-            #
-            # Bkgr
-            #
-            for i_name, sample_name in enumerate(list_of_values['bkgr'].keys()):
-                list_of_sr_hist[c]['bkgr'][sample_name] = ROOT.TH1D('_'.join([sample_name, str(c)]), '_'.join([sample_name, str(c)]), srm.getNumberOfSearchRegions(), 0.5, srm.getNumberOfSearchRegions()+0.5)
-                for sr in xrange(1, srm.getNumberOfSearchRegions()+1):
-                    list_of_sr_hist[c]['bkgr'][sample_name].SetBinContent(sr, list_of_values['bkgr'][sample_name][c][sr])
-                    list_of_sr_hist[c]['bkgr'][sample_name].SetBinError(sr, list_of_errors['bkgr'][sample_name][c][sr]) 
+            #First we need to make histograms that have different search region on x-axis
+            list_of_sr_hist = {}
 
-            #
-            # Signal
-            #   
-            for i_name, sample_name in enumerate(list_of_values['signal'].keys()):
-                list_of_sr_hist[c]['signal'][sample_name] = ROOT.TH1D('_'.join([sample_name, str(c)]), '_'.join([sample_name, str(c)]), srm.getNumberOfSearchRegions(), 0.5, srm.getNumberOfSearchRegions()+0.5)
-                for sr in xrange(1, srm.getNumberOfSearchRegions()+1):
-                    list_of_sr_hist[c]['signal'][sample_name].SetBinContent(sr, list_of_values['signal'][sample_name][c][sr]) 
-                    list_of_sr_hist[c]['signal'][sample_name].SetBinError(sr, list_of_errors['signal'][sample_name][c][sr])
-                if args.flavor == 'tau' and args.massRegion == 'high': list_of_sr_hist[c]['signal'][sample_name].Scale(1000)
+            for c in CATEGORIES:
+                list_of_sr_hist[c] = {'signal':{}, 'bkgr':{}}
+                #
+                # Bkgr
+                #
+                for i_name, sample_name in enumerate(list_of_values['bkgr'].keys()):
+                    list_of_sr_hist[c]['bkgr'][sample_name] = ROOT.TH1D('_'.join([sample_name, str(c)]), '_'.join([sample_name, str(c)]), srm[mass_str].getNumberOfSearchRegions(), 0.5, srm[mass_str].getNumberOfSearchRegions()+0.5)
+                    for sr in xrange(1, srm[mass_str].getNumberOfSearchRegions()+1):
+                        list_of_sr_hist[c]['bkgr'][sample_name].SetBinContent(sr, list_of_values['bkgr'][sample_name][c][sr])
+                        list_of_sr_hist[c]['bkgr'][sample_name].SetBinError(sr, list_of_errors['bkgr'][sample_name][c][sr]) 
 
-        def mergeCategories(ac, list_of_hist, signalOrBkgr, sample_name):
-            filtered_hist = [list_of_sr_hist[c][signalOrBkgr][sample_name] for c in ac]
-            if len(filtered_hist) == 0:
-                raise RuntimeError("Tried to merge nonexisting categories")
-            elif len(filtered_hist) == 1:
-                return filtered_hist[0]
-            else:
-                new_hist = filtered_hist[0]
-                for h in filtered_hist[1:]:
-                    new_hist.Add(h)
-                return new_hist
+                #
+                # Signal
+                #   
+                for i_name, sample_name in enumerate(list_of_values['signal'].keys()):
+                    list_of_sr_hist[c]['signal'][sample_name] = ROOT.TH1D('_'.join([sample_name, str(c)]), '_'.join([sample_name, str(c)]), srm[mass_str].getNumberOfSearchRegions(), 0.5, srm[mass_str].getNumberOfSearchRegions()+0.5)
+                    for sr in xrange(1, srm[mass_str].getNumberOfSearchRegions()+1):
+                        list_of_sr_hist[c]['signal'][sample_name].SetBinContent(sr, list_of_values['signal'][sample_name][c][sr]) 
+                        list_of_sr_hist[c]['signal'][sample_name].SetBinError(sr, list_of_errors['signal'][sample_name][c][sr])
+                    if args.flavor == 'tau' and args.massRegion == 'high': list_of_sr_hist[c]['signal'][sample_name].Scale(1000)
 
-        #Now add histograms together that belong to same analysis super category
-        list_of_ac_hist = {}
-        for ac in ANALYSIS_CATEGORIES.keys():
-            list_of_ac_hist[ac] = {'signal':[], 'bkgr':[]}
+            def mergeCategories(ac, list_of_hist, signalOrBkgr, sample_name):
+                filtered_hist = [list_of_sr_hist[c][signalOrBkgr][sample_name] for c in ac]
+                if len(filtered_hist) == 0:
+                    raise RuntimeError("Tried to merge nonexisting categories")
+                elif len(filtered_hist) == 1:
+                    return filtered_hist[0]
+                else:
+                    new_hist = filtered_hist[0]
+                    for h in filtered_hist[1:]:
+                        new_hist.Add(h)
+                    return new_hist
 
-            signal_names = []
-            for i_name, sample_name in enumerate(list_of_values['signal'].keys()):
-                signal_names.append(sample_name)
-                list_of_ac_hist[ac]['signal'].append(mergeCategories(ANALYSIS_CATEGORIES[ac], list_of_sr_hist, 'signal', sample_name))
-            
-            bkgr_names = []
-            for i_name, sample_name in enumerate(list_of_values['bkgr'].keys()):
-                bkgr_names.append(sample_name)
-                list_of_ac_hist[ac]['bkgr'].append(mergeCategories(ANALYSIS_CATEGORIES[ac], list_of_sr_hist, 'bkgr', sample_name))
+            #Now add histograms together that belong to same analysis super category
+            list_of_ac_hist = {}
+            for ac in ANALYSIS_CATEGORIES.keys():
+                list_of_ac_hist[ac] = {'signal':[], 'bkgr':[]}
 
-            extra_text = [extraTextFormat(ac, ypos = 0.82)]
-            if args.flavor: extra_text.append(extraTextFormat('V_{'+args.flavor+'N} = 0.01'))
-            if args.flavor == 'tau' and args.massRegion == 'high': extra_text.append(extraTextFormat('signal scaled up by factor 1000.', textsize=0.6))
-            if args.massRegion == 'low':
-                plotLowMassRegions(list_of_ac_hist[ac]['signal'], list_of_ac_hist[ac]['bkgr'], signal_names+bkgr_names, out_path = destination+'/SearchRegions/'+ac, extra_text = extra_text)
-            if args.massRegion == 'high':
-                plotHighMassRegions(list_of_ac_hist[ac]['signal'], list_of_ac_hist[ac]['bkgr'], signal_names+bkgr_names, out_path = destination+'/SearchRegions/'+ac, extra_text = extra_text)
+                signal_names = []
+                for i_name, sample_name in enumerate(list_of_values['signal'].keys()):
+                    signal_names.append(sample_name)
+                    list_of_ac_hist[ac]['signal'].append(mergeCategories(ANALYSIS_CATEGORIES[ac], list_of_sr_hist, 'signal', sample_name))
+                
+                bkgr_names = []
+                for i_name, sample_name in enumerate(list_of_values['bkgr'].keys()):
+                    bkgr_names.append(sample_name)
+                    list_of_ac_hist[ac]['bkgr'].append(mergeCategories(ANALYSIS_CATEGORIES[ac], list_of_sr_hist, 'bkgr', sample_name))
+
+                extra_text = [extraTextFormat(ac, ypos = 0.82)]
+                if args.flavor: extra_text.append(extraTextFormat('V_{'+args.flavor+'N} = 0.01'))
+                if args.flavor == 'tau' and args.massRegion == 'high': extra_text.append(extraTextFormat('signal scaled up by factor 1000.', textsize=0.6))
+                if args.massRegion == 'low':
+                    plotLowMassRegions(list_of_ac_hist[ac]['signal'], list_of_ac_hist[ac]['bkgr'], signal_names+bkgr_names, out_path = destination+'/SearchRegions/'+ac, extra_text = extra_text)
+                if args.massRegion == 'high':
+                    plotHighMassRegions(list_of_ac_hist[ac]['signal'], list_of_ac_hist[ac]['bkgr'], signal_names+bkgr_names, out_path = destination+'/SearchRegions/'+ac, extra_text = extra_text)
+
+

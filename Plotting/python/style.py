@@ -8,7 +8,7 @@ def setDefault(paintformat = "4.2f"):
     tdr.setTDRStyle()
     gStyle.SetPaintTextFormat(paintformat)
     gROOT.ProcessLine( "gErrorIgnoreLevel = 1001;")
-    #gROOT.ForceStyle()
+    # gROOT.ForceStyle()
 
 def setDefault2D():
     setDefault()

@@ -5,6 +5,7 @@ import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
 argParser.add_argument('--isTest',     action='store_true',      default=False,   help='Is this a test?')
+argParser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'], required=True)
 args = argParser.parse_args()
 
 if args.isTest:
@@ -25,7 +26,7 @@ sample_manager = SampleManager(args.year, 'noskim', 'signallist_'+str(args.year)
 from HNL.Tools.helpers import getMassRange
 from HNL.Tools.histogram import Histogram
 
-mass_range = getMassRange(sample_manager.sample_names)
+mass_range = getMassRange([sample_name for sample_name in sample_manager.sample_names if '-'+args.flavor+'-' in sample_name])
 
 #
 # Define the variables and axis name of the variable to fill and create efficiency objects
@@ -37,12 +38,13 @@ hist = Histogram('xsec', var['HNLmass'][0], var['HNLmass'][2], var['HNLmass'][1]
 
 for sample in sample_manager.sample_list:
     if sample.name not in sample_manager.sample_names: continue
+    if '-'+args.flavor+'-' not in sample.name: continue
     #
     # Load in sample and chain
     #
     chain = sample.initTree()
 
-    chain.HNLmass = sample.getMass
+    chain.HNLmass = sample.getMass()
     chain.year = int(args.year)
     hist.fill(chain, sample.xsec)
 

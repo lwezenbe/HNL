@@ -29,6 +29,7 @@ argParser.add_argument('--FOcut',   action='store_true', default=False,  help='P
 argParser.add_argument('--divideByCategory',   action='store_true', default=False,  help='Look at the efficiency per event category')
 argParser.add_argument('--genLevel',   action='store_true', default=False,  help='Check how many events pass cuts on gen level')
 argParser.add_argument('--compareTriggerCuts', action='store', default=None,  help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', choices=['single', 'cumulative', 'full'])
+argParser.add_argument('--flavor', action='store', default=None,  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
 
 args = argParser.parse_args()
 
@@ -38,9 +39,10 @@ args = argParser.parse_args()
 #
 if args.isTest: 
     args.isChild = True
-    args.sample = 'HNLtau-m200'
+    args.sample = 'HNL-tau-m200'
     args.subJob = '0'
     args.year = '2016'
+    args.flavor = 'tau'
 
 
 #
@@ -55,13 +57,25 @@ sample_manager = SampleManager(args.year, 'noskim', 'signallist_'+str(args.year)
 if not args.isChild:
     from HNL.Tools.jobSubmitter import submitJobs
     jobs = []
-    for sample_name in sample_manager.sample_names:
-        sample = sample_manager.getSample(sample_name)
-        for njob in xrange(sample.split_jobs): 
-            jobs += [(sample.name, str(njob))]
+    if args.flavor is None:
+        for sample_name in sample_manager.sample_names:
+            for flavor in ['tau', 'e', 'mu', '2l']:
+                if not '-'+flavor+'-' in sample_name: continue
+                sample = sample_manager.getSample(sample_name)
+                for njob in xrange(sample.split_jobs): 
+                    jobs += [(sample.name, str(njob), flavor)]
 
-    submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'calcSignalEfficiency')
-    exit(0)
+        submitJobs(__file__, ('sample', 'subJob', 'flavor'), jobs, argParser, jobLabel = 'calcSignalEfficiency')
+        exit(0)
+    else:
+        for sample_name in sample_manager.sample_names:
+            if not '-'+args.flavor+'-' in sample_name: continue
+            sample = sample_manager.getSample(sample_name)
+            for njob in xrange(sample.split_jobs): 
+                jobs += [(sample.name, str(njob))]
+
+        submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'calcSignalEfficiency')
+        exit(0)
 
 
 #
@@ -73,7 +87,14 @@ chain = sample.initTree()
 subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
 category_split_str = 'allCategories' if not args.divideByCategory else 'divideByCategory'
 trigger_str = args.compareTriggerCuts if args.compareTriggerCuts is not None else 'regularRun'
-output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], category_split_str, trigger_str, sample.output)
+flavor_name = args.flavor if args.flavor else 'allFlavor'
+if args.massRegion is not None: mass_str = args.massRegion+'MassCuts'
+else: mass_str = 'noMassCuts'
+
+if not args.isTest: 
+    output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], category_split_str, trigger_str, mass_str, flavor_name, sample.output)
+else:
+    output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0], category_split_str, trigger_str, mass_str, flavor_name, sample.output)
 
 if args.isChild:
     output_name += '/tmp_'+sample.output
@@ -89,8 +110,8 @@ else:
 # It assumes the samples are ordered by mass in the input list
 #
 from HNL.Tools.helpers import getMassRange
-
-mass_range = getMassRange(sample_manager.sample_names)
+print [sample_name for sample_name in sample_manager.sample_names if '-'+args.flavor+'-' in sample_name]
+mass_range = getMassRange([sample_name for sample_name in sample_manager.sample_names if '-'+args.flavor+'-' in sample_name])
 
 #
 # Define the variables and axis name of the variable to fill and create efficiency objects
@@ -113,20 +134,20 @@ else:
 
 if args.compareTriggerCuts is None:
     for k in efficiency.keys():
-        efficiency[k]['regularRun'] = Efficiency('efficiency_'+str(k), var['HNLmass'][0], var['HNLmass'][2], output_name, var['HNLmass'][1])
+        efficiency[k]['regularRun'] = Efficiency('efficiency_'+str(k), var['HNLmass'][0], var['HNLmass'][2], output_name, bins=var['HNLmass'][1])
 elif args.compareTriggerCuts == 'full':
     if not args.divideByCategory:
         print "Inconsistent input: This mode is to be used together with divideByCategory. Exiting"
         exit(0)
     for k in efficiency.keys():
-        efficiency[k]['full'] = Efficiency('efficiency_'+str(k), var['HNLmass'][0], var['HNLmass'][2], output_name, var['HNLmass'][1])
+        efficiency[k]['full'] = Efficiency('efficiency_'+str(k), var['HNLmass'][0], var['HNLmass'][2], output_name, bins=var['HNLmass'][1])
 else: #'single' or 'cumulative'
     if not args.divideByCategory:
         print "Inconsistent input: This mode is to be used together with divideByCategory. Exiting"
         exit(0)
     for c in ec.categories:
         for ptcuts in returnCategoryPtCuts(c):
-            efficiency[c][ptcuts] = Efficiency('efficiency_'+str(c)+'_l1_'+str(ptcuts[0])+'_l2_'+str(ptcuts[1])+'_l3_'+str(ptcuts[2]), var['HNLmass'][0], var['HNLmass'][2], output_name, var['HNLmass'][1])
+            efficiency[c][ptcuts] = Efficiency('efficiency_'+str(c)+'_l1_'+str(ptcuts[0])+'_l2_'+str(ptcuts[1])+'_l3_'+str(ptcuts[2]), var['HNLmass'][0], var['HNLmass'][2], output_name, bins=var['HNLmass'][1])
 
 #
 # Set event range
@@ -155,7 +176,7 @@ cutter = Cutter(chain = chain)
 # Loop over all events
 #
 from HNL.Tools.helpers import progress
-from HNL.EventSelection.eventSelection import select3Leptons, select3GenLeptons, lowMassCuts, highMassCuts, passedCustomPtCuts
+from HNL.EventSelection.eventSelection import select3Leptons, select3GenLeptons, lowMassCuts, highMassCuts, passedCustomPtCuts, passBaseCuts
 from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
 from HNL.ObjectSelection.leptonSelector import isFOLepton
 
@@ -191,7 +212,12 @@ for entry in event_range:
                 elif args.massRegion == 'high' and highMassCuts(chain, chain, cutter):
                     passed = True
         else:
-            passed = select3Leptons(chain, chain, cutter = cutter)
+            passed = False
+            if select3Leptons(chain, chain, cutter = cutter) and passBaseCuts(chain, chain, cutter):
+                if args.massRegion == 'low' and lowMassCuts(chain, chain, cutter):
+                    passed = True
+                elif args.massRegion == 'high' and highMassCuts(chain, chain, cutter):
+                    passed = True 
     else:
         passed = True
 
@@ -216,8 +242,6 @@ for entry in event_range:
     else:
         efficiency['noCategories']['regularRun'].fill(chain, weight, passed)   
         
-if args.isTest: exit(0)
-
 #
 # Save all histograms
 #

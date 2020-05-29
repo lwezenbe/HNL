@@ -376,7 +376,13 @@ class Plot:
             php_destination = '/user/lwezenbe/public_html/'
             php_destination += '/'.join([comp for comp in cleaned_components[index_for_php+1:] if (comp != 'data' and comp != 'Results')])
             makeDirIfNeeded(php_destination)    
-            os.system('cp -rf $CMSSW_BASE/src/HNL/Tools/php/index.php '+ php_destination.rsplit('/', 1)[0]+'/index.php')    
+            os.system('cp -rf $CMSSW_BASE/src/HNL/Tools/php/index.php '+ php_destination.rsplit('/', 1)[0]+'/index.php')   
+
+            cmssw_version = os.path.expandvars('$CMSSW_BASE').rsplit('/', 1)[-1]
+            central_destination =  '/user/lwezenbe/private/Backup/'+cmssw_version+'/'
+            central_destination += '/'.join([comp for comp in cleaned_components[index_for_php+1:] if (comp != 'data' and comp != 'Results')])
+            makeDirIfNeeded(central_destination)    
+
 
 
         self.canvas.SaveAs(destination + ".pdf")
@@ -391,6 +397,13 @@ class Plot:
             self.canvas.SaveAs(php_destination + ".png")
             self.canvas.SaveAs(php_destination + ".root")
 
+        #
+        # Save to a central, local backup that you can return to also after you switched CMSSW
+        #
+        if index_for_php:
+            self.canvas.SaveAs(central_destination + ".pdf")
+            self.canvas.SaveAs(central_destination + ".png")
+            self.canvas.SaveAs(central_destination + ".root")
 
         if message is not None:
             pt.writeMessage(destination.rsplit('/', 1)[0], message)
@@ -768,6 +781,10 @@ class Plot:
         
     def drawBarChart(self, output_dir = None, parallel_bins=False, message = None, index_colors = False):
         
+        #
+        # Make sure hist dont have errors, otherwise style breaks down
+        #
+
         setDefault()
         #Create Canvas
         self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
@@ -871,7 +888,7 @@ class Plot:
         #Write extra text
         if self.extra_text is not None:
             self.drawExtraText()
-        
+
         self.canvas.Update()
 
         #Save everything
