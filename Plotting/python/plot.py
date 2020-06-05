@@ -97,58 +97,63 @@ class Plot:
 
     def setAxisLog(self, is2D = False, stacked = True, min_cutoff = None, include_errors = True):
 
-        #
-        # Calculate range
-        #
-        to_check_min = [j for j in self.s]
-        if stacked and self.b is None:
-            to_check_max = [self.total_s]
-        else:
-            to_check_max = [j for j in self.s]
-            if self.b is not None:
-                if stacked:
-                    to_check_max += [self.total_b]
-                else:
-                    to_check_max += [k for k in self.b]
-        
+        if is2D:
+            if self.x_log:
+                self.plotpad.SetLogx()  
+            if self.y_log:
+                self.plotpad.SetLogy()      
+        else:      
 
-        if not is2D:
+            #
+            # Calculate range
+            #
+            to_check_min = [j for j in self.s]
+            if stacked and self.b is None:
+                to_check_max = [self.total_s]
+            else:
+                to_check_max = [j for j in self.s]
+                if self.b is not None:
+                    if stacked:
+                        to_check_max += [self.total_b]
+                    else:
+                        to_check_max += [k for k in self.b]
+            
+
             self.overall_max = max([pt.getOverallMaximum(to_check_max), 1])
             self.overall_min = pt.getOverallMinimum(to_check_min, zero_not_allowed=True)
 
-        if self.x_log:
-            self.plotpad.SetLogx()
+            if self.x_log:
+                self.plotpad.SetLogx()
 
-        # 
-        # Set y log and calculate min and max
-        if self.y_log:
-            self.plotpad.SetLogy()
+            # 
+            # Set y log and calculate min and max
+            if self.y_log:
+                self.plotpad.SetLogy()
 
-            if min_cutoff is None:
-                self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*3
-            else:
-                self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(min_cutoff))/2)*3
-
-            self.min_to_set = min_cutoff if min_cutoff is not None else 0.3*self.overall_min
-        else:
-            self.max_to_set = 1.25*self.overall_max
-            self.min_to_set = min_cutoff if min_cutoff is not None else 0.7*self.overall_min
-
-        #
-        # Set min and max
-        #
-        if not is2D:
-                if stacked:
-                    self.hs.SetMinimum(self.min_to_set)
-                    self.hs.SetMaximum(self.max_to_set)
-                elif self.b is None: 
-                    self.s[0].SetMinimum(self.min_to_set)
-                    self.s[0].SetMaximum(self.max_to_set)
+                if min_cutoff is None:
+                    self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*3
                 else:
-                    self.b[0].SetMinimum(self.min_to_set)
-                    self.b[0].SetMaximum(self.max_to_set)
+                    self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(min_cutoff))/2)*3
 
-        self.plotpad.Update()
+                self.min_to_set = min_cutoff if min_cutoff is not None else 0.3*self.overall_min
+            else:
+                self.max_to_set = 1.25*self.overall_max
+                self.min_to_set = min_cutoff if min_cutoff is not None else 0.7*self.overall_min
+
+            #
+            # Set min and max
+            #
+            if stacked:
+                self.hs.SetMinimum(self.min_to_set)
+                self.hs.SetMaximum(self.max_to_set)
+            elif self.b is None: 
+                self.s[0].SetMinimum(self.min_to_set)
+                self.s[0].SetMaximum(self.max_to_set)
+            else:
+                self.b[0].SetMinimum(self.min_to_set)
+                self.b[0].SetMaximum(self.max_to_set)
+
+            self.plotpad.Update()
 
     from HNL.Plotting.plottingTools import allBinsSameWidth
     def getYName(self):   
@@ -379,7 +384,7 @@ class Plot:
             os.system('cp -rf $CMSSW_BASE/src/HNL/Tools/php/index.php '+ php_destination.rsplit('/', 1)[0]+'/index.php')   
 
             cmssw_version = os.path.expandvars('$CMSSW_BASE').rsplit('/', 1)[-1]
-            central_destination =  '/user/lwezenbe/private/Backup/'+cmssw_version+'/'
+            central_destination =  '/user/lwezenbe/private/Backup/'+cmssw_version+'/Plots'
             central_destination += '/'.join([comp for comp in cleaned_components[index_for_php+1:] if (comp != 'data' and comp != 'Results')])
             makeDirIfNeeded(central_destination)    
 
@@ -692,7 +697,7 @@ class Plot:
         return
 
 
-    def draw2D(self, option='ETextColz', output_dir = None, message = None):
+    def draw2D(self, option='ETextColz', output_dir = None, message = None, names = None):
      
         setDefault2D()    
         self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
@@ -702,10 +707,13 @@ class Plot:
             print 'invalid x_names'
             return
         
-        for h in self.s:
+        for ih, h in enumerate(self.s):
             h.SetTitle(';'+self.x_name+';'+self.y_name) 
             h.Draw(option)
-            output_name = output_dir +'/'+h.GetName() #Not using name here because loop over things with different names
+            if names is not None:
+                output_name = output_dir +'/'+names[ih] #Not using name here because loop over things with different names
+            else:
+                output_name = output_dir +'/'+h.GetName() #Not using name here because loop over things with different names
             cl.CMS_lumi(self.canvas, 4, 0, 'Preliminary', self.year)
             self.savePlot(output_name, message)
             self.canvas.Clear()

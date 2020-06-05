@@ -1,10 +1,8 @@
 from HNL.Tools.mergeFiles import merge
 import os
 import glob
-from HNL.Tools.helpers import makePathTimeStamped
-
-#TODO: Change this hardcode
-plot_from = 'calcTriggerEff'
+import time
+from HNL.Tools.helpers import makePathTimeStamped, makeDirIfNeeded
 
 #
 # Argument parser and logging
@@ -25,54 +23,141 @@ for mf in merge_files:
     if "Results" in mf: continue
     merge(mf)
 
-inputFiles = glob.glob(os.getcwd()+'/data/calcTriggerEff/*/'+args.separateTriggers+'/*.root')
-f_names = {f.split('/')[-1].split('.')[0] for f in inputFiles}
+input_files = glob.glob(os.getcwd()+'/data/calcTriggerEff/*/'+args.separateTriggers+'/*.root')
+sample_names = {in_file_name.split('/')[-3] for in_file_name in input_files}
+print sample_names
+f_names = {f.split('/')[-1].split('.')[0] for f in input_files}
 
-def isUniqueElement(l, item):
-    list_of_truths = [e == item for e in l]
-    return not any(list_of_truths)
+#Prepare output dir
+timestamp = time.strftime("%Y%m%d_%H%M%S")
+for f_name in f_names:
+    out_dir = os.getcwd()+'/data/Results/'+args.separateTriggers+'/'+f_name+'/'+timestamp
+    makeDirIfNeeded(out_dir+'/x')
+
+
+
+# def isUniqueElement(l, item):
+#     list_of_truths = [e == item for e in l]
+#     return not any(list_of_truths)
 
 import ROOT
 from HNL.Tools.helpers import rootFileContent, getObjFromFile
 from HNL.Plotting.plot import Plot
 from HNL.Plotting.plottingTools import extraTextFormat
-from HNL.EventSelection.eventCategorization import returnTexName
+from HNL.EventSelection.eventCategorization import CATEGORIES, CATEGORY_TEX_NAMES, returnCategoryTriggerNames, TRIGGER_CATEGORIES
 from HNL.Tools.efficiency import Efficiency
 
-#TODO: Can this be made general?
-def makeNameCompList(name_list):
+# #TODO: Can this be made general?
+# def makeNameCompList(name_list):
     
-    comp_list = {}
+#     comp_list = {}
 
-    for n in name_list:
-        name = n.split('/')[1]
-        comp_list[name] = {}
-        for n2 in name_list:
-            if name not in n2: continue
-            name_2 = n2.split('/')[2]
-            comp_list[name][name_2] = {}
-            for n3 in name_list:
-                if name not in n3: continue
-                if name_2 not in n3: continue
-                name_3 = n3.split('/')[3]
-                comp_list[name][name_2][name_3] = n3.split('/')[4]
+#     for n in name_list:
+#         name = n.split('/')[1]
+#         comp_list[name] = {}
+#         for n2 in name_list:
+#             if name not in n2: continue
+#             name_2 = n2.split('/')[2]
+#             comp_list[name][name_2] = {}
+#             for n3 in name_list:
+#                 if name not in n3: continue
+#                 if name_2 not in n3: continue
+#                 name_3 = n3.split('/')[3]
+#                 comp_list[name][name_2][name_3] = n3.split('/')[4]
     
-    return comp_list      
+#     return comp_list      
 
-def getCategory(name, trigger_test = False, super_cat = False):
-    split_name = name.split('_')
-    try:
-        if super_cat: 
-            return int(split_name[1])
+# def getCategory(name, trigger_test = False, super_cat = False):
+#     split_name = name.split('_')
+#     try:
+#         if super_cat: 
+#             return int(split_name[1])
+#         else:
+#             return (int(split_name[1].split(',')[0].split('(')[1]), int(split_name[1].split(',')[0].split('(')[1]))
+#     except:
+#         return None
+
+
+def mergeEfficiencies(input_eff, out_name):
+    #
+    # Check if they all have the same var and triggers
+    #
+
+    #
+    # merge
+    #
+    new_eff_list = {}
+    for v in input_eff[0].keys():
+        new_eff_list[v] = [eff.clone(out_name) for eff in input_eff[0][v]]
+        for rem in xrange(1, len(input_eff)):
+            for i in xrange(len(new_eff_list[v])):
+                new_eff_list[v][i].add(input_eff[rem][v][i])
+    return new_eff_list
+
+if args.ignoreCategories:
+    cat_names = ['inclusive']
+else:
+    cat_names = CATEGORIES
+
+for sample in sample_names:
+    if sample != 'HNLmass': continue
+    base_dir = os.getcwd()+'/data/calcTriggerEff/'+sample+'/'+args.separateTriggers
+    sub_files = glob.glob(base_dir +'/*.root')
+    for sub_f in sub_files:
+        f_name = sub_f.split('/')[-1].split('.')[0]
+        rf = ROOT.TFile(sub_f)
+        eff_lists = {}
+        for cat in cat_names:
+            eff_lists[cat] = {}
+            extra_text = [extraTextFormat(CATEGORY_TEX_NAMES[cat], ypos = 0.83)] if cat is not None else None
+            var = [k[0].split('/')[-1] for k in rootFileContent(rf, starting_dir = 'efficiency_'+str(cat))]
+            for v in var:
+                if args.separateTriggers is None or args.separateTriggers == 'full':
+                    trigger_list = ['allTriggers']
+                else:
+                    trigger_list = returnCategoryTriggerNames(cat)
+                eff_lists[cat][v] = [Efficiency('_'.join([str(cat), v, 'integral', str(i)]), None, None, sub_f, subdirs = ['efficiency_'+str(cat), v, t]) for i, t in enumerate(trigger_list)]
+        rf.Close()
+
+        if not args.ignoreCategories:
+            for trigger_cat_name in sorted(TRIGGER_CATEGORIES.keys()):
+                to_merge = [eff_lists[c] for c in TRIGGER_CATEGORIES[trigger_cat_name]]
+                eff_lists[trigger_cat_name] = mergeEfficiencies(to_merge, trigger_cat_name)
+
+                for v in eff_lists[trigger_cat_name].keys():
+                    eff_list = [eff.getEfficiency() for eff in eff_lists[trigger_cat_name][v]]
+                    if args.separateTriggers is None or args.separateTriggers == 'full':
+                        trigger_list = ['allTriggers']
+                    else:
+                        trigger_list = returnCategoryTriggerNames(TRIGGER_CATEGORIES[trigger_cat_name][0])
+
+                    if args.separateTriggers == 'cumulative':
+                        out_dir = os.getcwd()+'/data/Results/'+args.separateTriggers+'/'+f_name+'/'+timestamp
+                        p = Plot(eff_list, trigger_list, trigger_cat_name+'_'+v, eff_list[0].GetXaxis().GetTitle(), eff_list[0].GetYaxis().GetTitle(), extra_text=extra_text)
+                        names = [trigger_cat_name+'_'+v+'_'+k for k in trigger_list]
+                        if '2D' in v:
+                            p.draw2D(output_dir = out_dir+'/'+sample, names = names) 
+                        else:          
+                            p.drawHist(output_dir = out_dir+'/'+sample) 
         else:
-            return (int(split_name[1].split(',')[0].split('(')[1]), int(split_name[1].split(',')[0].split('(')[1]))
-    except:
-        return None
+            to_merge = [eff_list[c] for c in CATEGORIES]
+            eff_lists['all'] = mergeEfficiencies(to_merge, 'all')
 
+            for v in eff_lists['all'].keys():
+                eff_list = [eff.getEfficiency() for eff in eff_lists['all'][v]]
+                out_dir = os.getcwd()+'/data/Results/'+str(args.separateTriggers)+'/'+f_name+'/'+timestamp
+                p = Plot(eff_list, trigger_list, v, eff_list[0].GetXaxis().GetTitle(), eff_list[0].GetYaxis().GetTitle(), extra_text=extra_text)
+                if '2D' in v:
+                    p.draw2D(output_dir = out_dir+'/'+sample) 
+                else:          
+                    p.drawHist(output_dir = out_dir+'/'+sample)            
+
+            
+
+exit(0)
 
 for f_name in f_names:
 
-    print f_name
     output_dir = makePathTimeStamped(os.getcwd()+'/data/Results/'+args.separateTriggers+'/'+f_name)
     hists = {}
     keyNames = []

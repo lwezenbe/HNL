@@ -79,6 +79,8 @@ CATEGORIES = sorted(CATEGORY_NAMES.keys())
 #
 SUPER_CATEGORIES = {'Ditau': [1, 2, 3, 4], 'SingleTau' : [5, 6, 7, 8, 9], 'NoTau' : [11, 12, 13, 14, 15, 16]}
 ANALYSIS_CATEGORIES = {'Ditau': [1, 2, 3, 4], 'SingleTau-OS': [6, 8], 'Single-Tau-SS': [5, 7], 'EEE': [11], 'MuMuMu': [12], 'EEMu': [13, 14], 'EMuMu': [15, 16]}
+#TODO: This category is a bit dodgy, because it is used in trigger calc but it is quite fragile. If the categories dont give the same output when given as input to returnCategoryTriggers, weird things will happen in that code
+TRIGGER_CATEGORIES = {'TauTauE': [1, 2], 'TauTauMu': [3, 4], 'TauEE': [5, 6], 'TauTauMu': [7, 8], 'TauEMu':[9, 10], 'EEE': [11], 'MuMuMu': [12], 'EEMu': [13, 14], 'EMuMu': [15, 16]} 
 
 def filterSuperCategory(super_category_name, category):
     if category in SUPER_CATEGORIES[super_category_name]: return True
@@ -254,18 +256,6 @@ class EventCategory():
 # Function to return triggers interesting to the specific category
 # Used to study triggers
 #
-def returnCategoryTriggers(chain, cat):
-    if cat == 1 or cat == 2:
-        return [chain._HLT_Ele27_WPTight_Gsf, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20, chain._HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg]
-    elif cat == 3 or cat == 4:        
-        return [chain._HLT_IsoMu24, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20, chain._HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg]
-    elif cat == 5 or cat == 6:
-        return [chain._HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ, chain._HLT_Ele27_WPTight_Gsf, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20]
-    elif cat == 9:
-        return [chain._HLT_IsoMu24, chain._HLT_Ele27_WPTight_Gsf, chain._HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ, chain._HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20]
-    elif cat == 7 or cat == 8:
-        return [chain._HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ, chain._HLT_IsoMu24, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20]
-    return [None]
 
 def returnCategoryTriggers(chain, cat):
     if cat == 1 or cat == 2:
@@ -274,24 +264,27 @@ def returnCategoryTriggers(chain, cat):
         return [chain._HLT_IsoMu24, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20, chain._HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg]
     elif cat == 5 or cat == 6:
         return [chain._HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ, chain._HLT_Ele27_WPTight_Gsf, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20]
-    elif cat == 9:
-        return [chain._HLT_IsoMu24, chain._HLT_Ele27_WPTight_Gsf, chain._HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ, chain._HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20]
     elif cat == 7 or cat == 8:
         return [chain._HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ, chain._HLT_IsoMu24, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20]
-    return [None]
+    elif cat == 9 or cat == 10:
+        return [chain._HLT_IsoMu24, chain._HLT_Ele27_WPTight_Gsf, chain._HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ, chain._HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL, chain._HLT_IsoMu19_eta2p1_LooseIsoPFTau20, chain._HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20]
+    else:  
+        return [chain._HLT_Ele27_WPTight_Gsf, chain._HLT_IsoMu24, chain._HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ, chain._passTrigger_mm, chain._passTrigger_em, chain._passTrigger_eee, chain._passTrigger_eem, chain._passTrigger_emm, chain._passTrigger_mmm]
 
-def returnSuperCategoryTriggerNames(cat):
+
+def returnCategoryTriggerNames(cat):
     if cat == 1 or cat == 2:
         return ['HLT_Ele27_WPTight_Gsf', 'HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20', 'HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg']
     elif cat == 3 or cat == 4:        
         return ['HLT_IsoMu24', 'HLT_IsoMu19_eta2p1_LooseIsoPFTau20', 'HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg']
     elif cat == 5 or cat == 6:
         return ['HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ', 'HLT_Ele27_WPTight_Gsf', 'HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20']
-    elif cat == 9:
+    elif cat == 9 or cat == 10:
         return ['HLT_IsoMu24', 'HLT_Ele27_WPTight_Gsf',  'HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ', 'HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL', 'HLT_IsoMu19_eta2p1_LooseIsoPFTau20', 'HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20']
     elif cat == 7 or cat == 8:
         return ['HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ', 'HLT_IsoMu24', 'HLT_IsoMu19_eta2p1_LooseIsoPFTau20']
-    return [None]
+    else:
+        return['HLT_Ele27_WPTight_Gsf', 'HLT_IsoMu24', 'HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ', 'pass_mm', 'pass_em', 'pass_eee', 'pass_eem', 'pass_emm', 'pass_mmm']
 
 def returnCategoryPtCuts(cat):
 

@@ -10,6 +10,7 @@ class Efficiency(object):
         self.var = var
         self.var_tex = var_tex
         self.bins = bins
+        self.subdirs = subdirs
         self.efficiency_num = None
         self.efficiency_denom = None
 
@@ -68,6 +69,23 @@ class Efficiency(object):
        
         graph.SetTitle(eff.GetName()+ ';' + eff.GetXaxis().GetTitle()+';'+eff.GetYaxis().GetTitle()) 
         return graph
+
+    def clone(self, out_name='clone'):
+        new_num = self.efficiency_num.clone(out_name)
+        new_denom = self.efficiency_denom.clone(out_name)
+        new_eff = Efficiency(self.name, self.var, self.var_tex, self.path, self.bins, self.subdirs)
+        new_eff.efficiency_num = new_num
+        new_eff.efficiency_denom = new_denom
+        return new_eff
+
+    #
+    # Efficiency objects just use num and denom, so we can just add those of different objects together
+    # and getEfficiency should still be correct
+    #
+    def add(self, other_efficiency):
+        self.efficiency_num.add(other_efficiency.efficiency_num)
+        self.efficiency_denom.add(other_efficiency.efficiency_denom)
+        return
     
 
     def write(self, append = False, name=None, subdirs = None):

@@ -6,6 +6,8 @@
 
 import numpy as np
 
+#TODO: Make for all three years and find a better way to deal with the categories
+
 #
 # Argument parser and logging
 #
@@ -18,19 +20,17 @@ argParser.add_argument('--subJob',   action='store',      default=None,   help='
 argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
 argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
+argParser.add_argument('--oldTriggers',   action='store_true', default=False,  help='Use triggers from AN 2017-014')
 argParser.add_argument('--useRef', action='store_true', default=False,  help='pass ref cuts')
-# argParser.add_argument('--ignoreCategories', action='store_true', default=False,  help='do not split the events in different categories')
-argParser.add_argument('--detailedCategories', action='store_true', default=False,  help='Use detailed categories instead of the supercategories')
 argParser.add_argument('--separateTriggers', action='store', default=None,  help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', choices=['single', 'cumulative', 'full'])
 args = argParser.parse_args()
-
 
 #
 # Change some settings if this is a test
 #
 if args.isTest: 
     args.isChild = True
-    args.sample = 'HNLtau-m200'
+    args.sample = 'HNL-tau-m40'
     args.subJob = '0'
     args.year = '2016'
 
@@ -68,24 +68,21 @@ chain.HNLmass = sample.getMass()
 #
 # Does an event pass the triggers
 #
-def passTriggers(c):
-    if c._HLT_Ele16_Ele12_Ele8_CaloIdL_TrackIdL or c._HLT_Mu8_DiEle12_CaloIdL_TrackIdL or c._HLT_DiMu9_Ele9_CaloIdL_TrackIdL or chain._HLT_TripleMu_12_10_5:        return True
-    if c._HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ or c._HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ or c._HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL_DZ:  return True
-    if c._HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL or c._HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL:     return True
-    if c._passTrigger_mm: return True
-    if c._HLT_Ele27_WPTight_Gsf or c._HLT_IsoMu24 or c._HLT_IsoTkMu24:      return True
-    return False
+from HNL.Triggers.triggerSelection import passTriggers
 
 #
 # Get the name for the output file for the different efficiencies
 #
 from HNL.Tools.helpers import makeDirIfNeeded
-def getOutputName(var):
+def getOutputName(var, istest=False):
 
     subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
 
     if var == 'HNLmass':
-        output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], 'HNLmass')
+        if args.isTest:
+            output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0], 'HNLmass')
+        else:
+            output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], 'HNLmass')
         if args.separateTriggers is not None:
             output_name += '/'+args.separateTriggers
         if args.isChild:
@@ -94,13 +91,17 @@ def getOutputName(var):
         else:   output_name += '/'+ sample.name +'_TrigEffnoMET_' +subjobAppendix+ '.root'
 
     else:
-        output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], sample.output)
+        if args.isTest:
+            output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0], sample.output)
+        else:
+            output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], sample.output)
+
         if args.separateTriggers is not None:
             output_name += '/'+args.separateTriggers
         if args.isChild:
             output_name += '/tmp_'+sample.output
         
-        if not args.useRef:        output_name += '/'+ sample.name +'_TrigEff_' +subjobAppendix+ '.root'
+        if args.useRef:        output_name += '/'+ sample.name +'_TrigEff_' +subjobAppendix+ '.root'
         else:   output_name += '/'+ sample.name +'_TrigEffnoMET_' +subjobAppendix+ '.root'
 
     return output_name 
@@ -138,7 +139,10 @@ mass_range = getMassRange(sample_manager.sample_names)
 
 category_map = {}
 for c in categories:
+    # category_map[c] = ['integral', '15to30', '30to55', '15to20', '20to25', '25to30', '30to40', '40to50', '55to100']   
     category_map[c] = ['integral']   
+    # category_map[c] = ('15to30', '30to55') 
+    # category_map[c] = ('15to20', '20to25', '25to30', '30to40', '40to50', '55to100') 
 
 var = {'l1pt' : (lambda c : c.l_pt[0],                          np.arange(0., 100., 15.),                 ('p_{T}(l1) [GeV]', 'Efficiency')),
         'l2pt' : (lambda c : c.l_pt[1],                          np.arange(0., 100., 15.),                  ('p_{T}(l2) [GeV]', 'Efficiency')),
@@ -160,8 +164,8 @@ eff = {}
 for c in categories:
     for v in {k for k in var.keys()}:
         for t in category_map[c]:
-            if args.separateTriggers is None:
-                name = 'supercat_'+str(c)+ '_' +v + '_' + t
+            if args.separateTriggers is None or args.separateTriggers == 'full':
+                name = str(c)+ '_' +v + '_' + t
                 if v != 'HNLmass':
                     eff[(c, v, t)] = Efficiency(name, var[v][0], var[v][2], getOutputName(v), var[v][1])
                 else:
@@ -169,7 +173,7 @@ for c in categories:
                 makeDirIfNeeded(getOutputName(v))
             else:
                 for i, trigger in enumerate(category_triggers(chain, c)):
-                    name = 'cat_'+str(c[0]) + '_' +str(c[1])+ '_' +v + '_' + t +'_'+str(i)
+                    name = str(c)+ '_' +v + '_' + t +'_'+str(i)
                     if v != 'HNLmass':
                         eff[(c, v, t, i)] = Efficiency(name, var[v][0], var[v][2], getOutputName(v), var[v][1])
                     else:
@@ -180,7 +184,9 @@ for c in categories:
 # Set event range
 #
 if args.isTest:
-    event_range = xrange(500)
+    event_range = xrange(2000)
+    # event_range = sample.getEventRange(args.subJob)    
+
 else:
     event_range = sample.getEventRange(args.subJob)    
 
@@ -196,14 +202,14 @@ for entry in event_range:
     chain.GetEntry(entry)
     progress(entry - event_range[0], len(event_range))
 
-    if not select3Leptons(chain, chain): continue
+    if not select3Leptons(chain, chain, tau_algo = 'gen_truth'): continue
     if args.useRef and not chain._passTrigger_ref:     continue
 
     weightfactor = 1.
     if not sample.is_data: weightfactor *= chain._weight
 
     if args.separateTriggers is None:    
-        passed = passTriggers(chain) 
+        passed = passTriggers(chain, chain.year, oldAN=args.oldTriggers) 
     
     true_cat = ec.returnCategory()
 
@@ -211,7 +217,7 @@ for entry in event_range:
         for v in {k for k in var.keys()}: 
             for t in category_map[c]:
                 
-                if not true_cat == c: continue
+                # if not true_cat == c: continue
 
                 if t != 'integral': 
                     lowpt, highpt = t.split('to')
@@ -220,34 +226,35 @@ for entry in event_range:
                 if args.separateTriggers is None:
                     eff[(c, v, t)].fill(chain, weightfactor, passed)
                 else:
-                    for i, trigger in enumerate(category_triggers(chain, c)):
-                        if args.separateTriggers == 'single':
-                            passed = applyCustomTriggers(chain, trigger)
-                            eff[(c, v, t, i)].fill(chain, weightfactor, passed)
-                        elif args.separateTriggers == 'cumulative':
-                            passed = applyCustomTriggers(chain, category_triggers(chain, c)[:i+1])
-                            eff[(c, v, t, i)].fill(chain, weightfactor, passed)
-                            
-if args.isTest: exit(0)
+                    if args.separateTriggers == 'full':
+                        passed = applyCustomTriggers(category_triggers(chain, c))
+                        eff[(c, v, t)].fill(chain, weightfactor, passed)
+                    else:
+                        for i, trigger in enumerate(category_triggers(chain, c)):
+                            if args.separateTriggers == 'single':
+                                passed = applyCustomTriggers(trigger)
+                                eff[(c, v, t, i)].fill(chain, weightfactor, passed)
+                            elif args.separateTriggers == 'cumulative':
+                                passed = applyCustomTriggers(category_triggers(chain, c)[:i+1])
+                                eff[(c, v, t, i)].fill(chain, weightfactor, passed)
 
+                            
 #
 # Save all histograms
 #
 from HNL.EventSelection.eventCategorization import returnCategoryTriggerNames
-from HNL.EventSelection.eventCategorization import returnSuperCategoryTriggerNames
+from HNL.EventSelection.eventCategorization import returnCategoryTriggerNames
 for i, c in enumerate(categories):
     for l, v in enumerate({k for k in var.keys()}): 
         for t in category_map[c]:
             if args.separateTriggers is None:
                 if i == 0 and l == 0:      eff[(c, v, t)].write(subdirs=['efficiency', v, 'allTriggers'])
                 else:           eff[(c, v, t)].write(append=True, subdirs=['efficiency', v, 'allTriggers'])
+            elif args.separateTriggers == 'full':
+                if i == 0 and l == 0:      eff[(c, v, t)].write(subdirs=['efficiency_'+str(c), v, 'allTriggers'])
+                else:           eff[(c, v, t)].write(append=True, subdirs=['efficiency_'+str(c), v, 'allTriggers'])               
             else:
                 for j, trigger in enumerate(category_triggers(chain, c)):
-                    if args.detailedCategories:
-                        if i == 0 and l == 0 and j == 0:       eff[(c, v, t, j)].write(subdirs=['efficiency_'+str(c[0])+'_'+str(c[1]), v, str(returnCategoryTriggerNames(c)[j])])
-                        else:                       eff[(c, v, t, j)].write(append=True, subdirs=['efficiency_'+str(c[0])+'_'+str(c[1]), v, str(returnCategoryTriggerNames(c)[j])])
-                    else:
-                        if i == 0 and l == 0 and j == 0:       eff[(c, v, t, j)].write(subdirs=['efficiency_'+str(c), v, str(returnSuperCategoryTriggerNames(c)[j])])
-                        else:                       eff[(c, v, t, j)].write(append=True, subdirs=['efficiency_'+str(c), v, str(returnSuperCategoryTriggerNames(c)[j])])
-
+                    if i == 0 and l == 0 and j == 0:       eff[(c, v, t, j)].write(subdirs=['efficiency_'+str(c), v, str(returnCategoryTriggerNames(c)[j])])
+                    else:                       eff[(c, v, t, j)].write(append=True, subdirs=['efficiency_'+str(c), v, str(returnCategoryTriggerNames(c)[j])])
 
