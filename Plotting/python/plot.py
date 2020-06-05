@@ -384,8 +384,8 @@ class Plot:
             os.system('cp -rf $CMSSW_BASE/src/HNL/Tools/php/index.php '+ php_destination.rsplit('/', 1)[0]+'/index.php')   
 
             cmssw_version = os.path.expandvars('$CMSSW_BASE').rsplit('/', 1)[-1]
-            central_destination =  '/user/lwezenbe/private/Backup/'+cmssw_version+'/Plots'
-            central_destination += '/'.join([comp for comp in cleaned_components[index_for_php+1:] if (comp != 'data' and comp != 'Results')])
+            central_destination =  '/user/lwezenbe/private/Backup/'+cmssw_version+'/'
+            central_destination += '/'.join([comp for comp in destination_components[index_for_php+1:]])
             makeDirIfNeeded(central_destination)    
 
 
