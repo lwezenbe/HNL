@@ -79,7 +79,7 @@ if args.massRegion is None:
 elif args.massRegion == 'low':
     mass_regions.append('lowMass')
     srm['lowMass'] = SearchRegionManager('oldAN_lowMass')
-elif args.massRegion == 'low':
+elif args.massRegion == 'high':
     mass_regions.append('highMass')
     srm['highMass'] = SearchRegionManager('oldAN_highMass')
 elif args.massRegion == 'all':
@@ -298,6 +298,7 @@ else:
             list_of_errors[is_signal][sample.output][c] = {}
             for sr in xrange(1, srm[mass_str].getNumberOfSearchRegions()+1):
                 tmp_hist = getObjFromFile(path_name, '_'.join([str(c), str(sr)])+'/'+'_'.join([str(c), str(sr)]))
+                # if 'HNL' in sample.name: tmp_hist.Scale(100.)
                 list_of_values[is_signal][sample.output][c][sr]= tmp_hist.GetBinContent(1)
                 list_of_errors[is_signal][sample.output][c][sr]= tmp_hist.GetBinError(1)
             
@@ -359,12 +360,13 @@ else:
         #
         # If we want to use shapes, first make shape histograms, then make datacards
         #
-        else:
+        elif args.makeDataCards == 'shapes':
             for ac in ['total']+SUPER_CATEGORIES.keys():
                 shape_hist = {}
                 n_search_regions = srm[mass_str].getNumberOfSearchRegions()
 
                 shape_hist['data_obs'] = ROOT.TH1D('data_obs', 'data_obs', n_search_regions, 0.5, n_search_regions+0.5)
+                shape_hist['data_obs'].SetBinContent(1, 1.)
                 for sample_name in list_of_values['bkgr'].keys():
                     shape_hist[sample_name] = ROOT.TH1D(sample_name, sample_name, n_search_regions, 0.5, n_search_regions+0.5)
                     for sr in xrange(1, n_search_regions+1):
@@ -381,10 +383,12 @@ else:
                         shape_hist[sample_name].SetBinContent(sr, list_of_values['signal'][sample_name][ac][sr])
                         shape_hist[sample_name].SetBinError(sr, list_of_errors['signal'][sample_name][ac][sr])
                     shape_hist[sample_name].Write(sample_name)
+                    bkgr_names = []
                     for bkgr_sample_name in list_of_values['bkgr'].keys()+['data_obs']:
+                        if shape_hist[bkgr_sample_name].GetSumOfWeights() > 0 and bkgr_sample_name != 'data_obs': bkgr_names.append(bkgr_sample_name)
                         shape_hist[bkgr_sample_name].Write(bkgr_sample_name)
                     out_shape_file.Close()
-                    makeDataCard(str(ac), args.flavor, args.year, 0, sample_name, list_of_values['bkgr'].keys(), shapes=True)
+                    makeDataCard(str(ac), args.flavor, args.year, 0, sample_name, bkgr_names, shapes=True)
 
     if args.makePlots:
 

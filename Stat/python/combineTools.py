@@ -6,7 +6,8 @@
 # Imports 
 #
 import os
-from HNL.Tools.helpers import makeDirIfNeeded, tab
+import glob
+from HNL.Tools.helpers import makeDirIfNeeded, tab, getObjFromFile
 
 #
 # Information about Combine release
@@ -36,13 +37,13 @@ def makeDataCard(bin_name, flavor, year, obs_yield, sig_name, bkgr_names, sig_yi
     out_file.write('kmax    * \n')
     out_file.write('-'*400 + '\n')
     if shapes:
-        shapes_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', str(year), flavor, sig_name, bin_name+'.txt')
+        shapes_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', str(year), flavor, sig_name, bin_name+'.shapes.root')
         out_file.write('shapes * * \t' +shapes_path + ' $PROCESS $PROCESS_SYSTEMATIC')
     out_file.write('-'*400 + '\n')
     out_file.write('bin             '+bin_name+ ' \n')
     if shapes:
-        # out_file.write('observation     -1 \n')   
-        out_file.write('observation     '+str(obs_yield)+ ' \n') 
+        out_file.write('observation     -1 \n')   
+        # out_file.write('observation     '+str(obs_yield)+ ' \n') 
     else:
         out_file.write('observation     '+str(obs_yield)+ ' \n')
     out_file.write('-'*400 + '\n')
@@ -60,7 +61,70 @@ def makeDataCard(bin_name, flavor, year, obs_yield, sig_name, bkgr_names, sig_yi
 
     out_file.close()
 
-# def makeShape(list_of_process_names, list_of_values)
+def runCombineCommand(command, output = None):
+    currentDir = os.getcwd()
+    current_release = os.path.expandvars('$CMSSW_BASE')
+    print current_release
+    combine_release = os.path.expandvars('$CMSSW_BASE')+'/../'+release
+    os.system('rm ' + combine_release +'/src/*root &> /dev/null') 
+    os.chdir(combine_release+'/src')
+    os.system('(eval `scramv1 runtime -sh`; ' + command + ')')
+    if len(glob.glob('*.root'))!=0:
+        if output is None:
+            os.system('mv *.root '+current_release +'/src/HNL/Stat/data/output/tmp/')
+            print 'output saved to '+current_release +'/src/HNL/Stat/data/output/tmp'
+        else:
+            os.system('mv *.root '+output)
+            print 'output saved to '+output
+    else:
+        print 'No combine .root output was saved. If this is not what you expect, please check your input.'
+    os.chdir(currentDir)
+
+from ROOT import TGraph
+def extractRawLimits(input_file_path):
+    tree = getObjFromFile(input_file_path, 'limit')
+    limits = {}
+    for entry in xrange(tree.GetEntries()):
+        tree.GetEntry(entry)
+        limits[tree.quantileExpected] = tree.limit
+    return limits
+
+def extractScaledLimitsPromptHNL(input_file_path, coupling):
+    tree = getObjFromFile(input_file_path, 'limit')
+    exclusion_coupling = {}
+    try:
+        for entry in xrange(tree.GetEntries()):
+            tree.GetEntry(entry)
+            exclusion_coupling[round(tree.quantileExpected, 3)] = tree.limit * coupling**2
+        return exclusion_coupling
+    except:
+        return None
+
+def makeGraphs(x_values, couplings, limits = None, input_paths = None):
+    if limits is None and input_paths is None:
+        raise RuntimeError('Invalid input: both "limits" and "input_paths" are None in CombineTools.makeGraphs')
+
+    npoints = len(x_values)
+    graphs = {
+        'expected': TGraph(npoints),
+        '1sigma': TGraph(npoints*2),
+        '2sigma': TGraph(npoints*2)
+    }
+
+    if limits is None:
+        limits = {}
+        for i, (m, p) in enumerate(zip(x_values, input_paths)):
+            limits[m] = extractScaledLimitsPromptHNL(input_path, couplings[i])
+
+    for i, m in enumerate(x_values):
+        graphs['2sigma'].SetPoint(i, m, limits[m][0.975])
+        graphs['1sigma'].SetPoint(i, m, limits[m][0.84])
+        graphs['expected'].SetPoint(i, m, limits[m][0.5])
+        graphs['1sigma'].SetPoint(npoints*2-1-i, m, limits[m][0.16])
+        graphs['2sigma'].SetPoint(npoints*2-1-i, m, limits[m][0.025])
+
+    return [graphs['expected'], graphs['1sigma'], graphs['2sigma']]
+
 
 if __name__ == '__main__':
     makeDataCard('testbin', 'tau', 2016, 20, 6, [20, 23, 12, 1], ['DY', 'WJets', 'tt', 'WZ'])

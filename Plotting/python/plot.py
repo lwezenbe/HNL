@@ -53,9 +53,9 @@ class Plot:
         self.year = int(year)
 
         self.s = makeList(getHistList(signal_hist))
-        self.total_s = self.s[0].Clone('total_sig')
-        for i, h in enumerate(self.s):
-            if i != 0:      self.total_s.Add(h)
+        # self.total_s = self.s[0].Clone('total_sig')
+        # for i, h in enumerate(self.s):
+        #     if i != 0:      self.total_s.Add(h)
 
         self.b = makeList(getHistList(bkgr_hist)) if bkgr_hist is not None else None
         self.total_b = None
@@ -903,6 +903,121 @@ class Plot:
         self.savePlot(output_dir +'/'+ self.name, message)
         ROOT.SetOwnership(self.canvas, self.year)
         return
+
+
+    #
+    # For the brazilian, the expected should be contained in a list of length 3 containing the median, 68% and 95% respectively
+    # Observed in background
+    #
+    def drawBrazilian(self, output_dir, draw_percent=False, message = None):
+        setDefault()
+        
+        #Create Canvas
+        self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
+
+        self.setPads()
+        self.plotpad.Draw()
+        self.plotpad.cd()
+
+
+        median = self.s[0]
+        green = self.s[1]
+        yellow = self.s[2]
+
+        max_y = max([v for v in yellow.GetY()])
+        min_y = min([v for v in yellow.GetY()])
+        values = [x for x in median.GetX()]
+
+        frame = self.plotpad.DrawFrame(1.4,0.001, 410, 10)
+        # frame.GetYaxis().CenterTitle()
+        # frame.GetYaxis().SetTitleSize(0.05)
+        # frame.GetXaxis().SetTitleSize(0.05)
+        # frame.GetXaxis().SetLabelSize(0.04)
+        # frame.GetYaxis().SetLabelSize(0.04)
+        # frame.GetYaxis().SetTitleOffset(0.9)
+        frame.GetXaxis().SetNdivisions(508)
+        # frame.GetYaxis().CenterTitle(True)
+        frame.GetYaxis().SetTitle(self.y_name)
+    #    frame.GetYaxis().SetTitle("95% upper limit on #sigma #times BR / (#sigma #times BR)_{SM}")
+        frame.GetXaxis().SetTitle(self.x_name)
+        frame.SetMinimum(0.3*min_y)
+        frame.SetMaximum(max_y*100)
+        frame.GetXaxis().SetLimits(0.95*min(values),1.05*max(values))
+
+
+        yellow.SetFillColor(ROOT.kOrange)
+        yellow.SetLineColor(ROOT.kOrange)
+        yellow.SetFillStyle(1001)
+        yellow.Draw('F')
+    
+        green.SetFillColor(ROOT.kGreen+1)
+        green.SetLineColor(ROOT.kGreen+1)
+        green.SetFillStyle(1001)
+        green.Draw('Fsame')
+    
+        median.SetLineColor(1)
+        median.SetLineWidth(2)
+        median.SetLineStyle(2)
+        median.Draw('Lsame')
+
+        # mgraph = ROOT.TMultiGraph()
+        # mgraph.Add(yellow)
+        # # mgraph.Add(green)
+        # # mgraph.Add(median)
+        # mgraph.Draw('F')
+        frame.Draw('sameaxis')
+
+        # mgraph_median = ROOT.TMultiGraph()
+        # mgraph_median.Add(median)
+        # mgraph_median.Draw("Lsame")
+
+
+        # if isinstance(self.x_name, list):
+        #     print 'invalid x_names'
+        #     return
+        # yellow.SetTitle(";" + self.x_name + ";" + self.y_name)
+ 
+        # xmax = pt.getXMax(self.s)
+        # xmin = pt.getXMin(self.s)
+        # ymax = pt.getYMax(self.s)
+        # ymin = pt.getYMin(self.s)
+
+        if self.x_log :
+            self.plotpad.SetLogx()
+        #     yellow.GetXaxis().SetRangeUser(0.3*xmin, 30*xmax)
+        # else :
+        #     yellow.GetXaxis().SetRangeUser(0.7*xmin, 1.3*xmax)
+        
+        if self.y_log:
+            self.plotpad.SetLogy()
+        #     yellow.GetYaxis().SetRangeUser(0.3*ymin, 10*ymax)
+        # else :
+        #     yellow.GetYaxis().SetRangeUser(0.5*ymin, 1.2*ymax)       
+
+ 
+        # #self.setAxisLog() 
+        # #Write extra text
+        # if self.extra_text is not None:
+        #     self.drawExtraText()
+        
+        #Create Legend
+        self.canvas.cd()
+        legend = ROOT.TLegend(0.5, .8, .9, .9)
+        legend.AddEntry(median, "Asymptotic CL_{s} expected",'L')
+        legend.AddEntry(green, "#pm 1 std. deviation",'f')
+        legend.AddEntry(yellow,"#pm 2 std. deviation",'f')
+        legend.SetFillStyle(0)
+        legend.SetBorderSize(0)
+        legend.Draw()
+       
+ 
+        ROOT.gPad.Update() 
+        self.canvas.Update()
+        cl.CMS_lumi(self.canvas, 4, 11, 'Simulation', self.year)
+
+        #Save everything
+        self.savePlot(output_dir +'/'+ self.name, message = None)
+        ROOT.SetOwnership(self.canvas, False)
 
     def close(self):
         del self.canvas         
