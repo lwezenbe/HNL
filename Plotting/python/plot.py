@@ -48,25 +48,33 @@ from HNL.Tools.helpers import isTimeStampFormat, makeDirIfNeeded
 from HNL.Plotting.style import setDefault, setDefault2D
 class Plot:
     
-    def __init__(self, signal_hist, tex_names, name = None, x_name = None, y_name = None, bkgr_hist = None, extra_text = None, x_log = None, y_log = None, draw_ratio = False, draw_significance = False, color_palette = 'Didar', color_palette_bkgr = 'StackTauPOGbyName', year = 2016):
+    def __init__(self, signal_hist, tex_names, name = None, x_name = None, y_name = None, bkgr_hist = None, syst_hist = None, extra_text = None, x_log = None, y_log = None, draw_ratio = None, draw_significance = False, color_palette = 'Didar', color_palette_bkgr = 'StackTauPOGbyName', year = 2016):
         self.name = name if name else self.s[0].GetTitle()
         self.year = int(year)
 
         self.s = makeList(getHistList(signal_hist))
-        # self.total_s = self.s[0].Clone('total_sig')
-        # for i, h in enumerate(self.s):
-        #     if i != 0:      self.total_s.Add(h)
+        try:
+            self.total_s = self.s[0].Clone('total_sig')
+            for i, h in enumerate(self.s):
+                if i != 0:      self.total_s.Add(h)
+        except:
+            self.total_s = None
 
         self.b = makeList(getHistList(bkgr_hist)) if bkgr_hist is not None else None
         self.total_b = None
         if self.b is not None:
-            self.total_b = self.b[0].Clone('total_bkgr')
-            for i, h in enumerate(self.b):
-                if i != 0:      self.total_b.Add(h)
+            try:
+                self.total_b = self.b[0].Clone('total_bkgr')
+                for i, h in enumerate(self.b):
+                    if i != 0:      self.total_b.Add(h)
+            except:
+                self.total_b = None
 
         self.tex_names = makeList(tex_names)
         self.s_tex_names = self.tex_names[:len(self.s)] 
         self.b_tex_names = self.tex_names[len(self.s):] 
+
+        self.syst_hist = syst_hist
 
         self.hs = None  #hist stack
 
@@ -94,6 +102,27 @@ class Plot:
         self.stat_bkgr_errors = [b.Clone(b.GetName()+'_statError') for b in self.b] if self.b is not None else None
         self.stat_totbkgr_error = self.total_b.Clone('totalSignalStatError') if self.total_b is not None else None
 
+        #
+        # Add syst and stat together
+        #
+        self.tot_totbkgr_error = self.stat_totbkgr_error.Clone('Total Error on background')
+
+        if self.syst_hist is not None:
+            syst_factor = self.syst_hist
+            #If the syst_hist is not a histogram but a float it will make a hist with systematic unc == float
+            if isinstance(self.syst_hist, float):
+                self.syst_hist = self.stat_totbkgr_error.Clone('Systematic Error on background')
+                for b in xrange(1, self.syst_hist.GetNbinsX()+1):
+                    self.syst_hist.SetBinError(b, syst_factor * self.syst_hist.GetBinContent(b))
+
+            if self.syst_hist:
+                for b in xrange(1, self.tot_totbkgr_error.GetNbinsX()+1):
+                    bin_stat_error = self.stat_totbkgr_error.GetBinError(b)
+                    bin_syst_error = self.syst_hist.GetBinError(b)
+                    # print b, self.total_b.GetBinContent(b), bin_stat_error, bin_stat_error ** 2, bin_syst_error, bin_syst_error ** 2, bin_stat_error ** 2 + bin_syst_error ** 2, np.sqrt(bin_stat_error ** 2 + bin_syst_error ** 2)
+                    self.tot_totbkgr_error.SetBinError(b, np.sqrt(bin_stat_error ** 2 + bin_syst_error ** 2))
+ 
+
 
     def setAxisLog(self, is2D = False, stacked = True, min_cutoff = None, include_errors = True):
 
@@ -108,12 +137,12 @@ class Plot:
             # Calculate range
             #
             to_check_min = [j for j in self.s]
-            if stacked and self.b is None:
+            if stacked and self.b is None and self.total_s is not None:
                 to_check_max = [self.total_s]
             else:
                 to_check_max = [j for j in self.s]
                 if self.b is not None:
-                    if stacked:
+                    if stacked and self.b is not None:
                         to_check_max += [self.total_b]
                     else:
                         to_check_max += [k for k in self.b]
@@ -216,12 +245,12 @@ class Plot:
 
     def setPads(self):
         plot_pad_y = 0.05
-        if self.draw_significance and self.draw_ratio:
+        if self.draw_significance and self.draw_ratio is not None:
             self.sig_pad = ROOT.TPad('sig_pad', 'sig_pad', 0, 0.05, 1, 0.25)
             self.ratio_pad = ROOT.TPad('ratio_pad', 'ratio_pad', 0, 0.25, 1, 0.45)
             self.ratio_pad.SetBottomMargin(0.05)
             plot_pad_y = 0.45
-        elif self.draw_ratio:
+        elif self.draw_ratio is not None:
             self.ratio_pad = ROOT.TPad('ratio_pad', 'ratio_pad', 0, 0.05, 1, 0.25)
             self.ratio_pad.SetBottomMargin(0.3)
             plot_pad_y = 0.25
@@ -232,7 +261,7 @@ class Plot:
         self.plotpad = ROOT.TPad('plotpad', 'plotpad', 0, plot_pad_y, 1, 0.98)
 
         self.plotpad.Draw()
-        if self.draw_ratio:
+        if self.draw_ratio is not None:
             self.plotpad.SetBottomMargin(0.)
             self.ratio_pad.SetTopMargin(0.05)
             self.ratio_pad.Draw()
@@ -245,53 +274,95 @@ class Plot:
 
         return        
 
-    def calculateRatio(self):
+    def calculateRatio(self, use_observed = False):
         ratios = []
+        if use_observed:
+            pass
+            #To be implemented once we start using observed in histograms as well
         for i, s in enumerate(self.s):
             ratios.append(s.Clone('ratio'))
             ratios[i].Divide(self.total_b)
 
         return ratios
 
-    def drawRatio(self, ratios, custom_labels = None):
+    def drawRatio(self, ratios, custom_labels = None, just_errors = False):
         self.ratio_pad.cd()        
-
-        #Set axis: if significance is also drawn, no x-axis
-        if self.draw_significance:
-            ratios[0].SetTitle('; ; S/B')
-        else:
-            ratios[0].SetTitle(';'+ self.x_name+'; S/B')
-            if custom_labels is not None:
-                for i, n in enumerate(custom_labels):
-                    ratios[0].GetXaxis().SetBinLabel(i+1, n)
-        ratios[0].SetMinimum(0.3)
-        ratios[0].SetMaximum(1.7)
-        ratios[0].GetXaxis().SetTitleSize(.12)
-        ratios[0].GetYaxis().SetTitleSize(.12)
-        ratios[0].GetXaxis().SetLabelSize(.12)
-        ratios[0].GetYaxis().SetLabelSize(.12)
-        ratios[0].GetYaxis().SetTitleOffset(.6)
-        if self.draw_significance:
-            ratios[0].GetXaxis().SetLabelOffset(999999)
-        else:
-            ratios[0].GetXaxis().SetTitleOffset(1.0)
-            
 
         for r in ratios:
             r.SetMarkerStyle(20)
             r.SetMarkerColor(r.GetLineColor())
+
+       #Draw errors
+        self.stat_err = self.tot_totbkgr_error.Clone('stat bkgr')
+        self.tot_err = self.tot_totbkgr_error.Clone('tot bkgr')
+        for b in xrange(1, self.stat_err.GetNbinsX()+1):
+            self.stat_err.SetBinContent(b, 1.)
+            self.tot_err.SetBinContent(b, 1.)
+            # print b, self.stat_totbkgr_error.GetBinContent(b), self.stat_totbkgr_error.GetBinError(b), self.tot_totbkgr_error.GetBinContent(b), self.tot_totbkgr_error.GetBinError(b), self.syst_hist.GetBinContent(b), self.syst_hist.GetBinError(b)
+            if self.tot_totbkgr_error.GetBinContent(b) != 0:
+                self.stat_err.SetBinError(b, self.stat_totbkgr_error.GetBinError(b)/self.stat_totbkgr_error.GetBinContent(b))
+                self.tot_err.SetBinError(b, self.tot_totbkgr_error.GetBinError(b)/self.tot_totbkgr_error.GetBinContent(b))
+            else:
+                self.stat_err.SetBinError(b, 0.)
+                self.tot_err.SetBinError(b, 0.)
+        self.stat_err.SetFillStyle(3001)
+        self.tot_err.SetFillStyle(3001)
+        self.stat_err.SetFillColor(ROOT.kCyan - 4)
+        self.stat_err.SetLineColor(ROOT.kBlack)
+        self.stat_err.SetLineWidth(1)
+        self.stat_err.SetMarkerStyle(0)
+        self.tot_err.SetFillColor(ROOT.kGray + 2)
+        self.tot_err.SetLineColor(ROOT.kBlack)
+        self.tot_err.SetLineWidth(1)
+        self.tot_err.SetMarkerStyle(0)
+
+        #Set axis: if significance is also drawn, no x-axis
+        self.tot_err.SetMinimum(0.3)
+        self.tot_err.SetMaximum(1.7)
+        self.tot_err.GetXaxis().SetTitleSize(.12)
+        self.tot_err.GetYaxis().SetTitleSize(.12)
+        self.tot_err.GetXaxis().SetLabelSize(.12)
+        self.tot_err.GetYaxis().SetLabelSize(.12)
+        self.tot_err.GetYaxis().SetTitleOffset(.6)
+        if self.draw_significance:
+            self.tot_err.GetXaxis().SetLabelOffset(999999)
+        else:
+            self.tot_err.GetXaxis().SetTitleOffset(1.0)
+        if self.draw_significance:
+            self.tot_err.SetTitle('; ; S/B')
+        else:
+            self.tot_err.SetTitle(';'+ self.x_name+'; S/B')
+            if custom_labels is not None:
+                for i, n in enumerate(custom_labels):
+                    self.tot_err.GetXaxis().SetBinLabel(i+1, n)
+
+
+        self.tot_err.Draw("E2")
+        self.stat_err.Draw("E2Same")
 
         #Draw a guide for the eye
         self.line = ROOT.TLine(ratios[0].GetXaxis().GetXmin(),1,ratios[0].GetXaxis().GetXmax(),1)
         self.line.SetLineColor(ROOT.kBlack)
         self.line.SetLineWidth(1)
         self.line.SetLineStyle(3)
-        
-        ratios[0].Draw('EP')
-        for r in ratios[1:]:
-            r.Draw('EPSame')
+
+        if not just_errors:
+            ratios[0].Draw('EPSame')
+            # ratios[0].Draw('EP')
+            for r in ratios[1:]:
+                r.Draw('EPSame')
+
        
         self.line.Draw()
+
+        self.ratio_legend = ROOT.TLegend(0.2, .7, .6, .9)
+        self.ratio_legend.SetNColumns(3)
+        self.ratio_legend.AddEntry(self.stat_err, 'Stat. Pred. Error', 'F')
+        self.ratio_legend.AddEntry(self.tot_err, 'Tot. Pred. Error', 'F')
+        
+        self.ratio_legend.SetFillStyle(0)
+        self.ratio_legend.SetBorderSize(0)
+        self.ratio_legend.Draw()
         
         self.ratio_pad.Update() 
         self.canvas.cd() 
@@ -412,7 +483,7 @@ class Plot:
 
         if message is not None:
             pt.writeMessage(destination.rsplit('/', 1)[0], message)
-    
+
     #
     # Functions to do actual plotting
     #
@@ -531,7 +602,7 @@ class Plot:
         #
         # Set title (background is drawn first so it gets dibs)
         #
-        if self.draw_ratio or self.draw_significance:
+        if self.draw_ratio is not None or self.draw_significance:
             title = " ; ; "+self.y_name
         else:
             title = " ;" +self.x_name+ " ; "+self.y_name   
@@ -555,13 +626,13 @@ class Plot:
         if self.b is not None:
             if bkgr_draw_option == 'Stack':
                 self.hs.Draw("Hist")                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
-                if self.draw_ratio or self.draw_significance: 
+                if self.draw_ratio is not None or self.draw_significance: 
                     self.hs.GetHistogram().GetXaxis().SetLabelOffset(9999999)
             else:
                 for i, b in enumerate(self.b):
                     if i == 0:
                         b.Draw(tmp_bkgr_draw_option)
-                        if self.draw_ratio or self.draw_significance: 
+                        if self.draw_ratio is not None or self.draw_significance: 
                             b.GetXaxis().SetLabelOffset(9999999)
                     else:
                         b.Draw(tmp_bkgr_draw_option + 'Same')
@@ -574,7 +645,7 @@ class Plot:
 
         if draw_option == "Stack":
             self.hs.Draw("Hist")                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
-            if self.draw_ratio or self.draw_significance: 
+            if self.draw_ratio is not None or self.draw_significance: 
                 self.hs.GetHistogram().GetXaxis().SetLabelOffset(9999999)
         else:
             for h in self.s:
@@ -672,10 +743,11 @@ class Plot:
         legend.SetBorderSize(0)
         legend.Draw()
 
-        if self.draw_ratio:
+        if self.draw_ratio is not None:
+            just_errors = self.draw_ratio == 'errorsOnly'
             if self.b is None:                 raise RuntimeError("Cannot ask ratio or significance if no background is given")
             ratios = self.calculateRatio()
-            self.drawRatio(ratios, custom_labels)
+            self.drawRatio(ratios, custom_labels, just_errors)
             self.ratio_pad.Update()
         if self.draw_significance:
             if self.b is None:                 raise RuntimeError("Cannot ask ratio or significance if no background is given")
@@ -907,7 +979,8 @@ class Plot:
 
     #
     # For the brazilian, the expected should be contained in a list of length 3 containing the median, 68% and 95% respectively
-    # Observed in background
+    # or a list of length 4 also containing the observed
+    # If you want to add observed and expected from prevous analysis to compare to, add those to background
     #
     def drawBrazilian(self, output_dir, draw_percent=False, message = None):
         setDefault()
@@ -919,26 +992,21 @@ class Plot:
         self.plotpad.Draw()
         self.plotpad.cd()
 
-
         median = self.s[0]
         green = self.s[1]
         yellow = self.s[2]
+        try:
+            observed = self.s[3]
+        except:
+            observed = None
 
         max_y = max([v for v in yellow.GetY()])
         min_y = min([v for v in yellow.GetY()])
         values = [x for x in median.GetX()]
 
         frame = self.plotpad.DrawFrame(1.4,0.001, 410, 10)
-        # frame.GetYaxis().CenterTitle()
-        # frame.GetYaxis().SetTitleSize(0.05)
-        # frame.GetXaxis().SetTitleSize(0.05)
-        # frame.GetXaxis().SetLabelSize(0.04)
-        # frame.GetYaxis().SetLabelSize(0.04)
-        # frame.GetYaxis().SetTitleOffset(0.9)
         frame.GetXaxis().SetNdivisions(508)
-        # frame.GetYaxis().CenterTitle(True)
         frame.GetYaxis().SetTitle(self.y_name)
-    #    frame.GetYaxis().SetTitle("95% upper limit on #sigma #times BR / (#sigma #times BR)_{SM}")
         frame.GetXaxis().SetTitle(self.x_name)
         frame.SetMinimum(0.3*min_y)
         frame.SetMaximum(max_y*100)
@@ -960,45 +1028,24 @@ class Plot:
         median.SetLineStyle(2)
         median.Draw('Lsame')
 
-        # mgraph = ROOT.TMultiGraph()
-        # mgraph.Add(yellow)
-        # # mgraph.Add(green)
-        # # mgraph.Add(median)
-        # mgraph.Draw('F')
+        if observed is not None:
+            observed.SetLineColor(ROOT.kBlack)
+            observed.SetLineWidth(2)
+            observed.Draw('Lsame')
+
+        if self.b is not None:
+            for i_bkgr, bkgr in enumerate(self.b):
+                bkgr.SetLineColor(ps.getColor('StackTauPOG', i_bkgr))
+                bkgr.SetLineWidth(2)
+                bkgr.Draw('Lsame')
+
         frame.Draw('sameaxis')
-
-        # mgraph_median = ROOT.TMultiGraph()
-        # mgraph_median.Add(median)
-        # mgraph_median.Draw("Lsame")
-
-
-        # if isinstance(self.x_name, list):
-        #     print 'invalid x_names'
-        #     return
-        # yellow.SetTitle(";" + self.x_name + ";" + self.y_name)
- 
-        # xmax = pt.getXMax(self.s)
-        # xmin = pt.getXMin(self.s)
-        # ymax = pt.getYMax(self.s)
-        # ymin = pt.getYMin(self.s)
 
         if self.x_log :
             self.plotpad.SetLogx()
-        #     yellow.GetXaxis().SetRangeUser(0.3*xmin, 30*xmax)
-        # else :
-        #     yellow.GetXaxis().SetRangeUser(0.7*xmin, 1.3*xmax)
         
         if self.y_log:
             self.plotpad.SetLogy()
-        #     yellow.GetYaxis().SetRangeUser(0.3*ymin, 10*ymax)
-        # else :
-        #     yellow.GetYaxis().SetRangeUser(0.5*ymin, 1.2*ymax)       
-
- 
-        # #self.setAxisLog() 
-        # #Write extra text
-        # if self.extra_text is not None:
-        #     self.drawExtraText()
         
         #Create Legend
         self.canvas.cd()
@@ -1006,6 +1053,9 @@ class Plot:
         legend.AddEntry(median, "Asymptotic CL_{s} expected",'L')
         legend.AddEntry(green, "#pm 1 std. deviation",'f')
         legend.AddEntry(yellow,"#pm 2 std. deviation",'f')
+        if self.tex_names is not None and self.b is not None:
+            for l, b in zip(self.tex_names, self.b):
+                legend.AddEntry(b, l)
         legend.SetFillStyle(0)
         legend.SetBorderSize(0)
         legend.Draw()

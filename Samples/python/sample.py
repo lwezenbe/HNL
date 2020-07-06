@@ -23,6 +23,7 @@ class Sample:
         self.hcount             = None
         self.chain              = None
         self.output             = output
+        self.mass               = self.getMass()
   
     #
     #   Return the file size of the file at the path location in MB

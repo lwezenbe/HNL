@@ -29,7 +29,7 @@ def isCleanFromMuons(chain, index, mu_algo = 'leptonMVAtZq'):
         if deltaR(chain._lEta[mu], chain._lEta[index], chain._lPhi[mu], chain._lPhi[index]) < 0.05: return False
     return True
 
-default_electron_selection = 'leptonMVAtZq'
+default_electron_selection = 'leptonMVAtop'
 
 #
 # WP as defined in AN 2017/014
@@ -183,6 +183,9 @@ def isTightElectronttH(chain, index):
     if chain._leptonMvaTTH[index] <= 0.8:       return False
     return True
 
+#    
+# tZq selection
+#
 def isLooseElectrontZq(chain, index):
     
     if abs(chain._lEta[index]) >= 2.5:          return False
@@ -217,10 +220,42 @@ def isTightElectrontZq(chain, index):
     if chain._leptonMvatZq[index] <= 0.4:       return False
     return True
 
+#
+# top lepton MVA selection
+#
+def topPreselection(chain, index):
+    if not isBaseElectron(chain, index):        return False
+    if not isCleanFromMuons(chain, index):      return False
+    if abs(chain._dxy[index]) >= 0.05:          return False
+    if abs(chain._dz[index]) >= 0.1:            return False
+    if chain._miniIso[index] >= 0.4:            return False
+    if chain._3dIPSig[index] >= 8:              return False
+    if chain._lElectronMissingHits[index] > 1:  return False
+    return True
+
+def isLooseElectronTop(chain, index):
+    if not topPreselection(chain, index):       return False
+    if chain._leptonMvaTOP[index] <= 0.0:       return False
+    return True
+
+def isFOElectronTop(chain, index):
+    if not isLooseElectronTop(chain, index):       return False
+    if chain._leptonMvaTOP[index] <= 0.6:       return False
+    return True
+
+def isTightElectronTop(chain, index):
+    if not isFOElectronTop(chain, index):       return False
+    if chain._leptonMvaTOP[index] <= 0.9:       return False
+    return True
+
+#
+# General functions for selection
+#
 def isLooseElectron(chain, index, algo = default_electron_selection):
     if algo == 'cutbased':       return isLooseElectronCutBased(chain, index)
     elif algo == 'leptonMVAttH':        return isLooseElectronttH(chain, index)
     elif algo == 'leptonMVAtZq':        return isLooseElectrontZq(chain, index)
+    elif algo == 'leptonMVAtop':        return isLooseElectronTop(chain, index)
     else:
         print 'Wrong input for "algo" in isLooseElectron'
         return False
@@ -229,6 +264,7 @@ def isFOElectron(chain, index, algo = default_electron_selection):
     if algo == 'cutbased':       return isFOElectronCutBased(chain, index)
     elif algo == 'leptonMVAttH':        return isFOElectronttH(chain, index)
     elif algo == 'leptonMVAtZq':        return isFOElectrontZq(chain, index)
+    elif algo == 'leptonMVAtop':        return isFOElectronTop(chain, index)
     else:
         print 'Wrong input for "algo" in isFOElectron'
         return False
@@ -237,6 +273,7 @@ def isTightElectron(chain, index, algo = default_electron_selection):
     if algo == 'cutbased':       return isTightElectronCutBased(chain, index)
     elif algo == 'leptonMVAttH':        return isTightElectronttH(chain, index)
     elif algo == 'leptonMVAtZq':        return isTightElectrontZq(chain, index)
+    elif algo == 'leptonMVAtop':        return isTightElectronTop(chain, index)
     else:
         print 'Wrong input for "algo" in isTightElectron'
         return False

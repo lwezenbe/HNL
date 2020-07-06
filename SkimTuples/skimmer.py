@@ -19,11 +19,13 @@ argParser.add_argument('--runLocal', action='store_true', default=False,  help='
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 argParser.add_argument('--overwrite', action='store_true', default=False,                help='overwrite if valid output file already exists')
 argParser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
-argParser.add_argument('--lightLeptonSelection', action='store', default='leptonMVAtZq', help='selection algorithm for light leptons', choices = ['leptonMVAtZq', 'leptonMVAttH', 'cutbased'])
+argParser.add_argument('--lightLeptonSelection', action='store', default='leptonMVAtop', help='selection algorithm for light leptons', choices = ['leptonMVAtop', 'leptonMVAtZq', 'leptonMVAttH', 'cutbased'])
 argParser.add_argument('--tauSelection',  action='store',      default='deeptauVSjets', help='selection algorithm for taus', choices=['deeptauVSjets', 'MVA2017v2'])
 argParser.add_argument('--summaryFile', action='store_true', default=False,  help='Create text file that shows all selected arguments')
 argParser.add_argument('--genSkim',  action='store_true',      default=False,               help='skim on generator level leptons')
 argParser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
+argParser.add_argument('--oldAnalysisSkim',  action='store_true',      default=False,               help='Shortcut to use cut-based selection to skim the samples.')
+argParser.add_argument('--removeOverlap',  action='store_true',      default=False,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
 
 args = argParser.parse_args()
 
@@ -54,6 +56,9 @@ if not args.isChild and not args.isTest:
     jobs = []
     for sample_name in sample_manager.sample_names:
         sample = sample_manager.getSample(sample_name)
+        if sample is None:
+            print sample_name, "not found. Will skip this sample"
+            continue
         for njob in xrange(sample.split_jobs):
             jobs += [(sample.name, str(njob))]
 
@@ -79,6 +84,12 @@ chain.year = int(args.year)
 chain.is_signal = 'HNL' in sample.name
 
 #
+# Import and create cutter to provide cut flow
+#
+from HNL.EventSelection.cutter import Cutter
+cutter = Cutter(chain = chain)
+
+#
 # Get lumiweight
 #
 from HNL.Weights.lumiweight import LumiWeight
@@ -94,17 +105,28 @@ if chain.is_signal:
 else:
     output_file_name = sample.path.split('/')[-2]
 
-output_name = os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL', str(args.year), gen_name, 'tmp_'+output_file_name, sample.name + '_' + str(args.subJob) + '.root'))
+
+output_base = os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL')) if not args.isTest else os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'SkimTuples', 'data', 'testArea'))
+
+if args.oldAnalysisSkim:
+    output_name = os.path.join(output_base, 'OldAnalysis', str(args.year), gen_name, 'tmp_'+output_file_name, sample.name + '_' + str(args.subJob) + '.root')
+else:
+    output_name = os.path.join(output_base, str(args.year), gen_name, 'tmp_'+output_file_name, sample.name + '_' + str(args.subJob) + '.root')
+
+# if not args.isTest:
+#     output_name = os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL', str(args.year), gen_name, 'tmp_'+output_file_name, sample.name + '_' + str(args.subJob) + '.root'))
+# else:
+#     output_name = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'SkimTuples', 'data', 'testArea', str(args.year), gen_name, 'tmp_'+output_file_name, sample.name + '_' + str(args.subJob) + '.root'))
+
 makeDirIfNeeded(output_name)
 
 if not args.isTest and not args.overwrite and isValidRootFile(output_name):
     log.info('Finished: valid outputfile already exists')
     exit(0)
 
-if not args.isTest:
-    output_file = ROOT.TFile(output_name ,"RECREATE")
-    output_file.mkdir('blackJackAndHookers')
-    output_file.cd('blackJackAndHookers')
+output_file = ROOT.TFile(output_name ,"RECREATE")
+output_file.mkdir('blackJackAndHookers')
+output_file.cd('blackJackAndHookers')
 
 #
 # Switch off unused branches and create outputTree
@@ -141,7 +163,7 @@ new_vars = makeBranches(output_tree, new_branches)
 # Start event loop
 #
 if args.isTest:
-    event_range = range(2000)
+    event_range = range(20000)
 else:
     event_range = sample.getEventRange(args.subJob)    
 
@@ -152,12 +174,22 @@ for entry in event_range:
     chain.GetEntry(entry)
     progress(entry - event_range[0], len(event_range))
  
+    cutter.cut(True, 'Total')
+
+    if args.removeOverlap:
+        if 'DYJets' in sample.name and chain._zgEventType>=3: continue
+        if sample.name == 'ZG' and chain._hasInternalConversion: continue
+
     if args.genSkim:
         if not select3GenLeptons(chain, new_vars):      continue
-    else:
+    elif not args.oldAnalysisSkim:
         # if not select3Leptons(chain, new_vars, light_algo=args.lightLeptonSelection, tau_algo=args.tauSelection):       continue
-        select3Leptons(chain, new_vars, light_algo=args.lightLeptonSelection, tau_algo=args.tauSelection)
+        select3Leptons(chain, new_vars, light_algo=args.lightLeptonSelection, tau_algo=args.tauSelection, workingpoint = 'loose')
         if len(chain.leptons) < 3:       continue
+    else:
+        select3Leptons(chain, new_vars, light_algo='cutbased', workingpoint = 'tight', no_tau = True, cutter = cutter)
+        if len(chain.leptons) < 3:       continue
+
     
     ec = EventCategory(new_vars)
     c = ec.returnCategory()
@@ -168,8 +200,13 @@ for entry in event_range:
     new_vars.lumiweight = lw.getLumiWeight()
     output_tree.Fill()
 
+# print output_name.split('.')[-1]+'_cutflow.root'
+# cutter.saveCutFlow(output_name.split('.')[-1]+'_cutflow.root')
+
+
 output_tree.AutoSave()
 #if hcounter is not None:
 #    hcounter.Write()
     
-if not args.isTest: output_file.Close()
+output_file.Close()
+

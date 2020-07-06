@@ -33,11 +33,13 @@ def getColor(palette, index):
         return getWPcolor(index)
     elif palette == 'Black':
         return getBlackColor(index)
+    elif palette == 'AN2017':
+        return getAN2017Colors(index)
     else:
         return getHistColor(index)
 
 def getPaletteIndex(palette, index, tex_name):
-    if palette == 'StackTauPOGbyName' or palette == 'WorkingPoints':
+    if palette == 'StackTauPOGbyName' or palette == 'WorkingPoints' or palette == 'AN2017':
         return tex_name
     else:
         return index
@@ -138,6 +140,25 @@ def getHNLColor(name):
     elif '10' in name:   return TColor.GetColor("#610F7F")
     elif '5' in name:   return TColor.GetColor("#613DC1")
     else:               return TColor.GetColor("#000000")
+
+
+def getAN2017Colors(name):
+    if name == 'WZ': return TColor.GetColor("#ff6666")
+    elif name == 'triboson': return TColor.GetColor("#6666ff")
+    elif name == 'TT-T+X': return TColor.GetColor("#ff66ff")
+    elif name == 'ZZ-H': return TColor.GetColor("#ff9966")
+    elif name == 'XG': return TColor.GetColor("#00cc00")
+    elif name == 'non-prompt': return TColor.GetColor("#3399ff")
+    elif '-m100' in name: return TColor.GetColor("#ff0000")
+    elif '-m130' in name: return TColor.GetColor("#0000ff")
+    elif '-m150' in name: return TColor.GetColor("#00ff00")
+    elif '-m200' in name: return TColor.GetColor("#ffff00")
+    elif '-m400' in name: return TColor.GetColor("#00ffff")
+    elif '-m600' in name: return TColor.GetColor("#ff00ff")
+    elif '-m20' in name: return TColor.GetColor("#00ff00")
+    elif '-m40' in name: return TColor.GetColor("#ffff00")
+    elif '-m60' in name: return TColor.GetColor("#ff00ff")
+    else:               return TColor.GetColor("#ff66ff")
 
 def getLineColor(index):
     if index == 3:      return TColor.GetColor("#000000")

@@ -1,5 +1,5 @@
 from HNL.Stat.combineTools import runCombineCommand, extractScaledLimitsPromptHNL, extractRawLimits, makeGraphs
-from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped
+from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped, getObjFromFile
 import ROOT
 import numpy as np
 
@@ -71,7 +71,7 @@ for mass in masses:
     asymptotic_str = 'asymptotic' if args.asymptotic else ''
     input_folder = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', str(args.year), args.flavor, 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', asymptotic_str)
     tmp_coupling = 0.01
-    # tmp_coupling = 0.01 if mass <= 80 else .1
+    tmp_coupling = 0.01 if mass <= 80 else .1
     tmp_limit = extractScaledLimitsPromptHNL(input_folder + '/higgsCombineTest.AsymptoticLimits.mH120.root', tmp_coupling)
     if tmp_limit is not None and len(tmp_limit) > 4 and mass != 5: 
         passed_masses.append(mass)
@@ -80,9 +80,24 @@ for mass in masses:
 
 graphs = makeGraphs(passed_masses, couplings = passed_couplings, limits=limits)
 
+if args.flavor == 'e':
+    observed_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsElectronMixing.root'), 'observed_promptDecays')
+    expected_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsElectronMixing.root'), 'expected_central')
+    tex_names = ['observed (AN-2017-014)', 'expected (AN-2017-014)']
+elif args.flavor == 'mu':
+    observed_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsMuonMixing.root'), 'observed_promptDecays')
+    expected_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsMuonMixing.root'), 'expected_central')
+    tex_names = ['observed (AN-2017-014)', 'expected (AN-2017-014)']
+
+else:
+    observed_AN = None
+    expected_AN = None
+    tex_names = None
+
+
 coupling_dict = {'tau':'#tau', 'mu':'#mu', 'e':'e', '2l':'l'}
 from HNL.Plotting.plot import Plot
 destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/Results/runAsymptoticLimits/'+args.flavor))
-p = Plot(graphs, ['2#sigma', '1#sigma', 'expected'], 'expected', y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = 'V_{'+coupling_dict[args.flavor]+' N}^{2}')
+p = Plot(graphs, tex_names, 'limits', bkgr_hist = [observed_AN, expected_AN], y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}')
 p.drawBrazilian(output_dir = destination)
 

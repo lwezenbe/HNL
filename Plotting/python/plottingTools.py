@@ -80,10 +80,10 @@ def drawLineFormat(x0 = None, x1 = None, y0 = None, y1 = None, color = None, wid
     if y0 is not None and y1 is None: y1 = y0
     return [x0, x1, y0, y1, color, width, style]
 
-def removeNegativeErrors(h):
-    for xbin in xrange(1, th1.GetSize()-1):                     #GetSize returns nbins + 2 (for overflow and underflow bin)
-        if (h.GetBinContent(xbin) - h.GetBinErrorLow(xbin)) < 0:
-            h.SetBinError
+# def removeNegativeErrors(h):
+#     for xbin in xrange(1, th1.GetSize()-1):                     #GetSize returns nbins + 2 (for overflow and underflow bin)
+#         if (h.GetBinContent(xbin) - h.GetBinErrorLow(xbin)) < 0:
+#             h.SetBinError
 
 def getCumulativeValue(hist, bin):
     out_val = 0.

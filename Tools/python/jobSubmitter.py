@@ -51,6 +51,7 @@ def submitJobs(script, subJobArgs, subJobList, argParser, dropArgs=None, subLog=
     changedArgs  = [arg for arg in vars(args) if getattr(args, arg) and argParser.get_default(arg) != getattr(args, arg)]
     submitArgs   = {arg: getattr(args, arg) for arg in changedArgs if (not dropArgs or arg not in dropArgs)}
 
+
     for i, subJob in enumerate(subJobList):
         for arg, value in zip(subJobArgs, subJob):
             if value: submitArgs[arg] = str(value)
@@ -71,3 +72,4 @@ def submitJobs(script, subJobArgs, subJobList, argParser, dropArgs=None, subLog=
         elif args.runLocal: runLocal(command, logfile)
         else:               launchCream02(command, logfile, checkQueue=(i%100==0), wallTimeInHours=wallTime, queue=queue, cores=cores, jobLabel=jobLabel)
 
+    print len(subJobList), 'jobs submitted'

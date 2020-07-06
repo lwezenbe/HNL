@@ -31,7 +31,7 @@ class Cutter():
         return self.order_of_cuts
 
     def printAllEvents(self):
-        return [(cut, self.list_of_cuts[cut]) for cut in order_of_cuts]
+        return [(cut, self.list_of_cuts[cut]) for cut in self.order_of_cuts]
 
     def saveCutFlow(self, out_file):
 

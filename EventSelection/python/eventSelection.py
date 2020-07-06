@@ -11,7 +11,7 @@
 #
 import numpy as np
 from HNL.ObjectSelection.leptonSelector import isFOLepton
-from HNL.ObjectSelection.leptonSelector import isTightLightLepton, isTightLepton
+from HNL.ObjectSelection.leptonSelector import isTightLightLepton, isTightLepton, isGoodLepton
 from HNL.ObjectSelection.leptonSelector import isGoodGenLepton
 from HNL.ObjectSelection.jetSelector import isGoodJet, isBJet
 from HNL.Tools.helpers import getFourVec, deltaPhi, deltaR
@@ -46,7 +46,7 @@ def getSortKeyHNLtruth(item):
 # no_tau: turn on to only accept light leptons
 # tau_algo: if set to 'gen_truth', it will still run over all reco taus but instead of using tight taus it will only look if they were matched to a hadronically decayed gen tau
 #
-def select3Leptons(chain, new_chain, no_tau=False, light_algo = None, tau_algo = None, cutter = None):
+def select3Leptons(chain, new_chain, no_tau=False, light_algo = None, tau_algo = None, cutter = None, workingpoint = 'tight'):
 
     if chain is new_chain:
         new_chain.l_pt = [0.0]*3
@@ -57,7 +57,7 @@ def select3Leptons(chain, new_chain, no_tau=False, light_algo = None, tau_algo =
         new_chain.l_e = [0.0]*3
 
     collection = chain._nL if not no_tau else chain._nLight
-    chain.leptons = [(chain._lPt[l], l) for l in xrange(collection) if isTightLepton(chain, l, algo = light_algo, tau_algo=tau_algo)]
+    chain.leptons = [(chain._lPt[l], l) for l in xrange(collection) if isGoodLepton(chain, l, algo = light_algo, tau_algo=tau_algo, workingpoint=workingpoint)]
     if cutter is not None:
         cutter.cut(len(chain.leptons) > 0, 'at_least_1_lep')
         cutter.cut(len(chain.leptons) > 1, 'at_least_2_lep')
@@ -331,6 +331,7 @@ def highMassCuts(chain, new_chain, cutter):
     if not cutter.cut(new_chain.l_pt[l2] > 15, 'l2pt>15'):        return False
     if not cutter.cut(new_chain.l_pt[l3] > 10, 'l3pt>10'):        return False
     if not cutter.cut(passesZcuts(chain, new_chain, same_flavor=True), 'M2l_OSSF_Z_veto'):        return False
+    # print new_chain.M3l, new_chain.minMos, new_chain.minMossf
     if not cutter.cut(abs(new_chain.M3l-91) > 15, 'M3l_Z_veto'):        return False 
     return True 
 
@@ -355,7 +356,7 @@ def passesZcuts(chain, new_chain, same_flavor=False):
             if new_chain.l_charge[fl] == new_chain.l_charge[sl]: continue
             if same_flavor and new_chain.l_flavor[fl] != new_chain.l_flavor[sl]: continue 
             l2Vec = getFourVec(new_chain.l_pt[sl], new_chain.l_eta[sl], new_chain.l_phi[sl], new_chain.l_e[sl])
-            if abs((l1Vec + l2Vec).M() - 90) < 15: return False
+            if abs((l1Vec + l2Vec).M() - 90.) < 15: return False
     return True
 
 def fourthFOVeto(chain, light_lep_selection = None, tau_selection = None):

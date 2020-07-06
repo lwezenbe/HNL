@@ -20,7 +20,7 @@ version        = 'v8.0.1'
 # Function to write out a data card, these data cards all contain 1 bin to be clear, readable and flexible
 # and should be combined later on
 #
-def makeDataCard(bin_name, flavor, year, obs_yield, sig_name, bkgr_names, sig_yield=None, bkgr_yields= None, shapes=False):
+def makeDataCard(bin_name, flavor, year, obs_yield, sig_name, bkgr_names, sig_yield=None, bkgr_yields= None, shapes=False, coupling_sq = 1e-4):
 
     if not shapes and len(bkgr_yields) != len(bkgr_names):
         raise RuntimeError("length of background yields and names is inconsistent")
@@ -32,6 +32,7 @@ def makeDataCard(bin_name, flavor, year, obs_yield, sig_name, bkgr_names, sig_yi
     makeDirIfNeeded(out_name)
     out_file = open(out_name, 'w')
 
+    out_file.write('# coupling squared = '+str(coupling_sq)+' \n \n')
     out_file.write('imax    1 number of bins \n')
     out_file.write('jmax    * number of processes\n')
     out_file.write('kmax    * \n')
@@ -58,6 +59,12 @@ def makeDataCard(bin_name, flavor, year, obs_yield, sig_name, bkgr_names, sig_yi
 
     # For now no systematics, just lumi as example
     out_file.write(tab(['lumi_13TeV', 'lnN']+ [1.025]*(len(bkgr_names)+1)))
+
+
+    #autoMCstats
+    if shapes:
+        out_file.write('* autoMCStats 3 1 1')
+
 
     out_file.close()
 

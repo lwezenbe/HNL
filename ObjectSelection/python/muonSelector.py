@@ -1,4 +1,4 @@
-default_muon_selection = 'leptonMVAtZq'
+default_muon_selection = 'leptonMVAtop'
 
 def isGoodGenMuon(chain, index):
     if not chain._gen_lIsPrompt[index]:         return False
@@ -10,6 +10,9 @@ def isBaseMuon(chain, index):
     if chain._lPt[index] <= 5:                   return False
     return True
 
+#
+# Cut-based selection
+#
 def isLooseMuonCutBased(chain, index):
     if not isBaseMuon(chain, index):            return False
     if abs(chain._dxy[index]) >= 0.05:          return False
@@ -59,7 +62,7 @@ def isTightMuonttH(chain, index):
     return True
     
 #
-# Updated selection with ttH MVA
+# Updated selection with tZq MVA
 #
 def isLooseMuontZq(chain, index):
     if not isBaseMuon(chain, index):            return False
@@ -71,7 +74,7 @@ def isLooseMuontZq(chain, index):
     return True
    
 def isFOMuontZq(chain, index):
-    if not isLooseMuonttH(chain, index):        return False
+    if not isLooseMuontZq(chain, index):        return False
     # if chain._leptonMvaTTH[index] <= 0.4:      
     #     if chain._ptRatio[index] <= 0.4: return False
     # if chain._closestJetDeepFlavor[index] >= slidingDeepFlavorThreshold(chain.year, chain._lPt[index]):
@@ -84,10 +87,42 @@ def isTightMuontZq(chain, index):
     if chain._leptonMvatZq[index] <= 0.4:     return False
     return True
 
+#
+# Updated selection with top MVA
+#
+def topPreselection(chain, index):
+    if not isBaseMuon(chain, index):            return False
+    if chain._lPt[index] < 10:                  return False
+    if abs(chain._dxy[index]) >= 0.05:          return False
+    if abs(chain._dz[index]) >= 0.1:            return False
+    if chain._3dIPSig[index] >= 8:              return False
+    if chain._miniIso[index] >= 0.4:            return False
+    if not chain._lPOGMedium[index]:            return False
+    return True
+
+def isLooseMuonTop(chain, index):
+    if not topPreselection(chain, index):       return False
+    if chain._leptonMvaTOP[index] <= 0.05:       return False
+    return True
+   
+def isFOMuonTop(chain, index):
+    if not isLooseMuonTop(chain, index):        return False
+    if chain._leptonMvaTOP[index] <= 0.65:       return False
+    return True
+
+def isTightMuonTop(chain, index):
+    if not isFOMuonTop(chain, index):           return False
+    if chain._leptonMvaTOP[index] <= 0.9:       return False
+    return True
+
+#
+# General function for selecting muons
+#
 def isLooseMuon(chain, index, algo = default_muon_selection):
     if algo == 'cutbased':       return isLooseMuonCutBased(chain, index)
     elif algo == 'leptonMVAttH':        return isLooseMuonttH(chain, index)
     elif algo == 'leptonMVAtZq':        return isLooseMuontZq(chain, index)
+    elif algo == 'leptonMVAtop':        return isLooseMuonTop(chain, index)
     else:
         print 'Wrong input for "algo" in isLooseMuon'
         return False
@@ -96,6 +131,7 @@ def isFOMuon(chain, index, algo = default_muon_selection):
     if algo == 'cutbased':       return isFOMuonCutBased(chain, index)
     elif algo == 'leptonMVAttH':        return isFOMuonttH(chain, index)
     elif algo == 'leptonMVAtZq':        return isFOMuontZq(chain, index)
+    elif algo == 'leptonMVAtop':        return isFOMuonTop(chain, index)
     else:
         print 'Wrong input for "algo" in isFOMuon'
         return False
@@ -104,6 +140,7 @@ def isTightMuon(chain, index, algo = default_muon_selection):
     if algo == 'cutbased':       return isTightMuonCutBased(chain, index)
     elif algo == 'leptonMVAttH':        return isTightMuonttH(chain, index)
     elif algo == 'leptonMVAtZq':        return isTightMuontZq(chain, index)
+    elif algo == 'leptonMVAtop':        return isTightMuonTop(chain, index)
     else:
         print 'Wrong input for "algo" in isTightMuon'
         return False

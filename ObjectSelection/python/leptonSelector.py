@@ -100,3 +100,14 @@ def isTightLepton(chain, index, algo = None, tau_algo = None):
         if tau_algo:    return isTightTau(chain, index, tau_algo)
         else:           return isTightTau(chain, index)
     return False
+
+def isGoodLepton(chain, index, algo = None, tau_algo = None, workingpoint = 'tight'):
+
+    if workingpoint == 'loose':
+        return isLooseLepton(chain, index, algo = algo, tau_algo = tau_algo)
+    elif workingpoint == 'medium':
+        return isFOLepton(chain, index, algo = algo, tau_algo = tau_algo)
+    elif workingpoint == 'tight':
+        return isTightLepton(chain, index, algo = algo, tau_algo = tau_algo)
+    else:
+        raise RuntimeError('Defined working point does not exist: ' +str(workingpoint))
