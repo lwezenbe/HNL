@@ -40,7 +40,11 @@ argParser.add_argument('--massRegion',   action='store', default=None,  help='ap
 argParser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
 argParser.add_argument('--makeDataCards', type = str, default=None,  help='Make data cards of the data you have', choices=['shapes', 'cutAndCount'])
 argParser.add_argument('--rescaleSignal', type = float,  action='store', default=None,  help='Enter desired signal coupling squared')
+
 args = argParser.parse_args()
+
+
+#TODO: Why are you filling separate histograms for each SR? You can just make these different bins in a single histogram
 
 #
 # Change some settings if this is a test
@@ -132,7 +136,7 @@ if not args.makePlots and args.makeDataCards is None:
     cutter = Cutter(chain = chain)
 
     if args.isTest:
-        max_events = 20000
+        max_events = 2000
         event_range = xrange(max_events) if max_events < len(sample.getEventRange(args.subJob)) else sample.getEventRange(args.subJob)
     else:
         event_range = sample.getEventRange(args.subJob)    
@@ -155,10 +159,8 @@ if not args.makePlots and args.makeDataCards is None:
         list_of_numbers[mr] = {}
         for c in listOfCategories():
             list_of_numbers[mr][c] = {}
-            for sr in xrange(1, srm[mr].getNumberOfSearchRegions()+1):
-                list_of_numbers[mr][c][sr] = {}
-                for prompt_str in ['prompt', 'nonprompt', 'total']:
-                    list_of_numbers[mr][c][sr][prompt_str] = Histogram('_'.join([str(c), str(sr)]), lambda c: 0.5, ('', 'Events'), np.arange(0., 2., 1.))
+            for prompt_str in ['prompt', 'nonprompt', 'total']:
+                list_of_numbers[mr][c][prompt_str] = Histogram('_'.join([str(c), prompt_str]), lambda c: c.search_region-0.5, ('', 'Events'), np.arange(0., srm[mr].getNumberOfSearchRegions()+1., 1.))                
 
     subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
     selection_str = 'OldSel' if args.oldAnalysisCuts else 'NewCuts'
@@ -225,29 +227,27 @@ if not args.makePlots and args.makeDataCards is None:
 
         if 'general' in mass_regions:
             chain.search_region = srm['general'].getSearchRegion(chain)
-            list_of_numbers['general'][ec.returnCategory()][chain.search_region][prompt_str].fill(chain, chain.weight)
-            list_of_numbers['general'][ec.returnCategory()][chain.search_region]['total'].fill(chain, chain.weight)
+            list_of_numbers['general'][ec.returnCategory()][prompt_str].fill(chain, chain.weight)
+            list_of_numbers['general'][ec.returnCategory()]['total'].fill(chain, chain.weight)
 
         if 'lowMass' in mass_regions and lowMassCuts(chain, chain, cutter):
             chain.search_region = srm['lowMass'].getSearchRegion(chain)
-            list_of_numbers['lowMass'][ec.returnCategory()][chain.search_region][prompt_str].fill(chain, chain.weight)
-            list_of_numbers['lowMass'][ec.returnCategory()][chain.search_region]['total'].fill(chain, chain.weight)
+            list_of_numbers['lowMass'][ec.returnCategory()][prompt_str].fill(chain, chain.weight)
+            list_of_numbers['lowMass'][ec.returnCategory()]['total'].fill(chain, chain.weight)
  
         if 'highMass' in mass_regions and highMassCuts(chain, chain, cutter):
             chain.search_region = srm['highMass'].getSearchRegion(chain)
-            list_of_numbers['highMass'][ec.returnCategory()][chain.search_region][prompt_str].fill(chain, chain.weight)
-            list_of_numbers['highMass'][ec.returnCategory()][chain.search_region]['total'].fill(chain, chain.weight)
+            list_of_numbers['highMass'][ec.returnCategory()][prompt_str].fill(chain, chain.weight)
+            list_of_numbers['highMass'][ec.returnCategory()]['total'].fill(chain, chain.weight)
 
     for mr in mass_regions:                
         for prompt_str in ['prompt', 'nonprompt', 'total']:
-        # for prompt_str in ['total']:
             for i, c_h in enumerate(list_of_numbers[mr].keys()):
-                for j, sr_h in enumerate(list_of_numbers[mr][c_h].values()):
-                    output_name = getOutputName(mr, prompt_str)
-                    if i == 0 and j == 0:
-                        sr_h[prompt_str].write(output_name)
-                    else:
-                        sr_h[prompt_str].write(output_name, append=True)
+                output_name = getOutputName(mr, prompt_str)
+                if i == 0:
+                    list_of_numbers[mr][c_h][prompt_str].write(output_name)
+                else:
+                    list_of_numbers[mr][c_h][prompt_str].write(output_name, append=True)
 
         cutter.saveCutFlow(getOutputName(mr, 'total'))
 
@@ -331,13 +331,13 @@ else:
         for c in listOfCategories():
             list_of_values['signal'][signal][c] = {}
             list_of_errors['signal'][signal][c] = {}
+            tmp_hist = getObjFromFile(path_name, '_'.join([str(c), 'total'])+'/'+'_'.join([str(c), 'total']))
+            #Rescale if requested
+            if args.rescaleSignal is not None:
+                tmp_hist.Scale(args.rescaleSignal/(args.coupling**2))
             for sr in xrange(1, srm[mass_str].getNumberOfSearchRegions()+1):
-                tmp_hist = getObjFromFile(path_name, '_'.join([str(c), str(sr)])+'/'+'_'.join([str(c), str(sr)]))
-                #Rescale if requested
-                if args.rescaleSignal is not None:
-                    tmp_hist.Scale(args.rescaleSignal/(args.coupling**2))
-                list_of_values['signal'][signal][c][sr]= tmp_hist.GetBinContent(1)
-                list_of_errors['signal'][signal][c][sr]= tmp_hist.GetBinError(1)
+                list_of_values['signal'][signal][c][sr]= tmp_hist.GetBinContent(sr)
+                list_of_errors['signal'][signal][c][sr]= tmp_hist.GetBinError(sr)
 
     #Loading in background
 
@@ -364,32 +364,31 @@ else:
         path_name_nonprompt = os.path.join(base_path, bkgr, 'nonprompt/events.root')
 
         for c in listOfCategories():
+            # print path_name_prompt
+            tmp_hist_prompt = getObjFromFile(path_name_prompt, '_'.join([str(c), 'prompt'])+'/'+'_'.join([str(c), 'prompt']))
+            tmp_hist_nonprompt = getObjFromFile(path_name_nonprompt, '_'.join([str(c), 'nonprompt'])+'/'+'_'.join([str(c), 'nonprompt']))
+            tmp_hist_total = getObjFromFile(path_name_total, '_'.join([str(c), 'total'])+'/'+'_'.join([str(c), 'total']))
             for sr in xrange(1, srm[mass_str].getNumberOfSearchRegions()+1):
                 if args.groupSamples:
-                    # print path_name_prompt
-                    tmp_hist_prompt = getObjFromFile(path_name_prompt, '_'.join([str(c), str(sr)])+'/'+'_'.join([str(c), str(sr)]))
-                    tmp_hist_nonprompt = getObjFromFile(path_name_nonprompt, '_'.join([str(c), str(sr)])+'/'+'_'.join([str(c), str(sr)]))
+
                     sg = [sk for sk in sample_manager.sample_groups.keys() if bkgr in sample_manager.sample_groups[sk]][0]
                     if bkgr == 'DY':
-                        list_of_values['bkgr']['XG'][c][sr] += tmp_hist_prompt.GetBinContent(1) 
-                        list_of_errors['bkgr']['XG'][c][sr] = np.sqrt(list_of_errors['bkgr'][sg][c][sr] ** 2 + tmp_hist_prompt.GetBinError(1) ** 2)
-                        list_of_values['bkgr']['non-prompt'][c][sr] += tmp_hist_nonprompt.GetBinContent(1) 
-                        list_of_errors['bkgr']['non-prompt'][c][sr] = np.sqrt(list_of_errors['bkgr']['non-prompt'][c][sr] ** 2 + tmp_hist_nonprompt.GetBinError(1) ** 2)   
+                        list_of_values['bkgr']['XG'][c][sr] += tmp_hist_prompt.GetBinContent(sr) 
+                        list_of_errors['bkgr']['XG'][c][sr] = np.sqrt(list_of_errors['bkgr'][sg][c][sr] ** 2 + tmp_hist_prompt.GetBinError(sr) ** 2)
+                        list_of_values['bkgr']['non-prompt'][c][sr] += tmp_hist_nonprompt.GetBinContent(sr) 
+                        list_of_errors['bkgr']['non-prompt'][c][sr] = np.sqrt(list_of_errors['bkgr']['non-prompt'][c][sr] ** 2 + tmp_hist_nonprompt.GetBinError(sr) ** 2)   
                     elif sg == 'non-prompt':
-                        list_of_values['bkgr'][sg][c][sr] += tmp_hist_nonprompt.GetBinContent(1) 
-                        list_of_errors['bkgr'][sg][c][sr] = np.sqrt(list_of_errors['bkgr'][sg][c][sr] ** 2 + tmp_hist_nonprompt.GetBinError(1) ** 2)
+                        list_of_values['bkgr'][sg][c][sr] += tmp_hist_nonprompt.GetBinContent(sr) 
+                        list_of_errors['bkgr'][sg][c][sr] = np.sqrt(list_of_errors['bkgr'][sg][c][sr] ** 2 + tmp_hist_nonprompt.GetBinError(sr) ** 2)
                     else:
-                        list_of_values['bkgr'][sg][c][sr] += tmp_hist_prompt.GetBinContent(1) 
-                        list_of_errors['bkgr'][sg][c][sr] = np.sqrt(list_of_errors['bkgr'][sg][c][sr] ** 2 + tmp_hist_prompt.GetBinError(1) ** 2)
-                        list_of_values['bkgr']['non-prompt'][c][sr] += tmp_hist_nonprompt.GetBinContent(1) 
-                        list_of_errors['bkgr']['non-prompt'][c][sr] = np.sqrt(list_of_errors['bkgr']['non-prompt'][c][sr] ** 2 + tmp_hist_nonprompt.GetBinError(1) ** 2)
-                    # if sr == 3 and c in [11, 13, 14]:
-                    #     print c, list_of_values['bkgr'][sg][c][sr], list_of_errors['bkgr']['non-prompt'][c][sr], tmp_hist_prompt.GetBinContent(1), tmp_hist_nonprompt.GetBinContent(1), tmp_hist_prompt.GetBinError(1), tmp_hist_nonprompt.GetBinError(1)
-                    #     print list_of_values['bkgr']['non-prompt'][c][sr], list_of_errors['bkgr']['non-prompt'][c][sr]
+                        list_of_values['bkgr'][sg][c][sr] += tmp_hist_prompt.GetBinContent(sr) 
+                        list_of_errors['bkgr'][sg][c][sr] = np.sqrt(list_of_errors['bkgr'][sg][c][sr] ** 2 + tmp_hist_prompt.GetBinError(sr) ** 2)
+                        list_of_values['bkgr']['non-prompt'][c][sr] += tmp_hist_nonprompt.GetBinContent(sr) 
+                        list_of_errors['bkgr']['non-prompt'][c][sr] = np.sqrt(list_of_errors['bkgr']['non-prompt'][c][sr] ** 2 + tmp_hist_nonprompt.GetBinError(sr) ** 2)
                 else:
                     tmp_hist_total = getObjFromFile(path_name_total, '_'.join([str(c), str(sr)])+'/'+'_'.join([str(c), str(sr)]))
-                    list_of_values['bkgr'][bkgr][c][sr]= tmp_hist_total.GetBinContent(1)
-                    list_of_errors['bkgr'][bkgr][c][sr]= tmp_hist_total.GetBinError(1)
+                    list_of_values['bkgr'][bkgr][c][sr]= tmp_hist_total.GetBinContent(sr)
+                    list_of_errors['bkgr'][bkgr][c][sr]= tmp_hist_total.GetBinError(sr)
 
     #
     # Add some grouped search regions for easier access
