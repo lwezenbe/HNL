@@ -60,6 +60,7 @@ if not args.isChild and not args.isTest:
             print sample_name, "not found. Will skip this sample"
             continue
         for njob in xrange(sample.split_jobs):
+            if njob > 26: continue
             jobs += [(sample.name, str(njob))]
 
     submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'skim')
@@ -100,7 +101,9 @@ lw = LumiWeight(sample, sample_manager)
 #
 from HNL.Tools.helpers import isValidRootFile, makeDirIfNeeded
 gen_name = 'Reco' if not args.genSkim else 'Gen'
-if chain.is_signal: 
+if sample.is_data:
+    output_file_name = 'Data'
+elif chain.is_signal: 
     output_file_name = sample.path.split('/')[-1].rsplit('.', 1)[0]
 else:
     output_file_name = sample.path.split('/')[-2]
@@ -151,9 +154,9 @@ new_branches = []
 # new_branches.extend(['M3l/F', 'minMos/F', 'pt_cone[20]/F', 'mtOther/F'])
 new_branches.extend(['M3l/F', 'minMos/F', 'mtOther/F'])
 new_branches.extend(['l1/I', 'l2/I', 'l3/I', 'index_other/I'])
-new_branches.extend(['l_pt[3]/F', 'l_eta[3]/F', 'l_phi[3]/F', 'l_e[3]/F', 'l_charge[3]/F', 'l_flavor[3]/I'])
+new_branches.extend(['l_pt[3]/F', 'l_eta[3]/F', 'l_phi[3]/F', 'l_e[3]/F', 'l_charge[3]/F', 'l_flavor[3]/I', 'l_indices[3]/I'])
 new_branches.extend(['lumiweight/F'])
-new_branches.extend(['event_category/I', 'event_subcategory/I', 'event_supercategory/I'])
+new_branches.extend(['event_category/I'])
 new_branches.extend(['njets/I', 'nbjets/I'])
 
 from HNL.Tools.makeBranches import makeBranches
@@ -164,11 +167,13 @@ new_vars = makeBranches(output_tree, new_branches)
 #
 if args.isTest:
     event_range = range(20000)
+    # event_range = sample.getEventRange(args.subJob)    
+
 else:
     event_range = sample.getEventRange(args.subJob)    
 
 from HNL.Tools.helpers import progress
-from HNL.EventSelection.eventSelection import calculateKinematicVariables, select3Leptons, select3GenLeptons
+from HNL.EventSelection.eventSelectionTools import calculateThreeLepVariables, calculateGeneralVariables, select3Leptons, select3GenLeptons
 from HNL.EventSelection.eventCategorization import EventCategory
 for entry in event_range:
     chain.GetEntry(entry)
@@ -196,7 +201,8 @@ for entry in event_range:
     new_vars.event_category = c
 
     print 'calcing'
-    calculateKinematicVariables(chain, new_vars, is_reco_level=not args.genSkim)
+    calculateGeneralVariables(chain, new_vars, is_reco_level=not args.genSkim)
+    calculateThreeLepVariables(chain, new_vars, is_reco_level=not args.genSkim)
     new_vars.lumiweight = lw.getLumiWeight()
     output_tree.Fill()
 
