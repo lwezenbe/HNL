@@ -3,7 +3,7 @@ WP = { (2016, 'loose', 'CSV') : 0.2217,
         (2016, 'medium', 'CSV') : 0.6321,
         (2016, 'tight', 'CSV') : 0.8953,
 
-        (2016, 'loose', 'AN2017-014') : 0.5426,
+        (2016, 'loose', 'AN2017014') : 0.5426,
         
         (2017, 'loose', 'CSV') : 0.1522,
         (2017, 'medium', 'CSV') : 0.4941,
@@ -35,7 +35,7 @@ def readBTagValue(chain, jet, algo = 'Deep'):
         return chain._jetDeepFlavor[jet]
     elif algo == 'CSV':
         return chain._jetDeepCsv[jet]
-    elif algo == 'AN2017-014':
+    elif algo == 'AN2017014':
         return chain._jetCsvV2[jet]
     else:
         print 'Unknown b-tagging algorithm'
