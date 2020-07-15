@@ -142,6 +142,12 @@ def getLeptonFourVecFromChain(chain, index):
     vec = getFourVec(chain._lPt[index], chain._lEta[index], chain._lPhi[index], chain._lE[index])
     return vec
 
+def printFourVec(four_vec):
+    print "Printing 4 vector components"
+    print "E, px, py, px = ", four_vec.E(), four_vec.Px(), four_vec.Py(), four_vec.Pz()
+    print "Pt, eta, phi, E = ", four_vec.Pt(), four_vec.Eta(), four_vec.Phi(), four_vec.E()
+    return
+
 #
 # Delta phi and R function
 #

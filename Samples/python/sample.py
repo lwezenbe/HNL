@@ -64,6 +64,7 @@ class Sample:
                 split_jobs *= int(init_value.split('*')[-1])
         else:
             split_jobs = int(init_value)
+            print 'splitJobs', split_jobs
         return split_jobs
 
     #

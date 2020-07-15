@@ -12,13 +12,14 @@ base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL')
 #
 # This part requires manual input for the moment
 #
-code_to_test = os.path.join(base_path, 'Test', 'plotVariables.py --isTest --year 2017')
-sublist = 'fulllist'
-year = '2017'
-skim = 'Reco'
+code_to_test = os.path.join(base_path, 'Analysis', 'plotVariables.py --isTest --year 2016 --selection AN2017014 --region WZCR --includeData')
+sublist = 'test'
+year = '2016'
+skim = 'Old'
 
 from HNL.Samples.sampleManager import SampleManager
-sample_manager = SampleManager(year, skim, sublist+'_'+year)
+sample_manager = SampleManager(year, skim, sublist)
+# sample_manager = SampleManager(year, skim, sublist+'_'+year)
 
 out_file = open('data/timeMeasurements.txt', 'w')
 out_file.write('SAMPLE \t \t #subjobs \t #events in subjob 0 \t tot events \t time for 500 events \t extrapolated time \n' )
