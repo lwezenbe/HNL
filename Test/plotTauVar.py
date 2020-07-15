@@ -124,7 +124,7 @@ if not args.makePlots:
         #
         from HNL.Tools.helpers import progress, makeDirIfNeeded
         from HNL.ObjectSelection.tauSelector import isGoodGenTau
-        from HNL.EventSelection.eventSelection import select3GenLeptons
+        from HNL.EventSelection.eventSelectionTools import select3GenLeptons
         ec = EventCategory(chain)
         for entry in event_range:
             

@@ -194,7 +194,7 @@ else:
 # Loop over all events
 #
 from HNL.Tools.helpers import progress
-from HNL.EventSelection.eventSelection import select3Leptons
+from HNL.EventSelection.eventSelectionTools import select3Leptons
 from HNL.ObjectSelection.electronSelector import isTightElectron
 from HNL.ObjectSelection.muonSelector import isTightMuon
 for entry in event_range:

@@ -116,7 +116,7 @@ if not args.makePlots:
         from HNL.ObjectSelection.muonSelector import isTightMuon
         from HNL.ObjectSelection.tauSelector import isGeneralTau
         from HNL.ObjectSelection.leptonSelector import isLooseLightLepton
-        from HNL.EventSelection.eventSelection import select3GenLeptons
+        from HNL.EventSelection.eventSelectionTools import select3GenLeptons
         ec = EventCategory(chain)
         for entry in event_range:
             

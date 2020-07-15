@@ -125,7 +125,7 @@ from HNL.Tools.helpers import progress
 from HNL.ObjectSelection.electronSelector import isBaseElectron
 from HNL.ObjectSelection.muonSelector import isBaseMuon
 from HNL.ObjectSelection.leptonSelector import isTightLightLepton
-from HNL.EventSelection.eventSelection import select3GenLeptons
+from HNL.EventSelection.eventSelectionTools import select3GenLeptons
 from HNL.Tools.helpers import deltaR
 
 def matchGenToReco(chain, l):

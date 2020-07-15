@@ -7,7 +7,7 @@
 # Is also used to check how many events on a generator level pass certain pt cuts
 #
 
-#TODO: THis code still uses the old categorization, this needs to be updated as well here
+#TODO: This code still uses the old categorization, this needs to be updated as well here
 
 import numpy as np
 
@@ -176,7 +176,7 @@ cutter = Cutter(chain = chain)
 # Loop over all events
 #
 from HNL.Tools.helpers import progress
-from HNL.EventSelection.eventSelection import select3Leptons, select3GenLeptons, lowMassCuts, highMassCuts, passedCustomPtCuts, passBaseCuts
+from HNL.EventSelection.eventSelectionTools import select3Leptons, select3GenLeptons, lowMassCuts, highMassCuts, passedCustomPtCuts, passBaseCuts
 from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
 from HNL.ObjectSelection.leptonSelector import isFOLepton
 

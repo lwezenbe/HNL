@@ -62,7 +62,7 @@ chain.year = int(args.year)
 #
 from HNL.Tools.helpers import progress, makeDirIfNeeded
 from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
-from HNL.EventSelection.eventSelection import select3Leptons, select3GenLeptons, calculateKinematicVariables
+from HNL.EventSelection.eventSelectionTools import select3Leptons, select3GenLeptons, calculateKinematicVariables
 from HNL.EventSelection.eventCategorization import EventCategory
 from HNL.ObjectSelection.tauSelector import isLooseTau, isTightTau
 from HNL.ObjectSelection.leptonSelector import isTightLepton

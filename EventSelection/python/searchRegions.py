@@ -103,29 +103,29 @@ def getHighMassRegion(chain):
             if chain.minMos < 100:
                 if chain.mtOther < 100:
                     return 4
-                if chain.mtOther < 200:
+                elif chain.mtOther < 200:
                     return 5
-                if chain.mtOther < 300:
+                elif chain.mtOther < 300:
                     return 6
-                if chain.mtOther < 400:
+                elif chain.mtOther < 400:
                     return 7
                 else:
                     return 8
             if chain.minMos < 200:
                 if chain.mtOther < 100:
                     return 9
-                if chain.mtOther < 200:
+                elif chain.mtOther < 200:
                     return 10
-                if chain.mtOther < 300:
+                elif chain.mtOther < 300:
                     return 11
                 else:
                     return 12
             else:
                 if chain.mtOther < 100:
                     return 13
-                if chain.mtOther < 200:
+                elif chain.mtOther < 200:
                     return 14
-                if chain.mtOther < 300:
+                elif chain.mtOther < 300:
                     return 15
                 else:
                     return 16
@@ -184,7 +184,7 @@ def plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, region_name, 
             p = Plot(group_signal_hist, tex_names, bkgr_hist = group_bkgr_hist, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text, color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = 'errorsOnly')
         else:
             p = Plot(group_signal_hist, tex_names, bkgr_hist = group_bkgr_hist, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text, syst_hist = 0.1, draw_ratio = 'errorsOnly')
-        p.drawHist(output_dir = out_path, min_cutoff = 0.1)
+        p.drawHist(output_dir = out_path, min_cutoff = 1.)
 
         del p, group_signal_hist, group_bkgr_hist
 
@@ -231,10 +231,24 @@ def plotHighMassRegions(signal_hist, bkgr_hist, tex_names, out_path, extra_text 
         p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text, color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = 'errorsOnly')
     else:
         p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text, syst_hist = 0.1, draw_ratio = 'errorsOnly')
-    p.drawHist(output_dir = out_path, min_cutoff = 0.1)
+    p.drawHist(output_dir = out_path, min_cutoff = 1.)
                     
 
 
 
+
+class RegionCollection:
+
+    def __init__(self, list_of_names):
+        self.list_of_names = list_of_names
+        self.list_of_regions = {}
+        for name in self.list_of_names:
+            self.list_of_regions[name] = SearchRegionManager(name)
+
+    def getRegion(name):
+        return self.list_of_regions[name]
+
+    def getRegionNames():
+        return self.list_of_names
 
 

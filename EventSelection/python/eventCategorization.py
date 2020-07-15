@@ -87,7 +87,6 @@ def filterSuperCategory(super_category_name, category):
     return False
 
 
-
 #
 # Signal truth categories are experimental
 #

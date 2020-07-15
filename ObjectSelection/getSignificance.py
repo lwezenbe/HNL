@@ -110,7 +110,7 @@ if args.processExistingFiles is None:
     from HNL.Weights.lumiweight import LumiWeight
     lw = LumiWeight(sample, sample_manager)
 
-    from HNL.EventSelection.eventSelection import bVeto
+    from HNL.EventSelection.eventSelectionTools import bVeto
     def passCuts(chain, indices):
         if len(indices) != 3:   return False
         if chain._lCharge[indices[0]] == chain._lCharge[indices[1]] and chain._lCharge[indices[2]] == chain._lCharge[indices[1]]: return False

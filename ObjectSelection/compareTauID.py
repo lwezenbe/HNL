@@ -19,7 +19,7 @@ import numpy as np
 from HNL.Tools.helpers import progress
 from HNL.ObjectSelection.tauSelector import isGeneralTau
 from HNL.ObjectSelection.tauSelector import isGoodGenTau, matchGenToReco
-from HNL.EventSelection.eventSelection import select3GenLeptons
+from HNL.EventSelection.eventSelectionTools import select3GenLeptons
 
 #
 # Some basic parameters

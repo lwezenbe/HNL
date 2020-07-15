@@ -158,7 +158,7 @@ if not args.makePlots:
     # Loop over all events
     #
     from HNL.Tools.helpers import progress
-    from HNL.EventSelection.eventSelection import select3Leptons, select3GenLeptons, passBaseCutsAN2017014, passBaseCuts, lowMassCuts, highMassCuts, calculateKinematicVariables, containsOSSF
+    from HNL.EventSelection.eventSelectionTools import select3Leptons, select3GenLeptons, passBaseCutsAN2017014, passBaseCuts, lowMassCuts, highMassCuts, calculateKinematicVariables, containsOSSF
     from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
     from HNL.Triggers.triggerSelection import applyCustomTriggers, listOfTriggersAN2017014
     from HNL.ObjectSelection.leptonSelector import isFOLepton, isTightLepton
