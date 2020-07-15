@@ -26,13 +26,20 @@ argParser.add_argument('--runOnCream',   action='store_true',   default=False,  
 argParser.add_argument('--genLevel',   action='store_true',     default=False,  help='Use gen level variables')
 argParser.add_argument('--signalOnly',   action='store_true',   default=False,  help='Run or plot a only the signal')
 argParser.add_argument('--bkgrOnly',   action='store_true',     default=False,  help='Run or plot a only the background')
-argParser.add_argument('--massRegion', action='store',          default = None, choices =['low', 'high'], help='Run with low mass region cuts or high mass region cuts')
 argParser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
 argParser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l', ''])
 argParser.add_argument('--coupling', action='store', default=0.01, type=float,  help='How large is the coupling?')
+argParser.add_argument('--selection', action='store', default='cut-based', type=str,  help='What type of analysis do you want to run?', choices=['cut-based', 'AN2017014', 'MVA'])
+argParser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', choices=['baseline', 'lowMassSR', 'highMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
+argParser.add_argument('--groupSamples',   action='store_true', default=False,  help='plot Search Regions')
+argParser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data')
+
 #argParser.add_argument('--triggerTest', type=str, default=None,  help='Some settings to perform pt cuts for triggers')
 args = argParser.parse_args()
 
+
+if args.includeData and args.region in ['baseline', 'highMassSR', 'lowMassSR']:
+    raise RuntimeError('These options combined would mean unblinding. This is not allowed.')
 
 #
 # General imports
@@ -45,11 +52,8 @@ from HNL.Tools.mergeFiles import merge
 from HNL.Tools.helpers import getObjFromFile, progress, makeDirIfNeeded
 from HNL.Samples.sample import createSampleList
 from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
-from HNL.EventSelection.eventSelection import select3Leptons, select3GenLeptons, calculateKinematicVariables
-from HNL.EventSelection.eventSelection import passBaseCutsNoBVeto, lowMassCuts, highMassCuts, bVeto
 from HNL.EventSelection.eventCategorization import EventCategory
 from HNL.EventSelection.cutter import Cutter, printSelections
-
 
 #
 # Some constants to make referring to signal leptons more readable
@@ -57,6 +61,9 @@ from HNL.EventSelection.cutter import Cutter, printSelections
 l1 = 0
 l2 = 1
 l3 = 2
+l4 = 4
+
+nl = 3 if args.region != 'ZZCR' else 4
 
 if args.isTest:
     if args.year is None: args.year = '2016'
@@ -65,87 +72,57 @@ if args.isTest:
 #
 # Create histograms
 #
-if args.genLevel:
-    var = {'minMos':        (lambda c : c.minMos,   np.arange(0., 120., 12.),         ('min(M_{OS}) [GeV]', 'Events')),
-            'm3l':          (lambda c : c.M3l,      np.arange(0., 240., 5.),         ('M_{3l} [GeV]', 'Events')),
-            'ml12':          (lambda c : c.Ml12,      np.arange(0., 240., 5.),         ('M_{l1l2} [GeV]', 'Events')),
-            'ml23':          (lambda c : c.Ml23,      np.arange(0., 240., 5.),         ('M_{l2l3} [GeV]', 'Events')),
-            'ml13':          (lambda c : c.Ml13,      np.arange(0., 240., 5.),         ('M_{l1l3} [GeV]', 'Events')),
-            'met':          (lambda c : c._met,     np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
-            'mtOther':      (lambda c : c.mtOther,  np.arange(0., 300., 5.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
-            'l1pt':      (lambda c : c.l_pt[l1],       np.arange(0., 300., 5.),       ('p_{T} (l1) [GeV]', 'Events')),
-            'l2pt':      (lambda c : c.l_pt[l2],       np.arange(0., 300., 5.),       ('p_{T} (l2) [GeV]', 'Events')),
-            'l3pt':      (lambda c : c.l_pt[l3],       np.arange(0., 300., 5.),       ('p_{T} (l3) [GeV]', 'Events'))
-            }
-else:
-    var = {
-            'minMos':        (lambda c : c.minMos,   np.arange(0., 240., 12.),         ('min(M_{OS}) [GeV]', 'Events')),
-            'maxMos':        (lambda c : c.maxMos,   np.arange(0., 240., 12.),         ('max(M_{OS}) [GeV]', 'Events')),
-            'minMss':        (lambda c : c.minMss,   np.arange(0., 240., 12.),         ('min(M_{SS}) [GeV]', 'Events')),
-            'maxMss':        (lambda c : c.maxMss,   np.arange(0., 240., 12.),         ('max(M_{SS}) [GeV]', 'Events')),
-            'minMossf':        (lambda c : c.minMossf,   np.arange(0., 240., 12.),         ('min(M_{OSSF}) [GeV]', 'Events')),
-            'maxMossf':        (lambda c : c.maxMossf,   np.arange(0., 240., 12.),         ('max(M_{OSSF}) [GeV]', 'Events')),
-            'minMsssf':        (lambda c : c.minMsssf,   np.arange(0., 240., 12.),         ('min(M_{SSSF}) [GeV]', 'Events')),
-            'maxMsssf':        (lambda c : c.maxMsssf,   np.arange(0., 240., 12.),         ('max(M_{SSSF}) [GeV]', 'Events')),
-            'm3l':          (lambda c : c.M3l,      np.arange(0., 240., 15.),         ('M_{3l} [GeV]', 'Events')),
-            'ml12':          (lambda c : c.Ml12,      np.arange(0., 240., 5.),         ('M_{l1l2} [GeV]', 'Events')),
-            'ml23':          (lambda c : c.Ml23,      np.arange(0., 240., 5.),         ('M_{l2l3} [GeV]', 'Events')),
-            'ml13':          (lambda c : c.Ml13,      np.arange(0., 240., 5.),         ('M_{l1l3} [GeV]', 'Events')),
-            'met':          (lambda c : c._met,     np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
-            'mtOther':      (lambda c : c.mtOther,  np.arange(0., 300., 15.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
-            'l1pt':      (lambda c : c.l_pt[l1],       np.arange(0., 300., 15.),       ('p_{T} (l1) [GeV]', 'Events')),
-            'l2pt':      (lambda c : c.l_pt[l2],       np.arange(0., 300., 15.),       ('p_{T} (l2) [GeV]', 'Events')),
-            'l3pt':      (lambda c : c.l_pt[l3],       np.arange(0., 300., 15.),       ('p_{T} (l3) [GeV]', 'Events')),
-            'l1eta':      (lambda c : c.l_eta[l1],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l1)', 'Events')),
-            'l2eta':      (lambda c : c.l_eta[l2],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l2)', 'Events')),
-            'l3eta':      (lambda c : c.l_eta[l3],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l3)', 'Events')),
-            'NJet':      (lambda c : c.njets,       np.arange(0., 12., 1.),       ('#Jets', 'Events')),
-            'NbJet':      (lambda c : c.nbjets,       np.arange(0., 12., 1.),       ('#B Jets', 'Events')),
-            'drl1l2':      (lambda c : c.dr_l1l2,       np.arange(0., 5.5, .25),       ('#Delta R(l1, l2)', 'Events')),
-            'drl1l3':      (lambda c : c.dr_l1l3,       np.arange(0., 5.5, .25),       ('#Delta R(l1, l3)', 'Events')),
-            'drl2l3':      (lambda c : c.dr_l2l3,       np.arange(0., 5.5, .25),       ('#Delta R(l2, l3)', 'Events')),
-            'drminOS':      (lambda c : c.dr_minOS,       np.arange(0., 5.5, .25),       ('#Delta R(min(OS))', 'Events')),
-            'drmaxOS':      (lambda c : c.dr_maxOS,       np.arange(0., 5.5, .25),       ('#Delta R(max(OS))', 'Events')),
-            'drminSS':      (lambda c : c.dr_minSS,       np.arange(0., 5.5, .25),       ('#Delta R(min(SS))', 'Events')),
-            'drmaxSS':      (lambda c : c.dr_maxSS,       np.arange(0., 5.5, .25),       ('#Delta R(max(SS))', 'Events')),
-            'drminOSSF':      (lambda c : c.dr_minOSSF,       np.arange(0., 5.5, .25),       ('#Delta R(min(OSSF))', 'Events')),
-            'drmaxOSSF':      (lambda c : c.dr_maxOSSF,       np.arange(0., 5.5, .25),       ('#Delta R(max(OSSF))', 'Events')),
-            'drminSSSF':      (lambda c : c.dr_minSSSF,       np.arange(0., 5.5, .25),       ('#Delta R(min(SSSF))', 'Events')),
-            'drmaxSSSF':      (lambda c : c.dr_maxSSSF,       np.arange(0., 5.5, .25),       ('#Delta R(max(SSSF))', 'Events')),
-            'mindrl1':      (lambda c : c.mindr_l1,       np.arange(0., 5.5, .25),       ('min(#Delta R(l1ln))', 'Events')),
-            'maxdrl1':      (lambda c : c.maxdr_l1,       np.arange(0., 5.5, .25),       ('max(#Delta R(l1ln))', 'Events')),
-            'mindrl2':      (lambda c : c.mindr_l2,       np.arange(0., 5.5, .25),       ('min(#Delta R(l2ln))', 'Events')),
-            'maxdrl2':      (lambda c : c.maxdr_l2,       np.arange(0., 5.5, .25),       ('max(#Delta R(l2ln))', 'Events')),
-            'mindrl3':      (lambda c : c.mindr_l3,       np.arange(0., 5.5, .25),       ('min(#Delta R(l3ln))', 'Events')),
-            'maxdrl3':      (lambda c : c.maxdr_l3,       np.arange(0., 5.5, .25),       ('max(#Delta R(l3ln))', 'Events'))
-        }
+import HNL.Analysis.analysisTypes as at
+var = at.returnVariables(nl, not args.genLevel)
+
 
 import HNL.EventSelection.eventCategorization as cat
-categories = [c for c in cat.CATEGORIES]
+def listOfCategories(region):
+    if region in ['baseline', 'highMassSR', 'lowMassSR']:
+        return cat.CATEGORIES
+    else:
+        return [max(cat.CATEGORIES)]
+
+categories = listOfCategories(args.region)
 reco_or_gen_str = 'reco' if not args.genLevel else 'gen'
-mass_str = 'noMassCuts' if args.massRegion is None else args.massRegion+'MassCuts'
 
 if not args.isTest:
-    output_name = lambda st : os.path.join(os.getcwd(), 'data', 'plotVariables', args.year, reco_or_gen_str, mass_str, st)
+    output_name = lambda st : os.path.join(os.getcwd(), 'data', 'plotVariables', args.year, args.selection, reco_or_gen_str, args.region, st)
 else:
-    output_name = lambda st : os.path.join(os.getcwd(), 'data', 'testArea', 'plotVariables', args.year, reco_or_gen_str, mass_str, st)
+    output_name = lambda st : os.path.join(os.getcwd(), 'data', 'testArea', 'plotVariables', args.year, args.selection, reco_or_gen_str, args.region, st)
 
 list_of_hist = {}
-for c in categories:
-    list_of_hist[c] = {}
-    for v in var:
-        list_of_hist[c][v] = {'signal':{}, 'bkgr':{}}
+for prompt_str in ['prompt', 'nonprompt', 'total']:
+    list_of_hist[prompt_str] = {}
+    for c in categories:
+        list_of_hist[prompt_str][c] = {}
+        for v in var:
+            list_of_hist[prompt_str][c][v] = {'signal':{}, 'bkgr':{}}
+            if args.includeData: list_of_hist[prompt_str][c][v]['data'] = {}
+
+#
+# Load in the sample list 
+#
+from HNL.Samples.sampleManager import SampleManager
+if args.genLevel and args.selection == 'AN2017014':
+    raise RuntimeError('gen level is currently not implemented on AN2017014 analysis type, will use reco skimmed samples')
+
+if args.genLevel:
+    skim_str = 'Gen'
+elif args.selection != 'AN2017014':
+    skim_str = 'Reco'
+else:
+    skim_str = 'Old'
+# sample_manager = SampleManager(args.year, skim_str, 'fulllist_'+str(args.year))
+sample_manager = SampleManager(args.year, skim_str, 'yields_'+str(args.year))
+
+from HNL.Triggers.triggerSelection import applyCustomTriggers, listOfTriggersAN2017014
+
 
 #
 # Loop over samples and events
 #
 if not args.makePlots:
-    #
-    # Load in the sample list 
-    #
-    from HNL.Samples.sampleManager import SampleManager
-    gen_name = 'Gen' if args.genLevel else 'Reco'
-    sample_manager = SampleManager(args.year, gen_name, 'fulllist_'+str(args.year))
 
     #
     # Submit subjobs
@@ -154,6 +131,7 @@ if not args.makePlots:
         from HNL.Tools.jobSubmitter import submitJobs
         jobs = []
         for sample_name in sample_manager.sample_names:
+            if not args.includeData and sample_name == 'Data': continue
             sample = sample_manager.getSample(sample_name)
             if args.signalOnly and not 'HNL' in sample.name: continue
             if args.bkgrOnly and 'HNL' in sample.name: continue
@@ -163,6 +141,21 @@ if not args.makePlots:
         submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'plotVar')
         exit(0)
 
+    #prepare object  and event selection
+    if args.selection == 'AN2017014':
+        object_selection_param = {
+            'no_tau' : True,
+            'light_algo' : 'cutbased',
+            'workingpoint' : 'tight'
+        }
+    else:
+        object_selection_param = {
+            'no_tau' : False,
+            'light_algo' : 'leptonMVAtop',
+            'workingpoint' : 'medium'
+        }
+
+    from HNL.EventSelection.eventSelector import EventSelector
 
     #Start a loop over samples
     sample_names = []
@@ -171,6 +164,7 @@ if not args.makePlots:
        
         if args.runOnCream and sample.name != args.sample: continue
         if args.sample and sample.name != args.sample: continue
+        if not args.includeData and sample.name == 'Data': continue
 
         #
         # Load in sample and chain
@@ -182,7 +176,10 @@ if not args.makePlots:
         # Check if sample is a signal or background sample
         #
         is_signal = 'HNL' in sample.name
-        signal_str = 'signal' if is_signal else 'bkgr'
+        if args.includeData and sample.name == 'Data':
+            signal_str = 'data'
+        else:
+            signal_str = 'signal' if is_signal else 'bkgr'
 
         if args.signalOnly and not is_signal:   continue
         if args.bkgrOnly and is_signal:         continue
@@ -190,18 +187,19 @@ if not args.makePlots:
         #
         # Create histogram for all categories and variables
         #
-        for c in categories:
-            for v in var:
-                list_of_hist[c][v][signal_str][sample.name] = Histogram(str(c)+'-'+v+'-'+sample.output, var[v][0], var[v][2], var[v][1])
+        for prompt_str in ['prompt', 'nonprompt', 'total']:
+            for c in categories:
+                for v in var:
+                    list_of_hist[prompt_str][c][v][signal_str][sample.name] = Histogram(str(c)+'-'+v+'-'+sample.output+'-'+prompt_str, var[v][0], var[v][2], var[v][1])
         
         #
         # Set event range
         #
         if args.isTest:
-            if len(sample.getEventRange(0)) < 500:
+            if len(sample.getEventRange(0)) < 2000:
                 event_range = sample.getEventRange(0)
             else:
-                event_range = xrange(500)
+                event_range = xrange(2000)
         elif args.runOnCream:
             event_range = sample.getEventRange(args.subJob)
         else:
@@ -227,6 +225,7 @@ if not args.makePlots:
         # Loop over all events
         #
         ec = EventCategory(chain)
+        es = EventSelector(args.region, args.selection, object_selection_param, not args.genLevel, ec)
         for entry in event_range:
             
             chain.GetEntry(entry)
@@ -234,47 +233,31 @@ if not args.makePlots:
  
             cutter.cut(True, 'Total')
 
-            if args.genLevel and args.signalOnly:
-                slm = SignalLeptonMatcher(chain)
-                if not slm.saveNewOrder(): continue
-                calculateKinematicVariables(chain, chain, is_reco_level=False)
+            #
+            #Triggers
+            #
+            if args.selection == 'AN2017014':
+                if not cutter.cut(applyCustomTriggers(listOfTriggersAN2017014(chain)), 'pass_triggers'): continue
            
-            if not args.genLevel:
-                if not cutter.cut(select3Leptons(chain, chain), 'select_3_leptons'):    continue 
-            else:
-                if not cutter.cut(select3GenLeptons(chain, chain), 'select_3_genleptons'):    continue 
-            calculateKinematicVariables(chain, chain, is_reco_level=not args.genLevel)
-            # print var['NbJet'][0](chain)
-            # print 'final', chain.nbjets, var['NbJet'][0](chain)
-            chain.event_category = ec.returnCategory()
-
-            if chain.event_category == cat.CATEGORY_FROM_NAME['Other']: continue
-
             #
             # Event selection
             #
-            if not passBaseCutsNoBVeto(chain, chain, cutter): continue
-            if args.massRegion == 'low' and not lowMassCuts(chain, chain, cutter): continue
-            if args.massRegion == 'high' and not highMassCuts(chain, chain, cutter): continue
+            if not es.passedFilter(chain, chain, cutter): continue
+            nprompt = 0
+            if sample.name != 'Data':
+                for index in chain.l_indices:
+                    if chain._lIsPrompt[index]: nprompt += 1
             
-            #
-            # Fill b veto
-            # Done separately here because otherwise basic cuts remove all b's
-            #
-            if chain.event_category < len(cat.CATEGORY_NAMES)+1: 
-                list_of_hist[chain.event_category]['NbJet'][signal_str][sample.name].fill(chain, chain.lumiweight)  
-            list_of_hist[cat.CATEGORY_FROM_NAME['Other']]['NbJet'][signal_str][sample.name].fill(chain, chain.lumiweight)
-
-            if not cutter.cut(not bVeto(chain, 'Deep'), 'b-veto'):              continue
+            prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
 
             #
             # Fill the histograms
             #
+            
             for v in var.keys():
-                if v == 'NbJet': continue
-                if chain.event_category < len(cat.CATEGORY_NAMES)+1: 
-                    list_of_hist[chain.event_category][v][signal_str][sample.name].fill(chain, chain.lumiweight)  
-                list_of_hist[cat.CATEGORY_FROM_NAME['Other']][v][signal_str][sample.name].fill(chain, chain.lumiweight)
+                # if v == 'NbJet': continue
+                list_of_hist[prompt_str][chain.category][v][signal_str][sample.name].fill(chain, chain.lumiweight)  
+                list_of_hist['total'][chain.category][v][signal_str][sample.name].fill(chain, chain.lumiweight)  
              
         #
         # Save histograms
@@ -296,7 +279,8 @@ if not args.makePlots:
             output_file.mkdir(v)
             output_file.cd(v)
             for c in categories:
-                list_of_hist[c][v][signal_str][sample.name].getHist().Write()
+                for prompt_str in ['prompt', 'nonprompt', 'total']:
+                    list_of_hist[prompt_str][c][v][signal_str][sample.name].getHist().Write()
         
         output_file.Close()
 
@@ -306,7 +290,6 @@ if not args.makePlots:
 else:
     import glob
 
-    print 'glob'
     # Collect signal file locations
     if args.genLevel and args.signalOnly:
         signal_list = glob.glob(output_name('signal')+'/signalOrdering/*'+args.flavor+'-*')
@@ -319,20 +302,40 @@ else:
     else:
         signal_list = []
 
-    print 'bkgr location'
     # Collect background file locations
     if not args.signalOnly:
         bkgr_list = glob.glob(output_name('bkgr')+'/*')
     else:
         bkgr_list = []
 
+    # data
+    if args.includeData:
+        data_list = glob.glob(output_name('data')+'/Data')
+    else:
+        data_list = []
+
     print 'check merge'
     # Merge files if necessary
-    mixed_list = signal_list + bkgr_list
+    mixed_list = signal_list + bkgr_list + data_list
     for n in mixed_list:
         merge(n)
 
-    # Load in the histograms from the files
+
+    if args.groupSamples:
+        background_collection = sample_manager.sample_groups.keys()
+    else:
+        background_collection = [b.split('/')[-1] for b in bkgr_list]
+
+
+    #Reset list_of_hist
+    list_of_hist = {}
+    for c in categories:
+        list_of_hist[c] = {}
+        for v in var:
+            list_of_hist[c][v] = {'signal':{}, 'bkgr':{}}
+
+
+    # Load in the signal histograms from the files
     for c in categories: 
         print 'loading', c
         for v in var.keys():
@@ -341,15 +344,62 @@ else:
                     sample_name = s.split('/')[-1]
                     sample_mass = int(sample_name.split('-m')[-1])
                     if args.masses is not None and sample_mass not in args.masses: continue
-                    #list_of_hist[c][v]['signal'][sample_name] = Histogram(getObjFromFile(s+'/variables.root', v+'/'+cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v+'-'+sample_name)) 
-                    list_of_hist[c][v]['signal'][sample_name] = Histogram(getObjFromFile(s+'/variables.root', v+'/'+str(c)+'-'+v+'-'+sample_name)) 
+                    list_of_hist[c][v]['signal'][sample_name] = Histogram(getObjFromFile(s+'/variables.root', v+'/'+str(c)+'-'+v+'-'+sample_name+'-total')) 
                     # list_of_hist[c][v]['signal'][sample_name].hist.Scale(1000.)
+
+    for c in categories: 
+        print 'loading', c
+        for v in var.keys():   
+            if not args.signalOnly:
+                for b in background_collection:
+                    list_of_hist[c][v]['bkgr'][b] = Histogram(b, var[v][0], var[v][2], var[v][1])
+
+    for c in categories: 
+        print 'loading', c
+        for v in var.keys():   
             if not args.signalOnly:
                 for b in bkgr_list:
-                    sample_name = b.split('/')[-1]
-                    if sample_name == 'XG': continue
-                    #list_of_hist[c][v]['bkgr'][sample_name] = Histogram(getObjFromFile(b+'/variables.root', v+'/'+cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-'+v+'-'+sample_name)) 
-                    list_of_hist[c][v]['bkgr'][sample_name] = Histogram(getObjFromFile(b+'/variables.root', v+'/'+str(c)+'-'+v+'-'+sample_name)) 
+                    bkgr = b.split('/')[-1]
+                    tmp_hist_total = Histogram(getObjFromFile(b+'/variables.root', v+'/'+str(c)+'-'+v+'-'+bkgr+'-total'))
+                    tmp_hist_prompt = Histogram(getObjFromFile(b+'/variables.root', v+'/'+str(c)+'-'+v+'-'+bkgr+'-prompt'))
+                    tmp_hist_nonprompt = Histogram(getObjFromFile(b+'/variables.root', v+'/'+str(c)+'-'+v+'-'+bkgr+'-nonprompt'))
+
+                    if args.groupSamples:
+                        sg = [sk for sk in sample_manager.sample_groups.keys() if bkgr in sample_manager.sample_groups[sk]]
+                        if bkgr == 'DY':
+                            list_of_hist[c][v]['bkgr']['XG'].add(tmp_hist_prompt)
+                            list_of_hist[c][v]['bkgr']['non-prompt'].add(tmp_hist_nonprompt)
+                        elif sg == 'non-prompt':
+                            list_of_hist[c][v]['bkgr'][sg[0]].add(tmp_hist_nonprompt)
+                        else:
+                            list_of_hist[c][v]['bkgr'][sg[0]].add(tmp_hist_prompt)
+                            list_of_hist[c][v]['bkgr']['non-prompt'].add(tmp_hist_nonprompt)
+                    else:
+                        list_of_hist[c][v]['bkgr'][bkgr].add(tmp_hist_total)
+
+    if args.includeData:
+        for c in categories:
+            for v in var:
+                list_of_hist[c][v]['data'] = Histogram(getObjFromFile(data_list[0]+'/variables.root', v+'/'+str(c)+'-'+v+'-'+'Data-total'))
+
+
+
+    if args.region in ['baseline', 'lowMassSR', 'highMassSR']:
+        for ac in cat.ANALYSIS_CATEGORIES.keys():
+            list_of_hist[ac] = {}
+            for v in var.keys():
+                list_of_hist[ac][v] = {}
+                if not args.bkgrOnly:
+                    for s in signal_list:
+                        sample_name = s.split('/')[-1]
+                        sample_mass = int(sample_name.split('-m')[-1])
+                        if args.masses is not None and sample_mass not in args.masses: continue
+                        list_of_hist[ac][v]['signal'][sample_name] = list_of_hist[cat.ANALYSIS_CATEGORIES[ac][0]][v]['bkgr'][sample_name].Clone(ac)
+                        if len(cat.ANALYSIS_CATEGORIES[ac]) > 1:
+                            for c in cat.ANALYSIS_CATEGORIES[ac][1:]:
+                                list_of_hist[ac][v]['signal'][sample_name].add(list_of_hist[cat.ANALYSIS_CATEGORIES[ac][c]][v]['bkgr'][sample_name])
+
+
 
 #
 #       Plot!
@@ -368,7 +418,7 @@ from HNL.Tools.efficiency import Efficiency
 #
 # Set output directory, taking into account the different options
 #
-output_dir = os.path.join(os.getcwd(), 'data', 'Results', 'plotVariables', args.year, reco_or_gen_str)
+output_dir = os.path.join(os.getcwd(), 'data', 'Results', 'plotVariables', args.year, args.selection, reco_or_gen_str, args.region)
 
 
 if args.signalOnly:
@@ -378,11 +428,10 @@ elif args.bkgrOnly:
 else:
     output_dir = os.path.join(output_dir, 'signalAndBackground')
 
+
+
 if args.flavor:         output_dir = os.path.join(output_dir, args.flavor+'_coupling')
 else:                   output_dir = os.path.join(output_dir, 'all_coupling')
-
-if args.massRegion is not None:     output_dir = os.path.join(output_dir, args.massRegion+'MassCuts')
-else:                               output_dir = os.path.join(output_dir, 'noMassCuts')
 
 if args.masses is not None:         output_dir = os.path.join(output_dir, 'customMasses', '-'.join([str(m) for m  in args.masses]))
 else:         output_dir = os.path.join(output_dir, 'allMasses')
@@ -392,16 +441,17 @@ output_dir = makePathTimeStamped(output_dir)
 # Create plots for each category
 #
 from HNL.EventSelection.eventCategorization import CATEGORY_NAMES, CATEGORY_FROM_NAME
-for c in categories:
-    print CATEGORY_NAMES[c]
+print list_of_hist.keys()
+for c in list_of_hist.keys():
+    print c
+    c_name = CATEGORY_NAMES[c] if c not in cat.ANALYSIS_CATEGORIES.keys() else c
 
-    printSelections(mixed_list[0]+'/variables.root', os.path.join(output_dir, CATEGORY_NAMES[c], 'Selections.txt'))
+    printSelections(mixed_list[0]+'/variables.root', os.path.join(output_dir, c_name, 'Selections.txt'))
 
     extra_text = [extraTextFormat(cat.returnTexName(c), xpos = 0.2, ypos = 0.82, textsize = None, align = 12)]  #Text to display event type in plot
-    extra_text.append(extraTextFormat('V_{'+args.flavor+'N} = '+str(args.coupling)))  #Text to display event type in plot
-    # extra_text.append(extraTextFormat('Signal scaled by factor 100', xpos = 0.2, ypos = 0.8, textsize = 0.7))  #Text to display event type in plot
-    # extra_text.append(extraTextFormat('Signal scaled by factor 1000', textsize = 0.7))  #Text to display event type in plot
-    extra_text.append(extraTextFormat('Signal scaled to background', textsize = 0.7))  #Text to display event type in plot
+    if not args.bkgrOnly:
+        extra_text.append(extraTextFormat('V_{'+args.flavor+'N} = '+str(args.coupling)))  #Text to display event type in plot
+        extra_text.append(extraTextFormat('Signal scaled to background', textsize = 0.7))  #Text to display event type in plot
 
     # Plots that display chosen for chosen signal masses and backgrounds the distributions for the different variables
     # S and B in same canvas for each variable
@@ -421,11 +471,20 @@ for c in categories:
         else:
             signal_hist = list_of_hist[c][v]['signal'].values()
 
+        if args.includeData:
+            observed_hist = list_of_hist[c][v]['data']
+        else:
+            observed_hist = None
+
         # Create plot object (if signal and background are displayed, also show the ratio)
-        p = Plot(list_of_hist[c][v]['signal'].values(), legend_names, CATEGORY_NAMES[c]+'-'+v, bkgr_hist = bkgr_hist, y_log = False, extra_text = extra_text, draw_ratio = (not args.signalOnly and not args.bkgrOnly), year = args.year)
+        if args.groupSamples:
+            p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = False, extra_text = extra_text, draw_ratio = (not args.signalOnly and not args.bkgrOnly), year = args.year, color_palette = 'AN2017', color_palette_bkgr = 'AN2017')
+        else:
+            p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, y_log = False, extra_text = extra_text, draw_ratio = (not args.signalOnly and not args.bkgrOnly), year = args.year)
+
 
         # Draw
-        p.drawHist(output_dir = os.path.join(output_dir, CATEGORY_NAMES[c]), normalize_signal=True, draw_option='Hist', min_cutoff = 1)
+        p.drawHist(output_dir = os.path.join(output_dir, c_name), normalize_signal=True, draw_option='Hist', min_cutoff = 1)
     
     #TODO: I broke this when changing the eventCategorization, fix this again
     # # If looking at signalOnly, also makes plots that compares the three lepton pt's for every mass point
