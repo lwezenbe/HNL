@@ -82,6 +82,8 @@ def select3Leptons(chain, new_chain, no_tau=False, light_algo = None, tau_algo =
         new_chain.l_e[i] = chain._lE[ptAndIndex[i][1]]
         new_chain.l_charge[i] = chain._lCharge[ptAndIndex[i][1]]
         new_chain.l_flavor[i] = chain._lFlavor[ptAndIndex[i][1]]
+
+    if len(new_chain.l_flavor) == new_chain.l_flavor.count(2): return False
     # print "NEW"
     # print chain.l_indices          
     # print chain.l_flavor

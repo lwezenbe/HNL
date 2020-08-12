@@ -1,5 +1,7 @@
 from eventSelectionTools import *
 import HNL.EventSelection.eventCategorization as cat
+from HNL.ObjectSelection.leptonSelector import *
+from HNL.Tools.helpers import getFourVec, deltaPhi, deltaR
 
 class ZZCRfilter:
     
@@ -82,3 +84,62 @@ class ConversionCRfilter:
         chain.category = max(cat.CATEGORIES)
         return True
 
+class TauFakeEnrichedDY:
+    
+    def __init__(self, name, selection, objsel, is_reco_level=True, event_categorization = None):
+        self.name = name
+        self.selection = selection
+        self.objsel = objsel
+        self.is_reco_level = is_reco_level
+        self.ec = event_categorization
+
+    def selectCustomLeptons(self, chain, new_chain, light_algo = None, tau_algo = None, cutter = None, lightworkingpoint = 'tight'):
+
+        light_leptons = [(chain._lPt[l], l) for l in xrange(chain._nLight) if isGoodLepton(chain, l, algo = light_algo, workingpoint=lightworkingpoint)]
+        taus = [(chain._lPt[l], l) for l in xrange(chain._nLight, chain._nL) if isGoodLepton(chain, l, algo = light_algo, tau_algo=tau_algo, workingpoint='loose')]
+        chain.leptons = light_leptons + taus
+        if len(light_leptons) != 2:  return False
+        if len(taus) != 1:  return False
+        if len(chain.leptons) != 3:  return False
+
+        if chain is new_chain:
+            new_chain.l_pt = [0.0]*3
+            new_chain.l_eta = [0.0]*3
+            new_chain.l_phi = [0.0]*3
+            new_chain.l_charge = [0.0]*3
+            new_chain.l_flavor = [0.0]*3
+            new_chain.l_e = [0.0]*3
+            new_chain.l_indices = [0.0]*3
+
+        ptAndIndex = chain.leptons
+
+        for i in xrange(3):
+            chain.l_indices[i] = ptAndIndex[i][1]
+            new_chain.l_pt[i] = ptAndIndex[i][0] 
+            new_chain.l_eta[i] = chain._lEta[ptAndIndex[i][1]]
+            new_chain.l_phi[i] = chain._lPhi[ptAndIndex[i][1]]
+            new_chain.l_e[i] = chain._lE[ptAndIndex[i][1]]
+            new_chain.l_charge[i] = chain._lCharge[ptAndIndex[i][1]]
+            new_chain.l_flavor[i] = chain._lFlavor[ptAndIndex[i][1]]
+
+        return True
+
+    def initEvent(self, chain, new_chain, cutter):
+        if not cutter.cut(self.selectCustomLeptons(chain, new_chain, light_algo = self.objsel['light_algo'], cutter=cutter, lightworkingpoint = self.objsel['workingpoint']), '3 leptons'): return False
+        chain.category = self.ec.returnCategory()
+        return True
+
+    def passedFilter(self, chain, new_chain, cutter):
+        if not self.initEvent(chain, new_chain, cutter):                                                 return False
+
+        if new_chain.l_flavor[0] != new_chain.l_flavor[1]:              return False
+        if new_chain.l_charge[0] == new_chain.l_charge[1]:              return False
+
+        l1Vec = getFourVec(new_chain.l_pt[l1], new_chain.l_eta[l1], new_chain.l_phi[l1], new_chain.l_e[l1])
+        l2Vec = getFourVec(new_chain.l_pt[l2], new_chain.l_eta[l2], new_chain.l_phi[l2], new_chain.l_e[l2])
+
+        if abs(91. - (l1Vec + l2Vec).M()) > 15: return False
+        if chain._met > 50: return False
+        return True
+
+    

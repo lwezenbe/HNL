@@ -110,6 +110,9 @@ class Histogram:
         hist_clone = self.hist.Clone(out_name)
         return Histogram(hist_clone)
 
+    def divide(self, other_histogram):
+        self.hist.Divide(other_histogram.getHist())
+
     def add(self, other_histogram):
         self.hist.Add(other_histogram.getHist())
 

@@ -155,7 +155,7 @@ def isLooseTau(chain, index, algo_iso = default_id_algo):
     if chain._lEta[index] > 2.3:                return False
     if chain._tauDecayMode[index] == 5 or chain._tauDecayMode[index] == 6: return False
     if not tau_DMfinding[algo_iso](chain)[index]:   return False
-    if not tau_id_WP[(algo_iso, 'loose')](chain)[index]:   return False
+    if not tau_id_WP[(algo_iso, 'vvloose')](chain)[index]:   return False
     if not isCleanFromLightLeptons(chain, index):       return False
     if not passedElectronDiscr(chain, index, algo_iso, 'loose'): return False
     if not passedMuonDiscr(chain, index, algo_iso, 'loose'): return False

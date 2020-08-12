@@ -17,6 +17,9 @@ class EventSelector:
             self.selector = WZCRfilter(name, selection, objsel, is_reco_level=is_reco_level)
         elif self.name == 'ConversionCR':
             self.selector = ConversionCRfilter(name, selection, objsel, is_reco_level=is_reco_level, event_categorization = event_categorization)
+        elif self.name =='TauFakes':
+            self.selector = TauFakeEnrichedDY(name, selection, objsel, is_reco_level=is_reco_level, event_categorization = event_categorization)
+
 
 
 
