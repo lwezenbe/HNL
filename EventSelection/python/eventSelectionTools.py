@@ -11,10 +11,10 @@
 #
 import numpy as np
 from HNL.ObjectSelection.leptonSelector import isFOLepton
-from HNL.ObjectSelection.leptonSelector import isTightLightLepton, isTightLepton, isGoodLepton
+from HNL.ObjectSelection.leptonSelector import isGoodLepton
 from HNL.ObjectSelection.leptonSelector import isGoodGenLepton
 from HNL.ObjectSelection.jetSelector import isGoodJet, isBJet
-from HNL.Tools.helpers import getFourVec, deltaPhi, deltaR
+from HNL.Tools.helpers import getFourVec, deltaPhi
 
 
 
@@ -82,13 +82,6 @@ def select3Leptons(chain, new_chain, no_tau=False, light_algo = None, tau_algo =
         new_chain.l_e[i] = chain._lE[ptAndIndex[i][1]]
         new_chain.l_charge[i] = chain._lCharge[ptAndIndex[i][1]]
         new_chain.l_flavor[i] = chain._lFlavor[ptAndIndex[i][1]]
-
-    if len(new_chain.l_flavor) == new_chain.l_flavor.count(2): return False
-    # print "NEW"
-    # print chain.l_indices          
-    # print chain.l_flavor
-    # print chain.l_charge
-    # print [f for f in chain._lFlavor]
 
     return True  
 
@@ -178,11 +171,8 @@ def calculateGeneralVariables(chain, new_chain, is_reco_level = True):
     #calculate #jets and #bjets
     njets = 0
     nbjets = 0
-    # print 'start'
     for jet in xrange(chain._nJets):
-        if isGoodJet(chain, jet): 
-            # print 'new good jet with index : ', jet
-            # print 'Is good b jet? ', isBJet(chain, jet, 'Deep', 'loose')    
+        if isGoodJet(chain, jet):     
             njets += 1        
             if isBJet(chain, jet, 'Deep', 'loose'): nbjets += 1
 
@@ -191,7 +181,6 @@ def calculateGeneralVariables(chain, new_chain, is_reco_level = True):
         
     new_chain.hasOSSF = containsOSSF(new_chain)
 
-from HNL.Tools.helpers import printFourVec
 def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
     # print "NEW"
 
@@ -200,17 +189,8 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
     l3Vec = getFourVec(new_chain.l_pt[l3], new_chain.l_eta[l3], new_chain.l_phi[l3], new_chain.l_e[l3])
     lVec = [l1Vec, l2Vec, l3Vec]
 
-    # print "l1"
-    # printFourVec(l1Vec)
-    # print "l2"
-    # printFourVec(l2Vec)
-    # print "l3"
-    # printFourVec(l3Vec)
-    
     #M3l
     new_chain.M3l = (l1Vec + l2Vec + l3Vec).M()
-    # print "m3l", new_chain.M3l
-
 
     #All combinations of dilepton masses
     new_chain.Ml12 = (l1Vec+l2Vec).M()         
@@ -228,7 +208,7 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
     max_ossf = None
     min_sssf = None
     max_sssf = None
-    Z_ossf = None
+    z_ossf = None
 
     tmp_minos = 99999999.
     tmp_minss = 99999999.
@@ -241,15 +221,11 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
     tmp_Zossf = 0
 
 
-    for i1, l in enumerate([new_chain.l1, new_chain.l2, new_chain.l3]):
-        for i2, sl in enumerate([new_chain.l1, new_chain.l2, new_chain.l3]):
+    for i1 in xrange(3):
+        for i2 in xrange(3):
             if i2 <= i1:        continue
-            # print i1, i2
-            # print chain.l_flavor[i1], chain.l_flavor[i2]
-            # print chain.l_charge[i1], chain.l_charge[i2]
-            # print chain._lMomPdgId[l], chain._lMomPdgId[sl]
+
             tmp_mass = (lVec[i1]+lVec[i2]).M()
-            # print tmp_mass
             if new_chain.l_charge[i1] == new_chain.l_charge[i2]:
                 if tmp_mass < tmp_minss: 
                     min_ss = [i1, i2]
@@ -278,7 +254,7 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
                         min_ossf = [i1, i2]
                         tmp_minossf = tmp_mass
                     if massDiff(tmp_mass, MZ) < massDiff(tmp_Zossf, MZ):
-                        Z_ossf = [i1, i2]
+                        z_ossf = [i1, i2]
                         tmp_Zossf = tmp_mass
                     if tmp_mass > tmp_maxossf: 
                         max_ossf = [i1, i2]
@@ -297,26 +273,12 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
     chain.maxMossf = (lVec[max_ossf[0]]+lVec[max_ossf[1]]).M() if max_ossf is not None else -1
     chain.minMsssf = (lVec[min_sssf[0]]+lVec[min_sssf[1]]).M() if min_sssf is not None else -1
     chain.maxMsssf = (lVec[max_sssf[0]]+lVec[max_sssf[1]]).M() if max_sssf is not None else -1
-    chain.MZossf = (lVec[Z_ossf[0]]+lVec[Z_ossf[1]]).M() if Z_ossf is not None else -1
-
-    # print "END CHOICES"
-    # print "tmp_minos", tmp_minos, chain.minMos
-    # print 'tmp_minss', tmp_minss, chain.maxMss
-    # print 'tmp_maxos', tmp_maxos, chain.maxMos
-    # print 'tmp_maxss', tmp_maxss, chain.maxMss
-    # print 'tmp_minossf', tmp_minossf, chain.minMossf
-    # print 'tmp_minssff', tmp_minsssf, chain.minMsssf
-    # print 'tmp_maxossf', tmp_maxossf, chain.maxMossf
-    # print 'tmp_maxsssf', tmp_maxsssf, chain.maxMsssf
-    # print 'tmp_Zossf', tmp_Zossf, chain.MZossf
+    chain.MZossf = (lVec[z_ossf[0]]+lVec[z_ossf[1]]).M() if z_ossf is not None else -1
 
     #MTother
-    # print chain.l1, chain.l2, chain.l3
-    # print 'min_os_ind', min_os
     index_other = [item for item in [0, 1, 2] if item not in min_os][0] if min_os is not None else None
     new_chain.index_other = new_chain.l_indices[index_other] if index_other is not None else -1
-    # print [item for item in [new_chain.l1, new_chain.l2, new_chain.l3] if item not in min_os][0] if min_os is not None else -1
-    # print 'ind_other', index_other, new_chain.index_other
+
 
     if new_chain.index_other != -1:
         if is_reco_level:    
@@ -349,7 +311,7 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
     new_chain.mindr_l3 = min(new_chain.dr_l1l3, new_chain.dr_l2l3)
     new_chain.maxdr_l3 = max(new_chain.dr_l1l3, new_chain.dr_l2l3)
 
-def calculateFourLepVariables(chain, new_chain, is_reco_level=True):
+def calculateFourLepVariables(chain, new_chain):
     l1Vec = getFourVec(new_chain.l_pt[l1], new_chain.l_eta[l1], new_chain.l_phi[l1], new_chain.l_e[l1])
     l2Vec = getFourVec(new_chain.l_pt[l2], new_chain.l_eta[l2], new_chain.l_phi[l2], new_chain.l_e[l2])
     l3Vec = getFourVec(new_chain.l_pt[l3], new_chain.l_eta[l3], new_chain.l_phi[l3], new_chain.l_e[l3])
@@ -359,29 +321,17 @@ def calculateFourLepVariables(chain, new_chain, is_reco_level=True):
     if len(chain.l_pt) < 4:
         raise RuntimeError('Inconsistent input: No 4 leptons to use in 4 lepton calculations')
 
-    # print 'NEW'
     min_os = None
     tmp_minos = 99999999.
     for i1 in xrange(len(new_chain.l_indices)):
         for i2 in xrange(i1, len(new_chain.l_indices)):
             if i2 <= i1:        continue
-        # for i2, sl in enumerate(new_chain.l_indices[i1:]):
-            # print i1, i2
-            # print new_chain.l_pt[i1], new_chain.l_eta[i1], new_chain.l_phi[i1], new_chain.l_e[i1]
-            # print lVec[i1].P(), lVec[i1].Px(), lVec[i1].Py(), lVec[i1].Pz()
-            # print new_chain.l_pt[i2], new_chain.l_eta[i2], new_chain.l_phi[i2], new_chain.l_e[i2]
-            # print lVec[i2].P(), lVec[i2].Px(), lVec[i2].Py(), lVec[i2].Pz()
-        
-            # print new_chain.l_flavor[i1], new_chain.l_flavor[i2]
-            # print new_chain.l_charge[i1], new_chain.l_charge[i2]
-            # print tmp_minos
+
             tmp_mass = (lVec[i1]+lVec[i2]).M()
-            # print tmp_mass
             if new_chain.l_charge[i1] != new_chain.l_charge[i2] and tmp_mass < tmp_minos:
                 min_os = [i1, i2]
                 tmp_minos = tmp_mass
-            # print 'New mass', tmp_minos, min_os
-
+            
     new_chain.minMos = (lVec[min_os[0]]+lVec[min_os[1]]).M() if min_os is not None else -1
 
     new_chain.M4l = (l1Vec + l2Vec + l3Vec + l4Vec).M()
@@ -433,17 +383,6 @@ def bVeto(chain, algo, cleaned = True, selection = None):
         if isBJet(chain, jet, algo, 'loose', cleaned=cleaned, selection = selection): return True    
     return False
 
-# def passesZcuts(chain, new_chain, same_flavor=False):
-#     for fl in [0, 1]:
-#         l1Vec = getFourVec(new_chain.l_pt[fl], new_chain.l_eta[fl], new_chain.l_phi[fl], new_chain.l_e[fl])
-#         for sl in [1, 2]:
-#             if fl == sl: continue
-#             if new_chain.l_charge[fl] == new_chain.l_charge[sl]: continue
-#             if same_flavor and new_chain.l_flavor[fl] != new_chain.l_flavor[sl]: continue 
-#             l2Vec = getFourVec(new_chain.l_pt[sl], new_chain.l_eta[sl], new_chain.l_phi[sl], new_chain.l_e[sl])
-#             if abs((l1Vec + l2Vec).M() - MZ) < 15: return False
-#     return True
-
 def fourthFOVeto(chain, light_lep_selection = None, tau_selection = None, no_tau = False):
     if no_tau: collection = chain._nLight 
     else:
@@ -454,13 +393,12 @@ def fourthFOVeto(chain, light_lep_selection = None, tau_selection = None, no_tau
         if isFOLepton(chain, lepton, light_lep_selection, tau_selection): return True
     return False
 
-from HNL.EventSelection.eventCategorization import CATEGORY_FROM_NAME, CATEGORY_NAMES
+from HNL.EventSelection.eventCategorization import CATEGORY_FROM_NAME
 def passesPtCutsAN2017014(chain):
     if chain.l_pt[l1] < 15: return False
     if chain.l_pt[l2] < 10: return False
     if chain._lFlavor[chain.l3] == 1 and chain.l_pt[l3] < 5:      return False    
     if chain._lFlavor[chain.l3] == 0 and chain.l_pt[l3] < 10:      return False
-    # print "Category", chain.category, CATEGORY_NAMES[chain.category]
 
     if chain.category == CATEGORY_FROM_NAME['EEE']:
         return (chain.l_pt[l1] > 19 and chain.l_pt[l2] > 15) or chain.l_pt[l1] > 30

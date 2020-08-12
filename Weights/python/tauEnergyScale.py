@@ -15,7 +15,8 @@ class TauEnergyScale:
         self.testool = TauESTool(YEARLIB[year], algorithm)
         self.tfestool = TauESTool(YEARLIB[year])
 
-    def applyES(tlv, dm, genmatch):
+    #tlv is four vector to correct
+    def applyES(self, tlv, dm, genmatch):
         if genmatch == 1 or genmatch == 3:
             tlv *= self.tfestool.getFES(tlv.Eta(), dm, genmatch)
         else:

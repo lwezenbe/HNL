@@ -7,7 +7,8 @@
 #
 # Argument parser and logging
 #
-import os, argparse
+import os
+import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--allCombinations',  action='store_true', default=False,  help='Run code that makes long list of all arguments to be combined in tests')
 args = argParser.parse_args()
@@ -29,7 +30,7 @@ def createCommandList(input_list):
     try:
         len(input_list)
     except:
-        "Weird stuff going on in input_list of createCommandList. Are you sure the input_list is a list?"
+        print "Weird stuff going on in input_list of createCommandList. Are you sure the input_list is a list?"
     if not input_list:
         raise RuntimeError('Invalid input list for createCommandList: '+str(input_list))
     
@@ -50,15 +51,13 @@ def createCommandList(input_list):
                 argument_dict[main_arg].append('')
                 for option in split_arg[1:]:
                     argument_dict[main_arg].append(' '.join([main_arg, option]))
-        combinations = makeCombinations(argument_dict)
+        combination_list = makeCombinations(argument_dict)
 
-        return [' '.join([main_command, comb]) for comb in combinations]
+        return [' '.join([main_command, c]) for c in combination_list]
 
 #
 # Shared constant
 #
-import glob
-import os
 import time
 base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL')
 
@@ -87,7 +86,7 @@ if args.allCombinations:
         combinations = createCommandList(code)
         for comb in combinations:
             # out_file.write('RUNNING '+ comb + ' \n')
-            os.system('python '+os.path.join(base_path,comb) + ' >> '+out_name)
+            os.system('python '+os.path.join(base_path, comb) + ' >> '+out_name)
 
 else:
     print "This mode requires input in data/input/codeToTest_custom.conf. Make sure you have done that"
@@ -96,7 +95,7 @@ else:
     code_to_test = [l for l in code_to_test if l]
     for code in code_to_test:
         print '\x1b[6;30;42m' + 'RUNNING '+ code + ' \x1b[0m'
-        os.system('python '+os.path.join(base_path,code))
+        os.system('python '+os.path.join(base_path, code))
 
 
 

@@ -18,13 +18,17 @@ argParser.add_argument('--logLevel',  action='store',      default='INFO',      
 
 argParser.add_argument('--summaryFile', action='store_true', default=False,  help='Create text file that shows all selected arguments')
 argParser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
-argParser.add_argument('--selection',   action='store', default='cut-based',  help='Select the strategy to use to separate signal from background', choices=['cut-based', 'AN2017014', 'MVA'])
-argParser.add_argument('--region',   action='store', default='baseline',  help='apply the cuts of high or low mass regions, use "all" to run both simultaniously', choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZ', 'WZ', 'Conversion'])
+argParser.add_argument('--selection',   action='store', default='cut-based',
+    help='Select the strategy to use to separate signal from background', choices=['cut-based', 'AN2017014', 'MVA'])
+argParser.add_argument('--region',   action='store', default='baseline', 
+    help='apply the cuts of high or low mass regions, use "all" to run both simultaniously', choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZ', 'WZ', 'Conversion'])
 argParser.add_argument('--merge',   action='store_true', default=False,  help='merge existing subjob output')
 
 
 args = argParser.parse_args()
 
+from HNL.Tools.logger import getLogger
+log = getLogger(args.logLevel)
 
 import ROOT
 import os
@@ -163,7 +167,7 @@ else:
     from HNL.Tools.mergeFiles import merge
 
     signal_mergefiles = '/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/'+str(args.year)+'/TMVA/Signal'
-    background_mergefiles ='/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/'+str(args.year)+'/TMVA/Background'
+    background_mergefiles = '/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/'+str(args.year)+'/TMVA/Background'
     merge(signal_mergefiles)
     merge(background_mergefiles)
 

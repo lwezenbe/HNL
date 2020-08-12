@@ -124,7 +124,7 @@ def plotCutFlow(in_file_paths, out_file_path, in_file_path_names, ignore_weights
         in_file.Close()
         for j, k in enumerate(key_names):
             list_of_cut_hist.append(ROOT.TH1D('cutflow_'+k, 'cutflow_'+k, len(in_file_paths), 0, len(in_file_paths)))
-            for i, (ifp, infp) in enumerate(zip(in_file_paths, in_file_path_names)):
+            for i, ifp in enumerate(in_file_paths):
                 if ignore_weights:
                     print ifp, k
                     list_of_cut_hist[j].SetBinContent(i+1, getObjFromFile(ifp, k).GetEntries())

@@ -1,8 +1,3 @@
-from HNL.Stat.combineTools import runCombineCommand, extractScaledLimitsPromptHNL, extractRawLimits, makeGraphs
-from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped, getObjFromFile
-import ROOT
-import numpy as np
-
 #
 # Argument parser and logging
 #
@@ -19,6 +14,8 @@ args = argParser.parse_args()
 
 datacards_base = os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/dataCards/'+args.year+'/'+args.flavor)
 import glob
+from HNL.Stat.combineTools import runCombineCommand, extractScaledLimitsPromptHNL, makeGraphs
+from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped, getObjFromFile
 all_signal = glob.glob(datacards_base+'/*')
 
 def getDataCard(mass):
@@ -51,6 +48,8 @@ def runAsymptoticLimit(mass):
 
 def runHybridNew(mass):
     datacard_massbase = os.path.join(datacards_base, 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
+    #TODO: Finish this
+    return datacard_massbase
 
 
 masses = sorted([int(signal.split('/')[-1].split('-m')[-1]) for signal in all_signal])

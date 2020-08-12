@@ -1,6 +1,6 @@
 import ROOT
 import os
-from HNL.Tools.helpers import getObjFromFile, makeDirIfNeeded
+from HNL.Tools.helpers import makeDirIfNeeded
 
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
@@ -27,7 +27,7 @@ for signal in ih.signal_names:
 	if not args.skipTraining:
 		makeDirIfNeeded(out_file_name)
 		out_file = ROOT.TFile(out_file_name, 'RECREATE') 
-		factory = ROOT.TMVA.Factory("factory",out_file,"")
+		factory = ROOT.TMVA.Factory("factory", out_file,"")
 
 		loader = ih.getLoader(signal, input_var)
 

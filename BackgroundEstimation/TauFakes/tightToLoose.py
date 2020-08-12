@@ -9,7 +9,6 @@ from HNL.Tools.histogram import Histogram
 from HNL.EventSelection.eventSelector import EventSelector
 from HNL.ObjectSelection.tauSelector import isTightTau
 from HNL.Tools.helpers import makeDirIfNeeded
-import ROOT
 
 #
 # Argument parser and logging
@@ -151,10 +150,7 @@ if not args.makePlots:
     # Loop over all events
     #
     from HNL.Tools.helpers import progress
-    from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
     from HNL.Triggers.triggerSelection import applyCustomTriggers, listOfTriggersAN2017014
-    from HNL.ObjectSelection.leptonSelector import isFOLepton, isTightLepton
-
 
     print 'tot_range', len(event_range)
     for entry in event_range:
@@ -184,10 +180,8 @@ if not args.makePlots:
 else:
     from HNL.Tools.mergeFiles import merge
     import glob
-    import os
     from HNL.Tools.helpers import getObjFromFile
     from HNL.Plotting.plot import Plot
-    from HNL.EventSelection.eventCategorization import CATEGORY_NAMES, ANALYSIS_CATEGORIES
 
     if not args.isTest:
         base_path = os.path.join(os.getcwd(), 'data', __file__.split('.')[0])

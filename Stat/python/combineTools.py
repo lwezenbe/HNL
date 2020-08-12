@@ -121,7 +121,7 @@ def makeGraphs(x_values, couplings, limits = None, input_paths = None):
     if limits is None:
         limits = {}
         for i, (m, p) in enumerate(zip(x_values, input_paths)):
-            limits[m] = extractScaledLimitsPromptHNL(input_path, couplings[i])
+            limits[m] = extractScaledLimitsPromptHNL(p, couplings[i])
 
     for i, m in enumerate(x_values):
         graphs['2sigma'].SetPoint(i, m, limits[m][0.975])

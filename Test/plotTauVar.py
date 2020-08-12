@@ -42,12 +42,11 @@ import HNL.EventSelection.eventCategorization as cat
 categories = cat.CATEGORIES
 reco_or_gen_str = 'reco' if not args.genLevel else 'gen'
 
-from ROOT import TFile, TLorentzVector
+from ROOT import TFile
 from HNL.Tools.histogram import Histogram
 from HNL.Tools.mergeFiles import merge
 from HNL.Tools.helpers import getObjFromFile
 list_of_hist = {}
-from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
 from HNL.EventSelection.eventCategorization import EventCategory
 
 
@@ -123,7 +122,6 @@ if not args.makePlots:
         # Loop over all events
         #
         from HNL.Tools.helpers import progress, makeDirIfNeeded
-        from HNL.ObjectSelection.tauSelector import isGoodGenTau
         from HNL.EventSelection.eventSelectionTools import select3GenLeptons
         ec = EventCategory(chain)
         for entry in event_range:
@@ -198,9 +196,7 @@ if args.runOnCream or args.isTest:
 # Necessary imports
 #
 from HNL.Plotting.plot import Plot
-from HNL.Plotting.plottingTools import extraTextFormat
 from HNL.Tools.helpers import makePathTimeStamped
-from HNL.EventSelection.eventCategorization import returnCategoryPtCuts
 
 #
 # Set output directory, taking into account the different options
@@ -219,4 +215,4 @@ for sample in list_of_hist.keys():
         p = Plot([list_of_hist[sample][v]], legend_names, sample+ '-' +v, y_log = True)
 
         # Draw
-        p.drawHist(output_dir = output_dir,  signal_style=True, draw_option='EHist')
+        p.drawHist(output_dir = output_dir, draw_option='EHist')

@@ -168,7 +168,7 @@ def getLineColor(index):
     if index == 1:      return TColor.GetColor("#685762")
     if index == 2:      return TColor.GetColor("#E8C547")
 
-def getBlackColor(index):
+def getBlackColor():
     return ROOT.kBlack
 
 def getMarker(index):
@@ -182,4 +182,5 @@ def getMarker(index):
 
 def returnSignalLegendName(name):
     split_name = name.split('-M')
+    #TODO : Finish this function
 

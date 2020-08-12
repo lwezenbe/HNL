@@ -88,6 +88,5 @@ class InputHandler:
         return loader
 
 if __name__ == '__main__':
-    import os
     ih = InputHandler(os.path.expandvars('$CMSSW_BASE/src/HNL/TMVA/data/InputLists/2016.conf'))
-    print ih.numbers, ih.signal_list, ih.background_list
+    print ih.numbers, ih.signal_names, ih.background_names

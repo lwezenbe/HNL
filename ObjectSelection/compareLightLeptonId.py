@@ -21,7 +21,8 @@ argParser.add_argument('--isTest',   action='store_true', default=False,  help='
 argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
 argParser.add_argument('--flavor', type=int, default=0,  help='flavor of lepton under consideration. 0 = electron, 1 = muon', choices = [0, 1])
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-argParser.add_argument('--includeReco',   action='store_true', default=False,  help='look at the efficiency for a gen tau to be both reconstructed and identified. Currently just fills the efficiency for isolation')
+argParser.add_argument('--includeReco',   action='store_true', default=False, 
+    help='look at the efficiency for a gen tau to be both reconstructed and identified. Currently just fills the efficiency for isolation')
 argParser.add_argument('--onlyReco',   action='store_true', default=False,  help='look at the efficiency for a gen tau to be reconstructed. Currently just fills the efficiency for isolation')
 args = argParser.parse_args()
 
@@ -128,19 +129,19 @@ from HNL.ObjectSelection.leptonSelector import isTightLightLepton
 from HNL.EventSelection.eventSelectionTools import select3GenLeptons
 from HNL.Tools.helpers import deltaR
 
-def matchGenToReco(chain, l):
+def matchGenToReco(in_chain, l):
    
     min_dr = 0.3
-    matched_l = None
-    for lepton in xrange(chain._nLight):
-        if not chain._lIsPrompt[lepton]: continue
-        if chain._gen_lFlavor[l] != chain._lFlavor[lepton]: continue
-        dr = deltaR(chain._gen_lEta[l], chain._lEta[lepton], chain._gen_lPhi[l], chain._lPhi[lepton])
+    matched_lepton = None
+    for lepton_index in xrange(in_chain._nLight):
+        if not in_chain._lIsPrompt[lepton_index]: continue
+        if in_chain._gen_lFlavor[l] != in_chain._lFlavor[lepton_index]: continue
+        dr = deltaR(in_chain._gen_lEta[l], in_chain._lEta[lepton_index], in_chain._gen_lPhi[l], in_chain._lPhi[lepton_index])
         if dr < min_dr:
-            matched_l = lepton
+            matched_lepton = lepton_index
             min_dr = dr
         
-    return matched_l
+    return matched_lepton
 
 for entry in event_range:
 
@@ -158,7 +159,7 @@ for entry in event_range:
             for wp in algos[algo]:
                 passed = False
                 if args.onlyReco: 
-                    passed=matched_l is not None
+                    passed = matched_l is not None
                 else:
                     passed = matched_l is not None and isTightLightLepton(chain, matched_l, algo)
                 passed_tot.append(passed)

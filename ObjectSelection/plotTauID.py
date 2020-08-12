@@ -3,7 +3,7 @@ from HNL.Tools.efficiency import Efficiency
 from HNL.Tools.mergeFiles import merge
 import os
 import glob
-from HNL.Tools.helpers import makePathTimeStamped, getObjFromFile, rootFileContent
+from HNL.Tools.helpers import rootFileContent
 from ROOT import TFile
 
 #
@@ -14,7 +14,8 @@ argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('bkgr',     action='store',      default=None,   help='Select bkgr')
 argParser.add_argument('--signal',     action='store',      default=None,   help='Select signal')
 argParser.add_argument('--makeCombinations',     action='store',      default=None,   help='Make combinations of iso and lepton discriminators')
-argParser.add_argument('--includeReco',   action='store', default=None,  help='look at the efficiency for a gen tau to be both reconstructed and identified. Currently just fills the efficiency for isolation', choices = ['iso', 'noIso'])
+argParser.add_argument('--includeReco',   action='store', default=None, 
+    help='look at the efficiency for a gen tau to be both reconstructed and identified. Currently just fills the efficiency for isolation', choices = ['iso', 'noIso'])
 argParser.add_argument('--overlaySignalAndBackground',   action='store_true', default=False,  help='Only applies when includeReco argument is given. This will overlay signal and background')
 argParser.add_argument('--discriminators', nargs='*', default=['iso', 'ele','mu'],  help='Which discriminators do you want to test?', choices = ['iso', 'ele', 'mu'])
 argParser.add_argument('--year', action='store', required=True, default=None,  help='Select year')
@@ -34,12 +35,12 @@ if args.includeReco is not None:
 #Merges subfiles if needed
 merge_files = []
 for d in args.discriminators:
-    merge_files.extend(glob.glob(os.path.join(os.getcwd(),'data', 'compareTauID', args.year, reco_names[args.includeReco], d, '*', '*', '*')))
+    merge_files.extend(glob.glob(os.path.join(os.getcwd(), 'data', 'compareTauID', args.year, reco_names[args.includeReco], d, '*', '*', '*')))
 for mf in merge_files:
     if "Results" in mf: continue
     merge(mf)
 
-input_base = os.path.join(os.getcwd(),'data', 'compareTauID', args.year, reco_names[args.includeReco])
+input_base = os.path.join(os.getcwd(), 'data', 'compareTauID', args.year, reco_names[args.includeReco])
 input_paths = {}
 for sob in ['signal', 'background']:
     input_paths[sob] = {}
@@ -122,12 +123,12 @@ for d in args.discriminators:
                         for mwp in mu_wp[algo]:
                             roc_curve = ROC('-'.join([algo, ewp, mwp]), signal_path , misid_path = bkgr_path)
                             p = Plot(roc_curve.returnGraph(), algo, '-'.join([algo, ewp, mwp]), 'efficiency', 'misid', y_log=True, extra_text = extra_text)
-                            output_path = os.path.join(os.getcwd(),'data', 'Results', 'compareTauID', reco_names[args.includeReco], d, signal_name+'-'+bkgr_name, algo)
+                            output_path = os.path.join(os.getcwd(), 'data', 'Results', 'compareTauID', reco_names[args.includeReco], d, signal_name+'-'+bkgr_name, algo)
                             p.drawGraph(output_dir = output_path)
                     curves.append(ROC('-'.join([algo, 'None', 'None']), signal_path , misid_path = bkgr_path).returnGraph()) 
                     ordered_names.append(algo)
                 p = Plot(curves, ordered_names, 'ROC', 'efficiency', 'misid', y_log=True, extra_text = extra_text)
-                output_path = os.path.join(os.getcwd(),'data', 'Results', 'compareTauID', args.year, reco_names[args.includeReco], d, signal_name+'-'+bkgr_name)
+                output_path = os.path.join(os.getcwd(), 'data', 'Results', 'compareTauID', args.year, reco_names[args.includeReco], d, signal_name+'-'+bkgr_name)
                 p.drawGraph(output_dir = output_path)
             else:
                 curves = []
@@ -138,7 +139,7 @@ for d in args.discriminators:
                     curves.append(ROC(algo, signal_path , misid_path = bkgr_path).returnGraph()) 
                     ordered_names.append(algo)
                 p = Plot(curves, ordered_names, 'ROC', 'efficiency', 'misid', y_log=True, extra_text = extra_text)
-                output_path = os.path.join(os.getcwd(),'data', 'Results', 'compareTauID', args.year, reco_names[args.includeReco], d, signal_name+'-'+bkgr_name)
+                output_path = os.path.join(os.getcwd(), 'data', 'Results', 'compareTauID', args.year, reco_names[args.includeReco], d, signal_name+'-'+bkgr_name)
                 p.drawGraph(output_dir = output_path)
             
 
@@ -187,7 +188,7 @@ for d in args.discriminators:
                     names = ['efficiency in '+signal_name, 'efficiency in '+bkgr_name, 'normalized distribution in '+signal_name, 'normalized distribution in '+bkgr_name]
                                         
                 p = Plot(list_of_eff, names, bkgr_hist = var_hist)
-                output_path = os.path.join(os.getcwd(),'data', 'Results', 'compareTauID', args.year, reco_names[args.includeReco], 'efficiency', signal_name)
+                output_path = os.path.join(os.getcwd(), 'data', 'Results', 'compareTauID', args.year, reco_names[args.includeReco], 'efficiency', signal_name)
                 p.drawHist(output_dir = output_path, draw_option = 'Hist')
 
         elif d == 'iso' and args.makeCombinations:
@@ -217,30 +218,30 @@ for d in args.discriminators:
                                 extra_text.append(extraTextFormat(algo, 0.2, 0.6))
                                 extra_text.append(extraTextFormat(ewp+' e discr.'))
                                 extra_text.append(extraTextFormat(mwp+' #mu discr.'))
-                                p = Plot(list_of_eff, ordered_names, name=eff_or_fake+'-'+ewp+'_'+mwp, bkgr_hist = var_hist, extra_text = extra_text)
-                                output_path = os.path.join(os.getcwd(),'data', 'Results', 'compareTauID', args.year, reco_names[args.includeReco], d, eff_or_fake, signal_name, algo, v)
-                                p.drawHist(output_dir = output_path, draw_option = 'Hist', color_palette = 'WorkingPoints')
+                                p = Plot(list_of_eff, ordered_names, name=eff_or_fake+'-'+ewp+'_'+mwp, bkgr_hist = var_hist, extra_text = extra_text, color_palette = 'WorkingPoints')
+                                output_path = os.path.join(os.getcwd(), 'data', 'Results', 'compareTauID', args.year, reco_names[args.includeReco], d, eff_or_fake, signal_name, algo, v)
+                                p.drawHist(output_dir = output_path, draw_option = 'Hist')
             rf = TFile(os.path.join(ip, [a for a in algos][0], 'None', 'efficiency.root'))
             var = [k[0].split('/')[1] for k in rootFileContent(rf)]
             rf.Close()
             for iwp in getCommonElements(iso_wp.values()):
                 for eff_or_fake in ['efficiency', 'fakerate']:
                     for v in var:
-                            list_of_eff = []
-                            ordered_names = []
-                            for algo in [a for a in algos]:
-                                eff = Efficiency(eff_or_fake, None, None, os.path.join(ip, algo, iwp, eff_or_fake+'.root'), subdirs = [v, algo+'-(None, None)'])
-                                list_of_eff.append(eff.getEfficiency())
-                                ordered_names.append(algo)
-                            var_hist = eff.getDenominator()
-                            var_hist.Scale(list_of_eff[0].GetSumOfWeights()/var_hist.GetSumOfWeights())
-                            ordered_names.append('event distribution')
-                            extra_text = []
-                            # p = Plot(list_of_eff, ordered_names, name=eff_or_fake+'-'+iwp, bkgr_hist = var_hist, extra_text = extra_text, y_log = True)
-                            p = Plot(list_of_eff, ordered_names, name=eff_or_fake+'-'+iwp, extra_text = extra_text, y_log = True)
-                            output_path = os.path.join(os.getcwd(),'data', 'Results', 'compareTauID', args.year, reco_names[args.includeReco], d, eff_or_fake, signal_name, 'all-gos', v)
-                            p.drawHist(output_dir = output_path, draw_option = 'Hist')
-                            p.close()
+                        list_of_eff = []
+                        ordered_names = []
+                        for algo in [a for a in algos]:
+                            eff = Efficiency(eff_or_fake, None, None, os.path.join(ip, algo, iwp, eff_or_fake+'.root'), subdirs = [v, algo+'-(None, None)'])
+                            list_of_eff.append(eff.getEfficiency())
+                            ordered_names.append(algo)
+                        var_hist = eff.getDenominator()
+                        var_hist.Scale(list_of_eff[0].GetSumOfWeights()/var_hist.GetSumOfWeights())
+                        ordered_names.append('event distribution')
+                        extra_text = []
+                        # p = Plot(list_of_eff, ordered_names, name=eff_or_fake+'-'+iwp, bkgr_hist = var_hist, extra_text = extra_text, y_log = True)
+                        p = Plot(list_of_eff, ordered_names, name=eff_or_fake+'-'+iwp, extra_text = extra_text, y_log = True)
+                        output_path = os.path.join(os.getcwd(), 'data', 'Results', 'compareTauID', args.year, reco_names[args.includeReco], d, eff_or_fake, signal_name, 'all-gos', v)
+                        p.drawHist(output_dir = output_path, draw_option = 'Hist')
+                        p.close()
 
 
 
@@ -262,6 +263,6 @@ for d in args.discriminators:
                         extra_text = []
                         extra_text.append(extraTextFormat(algo, 0.2, 0.6))
                         # p = Plot(list_of_eff, ordered_names, bkgr_hist = var_hist)
-                        p = Plot(list_of_eff, ordered_names, y_log = True)
-                        output_path = os.path.join(os.getcwd(),'data', 'Results', 'compareTauID', args.year, reco_names[args.includeReco], d, eff_or_fake, algo, signal_name)
-                        p.drawHist(output_dir = output_path, draw_option = 'Hist', color_palette = 'WorkingPoints')
+                        p = Plot(list_of_eff, ordered_names, y_log = True, color_palette = 'WorkingPoints')
+                        output_path = os.path.join(os.getcwd(), 'data', 'Results', 'compareTauID', args.year, reco_names[args.includeReco], d, eff_or_fake, algo, signal_name)
+                        p.drawHist(output_dir = output_path, draw_option = 'Hist')

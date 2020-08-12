@@ -16,8 +16,6 @@ if args.isTest:
     args.year = '2016'
     args.sample = 'DYJetsToLL-M-10to50' 
 
-import HNL.EventSelection.eventCategorization as cat
-
 list_of_numbers = {'total' : 0,
                     'single_lep' : 0,
                     'reco_tau' : 0,
@@ -60,11 +58,10 @@ chain.year = int(args.year)
 #
 # Loop over all events
 #
-from HNL.Tools.helpers import progress, makeDirIfNeeded
-from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
-from HNL.EventSelection.eventSelectionTools import select3Leptons, select3GenLeptons, calculateKinematicVariables
+from HNL.Tools.helpers import progress
+from HNL.EventSelection.eventSelectionTools import select3Leptons
 from HNL.EventSelection.eventCategorization import EventCategory
-from HNL.ObjectSelection.tauSelector import isLooseTau, isTightTau
+from HNL.ObjectSelection.tauSelector import isTightTau
 from HNL.ObjectSelection.leptonSelector import isTightLepton
 
 ec = EventCategory(chain)

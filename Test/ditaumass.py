@@ -32,14 +32,12 @@ if args.isTest:
 #
 var = { 'mvis':      (lambda c : c.m_vis,       np.arange(0., 310., 10.),       ('m_{vis} [GeV]', 'Events'))}
 
-from ROOT import TFile, TLorentzVector
+from ROOT import TFile
 from HNL.Tools.histogram import Histogram
 from HNL.Tools.mergeFiles import merge
 from HNL.Tools.helpers import getObjFromFile
 list_of_hist = {}
-from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
 from HNL.EventSelection.eventCategorization import EventCategory
-import sys
 #
 # Loop over samples and events
 #
@@ -112,11 +110,10 @@ if not args.makePlots:
         #
         # Loop over all events
         #
-        from HNL.Tools.helpers import progress, makeDirIfNeeded, deltaR, getLeptonFourVecFromChain, deltaPhi
+        from HNL.Tools.helpers import progress, makeDirIfNeeded, deltaR, getLeptonFourVecFromChain
         from HNL.ObjectSelection.muonSelector import isTightMuon
         from HNL.ObjectSelection.tauSelector import isGeneralTau
         from HNL.ObjectSelection.leptonSelector import isLooseLightLepton
-        from HNL.EventSelection.eventSelectionTools import select3GenLeptons
         ec = EventCategory(chain)
         for entry in event_range:
             
@@ -171,7 +168,7 @@ if not args.makePlots:
             #
             tau_index = tau_candidates[0]
             for tau in tau_candidates[1:]:
-                if chain._tauDeepTauVsJetsRaw[tau] < chain._tauDeepTauVsJetsRaw[tau_index]: tau_index == tau
+                if chain._tauDeepTauVsJetsRaw[tau] > chain._tauDeepTauVsJetsRaw[tau_index]: tau_index == tau
 
             mu_vec = getLeptonFourVecFromChain(chain, muon_index)
             tau_vec = getLeptonFourVecFromChain(chain, tau_index)
@@ -237,9 +234,7 @@ if args.runOnCream or args.isTest:
 # Necessary imports
 #
 from HNL.Plotting.plot import Plot
-from HNL.Plotting.plottingTools import extraTextFormat
 from HNL.Tools.helpers import makePathTimeStamped
-from HNL.EventSelection.eventCategorization import returnCategoryPtCuts
 
 #
 # Set output directory, taking into account the different options

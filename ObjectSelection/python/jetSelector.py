@@ -1,5 +1,5 @@
 from HNL.Tools.helpers import deltaR
-from HNL.ObjectSelection.leptonSelector import isLooseLepton, isTightLepton
+from HNL.ObjectSelection.leptonSelector import isTightLepton
 
 default_jet_selection = 'cut-based'
 
@@ -26,7 +26,7 @@ def isGoodJetCutBased(chain, index, cleaned = True):
     if cleaned and not isCleanFromLeptons(chain, index):       return False
     return True
 
-from bTagWP import getBTagWP, readBTagValue
+from HNL.ObjectSelection.bTagWP import getBTagWP, readBTagValue
 def isBJet(chain, index, algo, wp, cleaned = True, selection = None):
     if selection is None:
         if not isGoodJet(chain, index, cleaned = cleaned, selection = default_jet_selection): return False

@@ -1,18 +1,18 @@
-from HNL.Tools.mergeFiles import merge
 import os
 import glob
 from HNL.Tools.helpers import makePathTimeStamped
 from HNL.Tools.efficiency import Efficiency
-from HNL.EventSelection.eventCategorization import returnTexName, returnCategoryPtCuts, CATEGORIES
 
 #
 # Argument parser and logging
 #
-import os, argparse
+import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--FOcut',   action='store_true', default=False,  help='Perform baseline FO cut')
 argParser.add_argument('--divideByCategory',   action='store_true', default=False,  help='Look at the efficiency per event category')
-argParser.add_argument('--compareTriggerCuts', action='store', default=None,  help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', choices=['single', 'cumulative', 'full'])
+argParser.add_argument('--compareTriggerCuts', action='store', default=None, 
+    help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', 
+    choices=['single', 'cumulative', 'full'])
 argParser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l', ''])
 argParser.add_argument('--massRegion',   action='store', default=None,  help='apply the cuts of high or low mass regions', choices=['high', 'low'])
 args = argParser.parse_args()
@@ -34,11 +34,7 @@ input_name  = os.path.join(os.getcwd(), 'data', 'calcSignalEfficiency', category
 inputFiles = glob.glob(input_name + '/*.root')
 f_names = {f.split('/')[-1].split('.')[0] for f in inputFiles}
 
-import ROOT
-from HNL.Tools.helpers import rootFileContent, getObjFromFile
 from HNL.Plotting.plot import Plot
-from HNL.Plotting.plottingTools import extraTextFormat
-from HNL.Tools.efficiency import Efficiency
 
 def getCategory(name, trigger_test = False):
     if trigger_test or args.cumulativeCuts: name = name.split('/')[1]

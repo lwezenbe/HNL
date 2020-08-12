@@ -1,4 +1,4 @@
-from HNL.Tools.helpers import getSubDir, makeDirIfNeeded
+from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped
 import os
 
 skipDirs  = ['documents', 'log', '.git', 'virenv', 'utils', 'Results']
@@ -14,7 +14,7 @@ for root, dirs, files in os.walk(base_path, topdown=True):
 
 
 cmssw_version = os.path.expandvars('$CMSSW_BASE').rsplit('/', 1)[-1]
-central_destination =  '/user/lwezenbe/private/Backup/'+cmssw_version+'/AllOutput'
+central_destination =  makePathTimeStamped('/user/lwezenbe/private/Backup/'+cmssw_version+'/AllOutput')
 for rf in file_paths:
     try:
         index_for_backup = rf.split('/').index('src')

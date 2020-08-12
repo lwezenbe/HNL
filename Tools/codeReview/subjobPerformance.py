@@ -4,7 +4,6 @@
 #
 
 import os
-import glob
 import time
 import datetime
 base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL')

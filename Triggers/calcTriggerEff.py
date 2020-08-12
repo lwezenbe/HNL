@@ -22,7 +22,9 @@ argParser.add_argument('--runLocal', action='store_true', default=False,  help='
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 argParser.add_argument('--oldTriggers',   action='store_true', default=False,  help='Use triggers from AN 2017-014')
 argParser.add_argument('--useRef', action='store_true', default=False,  help='pass ref cuts')
-argParser.add_argument('--separateTriggers', action='store', default=None,  help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', choices=['single', 'cumulative', 'full'])
+argParser.add_argument('--separateTriggers', action='store', default=None,  
+    help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', 
+    choices=['single', 'cumulative', 'full'])
 args = argParser.parse_args()
 
 #
@@ -155,7 +157,7 @@ var = {'l1pt' : (lambda c : c.l_pt[0],                          np.arange(0., 10
         'l3-2D' : (lambda c : (c.l_pt[2], abs(c.l_eta[2])),      (np.arange(0., 100., 15.), np.arange(0., 3., .5)), ('p_{T}(l3) [GeV]', '|#eta|(subleading)'))}
 
 if chain.is_signal:
-        var['HNLmass'] = (lambda c : c.HNLmass,        np.array(mass_range),   ('m_{N} [GeV]', 'Efficiency'))
+    var['HNLmass'] = (lambda c : c.HNLmass,        np.array(mass_range),   ('m_{N} [GeV]', 'Efficiency'))
 
 from HNL.Tools.efficiency import Efficiency
 from HNL.EventSelection.eventCategorization import returnCategoryTriggers
@@ -195,8 +197,6 @@ else:
 #
 from HNL.Tools.helpers import progress
 from HNL.EventSelection.eventSelectionTools import select3Leptons
-from HNL.ObjectSelection.electronSelector import isTightElectron
-from HNL.ObjectSelection.muonSelector import isTightMuon
 for entry in event_range:
     
     chain.GetEntry(entry)
@@ -242,7 +242,6 @@ for entry in event_range:
 #
 # Save all histograms
 #
-from HNL.EventSelection.eventCategorization import returnCategoryTriggerNames
 from HNL.EventSelection.eventCategorization import returnCategoryTriggerNames
 for i, c in enumerate(categories):
     for l, v in enumerate({k for k in var.keys()}): 

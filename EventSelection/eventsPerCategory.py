@@ -5,6 +5,8 @@
 #
 # Can be used on RECO level, where you check how many events pass the reco selection
 # Is also used to check how many events on a generator level pass certain pt cuts (TODO: not anymore it seems)
+
+                                        #DEPRECATED
 #
 
 # TODO: Since high and low mass regions are orthogonal, you could fill both at the same time
@@ -131,7 +133,7 @@ if not args.makePlots:
         lw = LumiWeight(sample, sample_manager)
         
 
-    from HNL.EventSelection.eventCategorization import EventCategory
+    from HNL.EventSelection.eventCategorization import EventCategory, SUPERCATEGORY_TEX_NAMES
     ec = EventCategory(chain)
 
     list_of_numbers = {}
@@ -219,8 +221,6 @@ if not args.makePlots:
 else:
     from HNL.Tools.mergeFiles import merge
     import glob
-    import os
-    from HNL.Tools.helpers import getObjFromFile
     from HNL.Plotting.plot import Plot
     selection_str = 'OldSel' if args.oldAnalysisCuts else 'NewCuts'
     mass_str = 'allMass' if args.massRegion is None else args.massRegion
@@ -232,9 +232,9 @@ else:
         if '.txt' in f: continue
         merge(f)
 
-    def mergeSearchRegions(regions_to_merge, values, errors, out_name):
+    def mergeSearchRegions(regions_to_merge, values, errors, output_name):
         if not regions_to_merge: 
-            raise RuntimeError('Illegal input for mergeSearchRegions in call with output name "'+out_name+'"')
+            raise RuntimeError('Illegal input for mergeSearchRegions in call with output name "'+output_name+'"')
         out_val, out_err = (values[regions_to_merge[0]], errors[regions_to_merge[0]])
         if len(regions_to_merge) > 1:
             for reg in regions_to_merge[1:]:
@@ -242,8 +242,8 @@ else:
                 out_err = np.sqrt(out_err ** 2 + errors[reg] ** 2)
         return out_val, out_err
         # if not regions_to_merge: 
-        #     raise RuntimeError('Illegal input for mergeSearchRegions in call with output name "'+out_name+'"')
-        # out_hist = hist_collection[regions_to_merge[0]].clone(out_name)
+        #     raise RuntimeError('Illegal input for mergeSearchRegions in call with output name "'+output_name+'"')
+        # out_hist = hist_collection[regions_to_merge[0]].clone(output_name)
         # if len(regions_to_merge) > 1:
         #     for reg in regions_to_merge[1:]:
         #         out_hist.add(hist_collection[reg])
@@ -280,15 +280,17 @@ else:
             for sr in xrange(1, srm.getNumberOfSearchRegions()+1):
                 #list_of_values[is_signal][sample.output][c][sr]= Histogram(getObjFromFile(path_name, '_'.join([str(c), str(sr)])+'/'+'_'.join([str(c), str(sr)])))
                 tmp_hist = getObjFromFile(path_name, '_'.join([str(c), str(sr)])+'/'+'_'.join([str(c), str(sr)]))
-                list_of_values[is_signal][sample.output][c][sr]= tmp_hist.GetBinContent(1)
-                list_of_errors[is_signal][sample.output][c][sr]= tmp_hist.GetBinError(1)
+                list_of_values[is_signal][sample.output][c][sr] = tmp_hist.GetBinContent(1)
+                list_of_errors[is_signal][sample.output][c][sr] = tmp_hist.GetBinError(1)
             
             #
             # Add some grouped search regions for easier access
             #
             for group_name in srm.getListOfSearchRegionGroups():
-                list_of_values[is_signal][sample.output][c][group_name], list_of_errors[is_signal][sample.output][c][group_name] = mergeSearchRegions(srm.getGroupValues(group_name), list_of_values[is_signal][sample.output][c], list_of_errors[is_signal][sample.output][c], str(c)+'_'+str(group_name))
-            list_of_values[is_signal][sample.output][c]['total'], list_of_errors[is_signal][sample.output][c]['total'] = mergeSearchRegions(range(1, srm.getNumberOfSearchRegions()+1), list_of_values[is_signal][sample.output][c], list_of_errors[is_signal][sample.output][c], str(c)+'_'+str('total'))
+                list_of_values[is_signal][sample.output][c][group_name], list_of_errors[is_signal][sample.output][c][group_name] = mergeSearchRegions(srm.getGroupValues(group_name), 
+                    list_of_values[is_signal][sample.output][c], list_of_errors[is_signal][sample.output][c], str(c)+'_'+str(group_name))
+            list_of_values[is_signal][sample.output][c]['total'], list_of_errors[is_signal][sample.output][c]['total'] = mergeSearchRegions(range(1, srm.getNumberOfSearchRegions()+1), 
+                list_of_values[is_signal][sample.output][c], list_of_errors[is_signal][sample.output][c], str(c)+'_'+str('total'))
 
     search_region_names = range(1, srm.getNumberOfSearchRegions()+1) + srm.getListOfSearchRegionGroups() + ['total']
 
@@ -413,7 +415,6 @@ else:
             p.drawPieChart(output_dir = destination+'/PieCharts', draw_percent=True, message = args.message)
 
     if not args.noCutFlow:
-        import glob
         all_files = glob.glob(os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/eventsPerCategory/'+selection_str+'/'+mass_str+'/HNL-'+args.coupling+'*/events.root'))
 
         all_files = sorted(all_files, key = lambda k : int(k.split('/')[-2].split('.')[0].split('-m')[-1]))
@@ -439,7 +440,8 @@ else:
             # Bkgr
             #
             for i_name, sample_name in enumerate(list_of_values['bkgr'].keys()):
-                list_of_sr_hist[c]['bkgr'][sample_name] = ROOT.TH1D('_'.join([sample_name, str(c)]), '_'.join([sample_name, str(c)]), srm.getNumberOfSearchRegions(), 0.5, srm.getNumberOfSearchRegions()+0.5)
+                list_of_sr_hist[c]['bkgr'][sample_name] = ROOT.TH1D('_'.join([sample_name, str(c)]), '_'.join([sample_name, str(c)]), srm.getNumberOfSearchRegions(), 0.5, 
+                    srm.getNumberOfSearchRegions()+0.5)
                 for sr in xrange(1, srm.getNumberOfSearchRegions()+1):
                     list_of_sr_hist[c]['bkgr'][sample_name].SetBinContent(sr, list_of_values['bkgr'][sample_name][c][sr])
                     list_of_sr_hist[c]['bkgr'][sample_name].SetBinError(sr, list_of_errors['bkgr'][sample_name][c][sr]) 
@@ -448,13 +450,14 @@ else:
             # Signal
             #   
             for i_name, sample_name in enumerate(list_of_values['signal'].keys()):
-                list_of_sr_hist[c]['signal'][sample_name] = ROOT.TH1D('_'.join([sample_name, str(c)]), '_'.join([sample_name, str(c)]), srm.getNumberOfSearchRegions(), 0.5, srm.getNumberOfSearchRegions()+0.5)
+                list_of_sr_hist[c]['signal'][sample_name] = ROOT.TH1D('_'.join([sample_name, str(c)]), '_'.join([sample_name, str(c)]), srm.getNumberOfSearchRegions(), 0.5, 
+                    srm.getNumberOfSearchRegions()+0.5)
                 for sr in xrange(1, srm.getNumberOfSearchRegions()+1):
                     list_of_sr_hist[c]['signal'][sample_name].SetBinContent(sr, list_of_values['signal'][sample_name][c][sr]) 
                     list_of_sr_hist[c]['signal'][sample_name].SetBinError(sr, list_of_errors['signal'][sample_name][c][sr])
                 if args.coupling == 'tau' and args.massRegion == 'high': list_of_sr_hist[c]['signal'][sample_name].Scale(1000)
 
-        def mergeCategories(ac, list_of_hist, signalOrBkgr, sample_name):
+        def mergeCategories(ac, signalOrBkgr, sample_name):
             filtered_hist = [list_of_sr_hist[c][signalOrBkgr][sample_name] for c in ac]
             if len(filtered_hist) == 0:
                 raise RuntimeError("Tried to merge nonexisting categories")

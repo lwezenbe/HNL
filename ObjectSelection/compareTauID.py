@@ -19,7 +19,6 @@ import numpy as np
 from HNL.Tools.helpers import progress
 from HNL.ObjectSelection.tauSelector import isGeneralTau
 from HNL.ObjectSelection.tauSelector import isGoodGenTau, matchGenToReco
-from HNL.EventSelection.eventSelectionTools import select3GenLeptons
 
 #
 # Some basic parameters
@@ -48,9 +47,11 @@ argParser.add_argument('--sample',   action='store',      default=None,   help='
 argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
 argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-argParser.add_argument('--includeReco',   action='store', default=None,  help='look at the efficiency for a gen tau to be both reconstructed and identified. Currently just fills the efficiency for isolation', choices = ['iso', 'noIso'])
+argParser.add_argument('--includeReco',   action='store', default=None,  
+    help='look at the efficiency for a gen tau to be both reconstructed and identified. Currently just fills the efficiency for isolation', choices = ['iso', 'noIso'])
 argParser.add_argument('--discriminators', nargs='*', default=['iso', 'ele','mu'],  help='Which discriminators do you want to test?', choices = ['iso', 'ele', 'mu'])
-argParser.add_argument('--makeCombinations', action='store_true', default=False,  help='Makes combinations of iso with different electron and muon working points. Turned off by default because large hadd times for large samples.')
+argParser.add_argument('--makeCombinations', action='store_true', default=False,
+    help='Makes combinations of iso with different electron and muon working points. Turned off by default because large hadd times for large samples.')
 args = argParser.parse_args()
 
 #
@@ -118,20 +119,20 @@ for algo in mu_algo:
 # Deeptau only goes with deeptau lepton discr
 # The MVA's should always be used with againstMuon and againstElectron
 #
-def linkIsoToLep(lepton_str, iso_algo):
+def linkIsoToLep(lepton_str, isolation_algorithm):
     if lepton_str == 'mu':
-        if 'deeptau' in iso_algo: return 'deeptauVSmu'
+        if 'deeptau' in isolation_algorithm: return 'deeptauVSmu'
         else: return 'againstMuon'
     elif lepton_str == 'ele':
-        if 'deeptau' in iso_algo: return 'deeptauVSe'
+        if 'deeptau' in isolation_algorithm: return 'deeptauVSe'
         else: return 'againstElectron'
     return
 
-def linkLepToIso(algo):
-    if algo == 'deeptauVSe': return 'deeptauVSjets'
-    elif algo == 'againstElectron': return 'MVA2017v2'
-    elif algo == 'deeptauVSmu': return 'deeptauVSjets'
-    elif algo == 'againstMuon': return 'MVA2017v2'
+def linkLepToIso(algorithm):
+    if algorithm == 'deeptauVSe': return 'deeptauVSjets'
+    elif algorithm == 'againstElectron': return 'MVA2017v2'
+    elif algorithm == 'deeptauVSmu': return 'deeptauVSjets'
+    elif algorithm == 'againstMuon': return 'MVA2017v2'
     return
 
 #
@@ -245,7 +246,8 @@ for discr in args.discriminators:
                         for ele_wp in algos['ele'][linkIsoToLep('ele', algo)]:
                             list_of_var_hist[eff_or_fake][discr][algo][v][wp][ele_wp] = {}
                             for mu_wp in algos['mu'][linkIsoToLep('mu', algo)]:
-                                list_of_var_hist[eff_or_fake][discr][algo][v][wp][ele_wp][mu_wp] = Efficiency('-'.join([eff_or_fake, v, algo, str(wp), str((ele_wp, mu_wp))]), var_hist[v][0], var_hist[v][2], out_path, var_hist[v][1])
+                                list_of_var_hist[eff_or_fake][discr][algo][v][wp][ele_wp][mu_wp] = Efficiency('-'.join([eff_or_fake, v, algo, str(wp), str((ele_wp, mu_wp))]), 
+                                    var_hist[v][0], var_hist[v][2], out_path, var_hist[v][1])
             
 #
 # Determine if testrun so it doesn't need to calculate the number of events in the getEventRange
@@ -286,7 +288,8 @@ for entry in event_range:
                         for ele_wp in algos['ele'][linkIsoToLep('ele', algo)]:
                             for mu_wp in algos['mu'][linkIsoToLep('mu', algo)]:
                                 for index, wp in enumerate(algos[discr][algo]):
-                                    wp_passed = matched_l is not None and isGeneralTau(chain, matched_l, algo, wp, linkIsoToLep('ele', algo), ele_wp, linkIsoToLep('mu', algo), mu_wp, needDMfinding=False)
+                                    wp_passed = matched_l is not None and isGeneralTau(chain, matched_l, algo, wp, linkIsoToLep('ele', algo), 
+                                        ele_wp, linkIsoToLep('mu', algo), mu_wp, needDMfinding=False)
                                     for v in list_of_var_hist['efficiency'][discr][algo].keys():
                                         list_of_var_hist['efficiency'][discr][algo][v][wp][ele_wp][mu_wp].fill(chain, 1., wp_passed)
 

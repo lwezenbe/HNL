@@ -4,7 +4,6 @@
 # Code to calculate trigger efficiency
 #
 
-import numpy as np
 import ROOT
 
 #
@@ -101,7 +100,7 @@ if args.processExistingFiles is None:
                 for mu_wp in getMuWPs(algo):
                     list_of_hist[algo][iso_wp][ele_wp][mu_wp] = {}
                     for channel in ['Ditau', 'SingleTau']:
-                        list_of_hist[algo][iso_wp][ele_wp][mu_wp][channel] = ROOT.TH1D('_'.join([channel, algo, iso_wp, ele_wp, mu_wp]), '_'.join([channel, algo, iso_wp, ele_wp, mu_wp]),1, 0, 1)
+                        list_of_hist[algo][iso_wp][ele_wp][mu_wp][channel] = ROOT.TH1D('_'.join([channel, algo, iso_wp, ele_wp, mu_wp]), '_'.join([channel, algo, iso_wp, ele_wp, mu_wp]), 1, 0, 1)
                         list_of_hist[algo][iso_wp][ele_wp][mu_wp][channel].Sumw2()
 
     #
@@ -116,10 +115,10 @@ if args.processExistingFiles is None:
         if chain._lCharge[indices[0]] == chain._lCharge[indices[1]] and chain._lCharge[indices[2]] == chain._lCharge[indices[1]]: return False
         if bVeto(chain, 'Deep'): return False
         vectors = []
-        for l in indices:
-            vectors.append(getFourVec(chain._lPt[l], chain._lEta[l], chain._lPhi[l], chain._lE[l]))
-        Mlll = (vectors[0] + vectors[1] + vectors[2]).M()
-        if abs(Mlll-91.19) < 15 :  return False
+        for lepton_index in indices:
+            vectors.append(getFourVec(chain._lPt[lepton_index], chain._lEta[lepton_index], chain._lPhi[lepton_index], chain._lE[lepton_index]))
+        mass_lll = (vectors[0] + vectors[1] + vectors[2]).M()
+        if abs(mass_lll-91.19) < 15 :  return False
 
         return True
 
@@ -145,9 +144,9 @@ if args.processExistingFiles is None:
         if len(lepton_indices) > 2: continue 
         if len(lepton_indices) == 0: continue
         if len(lepton_indices) == 2 and chain._lFlavor[lepton_indices[0]] == chain._lFlavor[lepton_indices[1]] and chain._lCharge[lepton_indices[0]] != chain._lCharge[lepton_indices[1]]:
-                v0 = getFourVec(chain._lPt[lepton_indices[0]], chain._lEta[lepton_indices[0]], chain._lPhi[lepton_indices[0]], chain._lE[lepton_indices[0]])
-                v1 = getFourVec(chain._lPt[lepton_indices[1]], chain._lEta[lepton_indices[1]], chain._lPhi[lepton_indices[1]], chain._lE[lepton_indices[1]])
-                if abs((v0+v1).M()-91.19) < 15 :  continue
+            v0 = getFourVec(chain._lPt[lepton_indices[0]], chain._lEta[lepton_indices[0]], chain._lPhi[lepton_indices[0]], chain._lE[lepton_indices[0]])
+            v1 = getFourVec(chain._lPt[lepton_indices[1]], chain._lEta[lepton_indices[1]], chain._lPhi[lepton_indices[1]], chain._lE[lepton_indices[1]])
+            if abs((v0+v1).M()-91.19) < 15 :  continue
 
         #pre-filtering tau with common cuts to decrease time later on
         base_tau_indices_per_algo = {}
@@ -228,7 +227,6 @@ else:
                     'Background': glob.glob(os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.year, 'Background', '*', 'events.root'))
     }
 
-    from math import sqrt
     from HNL.Tools.helpers import getObjFromFile, makeDirIfNeeded
     # def calcSignificance(S, B):
     #     try:
@@ -237,12 +235,12 @@ else:
     #         return 0.
 
     from  HNL.Tools.histogram import returnSqrt
-    def calcSignificance(S, B):
+    def calcSignificance(signal_hist, background_hist):
 
-        num = S.Clone('num')
-        tot = S.Clone('tot')
-        tot.Add(B)
-        sqrtTot = returnSqrt(B)
+        num = signal_hist.Clone('num')
+        tot = signal_hist.Clone('tot')
+        tot.Add(background_hist)
+        sqrtTot = returnSqrt(tot)
         num.Divide(sqrtTot)
 
 
@@ -355,7 +353,8 @@ else:
                             if args.masses is not None and 'HNL' in s_name and int(s_name.split('_')[0].split('-m')[1]) not in args.masses: continue
                             tex_names.append(signal.split('/')[-2])
 
-                            list_of_hist[channel][algo][ele_wp][hist_key].append(ROOT.TH1D('_'.join([signal.split('/')[-2], channel, algo, ele_wp]), '_'.join([signal.split('/')[-2], channel, algo, ele_wp]), total_bins, 0, total_bins))
+                            list_of_hist[channel][algo][ele_wp][hist_key].append(ROOT.TH1D('_'.join([signal.split('/')[-2], channel, algo, ele_wp]), 
+                                '_'.join([signal.split('/')[-2], channel, algo, ele_wp]), total_bins, 0, total_bins))
                             for mu, mu_wp in enumerate(getMuWPs(algo)):
                                 for iso, iso_wp in enumerate(algos[algo]):
                                     h = getObjFromFile(signal, channel+'/'+channel+'_'+algo+'_'+iso_wp+'_'+ele_wp+'_'+mu_wp)
@@ -380,10 +379,11 @@ else:
                     extra_text.append(extraTextFormat(algo, 0.2, 0.8))
                     extra_text.append(extraTextFormat(ele_wp + ' ' + getCorrespondingLightLepDiscr(algo)[0]))
 
-                    p = Plot(list_of_hist[channel][algo][ele_wp]['Signal'], tex_names, name = '_'.join([channel, algo, ele_wp]), bkgr_hist = list_of_hist[channel][algo][ele_wp]['Background'], y_log = True, draw_significance = True, extra_text = extra_text)   
+                    p = Plot(list_of_hist[channel][algo][ele_wp]['Signal'], tex_names, name = '_'.join([channel, algo, ele_wp]), bkgr_hist = list_of_hist[channel][algo][ele_wp]['Background'], 
+                        y_log = True, draw_significance = True, extra_text = extra_text)   
                     out_dir = os.path.join(os.getcwd(), 'data', 'Results', __file__.split('.')[0], args.year, 'Plots') 
                     if args.masses: out_dir = os.path.join(out_dir, '-'.join([str(m) for m in args.masses]))
-                    p.drawHist(output_dir = out_dir, signal_style = True, custom_labels = custom_labels, draw_lines = lines_to_draw)                
+                    p.drawHist(output_dir = out_dir, custom_labels = custom_labels, draw_lines = lines_to_draw)                
 
 
 

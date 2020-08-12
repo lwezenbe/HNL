@@ -171,19 +171,21 @@ def plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, region_name, 
         for ish, sh in enumerate(signal_hist):
             group_signal_hist.append(ROOT.TH1D('tmp_signal_'+tex_names[ish]+'_'+group+out_path, 'tmp_signal', len(region_groups[region_name][group]), 0.5, len(region_groups[region_name][group])+0.5))
             for ib, b in enumerate(region_groups[region_name][group]):
-                group_signal_hist[ish].SetBinContent(ib+1, signal_hist[ish].GetBinContent(b))
-                group_signal_hist[ish].SetBinError(ib+1, signal_hist[ish].GetBinError(b))
+                group_signal_hist[ish].SetBinContent(ib+1, sh.GetBinContent(b))
+                group_signal_hist[ish].SetBinError(ib+1, sh.GetBinError(b))
 
         for ish, sh in enumerate(bkgr_hist):
             group_bkgr_hist.append(ROOT.TH1D('tmp_bkgr_'+tex_names[ish]+'_'+group+out_path, 'tmp_bkgr', len(region_groups[region_name][group]), 0.5, len(region_groups[region_name][group])+0.5))
             for ib, b in enumerate(region_groups[region_name][group]):
-                group_bkgr_hist[ish].SetBinContent(ib+1, bkgr_hist[ish].GetBinContent(b))
-                group_bkgr_hist[ish].SetBinError(ib+1, bkgr_hist[ish].GetBinError(b))
+                group_bkgr_hist[ish].SetBinContent(ib+1, sh.GetBinContent(b))
+                group_bkgr_hist[ish].SetBinError(ib+1, sh.GetBinError(b))
         
         if sample_groups:
-            p = Plot(group_signal_hist, tex_names, bkgr_hist = group_bkgr_hist, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text, color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = 'errorsOnly')
+            p = Plot(group_signal_hist, tex_names, bkgr_hist = group_bkgr_hist, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, 
+                extra_text = extra_text, color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = 'errorsOnly')
         else:
-            p = Plot(group_signal_hist, tex_names, bkgr_hist = group_bkgr_hist, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text, syst_hist = 0.1, draw_ratio = 'errorsOnly')
+            p = Plot(group_signal_hist, tex_names, bkgr_hist = group_bkgr_hist, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, 
+                extra_text = extra_text, syst_hist = 0.1, draw_ratio = 'errorsOnly')
         p.drawHist(output_dir = out_path, min_cutoff = 1.)
 
         del p, group_signal_hist, group_bkgr_hist
@@ -212,14 +214,13 @@ def plotLowMassRegions(signal_hist, bkgr_hist, tex_names, out_path, extra_text =
     custom_labels = ['0-10', '10-20', '20-30', '> 30']*2
 
     if sample_groups:
-        p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'M_{2lOS}^{min} [GeV]', y_name = 'Events', extra_text = extra_text, y_log=True, color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = 'errorsOnly')
+        p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'M_{2lOS}^{min} [GeV]', y_name = 'Events', extra_text = extra_text, y_log=True, 
+            color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = 'errorsOnly')
     else:
-        p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'M_{2lOS}^{min} [GeV]', y_name = 'Events', extra_text = extra_text, y_log=True, syst_hist = 0.1, draw_ratio = 'errorsOnly')
+        p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'M_{2lOS}^{min} [GeV]', y_name = 'Events', extra_text = extra_text, y_log=True, 
+            syst_hist = 0.1, draw_ratio = 'errorsOnly')
  
     p.drawHist(output_dir = out_path, draw_lines = line_collection, min_cutoff = 0.1, custom_labels = custom_labels)
-
-
-
 
 def plotHighMassRegions(signal_hist, bkgr_hist, tex_names, out_path, extra_text = None, sample_groups = False):
 
@@ -228,9 +229,11 @@ def plotHighMassRegions(signal_hist, bkgr_hist, tex_names, out_path, extra_text 
     plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, 'oldAN_highMass', extra_text = extra_text, sample_groups = sample_groups)
 
     if sample_groups:
-        p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text, color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = 'errorsOnly')
+        p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text, 
+            color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = 'errorsOnly')
     else:
-        p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text, syst_hist = 0.1, draw_ratio = 'errorsOnly')
+        p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, 
+            extra_text = extra_text, syst_hist = 0.1, draw_ratio = 'errorsOnly')
     p.drawHist(output_dir = out_path, min_cutoff = 1.)
                     
 
@@ -245,10 +248,10 @@ class RegionCollection:
         for name in self.list_of_names:
             self.list_of_regions[name] = SearchRegionManager(name)
 
-    def getRegion(name):
+    def getRegion(self, name):
         return self.list_of_regions[name]
 
-    def getRegionNames():
+    def getRegionNames(self):
         return self.list_of_names
 
 

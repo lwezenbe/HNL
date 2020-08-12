@@ -62,7 +62,6 @@ class Efficiency(object):
         y_values = [y for y in graph.GetY()] 
         for i in xrange(eff.GetNbinsX()):
             err_up = graph.GetErrorYhigh(i)
-            err_x = graph.GetErrorX(i)
             val_y = y_values[i]
             if val_y + err_up > 1.:
                 graph.SetPointEYhigh(i, 1.-val_y)

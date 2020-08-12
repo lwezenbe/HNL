@@ -28,7 +28,9 @@ argParser.add_argument('--massRegion',   action='store', default=None,  help='ap
 argParser.add_argument('--FOcut',   action='store_true', default=False,  help='Perform baseline FO cut')
 argParser.add_argument('--divideByCategory',   action='store_true', default=False,  help='Look at the efficiency per event category')
 argParser.add_argument('--genLevel',   action='store_true', default=False,  help='Check how many events pass cuts on gen level')
-argParser.add_argument('--compareTriggerCuts', action='store', default=None,  help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', choices=['single', 'cumulative', 'full'])
+argParser.add_argument('--compareTriggerCuts', action='store', default=None,  
+    help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', 
+    choices=['single', 'cumulative', 'full'])
 argParser.add_argument('--flavor', action='store', default=None,  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
 
 args = argParser.parse_args()
@@ -118,11 +120,11 @@ mass_range = getMassRange([sample_name for sample_name in sample_manager.sample_
 #
 var = {'HNLmass': (lambda c : c.HNLmass,        np.array(mass_range),   ('m_{N} [GeV]', 'Events'))}
 
-from HNL.EventSelection.oldEventCategorization import EventCategory, categoryName, subcategoryName
+from HNL.EventSelection.eventCategorization import EventCategory
 ec = EventCategory(chain)
 
 from HNL.Tools.efficiency import Efficiency
-from HNL.EventSelection.oldEventCategorization import returnCategoryPtCuts
+from HNL.EventSelection.eventCategorization import returnCategoryPtCuts
 
 efficiency = {}
 
@@ -147,7 +149,8 @@ else: #'single' or 'cumulative'
         exit(0)
     for c in ec.categories:
         for ptcuts in returnCategoryPtCuts(c):
-            efficiency[c][ptcuts] = Efficiency('efficiency_'+str(c)+'_l1_'+str(ptcuts[0])+'_l2_'+str(ptcuts[1])+'_l3_'+str(ptcuts[2]), var['HNLmass'][0], var['HNLmass'][2], output_name, bins=var['HNLmass'][1])
+            efficiency[c][ptcuts] = Efficiency('efficiency_'+str(c)+'_l1_'+str(ptcuts[0])+'_l2_'+str(ptcuts[1])+'_l3_'+str(ptcuts[2]), 
+                var['HNLmass'][0], var['HNLmass'][2], output_name, bins=var['HNLmass'][1])
 
 #
 # Set event range
@@ -180,10 +183,10 @@ from HNL.EventSelection.eventSelectionTools import select3Leptons, select3GenLep
 from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
 from HNL.ObjectSelection.leptonSelector import isFOLepton
 
-def passedPtCutsByCategory(chain, cat):
+def passedPtCutsByCategory(in_chain, cat):
     cuts_collection = returnCategoryPtCuts(cat)
-    passed = [passedCustomPtCuts(chain, cut) for cut in cuts_collection]
-    return any(passed)
+    passes_cuts = [passedCustomPtCuts(in_chain, cut) for cut in cuts_collection]
+    return any(passes_cuts)
 
 
 for entry in event_range:

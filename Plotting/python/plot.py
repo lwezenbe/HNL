@@ -47,7 +47,8 @@ from HNL.Tools.helpers import isTimeStampFormat, makeDirIfNeeded
 from HNL.Plotting.style import setDefault, setDefault2D
 class Plot:
     
-    def __init__(self, signal_hist = None, tex_names = None, name = None, x_name = None, y_name = None, bkgr_hist = None, observed_hist = None, syst_hist = None, extra_text = None, x_log = None, y_log = None, draw_ratio = None, draw_significance = False, color_palette = 'Didar', color_palette_bkgr = 'StackTauPOGbyName', year = 2016):
+    def __init__(self, signal_hist = None, tex_names = None, name = None, x_name = None, y_name = None, bkgr_hist = None, observed_hist = None, syst_hist = None, extra_text = None, 
+        x_log = None, y_log = None, draw_ratio = None, draw_significance = False, color_palette = 'Didar', color_palette_bkgr = 'StackTauPOGbyName', year = 2016):
 
         self.s = makeList(getHistList(signal_hist)) if signal_hist is not None else []
         try:
@@ -135,12 +136,11 @@ class Plot:
                     for b in xrange(1, self.tot_totbkgr_error.GetNbinsX()+1):
                         bin_stat_error = self.stat_totbkgr_error.GetBinError(b)
                         bin_syst_error = self.syst_hist.GetBinError(b)
-                        # print b, self.total_b.GetBinContent(b), bin_stat_error, bin_stat_error ** 2, bin_syst_error, bin_syst_error ** 2, bin_stat_error ** 2 + bin_syst_error ** 2, np.sqrt(bin_stat_error ** 2 + bin_syst_error ** 2)
                         self.tot_totbkgr_error.SetBinError(b, np.sqrt(bin_stat_error ** 2 + bin_syst_error ** 2))
  
 
 
-    def setAxisLog(self, is2D = False, stacked = True, min_cutoff = None, include_errors = True):
+    def setAxisLog(self, is2D = False, stacked = True, min_cutoff = None):
 
         if is2D:
             if self.x_log:
@@ -325,7 +325,6 @@ class Plot:
         for b in xrange(1, self.stat_err.GetNbinsX()+1):
             self.stat_err.SetBinContent(b, 1.)
             self.tot_err.SetBinContent(b, 1.)
-            # print b, self.stat_totbkgr_error.GetBinContent(b), self.stat_totbkgr_error.GetBinError(b), self.tot_totbkgr_error.GetBinContent(b), self.tot_totbkgr_error.GetBinError(b), self.syst_hist.GetBinContent(b), self.syst_hist.GetBinError(b)
             if self.tot_totbkgr_error.GetBinContent(b) != 0:
                 self.stat_err.SetBinError(b, self.stat_totbkgr_error.GetBinError(b)/self.stat_totbkgr_error.GetBinContent(b))
                 self.tot_err.SetBinError(b, self.tot_totbkgr_error.GetBinError(b)/self.tot_totbkgr_error.GetBinContent(b))
@@ -380,14 +379,13 @@ class Plot:
         elif len(self.b) > 0:
             x_val = [self.b[0].GetXaxis().GetXmin(), self.b[0].GetXaxis().GetXmax()]
 
-        self.line = ROOT.TLine(x_val[0],1,x_val[1],1)
+        self.line = ROOT.TLine(x_val[0], 1, x_val[1], 1)
         self.line.SetLineColor(ROOT.kBlack)
         self.line.SetLineWidth(1)
         self.line.SetLineStyle(3)
 
         if not just_errors and len(ratios) > 0:
             ratios[0].Draw('EPSame')
-            # ratios[0].Draw('EP')
             for r in ratios[1:]:
                 r.Draw('EPSame')
 
@@ -440,7 +438,7 @@ class Plot:
 
         return significances
     
-    def drawSignificance(self, significances, custom_labels = None, line=None):
+    def drawSignificance(self, significances, custom_labels = None):
         self.sig_pad.cd()
 
         #Set axis: if significance is also drawn, no x-axis
@@ -550,11 +548,12 @@ class Plot:
                 self.stat_totbkgr_error.SetMarkerStyle(0)
                 self.stat_totbkgr_error.Draw("E2 Same")
             elif 'E' in bkgr_draw_option:
-                for i, s in enumerate(self.s):
+                for i in xrange(len(self.s)):
                     self.stat_bkgr_errors[i].Draw("E Same")
 
 
-    def drawHist(self, output_dir = None, normalize_signal = False, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None, custom_labels = None, draw_lines = None, message = None, min_cutoff = None):
+    def drawHist(self, output_dir = None, normalize_signal = False, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None, 
+        custom_labels = None, draw_lines = None, message = None, min_cutoff = None):
 
         #
         # Some default settings
@@ -667,7 +666,7 @@ class Plot:
         tmp_bkgr_draw_option = bkgr_draw_option.split('E')[-1]
         if len(self.b) > 0:
             if bkgr_draw_option == 'Stack':
-                self.hs.Draw("Hist")                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
+                self.hs.Draw("Hist")                                     #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
                 if self.draw_ratio is not None or self.draw_significance: 
                     self.hs.GetHistogram().GetXaxis().SetLabelOffset(9999999)
             else:
@@ -686,7 +685,7 @@ class Plot:
         tmp_draw_option = draw_option.split('E')[-1]
 
         if draw_option == "Stack":
-            self.hs.Draw("Hist")                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
+            self.hs.Draw("Hist")                                           #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
             if self.draw_ratio is not None or self.draw_significance: 
                 self.hs.GetHistogram().GetXaxis().SetLabelOffset(9999999)
         else:
@@ -845,7 +844,7 @@ class Plot:
             self.canvas.Clear()
         return
 
-    def drawGraph(self, output_dir = None, message = None):
+    def drawGraph(self, output_dir = None):
         
         setDefault()
         
@@ -946,7 +945,7 @@ class Plot:
                 hist.SetBarOffset(0.1)
                 self.hs.Add(hist)
      
-            self.hs.Draw('B')                                                            #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
+            self.hs.Draw('B')                     #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
             self.hs.SetTitle(title)
 
         else:
@@ -1036,7 +1035,7 @@ class Plot:
     # or a list of length 4 also containing the observed
     # If you want to add observed and expected from prevous analysis to compare to, add those to background
     #
-    def drawBrazilian(self, output_dir, draw_percent=False, message = None):
+    def drawBrazilian(self, output_dir):
         setDefault()
         
         #Create Canvas
@@ -1058,13 +1057,13 @@ class Plot:
         min_y = min([v for v in yellow.GetY()])
         values = [x for x in median.GetX()]
 
-        frame = self.plotpad.DrawFrame(1.4,0.001, 410, 10)
+        frame = self.plotpad.DrawFrame(1.4, 0.001, 410, 10)
         frame.GetXaxis().SetNdivisions(508)
         frame.GetYaxis().SetTitle(self.y_name)
         frame.GetXaxis().SetTitle(self.x_name)
         frame.SetMinimum(0.3*min_y)
         frame.SetMaximum(max_y*100)
-        frame.GetXaxis().SetLimits(0.95*min(values),1.05*max(values))
+        frame.GetXaxis().SetLimits(0.95*min(values), 1.05*max(values))
 
 
         yellow.SetFillColor(ROOT.kOrange)
@@ -1106,7 +1105,7 @@ class Plot:
         legend = ROOT.TLegend(0.5, .8, .9, .9)
         legend.AddEntry(median, "Asymptotic CL_{s} expected",'L')
         legend.AddEntry(green, "#pm 1 std. deviation",'f')
-        legend.AddEntry(yellow,"#pm 2 std. deviation",'f')
+        legend.AddEntry(yellow, "#pm 2 std. deviation",'f')
         if self.tex_names is not None and len(self.b) > 0:
             for l, b in zip(self.tex_names, self.b):
                 legend.AddEntry(b, l)

@@ -4,10 +4,6 @@
 #       Code to look at the cutflow of taus in our current object selection
 #
 
-import numpy as np
-from HNL.Tools.histogram import Histogram
-import ROOT
-
 #
 # Argument parser and logging
 #
@@ -85,7 +81,7 @@ if not args.plotCutFlow:
     # Loop over all events
     #
     from HNL.Tools.helpers import progress
-    from HNL.ObjectSelection.tauSelector import tau_DMfinding, isCleanFromLightLeptons, passedMuonDiscr, passedElectronDiscr,tau_id_WP, isGoodGenTau
+    from HNL.ObjectSelection.tauSelector import tau_DMfinding, isCleanFromLightLeptons, passedMuonDiscr, passedElectronDiscr, tau_id_WP, isGoodGenTau
     algo_iso = 'deeptauVSjets'
     for entry in event_range:
         

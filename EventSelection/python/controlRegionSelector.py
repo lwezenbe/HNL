@@ -1,4 +1,4 @@
-from eventSelectionTools import *
+from HNL.EventSelection.eventSelectionTools import *
 import HNL.EventSelection.eventCategorization as cat
 from HNL.ObjectSelection.leptonSelector import *
 from HNL.Tools.helpers import getFourVec, deltaPhi, deltaR
@@ -13,7 +13,8 @@ class ZZCRfilter:
         self.ec = event_categorization
 
     def initEvent(self, chain, new_chain, cutter):
-        if not cutter.cut(selectLeptonsGeneral(chain, new_chain, 4, light_algo = self.objsel['light_algo'], no_tau=self.objsel['no_tau'], cutter=cutter, workingpoint = self.objsel['workingpoint']), '4 tight leptons'): return False
+        if not cutter.cut(selectLeptonsGeneral(chain, new_chain, 4, light_algo = self.objsel['light_algo'], no_tau=self.objsel['no_tau'], 
+            cutter=cutter, workingpoint = self.objsel['workingpoint']), '4 tight leptons'): return False
         calculateGeneralVariables(chain, new_chain, is_reco_level=self.is_reco_level)
         calculateFourLepVariables(chain, new_chain, is_reco_level=self.is_reco_level)
         chain.category = max(cat.CATEGORIES)
@@ -41,7 +42,8 @@ class WZCRfilter:
 
 
     def initEvent(self, chain, new_chain, cutter):
-        if not cutter.cut(select3Leptons(chain, new_chain, light_algo = self.objsel['light_algo'], no_tau=self.objsel['no_tau'], cutter=cutter, workingpoint = self.objsel['workingpoint']), '4 tight leptons'): return False
+        if not cutter.cut(select3Leptons(chain, new_chain, light_algo = self.objsel['light_algo'], no_tau=self.objsel['no_tau'], 
+            cutter=cutter, workingpoint = self.objsel['workingpoint']), '4 tight leptons'): return False
         calculateGeneralVariables(chain, new_chain, is_reco_level=self.is_reco_level)
         calculateThreeLepVariables(chain, new_chain, is_reco_level=self.is_reco_level)
         chain.category = max(cat.CATEGORIES)
@@ -68,7 +70,8 @@ class ConversionCRfilter:
 
 
     def initEvent(self, chain, new_chain, cutter):
-        if not cutter.cut(select3Leptons(chain, new_chain, light_algo = self.objsel['light_algo'], no_tau=self.objsel['no_tau'], cutter=cutter, workingpoint = self.objsel['workingpoint']), '4 tight leptons'): return False
+        if not cutter.cut(select3Leptons(chain, new_chain, light_algo = self.objsel['light_algo'], no_tau=self.objsel['no_tau'], 
+            cutter=cutter, workingpoint = self.objsel['workingpoint']), '4 tight leptons'): return False
         calculateGeneralVariables(chain, new_chain, is_reco_level=self.is_reco_level)
         calculateThreeLepVariables(chain, new_chain, is_reco_level=self.is_reco_level)
         chain.category = self.ec.returnCategory()

@@ -41,7 +41,8 @@ from HNL.Tools.efficiency import Efficiency
 from HNL.Tools.helpers import rootFileContent
 from ROOT import TFile
 var = ['pt', 'eta']
-inputFiles = {'efficiency' : glob.glob(os.getcwd()+'/data/compareLightLeptonId/'+args.signal+'/efficiency-'+str(args.flavor)+'.root'), 'fakerate': glob.glob(os.getcwd()+'/data/compareLightLeptonId/'+args.bkgr+'/fakerate-'+str(args.flavor)+'.root')}
+inputFiles = {'efficiency' : glob.glob(os.getcwd()+'/data/compareLightLeptonId/'+args.signal+'/efficiency-'+str(args.flavor)+'.root'), 
+        'fakerate': glob.glob(os.getcwd()+'/data/compareLightLeptonId/'+args.bkgr+'/fakerate-'+str(args.flavor)+'.root')}
 for eff_name in ['efficiency', 'fakerate']:
     for f in inputFiles[eff_name]:
         print f
@@ -63,7 +64,8 @@ for eff_name in ['efficiency', 'fakerate']:
                 tmp_list = [list_of_eff[fk][i][v] for i in list_of_eff[fk].keys()]
                 scale_factor = 0.25 if v == 'pt' else 1.
                 bkgr_hist.Scale(scale_factor*tmp_list[0].getEfficiency().GetSumOfWeights()/bkgr_hist.GetSumOfWeights())
-                p = Plot([efficiency.getEfficiency() for efficiency in tmp_list], [i+' '+fk for i in list_of_eff[fk].keys()]+['lepton distribution'],  eff_name+'_'+args.flavor+'_'+v, bkgr_hist = bkgr_hist)
+                p = Plot([efficiency.getEfficiency() for efficiency in tmp_list], [i+' '+fk for i in list_of_eff[fk].keys()]+['lepton distribution']
+                        ,  eff_name+'_'+args.flavor+'_'+v, bkgr_hist = bkgr_hist)
                 p.drawHist(output_dir = os.getcwd()+'/data/Results/compareLightLeptonId/'+fk+'/var/'+sample, draw_option = 'Hist')
                 
         

@@ -32,7 +32,7 @@ def isTightMuonCutBased(chain, index):
     if chain._relIso[index] >= 0.1:                    return False
     return True
 
-from bTagWP import slidingDeepFlavorThreshold
+from HNL.ObjectSelection.bTagWP import slidingDeepFlavorThreshold
 
 #
 # Updated selection with ttH MVA

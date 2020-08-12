@@ -30,7 +30,8 @@ argParser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot 
 argParser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l', ''])
 argParser.add_argument('--coupling', action='store', default=0.01, type=float,  help='How large is the coupling?')
 argParser.add_argument('--selection', action='store', default='cut-based', type=str,  help='What type of analysis do you want to run?', choices=['cut-based', 'AN2017014', 'MVA'])
-argParser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', choices=['baseline', 'lowMassSR', 'highMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
+argParser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', 
+    choices=['baseline', 'lowMassSR', 'highMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
 argParser.add_argument('--groupSamples',   action='store_true', default=False,  help='plot Search Regions')
 argParser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data')
 
@@ -44,14 +45,11 @@ if args.includeData and args.region in ['baseline', 'highMassSR', 'lowMassSR']:
 #
 # General imports
 #
-import numpy as np
 import os
-from ROOT import TFile, TLorentzVector
+from ROOT import TFile
 from HNL.Tools.histogram import Histogram
 from HNL.Tools.mergeFiles import merge
 from HNL.Tools.helpers import getObjFromFile, progress, makeDirIfNeeded
-from HNL.Samples.sample import createSampleList
-from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
 from HNL.EventSelection.eventCategorization import EventCategory
 from HNL.EventSelection.cutter import Cutter, printSelections
 
@@ -243,6 +241,7 @@ if not args.makePlots:
             # Event selection
             #
             if not es.passedFilter(chain, chain, cutter): continue
+            if len(chain.l_flavor) == chain.l_flavor.count(2): continue #Not all taus
             nprompt = 0
             if sample.name != 'Data':
                 for index in chain.l_indices:
@@ -413,7 +412,6 @@ if args.runOnCream or args.isTest:
 from HNL.Plotting.plot import Plot
 from HNL.Plotting.plottingTools import extraTextFormat
 from HNL.Tools.helpers import makePathTimeStamped
-from HNL.Tools.efficiency import Efficiency
 
 #
 # Set output directory, taking into account the different options
@@ -440,7 +438,7 @@ output_dir = makePathTimeStamped(output_dir)
 #
 # Create plots for each category
 #
-from HNL.EventSelection.eventCategorization import CATEGORY_NAMES, CATEGORY_FROM_NAME
+from HNL.EventSelection.eventCategorization import CATEGORY_NAMES
 print list_of_hist.keys()
 for c in list_of_hist.keys():
     print c
@@ -478,7 +476,8 @@ for c in list_of_hist.keys():
 
         # Create plot object (if signal and background are displayed, also show the ratio)
         if args.groupSamples:
-            p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = False, extra_text = extra_text, draw_ratio = (not args.signalOnly and not args.bkgrOnly), year = args.year, color_palette = 'AN2017', color_palette_bkgr = 'AN2017')
+            p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = False, extra_text = extra_text, 
+                draw_ratio = (not args.signalOnly and not args.bkgrOnly), year = args.year, color_palette = 'AN2017', color_palette_bkgr = 'AN2017')
         else:
             p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, y_log = False, extra_text = extra_text, draw_ratio = (not args.signalOnly and not args.bkgrOnly), year = args.year)
 
@@ -497,7 +496,8 @@ for c in list_of_hist.keys():
     #         # Load in efficiency to print on canvas if requested
     #         if args.showCuts:
     #             eff_file = os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/calcSignalEfficiency/HNLtau/divideByCategory/triggerTest/signalSelectionFull.root')
-    #             eff = Efficiency('efficiency_'+str(c[0])+'_'+str(c[1]) + '_l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2]), None, None, eff_file, subdirs=['efficiency_'+str(c[0])+'_'+str(c[1]), 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])])           
+    #             eff = Efficiency('efficiency_'+str(c[0])+'_'+str(c[1]) + '_l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2]), None, None, eff_file, 
+    #                   subdirs=['efficiency_'+str(c[0])+'_'+str(c[1]), 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])])           
  
     #         # Loop over different signals and draw the pt
     #         for n in list_of_hist[c][v]['signal'].keys():
@@ -512,5 +512,7 @@ for c in list_of_hist.keys():
     #             # Create plot object and draw
     #             #p = Plot(h, legend_names, cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-pt-'+n, extra_text=extra_text)
     #             p = Plot(h, legend_names, str(c)+'-pt-'+n, extra_text=extra_text)
-    #             #p.drawHist(output_dir = os.path.join(output_dir, cat.categoryName(c), cat.subcategoryName(c), 'pt', 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])), normalize_signal=False, draw_option='EHist', draw_cuts=draw_cuts)
-    #             p.drawHist(output_dir = os.path.join(output_dir, str(c), 'pt', 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])), normalize_signal=False, draw_option='EHist', draw_cuts=draw_cuts)
+    #             #p.drawHist(output_dir = os.path.join(output_dir, cat.categoryName(c), cat.subcategoryName(c), 'pt', 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])), 
+    #                    normalize_signal=False, draw_option='EHist', draw_cuts=draw_cuts)
+    #             p.drawHist(output_dir = os.path.join(output_dir, str(c), 'pt', 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])), 
+                        # normalize_signal=False, draw_option='EHist', draw_cuts=draw_cuts)

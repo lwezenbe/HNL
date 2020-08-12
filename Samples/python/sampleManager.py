@@ -1,6 +1,5 @@
-from HNL.Samples.sample import *
+from HNL.Samples.sample import Sample, getListOfSampleNames, createSampleList, getSampleFromList
 import os
-
 
 #
 # To get load in samples, this manager is used
@@ -37,6 +36,8 @@ class SampleManager:
         self.sample_names = self.getSampleNames(sample_names_file_full)
         self.sample_list = createSampleList(self.path)
         self.sample_groups = SAMPLE_GROUPS
+
+        self.lumi_clusters = {}
 
     def getSampleNames(self, in_file_name):
         sample_infos = [line.split('%')[0].strip() for line in open(in_file_name)]                     # Strip % comments and \n charachters

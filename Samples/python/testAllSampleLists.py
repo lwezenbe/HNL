@@ -1,5 +1,5 @@
-from HNL.Samples.sample import Sample, createSampleList
-from HNL.Tools.helpers import isValidRootFile, makeDirIfNeeded
+from HNL.Samples.sample import createSampleList
+from HNL.Tools.helpers import makeDirIfNeeded
 import glob
 import os
 

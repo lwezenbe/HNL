@@ -80,7 +80,7 @@ CATEGORIES = sorted(CATEGORY_NAMES.keys())
 SUPER_CATEGORIES = {'Ditau': [1, 2, 3, 4], 'SingleTau' : [5, 6, 7, 8, 9], 'NoTau' : [11, 12, 13, 14, 15, 16]}
 ANALYSIS_CATEGORIES = {'Ditau': [1, 2, 3, 4], 'SingleTau-OS': [6, 8], 'Single-Tau-SS': [5, 7], 'EEE': [11], 'MuMuMu': [12], 'EEMu': [13, 14], 'EMuMu': [15, 16], 'EEE-Mu': [11, 13, 14], 'MuMuMu-E': [12, 15, 16]}
 #TODO: This category is a bit dodgy, because it is used in trigger calc but it is quite fragile. If the categories dont give the same output when given as input to returnCategoryTriggers, weird things will happen in that code
-TRIGGER_CATEGORIES = {'TauTauE': [1, 2], 'TauTauMu': [3, 4], 'TauEE': [5, 6], 'TauTauMu': [7, 8], 'TauEMu':[9, 10], 'EEE': [11], 'MuMuMu': [12], 'EEMu': [13, 14], 'EMuMu': [15, 16]} 
+TRIGGER_CATEGORIES = {'TauTauE': [1, 2], 'TauTauMu': [3, 4], 'TauEE': [5, 6], 'TauMuMu': [7, 8], 'TauEMu':[9, 10], 'EEE': [11], 'MuMuMu': [12], 'EEMu': [13, 14], 'EMuMu': [15, 16]} 
 
 def filterSuperCategory(super_category_name, category):
     if category in SUPER_CATEGORIES[super_category_name]: return True
@@ -103,6 +103,7 @@ class EventCategory():
         self.n_mu = 0
         self.n_ele = 0
         self.n_tau = 0
+        self.n_l = 0
         self.category = None
         self.categories = CATEGORIES
         self.categories_signaltruth = CATEGORIES_SIGNALTRUTH
@@ -200,14 +201,14 @@ class EventCategory():
         self.flavorContent()
         #Category 1 and 2:
         if self.chain.l_flavor[l1] == 2 and self.chain.l_flavor[l2] == 2:
-            if chain.l_flavor[l3] == 0:
+            if self.chain.l_flavor[l3] == 0:
                 #Category 1:
                 if self.chain.l_charge[l1] == self.chain.l_charge[l2]:
                     self.category = 1
                 #Category 2:
                 else:
                     self.category = 2
-            elif chain.l_flavor[l3] == 1:
+            elif self.chain.l_flavor[l3] == 1:
                 #Category 1:
                 if self.chain.l_charge[l1] == self.chain.l_charge[l2]:
                     self.category = 3

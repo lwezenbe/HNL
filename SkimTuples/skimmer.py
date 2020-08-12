@@ -19,7 +19,8 @@ argParser.add_argument('--runLocal', action='store_true', default=False,  help='
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 argParser.add_argument('--overwrite', action='store_true', default=False,                help='overwrite if valid output file already exists')
 argParser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
-argParser.add_argument('--lightLeptonSelection', action='store', default='leptonMVAtop', help='selection algorithm for light leptons', choices = ['leptonMVAtop', 'leptonMVAtZq', 'leptonMVAttH', 'cutbased'])
+argParser.add_argument('--lightLeptonSelection', action='store', default='leptonMVAtop', help='selection algorithm for light leptons', 
+    choices = ['leptonMVAtop', 'leptonMVAtZq', 'leptonMVAttH', 'cutbased'])
 argParser.add_argument('--tauSelection',  action='store',      default='deeptauVSjets', help='selection algorithm for taus', choices=['deeptauVSjets', 'MVA2017v2'])
 argParser.add_argument('--summaryFile', action='store_true', default=False,  help='Create text file that shows all selected arguments')
 argParser.add_argument('--genSkim',  action='store_true',      default=False,               help='skim on generator level leptons')
@@ -60,7 +61,7 @@ if not args.isChild and not args.isTest:
             print sample_name, "not found. Will skip this sample"
             continue
         for njob in xrange(sample.split_jobs):
-            if njob > 26: continue
+            # if njob > 26: continue
             jobs += [(sample.name, str(njob))]
 
     submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'skim')
@@ -116,11 +117,6 @@ if args.oldAnalysisSkim:
 else:
     output_name = os.path.join(output_base, str(args.year), gen_name, 'tmp_'+output_file_name, sample.name + '_' + str(args.subJob) + '.root')
 
-# if not args.isTest:
-#     output_name = os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL', str(args.year), gen_name, 'tmp_'+output_file_name, sample.name + '_' + str(args.subJob) + '.root'))
-# else:
-#     output_name = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'SkimTuples', 'data', 'testArea', str(args.year), gen_name, 'tmp_'+output_file_name, sample.name + '_' + str(args.subJob) + '.root'))
-
 makeDirIfNeeded(output_name)
 
 if not args.isTest and not args.overwrite and isValidRootFile(output_name):
@@ -165,12 +161,17 @@ new_vars = makeBranches(output_tree, new_branches)
 #
 # Start event loop
 #
+print len(sample.getEventRange(args.subJob))
+
 if args.isTest:
     event_range = range(20000)
     # event_range = sample.getEventRange(args.subJob)    
 
 else:
-    event_range = sample.getEventRange(args.subJob)    
+    event_range = sample.getEventRange(args.subJob)   
+
+
+     
 
 from HNL.Tools.helpers import progress
 from HNL.EventSelection.eventSelectionTools import calculateThreeLepVariables, calculateGeneralVariables, select3Leptons, select3GenLeptons
@@ -195,6 +196,7 @@ for entry in event_range:
         select3Leptons(chain, new_vars, light_algo='cutbased', workingpoint = 'tight', no_tau = True, cutter = cutter)
         if len(chain.leptons) < 3:       continue
 
+
     
     ec = EventCategory(new_vars)
     c = ec.returnCategory()
@@ -207,7 +209,7 @@ for entry in event_range:
     output_tree.Fill()
 
 # print output_name.split('.')[-1]+'_cutflow.root'
-# cutter.saveCutFlow(output_name.split('.')[-1]+'_cutflow.root')
+cutter.saveCutFlow(output_name.split('.')[-1]+'_cutflow.root')
 
 
 output_tree.AutoSave()

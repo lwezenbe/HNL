@@ -1,6 +1,6 @@
 from HNL.Tools.helpers import deltaR
 import math
-from bTagWP import getBTagWP
+from HNL.ObjectSelection.bTagWP import getBTagWP
 
 #
 # Simple gen level selection

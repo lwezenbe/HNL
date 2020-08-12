@@ -35,21 +35,20 @@ class LumiWeight:
 
 if __name__ == '__main__':
     from HNL.Samples.sample import createSampleList, getSampleFromList
-    from HNL.Samples.sampleManager import *
+    from HNL.Samples.sampleManager import SampleManager
     import os
 
-    sample_manager = SampleManager(2016, 'noskim', 'test')
+    sm = SampleManager(2016, 'noskim', 'test')
 
-    # sample = sample_manager.getSample('DYJetsToLL-M-10to50')
-    sample = sample_manager.getSample('ZZTo4L')
+    s = sm.getSample('ZZTo4L')
 
-    chain = sample.initTree()
-    lw = LumiWeight(sample, sample_manager)
+    chain = s.initTree()
+    lw = LumiWeight(s, sm)
     chain.GetEntry(5)
     chain.year = 2016
-    print sample.name
+    print s.name
     print lw.getLumiWeight() 
     print 'chain._weight: ', chain._weight, 'expected -41444.199'
-    print 'xsec ', sample.xsec, lw.sample.xsec, 'expected 18610'
+    print 'xsec ', s.xsec, lw.s.xsec, 'expected 18610'
     print 'luminosity ', LUMINOSITY_MAP[chain.year], 'expected 35546.'
-    print 'hCount ', sample.hcount, lw.total_hcount, 'more than 2.05023673303e+12'
+    print 'hCount ', s.hcount, lw.total_hcount, 'more than 2.05023673303e+12'

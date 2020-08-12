@@ -7,11 +7,13 @@ from HNL.Tools.helpers import makePathTimeStamped, makeDirIfNeeded
 #
 # Argument parser and logging
 #
-import os, argparse
+import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
 argParser.add_argument('--ignoreCategories', action='store_true', default=False,  help='do not split the events in different categories')
-argParser.add_argument('--separateTriggers', action='store', default=None,  help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', choices=['single', 'cumulative', 'full'])
+argParser.add_argument('--separateTriggers', action='store', default=None,  
+    help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', 
+    choices=['single', 'cumulative', 'full'])
 argParser.add_argument('--signalMass', action='store', default=None,  help='Only look at sample with specific mass')
 args = argParser.parse_args()
 
@@ -220,10 +222,12 @@ for f_name in f_names:
             for v in file_name_comp[sample][c].keys():
                 triggers = [t for t in hists[sample][c][v].keys()]
                 if not '2D' in v:
-                    p = Plot([hists[sample][c][v][t] for t in triggers], triggers, c+'_'+v, hists[sample][c][v][triggers[0]].GetXaxis().GetTitle(), hists[sample][c][v][triggers[0]].GetYaxis().GetTitle(), extra_text = extra_text)  
+                    p = Plot([hists[sample][c][v][t] for t in triggers], triggers, c+'_'+v, hists[sample][c][v][triggers[0]].GetXaxis().GetTitle(), 
+                        hists[sample][c][v][triggers[0]].GetYaxis().GetTitle(), extra_text = extra_text)  
                     p.drawHist(output_dir = output_dir+'/'+sample, draw_option = "EHist")
                 for t in triggers:
-                    p = Plot(hists[sample][c][v][t], triggers, c+'_'+v+'_'+t, hists[sample][c][v][t].GetXaxis().GetTitle(), hists[sample][c][v][t].GetYaxis().GetTitle(), extra_text=extra_text)          
+                    p = Plot(hists[sample][c][v][t], triggers, c+'_'+v+'_'+t, hists[sample][c][v][t].GetXaxis().GetTitle(), 
+                        hists[sample][c][v][t].GetYaxis().GetTitle(), extra_text=extra_text)          
                     if '2D' in v:
                         p.draw2D(output_dir = output_dir+'/'+sample)
                     else:

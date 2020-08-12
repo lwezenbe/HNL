@@ -1,5 +1,5 @@
 from ROOT import TFile, TGraphErrors, TChain
-from helpers import makeDirIfNeeded, getObjFromFile, isValidRootFile
+from HNL.Tools.helpers import makeDirIfNeeded, getObjFromFile, isValidRootFile
 import numpy as np
 from HNL.Tools.histogram import Histogram
 
@@ -41,7 +41,7 @@ class ROC:
             raise RuntimeError("In fillEfficiency in ROC.py: length of passed ("+len(passed)+") is not the same as number of working points ("+len(self.working_points)+")")
         if weight is None: weight = [1.]*len(passed)
 
-        for i, wp in enumerate(self.working_points):
+        for i in xrange(len(self.working_points)):
             self.eff_denominator.fill(self.chain, weight[i], i)
             if passed[i]: self.eff_numerator.fill(self.chain, weight[i], i)
     
@@ -50,7 +50,7 @@ class ROC:
             raise RuntimeError("In fillMisid in ROC.py: length of passed ("+len(passed)+") is not the same as number of working points ("+len(self.working_points)+")")
         if weight is None: weight = [1.]*len(passed)
 
-        for i, wp in enumerate(self.working_points):
+        for i in xrange(len(self.working_points)):
             self.misid_denominator.fill(self.chain, weight[i], i)
             if passed[i]: self.misid_numerator.fill(self.chain, weight[i], i)
         

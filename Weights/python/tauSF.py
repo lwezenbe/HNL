@@ -9,9 +9,9 @@ YEARLIB = {2016 : '2016Legacy',
             2017: '2017ReReco',
             2018: '2018ReReco'}
 
-ISOLIB= {'deeptauVSjets' : 'DeepTau2017v2p1VSjet', 'MVA2017v2': 'MVAoldDM2017v2'}
-ELIB= {'deeptauVSe' : 'DeepTau2017v2p1VSe', 'againstElectron': 'antiEleMVA6'}
-MULIB= {'deeptauVSmu' : 'DeepTau2017v2p1VSmu', 'againstMuon': 'antiMu3'}
+ISOLIB = {'deeptauVSjets' : 'DeepTau2017v2p1VSjet', 'MVA2017v2': 'MVAoldDM2017v2'}
+ELIB = {'deeptauVSe' : 'DeepTau2017v2p1VSe', 'againstElectron': 'antiEleMVA6'}
+MULIB = {'deeptauVSmu' : 'DeepTau2017v2p1VSmu', 'againstMuon': 'antiMu3'}
 
 WPLIB = {'vvvloose': 'VVVLoose', 
             'vvloose': 'VVLoose',
@@ -30,13 +30,13 @@ class TauSF:
         self.sftool_e = TauIDSFTool(YEARLIB[year], ELIB[getCorrespondingLightLepDiscr(algorithm)[0]],  WPLIB[wp_e])
         self.sftool_mu = TauIDSFTool(YEARLIB[year], MULIB[getCorrespondingLightLepDiscr(algorithm)[1]],  WPLIB[wp_mu])
 
-    def getSF(chain, index):
+    def getSF(self, chain, index):
         if chain._tauGenStatus[index] == 1 or chain._tauGenStatus[index] == 3:
-            return self.sftool_e.getSFvsEta(chain._lEta[index],chain._tauGenStatus[index])
+            return self.sftool_e.getSFvsEta(chain._lEta[index], chain._tauGenStatus[index])
         elif chain._tauGenStatus[index] == 2 or chain._tauGenStatus[index] == 4:
-            return self.sftool_mu.getSFvsEta(chain._lEta[index],chain._tauGenStatus[index])
+            return self.sftool_mu.getSFvsEta(chain._lEta[index], chain._tauGenStatus[index])
         elif chain._tauGenStatus[index] == 5:
-            return self.sftool_iso.getSFvsPT(chain._lPt[index],chain._tauGenStatus[index])
+            return self.sftool_iso.getSFvsPT(chain._lPt[index], chain._tauGenStatus[index])
         else:
             return 1.
 
@@ -96,7 +96,7 @@ if __name__ == "__main__":
         out_file_tex.write(ele)
         for eta in eta_range:
             sf = tausftool.sftool_e.getSFvsEta(eta, 1)
-            up = tausftool.sftool_e.getSFvsEta(eta, 1,unc='Up') - tausftool.sftool_e.getSFvsEta(eta, 1)
+            up = tausftool.sftool_e.getSFvsEta(eta, 1, unc='Up') - tausftool.sftool_e.getSFvsEta(eta, 1)
             down = tausftool.sftool_e.getSFvsEta(eta, 1) - tausftool.sftool_e.getSFvsEta(eta, 1, unc='Down')
             out_file_tex.write(' & $%.2f'%sf+'^{+%.2f'%up+'}_{-%.2f'%down+'}$')
         out_file_tex.write('\\\\ \hline \n')
@@ -122,7 +122,7 @@ if __name__ == "__main__":
         out_file_tex.write(mu)
         for eta in eta_range:
             sf = tausftool.sftool_mu.getSFvsEta(eta, 2)
-            up = tausftool.sftool_mu.getSFvsEta(eta, 2,unc='Up') - tausftool.sftool_mu.getSFvsEta(eta, 2)
+            up = tausftool.sftool_mu.getSFvsEta(eta, 2, unc='Up') - tausftool.sftool_mu.getSFvsEta(eta, 2)
             down = tausftool.sftool_mu.getSFvsEta(eta, 2) - tausftool.sftool_mu.getSFvsEta(eta, 2, unc='Down')
             out_file_tex.write(' & $%.2f'%sf+'^{+%.2f'%up+'}_{-%.2f'%down+'}$')
         out_file_tex.write('\\\\ \hline \n')

@@ -113,7 +113,7 @@ def getEleWorkingPoints(algorithm):
     sorted_wp = sorted(all_wp, key = lambda k: order_of_workingpoints[k])
     return sorted_wp
 
-def passedElectronDiscr(chain, index, iso_algorithm_name, WP):
+def passedElectronDiscr(chain, index, iso_algorithm_name, wp):
     if 'deeptau' in iso_algorithm_name:
         ele_discr_name = 'deeptauVSe'
     elif 'MVA' in iso_algorithm_name:
@@ -121,9 +121,9 @@ def passedElectronDiscr(chain, index, iso_algorithm_name, WP):
     else:
         print 'Error: inconsistent iso_algorithm_name in tauSelector.applyElectronDiscr'
         exit(0)
-    return tau_eleDiscr_WP[(ele_discr_name, WP)](chain)[index]
+    return tau_eleDiscr_WP[(ele_discr_name, wp)](chain)[index]
 
-def passedMuonDiscr(chain, index, iso_algorithm_name, WP):
+def passedMuonDiscr(chain, index, iso_algorithm_name, wp):
     if 'deeptau' in iso_algorithm_name:
         mu_discr_name = 'deeptauVSmu'
     elif 'MVA' in iso_algorithm_name:
@@ -131,7 +131,7 @@ def passedMuonDiscr(chain, index, iso_algorithm_name, WP):
     else:
         print 'Error: inconsistent iso_algorithm_name in tauSelector.applyMuonDiscr'
         exit(0)
-    return tau_muonDiscr_WP[(mu_discr_name, WP)](chain)[index]
+    return tau_muonDiscr_WP[(mu_discr_name, wp)](chain)[index]
 
 def isGoodGenTau(chain, index):
     if chain._gen_lFlavor[index] != 2:          return False

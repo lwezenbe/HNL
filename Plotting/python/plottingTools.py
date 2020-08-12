@@ -85,10 +85,10 @@ def drawLineFormat(x0 = None, x1 = None, y0 = None, y1 = None, color = None, wid
 #         if (h.GetBinContent(xbin) - h.GetBinErrorLow(xbin)) < 0:
 #             h.SetBinError
 
-def getCumulativeValue(hist, bin):
+def getCumulativeValue(hist, h_bin):
     out_val = 0.
     out_err = 0.
-    for b in xrange(bin, hist.GetNbinsX() + 1):
+    for b in xrange(h_bin, hist.GetNbinsX() + 1):
         out_val += hist.GetBinContent(b)
         out_err += hist.GetBinError(b) ** 2
     return out_val, np.sqrt(out_err)
