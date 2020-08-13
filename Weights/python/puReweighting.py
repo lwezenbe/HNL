@@ -12,9 +12,9 @@ dataDir = '$CMSSW_BASE/src/HNL/Weights/data/puReweightingData/'
 #Define a functio that returns a reweighting-function according to the data 
 def getReweightingFunction(year, variation='central', useMC=None):
 
-    if   year == '2016': data = {'central' : "PU_2016_36000_XSecCentral", 'up' : "PU_2016_36000_XSecUp", 'down' : "PU_2016_36000_XSecDown"}
-    elif year == '2017': data = {'central' : "PU_2017_41500_XSecCentral", 'up' : "PU_2017_41500_XSecUp", 'down' : "PU_2017_41500_XSecDown"}
-    elif year == '2018': data = {'central' : "PU_2018_60000_XSecCentral", 'up' : "PU_2018_60000_XSecUp", 'down' : "PU_2018_60000_XSecDown"}
+    if   year == 2016: data = {'central' : "PU_2016_36000_XSecCentral", 'up' : "PU_2016_36000_XSecUp", 'down' : "PU_2016_36000_XSecDown"}
+    elif year == 2017: data = {'central' : "PU_2017_41500_XSecCentral", 'up' : "PU_2017_41500_XSecUp", 'down' : "PU_2017_41500_XSecDown"}
+    elif year == 2018: data = {'central' : "PU_2018_60000_XSecCentral", 'up' : "PU_2018_60000_XSecUp", 'down' : "PU_2018_60000_XSecDown"}
 
     # Data
     histoData = getObjFromFile(dataDir + data[variation] + '.root', 'pileup')
@@ -24,9 +24,9 @@ def getReweightingFunction(year, variation='central', useMC=None):
     if not useMC:
         mcProfile = ROOT.TH1D('mc', 'mc', 100, 0, 100)
         sys.stdout = open(os.devnull, 'w')
-        if year == '2016':   from SimGeneral.MixingModule.mix_2016_25ns_Moriond17MC_PoissonOOTPU_cfi import mix
-        elif year == '2017': from SimGeneral.MixingModule.mix_2017_25ns_WinterMC_PUScenarioV1_PoissonOOTPU_cfi import mix
-        elif year == '2018': from SimGeneral.MixingModule.mix_2018_25ns_JuneProjectionFull18_PoissonOOTPU_cfi import mix
+        if year == 2016:   from SimGeneral.MixingModule.mix_2016_25ns_Moriond17MC_PoissonOOTPU_cfi import mix
+        elif year == 2017: from SimGeneral.MixingModule.mix_2017_25ns_WinterMC_PUScenarioV1_PoissonOOTPU_cfi import mix
+        elif year == 2018: from SimGeneral.MixingModule.mix_2018_25ns_JuneProjectionFull18_PoissonOOTPU_cfi import mix
           
         sys.stdout = sys.__stdout__
         for i, value in enumerate(mix.input.nbPileupEvents.probValue): mcProfile.SetBinContent(i+1, value)   # pylint: disable=E1103
@@ -51,6 +51,6 @@ if __name__ == '__main__':
 
     chain = sample.initTree()
     chain.GetEntry(5)
-    chain.year = '2016'
+    chain.year = 2016
     pu = getReweightingFunction(chain.year, 'central')
     print pu(chain._nTrueInt)

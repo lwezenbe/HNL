@@ -8,9 +8,9 @@ LUMINOSITY_MAP = {
 
 class LumiWeight:
 
-    def __init__(self, sample, sample_manager, skimmed = False):
+    def __init__(self, sample, sample_manager):
         self.sample = sample
-        self.skimmed = skimmed
+        self.skimmed = sample_manager.skim != 'noskim'
 
         if not self.skimmed and not self.sample.is_data: 
             self.lumi_cluster = sample_manager.makeLumiClusters()[sample.shavedName()]
