@@ -18,11 +18,10 @@ argParser.add_argument('--year',     action='store',            default=None,   
 argParser.add_argument('--sample',   action='store',            default=None,   help='Select sample by entering the name as defined in the conf file')
 argParser.add_argument('--subJob',   action='store',            default=None,   help='The number of the subjob for this sample')
 argParser.add_argument('--isTest',   action='store_true',       default=False,  help='Run a small test')
-argParser.add_argument('--runLocal', action='store_true',       default=False,  help='use local resources instead of Cream02')
+argParser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 argParser.add_argument('--dryRun',   action='store_true',       default=False,  help='do not launch subjobs, only show them')
 argParser.add_argument('--makePlots',   action='store_true',    default=False,  help='Use existing root files to make the plots')
 argParser.add_argument('--showCuts',   action='store_true',     default=False,  help='Show what the pt cuts were for the category in the plots')
-argParser.add_argument('--runOnCream',   action='store_true',   default=False,  help='Submit jobs on the cluster')
 argParser.add_argument('--genLevel',   action='store_true',     default=False,  help='Use gen level variables')
 argParser.add_argument('--signalOnly',   action='store_true',   default=False,  help='Run or plot a only the signal')
 argParser.add_argument('--bkgrOnly',   action='store_true',     default=False,  help='Run or plot a only the background')
@@ -34,13 +33,23 @@ argParser.add_argument('--region', action='store', default='baseline', type=str,
     choices=['baseline', 'lowMassSR', 'highMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
 argParser.add_argument('--groupSamples',   action='store_true', default=False,  help='plot Search Regions')
 argParser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data')
+argParser.add_argument('--makeDataCards', action = 'store_true',  help='Make data cards of the data you have')
+argParser.add_argument('--rescaleSignal', type = float,  action='store', default=None,  help='Enter desired signal coupling squared')
+argParser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 
-#argParser.add_argument('--triggerTest', type=str, default=None,  help='Some settings to perform pt cuts for triggers')
+
+
 args = argParser.parse_args()
 
 
+from HNL.Tools.logger import getLogger, closeLogger
+log = getLogger(args.logLevel)
+
 if args.includeData and args.region in ['baseline', 'highMassSR', 'lowMassSR']:
     raise RuntimeError('These options combined would mean unblinding. This is not allowed.')
+
+if args.makeDataCards and args.selection != 'MVA': 
+    raise RuntimeError("makeDataCards here is not supported for anything that is not MVA. Please use calcYields for this. The eventual plan is to merge calcYields and plotVariables into 1 but for now they are separated")
 
 #
 # General imports
@@ -52,6 +61,8 @@ from HNL.Tools.mergeFiles import merge
 from HNL.Tools.helpers import getObjFromFile, progress, makeDirIfNeeded
 from HNL.EventSelection.eventCategorization import EventCategory
 from HNL.EventSelection.cutter import Cutter, printSelections
+from HNL.Weights.reweighter import Reweighter
+from HNL.TMVA.reader import Reader
 
 #
 # Some constants to make referring to signal leptons more readable
@@ -65,14 +76,18 @@ nl = 3 if args.region != 'ZZCR' else 4
 
 if args.isTest:
     if args.year is None: args.year = '2016'
-    if args.sample is None: args.sample = 'DYJetsToLL-M-10to50'
+    if args.sample is None: args.sample = 'DYJetsToLL-M-50'
+
 
 #
 # Create histograms
 #
 import HNL.Analysis.analysisTypes as at
-var = at.returnVariables(nl, not args.genLevel)
-
+if args.makeDataCards and not args.makePlots:
+    var = at.var_mva
+else:
+    var = at.returnVariables(nl, not args.genLevel, args.selection == 'MVA')
+    # var = at.var_mva
 
 import HNL.EventSelection.eventCategorization as cat
 def listOfCategories(region):
@@ -94,7 +109,7 @@ for prompt_str in ['prompt', 'nonprompt', 'total']:
     list_of_hist[prompt_str] = {}
     for c in categories:
         list_of_hist[prompt_str][c] = {}
-        for v in var:
+        for v in var.keys():
             list_of_hist[prompt_str][c][v] = {'signal':{}, 'bkgr':{}}
             if args.includeData: list_of_hist[prompt_str][c][v]['data'] = {}
 
@@ -111,47 +126,42 @@ elif args.selection != 'AN2017014':
     skim_str = 'Reco'
 else:
     skim_str = 'Old'
-# sample_manager = SampleManager(args.year, skim_str, 'fulllist_'+str(args.year))
-sample_manager = SampleManager(args.year, skim_str, 'yields_'+str(args.year))
+sample_manager = SampleManager(args.year, skim_str, 'fulllist_'+str(args.year))
 
 from HNL.Triggers.triggerSelection import applyCustomTriggers, listOfTriggersAN2017014
 
+#
+# Prepare jobs
+#
+jobs = []
+for sample_name in sample_manager.sample_names:
+    if not args.includeData and sample_name == 'Data': continue
+    sample = sample_manager.getSample(sample_name)
+    if args.sample and args.sample != sample.name: continue
+    if args.signalOnly and not 'HNL' in sample.name: continue
+    if args.bkgrOnly and 'HNL' in sample.name: continue
+    for njob in xrange(sample.split_jobs): 
+        jobs += [(sample.name, str(njob))]
 
 #
 # Loop over samples and events
 #
-if not args.makePlots:
+if not args.makePlots and not args.makeDataCards:
 
     #
     # Submit subjobs
     #
     if args.runOnCream and not args.isChild:
         from HNL.Tools.jobSubmitter import submitJobs
-        jobs = []
-        for sample_name in sample_manager.sample_names:
-            if not args.includeData and sample_name == 'Data': continue
-            sample = sample_manager.getSample(sample_name)
-            if args.signalOnly and not 'HNL' in sample.name: continue
-            if args.bkgrOnly and 'HNL' in sample.name: continue
-            for njob in xrange(sample.split_jobs): 
-                jobs += [(sample.name, str(njob))]
-
         submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'plotVar')
         exit(0)
 
     #prepare object  and event selection
+    from HNL.ObjectSelection.objectSelection import objectSelectionCollection
     if args.selection == 'AN2017014':
-        object_selection_param = {
-            'no_tau' : True,
-            'light_algo' : 'cutbased',
-            'workingpoint' : 'tight'
-        }
+        object_selection = objectSelectionCollection('deeptauVSjets', 'cutbased', 'tight', 'tight', 'tight', True)
     else:
-        object_selection_param = {
-            'no_tau' : False,
-            'light_algo' : 'leptonMVAtop',
-            'workingpoint' : 'medium'
-        }
+        object_selection = objectSelectionCollection('deeptauVSjets', 'leptonMVAtop', 'tight', 'tight', 'tight', False)
 
     from HNL.EventSelection.eventSelector import EventSelector
 
@@ -194,10 +204,10 @@ if not args.makePlots:
         # Set event range
         #
         if args.isTest:
-            if len(sample.getEventRange(0)) < 2000:
+            if len(sample.getEventRange(0)) < 1000:
                 event_range = sample.getEventRange(0)
             else:
-                event_range = xrange(2000)
+                event_range = xrange(1000)
         elif args.runOnCream:
             event_range = sample.getEventRange(args.subJob)
         else:
@@ -220,10 +230,23 @@ if not args.makePlots:
         cutter = Cutter(chain = chain)
 
         #
+        # Initialize reweighter
+        #
+        reweighter = Reweighter(sample, sample_manager)
+
+        #
+        # Load in MVA reader if needed
+        #
+        if args.selection == 'MVA':
+            tmva = {}
+            for n in ['low_tau', 'high_tau', 'low_e', 'high_e', 'low_mu', 'high_mu']:
+                tmva[n] = Reader(chain, 'kBDT', n)
+
+        #
         # Loop over all events
         #
         ec = EventCategory(chain)
-        es = EventSelector(args.region, args.selection, object_selection_param, not args.genLevel, ec)
+        es = EventSelector(args.region, args.selection, object_selection, not args.genLevel, ec)
         for entry in event_range:
             
             chain.GetEntry(entry)
@@ -249,14 +272,21 @@ if not args.makePlots:
             
             prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
 
+            if args.selection == 'MVA':
+                chain.mva_high_mu = tmva['high_mu'].predict()
+                chain.mva_low_mu = tmva['low_mu'].predict()
+                chain.mva_high_tau = tmva['high_tau'].predict()
+                chain.mva_low_tau = tmva['low_tau'].predict()
+                chain.mva_low_e = tmva['low_e'].predict()
+                chain.mva_high_e = tmva['high_e'].predict()
+
             #
             # Fill the histograms
             #
-            
+
             for v in var.keys():
-                # if v == 'NbJet': continue
-                list_of_hist[prompt_str][chain.category][v][signal_str][sample.name].fill(chain, chain.lumiweight)  
-                list_of_hist['total'][chain.category][v][signal_str][sample.name].fill(chain, chain.lumiweight)  
+                list_of_hist[prompt_str][chain.category][v][signal_str][sample.name].fill(chain, reweighter.getTotalWeight())  
+                list_of_hist['total'][chain.category][v][signal_str][sample.name].fill(chain, reweighter.getTotalWeight())  
              
         #
         # Save histograms
@@ -285,9 +315,12 @@ if not args.makePlots:
 
         cutter.saveCutFlow(output_name_full +'variables'+subjobAppendix+ '.root')
 
+    closeLogger(log)
+
 #If the option to not run over the events again is made, load in the already created histograms here
 else:
     import glob
+    from HNL.Analysis.analysisTypes import signal_couplingsquared
 
     # Collect signal file locations
     if args.genLevel and args.signalOnly:
@@ -316,8 +349,7 @@ else:
     print 'check merge'
     # Merge files if necessary
     mixed_list = signal_list + bkgr_list + data_list
-    for n in mixed_list:
-        merge(n)
+    merge(mixed_list, __file__, jobs, ('sample', 'subJob'), argParser)
 
 
     if args.groupSamples:
@@ -336,22 +368,28 @@ else:
 
     # Load in the signal histograms from the files
     for c in categories: 
-        print 'loading', c
+        print 'loading signal ', c
         for v in var.keys():
             if not args.bkgrOnly:
                 for s in signal_list:
                     sample_name = s.split('/')[-1]
+                    # print sample_name
                     sample_mass = int(sample_name.split('-m')[-1])
                     if args.masses is not None and sample_mass not in args.masses: continue
                     list_of_hist[c][v]['signal'][sample_name] = Histogram(getObjFromFile(s+'/variables.root', v+'/'+str(c)+'-'+v+'-'+sample_name+'-total')) 
-                    # list_of_hist[c][v]['signal'][sample_name].hist.Scale(1000.)
+
+                    coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
+                    list_of_hist[c][v]['signal'][sample_name].hist.Scale(coupling_squared/(args.coupling**2))
+
+                    # if args.rescaleSignal is not None:
+                    #    list_of_hist[c][v]['signal'][sample_name].hist.Scale(args.rescaleSignal/(args.coupling**2))
 
     for c in categories: 
         print 'loading', c
         for v in var.keys():   
             if not args.signalOnly:
                 for b in background_collection:
-                    list_of_hist[c][v]['bkgr'][b] = Histogram(b, var[v][0], var[v][2], var[v][1])
+                    list_of_hist[c][v]['bkgr'][b] = Histogram(b+v+str(c), var[v][0], var[v][2], var[v][1])
 
     for c in categories: 
         print 'loading', c
@@ -371,10 +409,15 @@ else:
                         elif sg == 'non-prompt':
                             list_of_hist[c][v]['bkgr'][sg[0]].add(tmp_hist_nonprompt)
                         else:
+                            # print c, v, b, sg
                             list_of_hist[c][v]['bkgr'][sg[0]].add(tmp_hist_prompt)
                             list_of_hist[c][v]['bkgr']['non-prompt'].add(tmp_hist_nonprompt)
                     else:
                         list_of_hist[c][v]['bkgr'][bkgr].add(tmp_hist_total)
+
+                    del(tmp_hist_total)
+                    del(tmp_hist_prompt)
+                    del(tmp_hist_nonprompt)
 
     if args.includeData:
         for c in categories:
@@ -389,15 +432,48 @@ else:
             for v in var.keys():
                 list_of_hist[ac][v] = {}
                 if not args.bkgrOnly:
+                    list_of_hist[ac][v]['signal'] = {}
                     for s in signal_list:
                         sample_name = s.split('/')[-1]
                         sample_mass = int(sample_name.split('-m')[-1])
                         if args.masses is not None and sample_mass not in args.masses: continue
-                        list_of_hist[ac][v]['signal'][sample_name] = list_of_hist[cat.ANALYSIS_CATEGORIES[ac][0]][v]['bkgr'][sample_name].Clone(ac)
+                        list_of_hist[ac][v]['signal'][sample_name] = list_of_hist[cat.ANALYSIS_CATEGORIES[ac][0]][v]['signal'][sample_name].clone(ac)
                         if len(cat.ANALYSIS_CATEGORIES[ac]) > 1:
                             for c in cat.ANALYSIS_CATEGORIES[ac][1:]:
-                                list_of_hist[ac][v]['signal'][sample_name].add(list_of_hist[cat.ANALYSIS_CATEGORIES[ac][c]][v]['bkgr'][sample_name])
+                                list_of_hist[ac][v]['signal'][sample_name].add(list_of_hist[c][v]['signal'][sample_name])
+                if not args.signalOnly:
+                    list_of_hist[ac][v]['bkgr'] = {}
+                    for b in background_collection:
+                        sample_name = b.split('/')[-1]
+                        list_of_hist[ac][v]['bkgr'][sample_name] = list_of_hist[cat.ANALYSIS_CATEGORIES[ac][0]][v]['bkgr'][sample_name].clone(ac)
+                        if len(cat.ANALYSIS_CATEGORIES[ac]) > 1:
+                            for c in cat.ANALYSIS_CATEGORIES[ac][1:]:
+                                list_of_hist[ac][v]['bkgr'][sample_name].add(list_of_hist[c][v]['bkgr'][sample_name])
 
+        for ac in cat.SUPER_CATEGORIES.keys():
+            if ac in list_of_hist.keys():
+                continue
+            list_of_hist[ac] = {}
+            for v in var.keys():
+                list_of_hist[ac][v] = {}
+                if not args.bkgrOnly:
+                    list_of_hist[ac][v]['signal'] = {}
+                    for s in signal_list:
+                        sample_name = s.split('/')[-1]
+                        sample_mass = int(sample_name.split('-m')[-1])
+                        if args.masses is not None and sample_mass not in args.masses: continue
+                        list_of_hist[ac][v]['signal'][sample_name] = list_of_hist[cat.SUPER_CATEGORIES[ac][0]][v]['signal'][sample_name].clone(ac)
+                        if len(cat.SUPER_CATEGORIES[ac]) > 1:
+                            for c in cat.SUPER_CATEGORIES[ac][1:]:
+                                list_of_hist[ac][v]['signal'][sample_name].add(list_of_hist[c][v]['signal'][sample_name])
+                if not args.signalOnly:
+                    list_of_hist[ac][v]['bkgr'] = {}
+                    for b in background_collection:
+                        sample_name = b.split('/')[-1]
+                        list_of_hist[ac][v]['bkgr'][sample_name] = list_of_hist[cat.SUPER_CATEGORIES[ac][0]][v]['bkgr'][sample_name].clone(ac)
+                        if len(cat.SUPER_CATEGORIES[ac]) > 1:
+                            for c in cat.SUPER_CATEGORIES[ac][1:]:
+                                list_of_hist[ac][v]['bkgr'][sample_name].add(list_of_hist[c][v]['bkgr'][sample_name])
 
 
 #
@@ -413,106 +489,157 @@ from HNL.Plotting.plot import Plot
 from HNL.Plotting.plottingTools import extraTextFormat
 from HNL.Tools.helpers import makePathTimeStamped
 
-#
-# Set output directory, taking into account the different options
-#
-output_dir = os.path.join(os.getcwd(), 'data', 'Results', 'plotVariables', args.year, args.selection, reco_or_gen_str, args.region)
 
+if args.makeDataCards:
+    from HNL.Stat.combineTools import makeDataCard
 
-if args.signalOnly:
-    output_dir = os.path.join(output_dir, 'signalOnly')
-elif args.bkgrOnly:
-    output_dir = os.path.join(output_dir, 'bkgrOnly')
-else:
-    output_dir = os.path.join(output_dir, 'signalAndBackground')
+    #
+    # If we want to use shapes, first make shape histograms, then make datacards
+    #
+    for ac in cat.SUPER_CATEGORIES.keys():
 
+        # # Observed
+        # shape_hist['data_obs'] = ROOT.TH1D('data_obs', 'data_obs', n_search_regions, 0.5, n_search_regions+0.5)
+        # shape_hist['data_obs'].SetBinContent(1, 1.)
 
-
-if args.flavor:         output_dir = os.path.join(output_dir, args.flavor+'_coupling')
-else:                   output_dir = os.path.join(output_dir, 'all_coupling')
-
-if args.masses is not None:         output_dir = os.path.join(output_dir, 'customMasses', '-'.join([str(m) for m  in args.masses]))
-else:         output_dir = os.path.join(output_dir, 'allMasses')
-
-output_dir = makePathTimeStamped(output_dir)
-#
-# Create plots for each category
-#
-from HNL.EventSelection.eventCategorization import CATEGORY_NAMES
-print list_of_hist.keys()
-for c in list_of_hist.keys():
-    print c
-    c_name = CATEGORY_NAMES[c] if c not in cat.ANALYSIS_CATEGORIES.keys() else c
-
-    printSelections(mixed_list[0]+'/variables.root', os.path.join(output_dir, c_name, 'Selections.txt'))
-
-    extra_text = [extraTextFormat(cat.returnTexName(c), xpos = 0.2, ypos = 0.82, textsize = None, align = 12)]  #Text to display event type in plot
-    if not args.bkgrOnly:
-        extra_text.append(extraTextFormat('V_{'+args.flavor+'N} = '+str(args.coupling)))  #Text to display event type in plot
-        extra_text.append(extraTextFormat('Signal scaled to background', textsize = 0.7))  #Text to display event type in plot
-
-    # Plots that display chosen for chosen signal masses and backgrounds the distributions for the different variables
-    # S and B in same canvas for each variable
-    for v in var:
-        print v
-        legend_names = list_of_hist[c][v]['signal'].keys()+list_of_hist[c][v]['bkgr'].keys()
+        # # Background
+        # for sample_name in sample_manager.sample_groups.keys():
+        #     shape_hist[sample_name] = ROOT.TH1D(sample_name, sample_name, n_search_regions, 0.5, n_search_regions+0.5)
+        #     for sr in xrange(1, n_search_regions+1):
+        #         shape_hist[sample_name].SetBinContent(sr, list_of_values['bkgr'][sample_name][ac][sr])
+        #         shape_hist[sample_name].SetBinError(sr, list_of_errors['bkgr'][sample_name][ac][sr])
         
-        # Make list of background histograms for the plot object (or None if no background)
-        if not list_of_hist[c][v]['bkgr'].values() or args.signalOnly: 
-            bkgr_hist = None
-        else:
-            bkgr_hist = list_of_hist[c][v]['bkgr'].values()
-       
-        # Make list of signal histograms for the plot object
-        if not list_of_hist[c][v]['signal'].values() or args.bkgrOnly: 
-            signal_hist = None
-        else:
-            signal_hist = list_of_hist[c][v]['signal'].values()
+        # Signal 
+        for s in signal_list:
+            sample_name = s.split('/')[-1]
+            sample_mass = int(sample_name.split('-m')[-1])
+            if sample_mass not in args.masses: continue
+            if sample_mass <= 80:
+                mva_to_use = 'mva_low_'+args.flavor
+            else:
+                mva_to_use = 'mva_high_'+args.flavor
 
-        if args.includeData:
-            observed_hist = list_of_hist[c][v]['data']
-        else:
-            observed_hist = None
+            out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', str(args.year), args.selection, args.flavor, sample_name, ac+'.shapes.root')
+            makeDirIfNeeded(out_path)
+            # out_shape_file = ROOT.TFile(out_path, 'recreate')
+            list_of_hist[ac][mva_to_use]['signal'][sample_name].write(out_path, sample_name)
+            # out_shape_file.Close()
+            bkgr_names = []
+            for b in background_collection:
+                bkgr_name = b.split('/')[-1]
+                if bkgr_name == 'WZ' or bkgr_name == 'XG': continue
+                if list_of_hist[ac][mva_to_use]['bkgr'][bkgr_name].hist.GetSumOfWeights() > 0:
+                    list_of_hist[ac][mva_to_use]['bkgr'][bkgr_name].write(out_path, bkgr_name, append=True)
+                    bkgr_names.append(bkgr_name)
+            
+            data_hist_tmp = list_of_hist[ac][mva_to_use]['signal'][sample_name].clone('Ditau')
+            data_hist_tmp.write(out_path, 'data_obs', append=True)
+            
+            makeDataCard(str(ac), args.flavor, args.year, 0, sample_name, bkgr_names, args.selection, shapes=True, coupling_sq = coupling_squared)
 
-        # Create plot object (if signal and background are displayed, also show the ratio)
-        if args.groupSamples:
-            p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = False, extra_text = extra_text, 
-                draw_ratio = (not args.signalOnly and not args.bkgrOnly), year = args.year, color_palette = 'AN2017', color_palette_bkgr = 'AN2017')
-        else:
-            p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, y_log = False, extra_text = extra_text, draw_ratio = (not args.signalOnly and not args.bkgrOnly), year = args.year)
+if args.makePlots:
+    #
+    # Set output directory, taking into account the different options
+    #
+    output_dir = os.path.join(os.getcwd(), 'data', 'Results', 'plotVariables', args.year, args.selection, reco_or_gen_str, args.region)
 
 
-        # Draw
-        p.drawHist(output_dir = os.path.join(output_dir, c_name), normalize_signal=True, draw_option='Hist', min_cutoff = 1)
+    if args.signalOnly:
+        output_dir = os.path.join(output_dir, 'signalOnly')
+    elif args.bkgrOnly:
+        output_dir = os.path.join(output_dir, 'bkgrOnly')
+    else:
+        output_dir = os.path.join(output_dir, 'signalAndBackground')
+
+
+
+    if args.flavor:         output_dir = os.path.join(output_dir, args.flavor+'_coupling')
+    else:                   output_dir = os.path.join(output_dir, 'all_coupling')
+
+    if args.masses is not None:         output_dir = os.path.join(output_dir, 'customMasses', '-'.join([str(m) for m  in args.masses]))
+    else:         output_dir = os.path.join(output_dir, 'allMasses')
+
+    output_dir = makePathTimeStamped(output_dir)
+    #
+    # Create plots for each category
+    #
+    from HNL.EventSelection.eventCategorization import CATEGORY_NAMES
+    # for c in list_of_hist.keys():
+    for c in cat.SUPER_CATEGORIES.keys():
+        print c
+        # c_name = CATEGORY_NAMES[c] if c not in cat.SUPER_CATEGORIES.keys() else c
+        c_name = c
+
+        printSelections(mixed_list[0]+'/variables.root', os.path.join(output_dir, c_name, 'Selections.txt'))
+
+        extra_text = [extraTextFormat(cat.returnTexName(c), xpos = 0.2, ypos = 0.82, textsize = None, align = 12)]  #Text to display event type in plot
+        if not args.bkgrOnly:
+            extra_text.append(extraTextFormat('V_{'+args.flavor+'N} = '+str(args.coupling)))  #Text to display event type in plot
+            extra_text.append(extraTextFormat('Signal scaled to background', textsize = 0.7))  #Text to display event type in plot
+
+        # Plots that display chosen for chosen signal masses and backgrounds the distributions for the different variables
+        # S and B in same canvas for each variable
+        for v in var:
+            legend_names = list_of_hist[c][v]['signal'].keys()+list_of_hist[c][v]['bkgr'].keys()
+            
+            # Make list of background histograms for the plot object (or None if no background)
+            if args.signalOnly or not list_of_hist[c][v]['bkgr'].values(): 
+                bkgr_hist = None
+            else:
+                bkgr_hist = list_of_hist[c][v]['bkgr'].values()
+        
+            # Make list of signal histograms for the plot object
+            if args.bkgrOnly or not list_of_hist[c][v]['signal'].values(): 
+                signal_hist = None
+            else:
+                signal_hist = list_of_hist[c][v]['signal'].values()
+
+            if args.includeData:
+                observed_hist = list_of_hist[c][v]['data']
+            else:
+                observed_hist = None
+
+            # Create plot object (if signal and background are displayed, also show the ratio)
+
+            draw_ratio = None if args.signalOnly or args.bkgrOnly else True
+            if args.groupSamples:
+                p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = args.year, color_palette = 'HNL', color_palette_bkgr = 'AN2017')
+            else:
+                p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, y_log = False, extra_text = extra_text, draw_ratio = draw_ratio, year = args.year)
+
+
+            # Draw
+            p.drawHist(output_dir = os.path.join(output_dir, c_name), normalize_signal = draw_ratio, draw_option='Hist', min_cutoff = 1)
+        
+        #TODO: I broke this when changing the eventCategorization, fix this again
+        # # If looking at signalOnly, also makes plots that compares the three lepton pt's for every mass point
+        # if args.signalOnly:
+
+        #     all_cuts = returnCategoryPtCuts(c)
+            
+        #     for cuts in all_cuts:   
     
-    #TODO: I broke this when changing the eventCategorization, fix this again
-    # # If looking at signalOnly, also makes plots that compares the three lepton pt's for every mass point
-    # if args.signalOnly:
+        #         # Load in efficiency to print on canvas if requested
+        #         if args.showCuts:
+        #             eff_file = os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/calcSignalEfficiency/HNLtau/divideByCategory/triggerTest/signalSelectionFull.root')
+        #             eff = Efficiency('efficiency_'+str(c[0])+'_'+str(c[1]) + '_l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2]), None, None, eff_file, 
+        #                   subdirs=['efficiency_'+str(c[0])+'_'+str(c[1]), 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])])           
+    
+        #         # Loop over different signals and draw the pt
+        #         for n in list_of_hist[c][v]['signal'].keys():
+        #             h = [list_of_hist[c]['l1pt']['signal'][n], list_of_hist[c]['l2pt']['signal'][n], list_of_hist[c]['l3pt']['signal'][n]]
+        #             legend_names = ['l1', 'l2', 'l3']
+                    
+        #             # Prepare to draw the pt cuts on the canvas if requested
+        #             if args.showCuts:
+        #                 draw_cuts = [cuts, eff.getEfficiency(inPercent=True).GetBinContent(eff.getEfficiency().FindBin(float(n.split('-')[1].split('M')[1])))]
+        #             else:
+        #                 draw_cuts = None
+        #             # Create plot object and draw
+        #             #p = Plot(h, legend_names, cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-pt-'+n, extra_text=extra_text)
+        #             p = Plot(h, legend_names, str(c)+'-pt-'+n, extra_text=extra_text)
+        #             #p.drawHist(output_dir = os.path.join(output_dir, cat.categoryName(c), cat.subcategoryName(c), 'pt', 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])), 
+        #                    normalize_signal=False, draw_option='EHist', draw_cuts=draw_cuts)
+        #             p.drawHist(output_dir = os.path.join(output_dir, str(c), 'pt', 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])), 
+                            # normalize_signal=False, draw_option='EHist', draw_cuts=draw_cuts)
 
-    #     all_cuts = returnCategoryPtCuts(c)
-        
-    #     for cuts in all_cuts:   
- 
-    #         # Load in efficiency to print on canvas if requested
-    #         if args.showCuts:
-    #             eff_file = os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/calcSignalEfficiency/HNLtau/divideByCategory/triggerTest/signalSelectionFull.root')
-    #             eff = Efficiency('efficiency_'+str(c[0])+'_'+str(c[1]) + '_l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2]), None, None, eff_file, 
-    #                   subdirs=['efficiency_'+str(c[0])+'_'+str(c[1]), 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])])           
- 
-    #         # Loop over different signals and draw the pt
-    #         for n in list_of_hist[c][v]['signal'].keys():
-    #             h = [list_of_hist[c]['l1pt']['signal'][n], list_of_hist[c]['l2pt']['signal'][n], list_of_hist[c]['l3pt']['signal'][n]]
-    #             legend_names = ['l1', 'l2', 'l3']
-                
-    #             # Prepare to draw the pt cuts on the canvas if requested
-    #             if args.showCuts:
-    #                 draw_cuts = [cuts, eff.getEfficiency(inPercent=True).GetBinContent(eff.getEfficiency().FindBin(float(n.split('-')[1].split('M')[1])))]
-    #             else:
-    #                 draw_cuts = None
-    #             # Create plot object and draw
-    #             #p = Plot(h, legend_names, cat.categoryName(c)+'-'+cat.subcategoryName(c)+'-pt-'+n, extra_text=extra_text)
-    #             p = Plot(h, legend_names, str(c)+'-pt-'+n, extra_text=extra_text)
-    #             #p.drawHist(output_dir = os.path.join(output_dir, cat.categoryName(c), cat.subcategoryName(c), 'pt', 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])), 
-    #                    normalize_signal=False, draw_option='EHist', draw_cuts=draw_cuts)
-    #             p.drawHist(output_dir = os.path.join(output_dir, str(c), 'pt', 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])), 
-                        # normalize_signal=False, draw_option='EHist', draw_cuts=draw_cuts)

@@ -1,5 +1,10 @@
 #Same as controlregionselector but with added option for signal vs background extraction (Want to use cut-based analysis selection or MVA based?)
 import eventSelectionTools as est
+from eventSelectionTools import MZ
+
+l1 = 0
+l2 = 1
+l3 = 2
 
 class SignalRegionSelector:
 
@@ -11,17 +16,14 @@ class SignalRegionSelector:
         self.ec = event_categorization
 
     def initEvent(self, chain, new_chain, cutter):
-        if self.is_reco_level and not cutter.cut(est.select3Leptons(chain, new_chain, light_algo = self.objsel['light_algo'], no_tau=self.objsel['no_tau'], 
-            cutter=cutter, workingpoint = self.objsel['workingpoint']), '3_tight_leptons'): return False
-        if not self.is_reco_level and not cutter.cut(est.select3GenLeptons(chain, new_chain, light_algo = self.objsel['light_algo'], no_tau=self.objsel['no_tau'], 
-            cutter=cutter, workingpoint = self.objsel['workingpoint']), '3_tight_leptons'): return False
-        est.calculateGeneralVariables(chain, new_chain, is_reco_level=self.is_reco_level)
-        est.calculateThreeLepVariables(chain, new_chain, is_reco_level=self.is_reco_level)
+        if self.is_reco_level and not cutter.cut(est.select3Leptons(chain, new_chain, self.objsel, cutter=cutter), 'select leptons'): return False
+        if not self.is_reco_level and not cutter.cut(est.select3GenLeptons(chain, new_chain), 'select leptons'): return False
+        est.calculateEventVariables(chain, new_chain, 3, is_reco_level=self.is_reco_level, selection=self.selection)
         chain.category = self.ec.returnCategory()
         return True
 
     def initSkim(self, chain, new_chain, cutter):
-        est.select3Leptons(chain, new_chain, light_algo = self.objsel['light_algo'], no_tau=self.objsel['no_tau'], cutter=cutter, workingpoint = self.objsel['workingpoint'])
+        est.select3Leptons(chain, new_chain, light_algo = self.objsel['light_algo'], no_tau=self.objsel['notau'], cutter=cutter, workingpoint = self.objsel['workingpoint'])
         if len(chain.l_pt) < 3: return False
 
     #
@@ -31,22 +33,30 @@ class SignalRegionSelector:
         if not cutter.cut(est.passesPtCutsAN2017014(chain), 'pt_cuts'):         return False 
         if not cutter.cut(not est.bVeto(chain, 'AN2017014', cleaned=False, selection=self.selection), 'b-veto'):              return False
         if not cutter.cut(not est.threeSameSignVeto(chain), 'three_same_sign_veto'):                    return False
-        if not cutter.cut(not est.fourthFOVeto(chain, self.objsel['light_algo'], no_tau=self.objsel['no_tau']), '4th_l_veto'):   return False
+        if not cutter.cut(not est.fourthFOVeto(chain, self.objsel['light_algo'], no_tau=self.objsel['notau']), '4th_l_veto'):   return False
 
         return True
     
-    #
     # Basic cuts every event has to pass
-    #
     def baseFilterCutBased(self, chain, new_chain, cutter):
-        if not cutter.cut(not est.fourthFOVeto(chain, self.objsel['light_algo'], no_tau=self.objsel['no_tau']), 'Fourth FO veto'):        return False 
+        if not cutter.cut(not est.fourthFOVeto(chain, self.objsel['light_algo'], no_tau=self.objsel['notau']), 'Fourth FO veto'):        return False 
         if not cutter.cut(not est.threeSameSignVeto(chain), 'No three same sign'):        return False
         if not cutter.cut(not est.bVeto(chain, 'Deep', selection=self.selection), 'b-veto'):              return False
+        return True
+
+    # Basic cuts every event has to pass
+    def baseFilterMVA(self, chain, new_chain, cutter):
+        if not cutter.cut(not est.fourthFOVeto(chain, self.objsel['light_algo'], no_tau=self.objsel['notau']), 'Fourth FO veto'):        return False 
+        if not cutter.cut(not est.threeSameSignVeto(chain), 'No three same sign'):        return False
+        if not cutter.cut(not est.bVeto(chain, 'Deep', selection=self.selection), 'b-veto'):              return False
+        if not cutter.cut(abs(chain.MZossf-MZ) > 15, 'M2l_OSSF_Z_veto'):        return False
         return True
 
     def passBaseCuts(self, chain, new_chain, cutter):
         if self.selection == 'AN2017014':
             return self.baseFilterAN2017(chain, new_chain, cutter)
+        elif self.selection == 'MVA':
+            return self.baseFilterMVA(chain, new_chain, cutter)
         else:
             return self.baseFilterCutBased(chain, new_chain, cutter)
 
@@ -77,13 +87,17 @@ class SignalRegionSelector:
 
         if not self.passBaseCuts(chain, new_chain, cutter): return False
 
-        if self.region == 'lowMassSR':
-            return self.passLowMassSelection(chain, new_chain, cutter)
-        elif self.region == 'highMassSR':
-            return self.passHighMassSelection(chain, new_chain, cutter)
-        elif self.region == 'baseline':
+        if self.selection != "MVA":
+            if self.region == 'lowMassSR':
+                return self.passLowMassSelection(chain, new_chain, cutter)
+            elif self.region == 'highMassSR':
+                return self.passHighMassSelection(chain, new_chain, cutter)
+            elif self.region == 'baseline':
+                return True
+        elif self.selection == "MVA":
             return True
         else:
             raise RuntimeError('Given signal region: "'+ self.region +'" not known')
+
 
     

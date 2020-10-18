@@ -78,7 +78,7 @@ CATEGORIES = sorted(CATEGORY_NAMES.keys())
 # Accompanying function to filter more easily than messing around with these dictionaries
 #
 SUPER_CATEGORIES = {'Ditau': [1, 2, 3, 4], 'SingleTau' : [5, 6, 7, 8, 9], 'NoTau' : [11, 12, 13, 14, 15, 16]}
-ANALYSIS_CATEGORIES = {'Ditau': [1, 2, 3, 4], 'SingleTau-OS': [6, 8], 'Single-Tau-SS': [5, 7], 'EEE': [11], 'MuMuMu': [12], 'EEMu': [13, 14], 'EMuMu': [15, 16], 'EEE-Mu': [11, 13, 14], 'MuMuMu-E': [12, 15, 16]}
+ANALYSIS_CATEGORIES = {'Ditau': [1, 2, 3, 4], 'SingleTau-OS': [6, 8], 'Single-Tau-SS': [5, 7], 'EEE': [11], 'MuMuMu': [12], 'EEMu': [13, 14], 'EMuMu': [15, 16], 'EEE-Mu': [11, 13, 14], 'MuMuMu-E': [12, 15, 16], 'Other':[17]}
 #TODO: This category is a bit dodgy, because it is used in trigger calc but it is quite fragile. If the categories dont give the same output when given as input to returnCategoryTriggers, weird things will happen in that code
 TRIGGER_CATEGORIES = {'TauTauE': [1, 2], 'TauTauMu': [3, 4], 'TauEE': [5, 6], 'TauMuMu': [7, 8], 'TauEMu':[9, 10], 'EEE': [11], 'MuMuMu': [12], 'EEMu': [13, 14], 'EMuMu': [15, 16]} 
 
@@ -196,6 +196,12 @@ class EventCategory():
             return CATEGORY_FROM_NAME['Other']
         
         return self.category
+
+    def returnAnalysisCategory(self):
+        cat = self.returnCategory()
+        for k in ANALYSIS_CATEGORIES.keys():
+            if cat in ANALYSIS_CATEGORIES[k]: return k
+        return None
 
     def returnSignalTruthCategory(self):
         self.flavorContent()

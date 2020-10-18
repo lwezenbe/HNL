@@ -105,9 +105,25 @@ def isGoodLepton(chain, index, algo = None, tau_algo = None, workingpoint = 'tig
 
     if workingpoint == 'loose':
         return isLooseLepton(chain, index, algo = algo, tau_algo = tau_algo)
-    elif workingpoint == 'medium':
+    elif workingpoint == 'FO':
         return isFOLepton(chain, index, algo = algo, tau_algo = tau_algo)
     elif workingpoint == 'tight':
         return isTightLepton(chain, index, algo = algo, tau_algo = tau_algo)
     else:
         raise RuntimeError('Defined working point does not exist: ' +str(workingpoint))
+
+def isGoodLeptonTycho(chain, index, algo = None, tau_algo = None):
+    if chain._lFlavor[index] != 2: return isTightLightLepton(chain, index, algo)
+    if chain._lFlavor[index] == 2: 
+        if tau_algo:    return isLooseTau(chain, index, tau_algo)
+        else:           return isLooseTau(chain, index)
+    return False
+
+from HNL.ObjectSelection.tauSelector import isJetFakingTau
+from HNL.ObjectSelection.electronSelector import isFakeElectron
+from HNL.ObjectSelection.muonSelector import isFakeMuon
+def isFakeLepton(chain, index):
+    if chain._lFlavor[index] == 0: return isFakeElectron(chain, index)
+    if chain._lFlavor[index] == 1: return isFakeMuon(chain, index)
+    if chain._lFlavor[index] == 2: return isJetFakingTau(chain, index)
+    return False

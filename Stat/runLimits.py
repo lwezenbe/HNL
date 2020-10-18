@@ -3,36 +3,60 @@
 #
 import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
-argParser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+argParser.add_argument('--year',     nargs='*',      default=[],   help='Select year', choices=['2016', '2017', '2018'])
 argParser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
 argParser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
 argParser.add_argument('--asymptotic',   action='store_true', default=False,  help='Use the -M AsymptoticLimits option in Combine')
 argParser.add_argument('--blind',   action='store_true', default=False,  help='activate --blind option of combine')
 argParser.add_argument('--useExistingLimits',   action='store_true', default=False,  help='Dont run combine, just plot')
+argParser.add_argument('--compareToCards',   type=str, nargs='*',  help='Compare to a specific card if it exists. If you want different selection use "selection/card" otherwise just "card"')
+argParser.add_argument('--selection', action='store', default='cut-based', type=str,  help='What type of analysis do you want to run?', choices=['cut-based', 'AN2017014', 'MVA'])
+argParser.add_argument('--datacard', action='store', default='', type=str,  help='What type of analysis do you want to run?', choices=['Combined', 'Ditau', 'NoTau', 'SingleTau', 'TauCombined'])
 argParser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
 args = argParser.parse_args()
 
-datacards_base = os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/dataCards/'+args.year+'/'+args.flavor)
+datacards_base = lambda year : os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/dataCards/'+year+'/'+args.selection+'/'+args.flavor)
 import glob
 from HNL.Stat.combineTools import runCombineCommand, extractScaledLimitsPromptHNL, makeGraphs
 from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped, getObjFromFile
-all_signal = glob.glob(datacards_base+'/*')
+from HNL.Analysis.analysisTypes import signal_couplingsquared
+from numpy import sqrt
 
-def getDataCard(mass):
-    datacard_massbase = os.path.join(datacards_base, 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
-    categories = [el for el in glob.glob(datacard_massbase+'/*') if not 'total' in el and not 'Combined' in el and not 'NoTau' in el]
-    # categories = [el for el in glob.glob(datacard_massbase+'/*') if not 'total' in el and not 'Combined' in el]
-    if args.flavor == 'tau':
-        print 'Combining datacards'
-        runCombineCommand('combineCards.py '+' '.join(categories)+' > '+datacard_massbase+'/Combined.txt')
-        return datacard_massbase+'/Combined.txt'
+def getDataCard(mass, cardname, year):
+    datacard_massbase = os.path.join(datacards_base(year), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
+    return datacard_massbase+ '/'+cardname+'.txt'
+
+def combineSets(mass, year):
+    datacard_massbase = os.path.join(datacards_base(year), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
+    #Combined
+    categories = [el for el in glob.glob(datacard_massbase+'/*') if not 'total' in el and not 'Combined' in el and not 'TauCombined' in el]
+    runCombineCommand('combineCards.py '+' '.join(categories)+' > '+datacard_massbase+'/Combined.txt')
+    #TauCombined
+    categories = [el for el in glob.glob(datacard_massbase+'/*') if not 'total' in el and not 'Combined' in el and not 'TauCombined' in el and not 'NoTau' in el]
+    runCombineCommand('combineCards.py '+' '.join(categories)+' > '+datacard_massbase+'/TauCombined.txt')
+
+def combineYears(mass, cardname):
+    if len(args.year) == 1:
+        return
     else:
-        return datacard_massbase+ '/NoTau.txt'
+        datacard_path = lambda year : os.path.join(datacards_base(year), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', cardname+'.txt')
+        categories = [datacard_path(y) for y in args.year if os.path.isfile(datacard_path(year))]
+        runCombineCommand('combineCards.py '+' '.join(categories)+' > '+datacard_massbase+'/'+cardname+'.txt')
 
 
-def runAsymptoticLimit(mass):
-    datacard = getDataCard(mass)
-    output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic'
+def runAsymptoticLimit(mass, cardname, year):
+    if '-' in year:
+        split_year = year.split('-')
+    else:
+        split_year = [year]
+
+    for y in split_year:
+        datacard = getDataCard(mass, cardname, y)
+        combineSets(mass, y)
+    combineYears(mass, cardname)
+    datacard = getDataCard(mass, cardname, year)
+
+    output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname
     print 'Running Combine for mass', str(mass), 'GeV'
 
     if args.blind:
@@ -51,52 +75,105 @@ def runHybridNew(mass):
     #TODO: Finish this
     return datacard_massbase
 
+year_to_read = args.year[0] if len(args.year) == 1 else '-'.join(args.year)
+cards_to_read = [args.datacard] if args.datacard != '' else ['Combined', 'Ditau', 'NoTau', 'SingleTau', 'TauCombined']
 
-masses = sorted([int(signal.split('/')[-1].split('-m')[-1]) for signal in all_signal])
-passed_masses = []
-passed_couplings = []
-limits = {}
+all_signal = {}
+masses_py = {}
+for year in args.year:
+    all_signal[year] = glob.glob(datacards_base(year)+'/*')
+    masses_py[year] = [int(signal.split('/')[-1].split('-m')[-1]) for signal in all_signal[year]]
+masses = []
+for year in args.year:
+    masses += (list(set(masses_py[year])-set(masses)))
+masses = sorted(masses)
 
-for mass in masses:
-    print '\x1b[6;30;42m', 'Processing mN =', str(mass), 'GeV', '\x1b[0m'
+if not args.useExistingLimits:
+    for card in cards_to_read:
+        print '\x1b[6;30;42m', 'Processing datacard "' +str(card)+ '"', '\x1b[0m'
+        for mass in masses:
+            if mass not in args.masses: continue
+            print '\x1b[6;30;42m', 'Processing mN =', str(mass), 'GeV', '\x1b[0m'
 
-    if not args.useExistingLimits:
-        if args.asymptotic: runAsymptoticLimit(mass)
-        else:
-            print 'To be implemented'
-            exit(0)
-
-
-    asymptotic_str = 'asymptotic' if args.asymptotic else ''
-    input_folder = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', str(args.year), args.flavor, 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', asymptotic_str)
-    tmp_coupling = 0.01
-    tmp_coupling = 0.01 if mass <= 80 else .1
-    tmp_limit = extractScaledLimitsPromptHNL(input_folder + '/higgsCombineTest.AsymptoticLimits.mH120.root', tmp_coupling)
-    if tmp_limit is not None and len(tmp_limit) > 4 and mass != 5: 
-        passed_masses.append(mass)
-        passed_couplings.append(tmp_coupling)
-        limits[mass] = tmp_limit
-
-graphs = makeGraphs(passed_masses, couplings = passed_couplings, limits=limits)
-
-if args.flavor == 'e':
-    observed_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsElectronMixing.root'), 'observed_promptDecays')
-    expected_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsElectronMixing.root'), 'expected_central')
-    tex_names = ['observed (AN-2017-014)', 'expected (AN-2017-014)']
-elif args.flavor == 'mu':
-    observed_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsMuonMixing.root'), 'observed_promptDecays')
-    expected_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsMuonMixing.root'), 'expected_central')
-    tex_names = ['observed (AN-2017-014)', 'expected (AN-2017-014)']
-
-else:
-    observed_AN = None
-    expected_AN = None
-    tex_names = None
+            if args.asymptotic: runAsymptoticLimit(mass, card, year_to_read)
+            else:
+                print 'To be implemented'
+                exit(0)
 
 
-coupling_dict = {'tau':'#tau', 'mu':'#mu', 'e':'e', '2l':'l'}
-from HNL.Plotting.plot import Plot
-destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/Results/runAsymptoticLimits/'+args.flavor))
-p = Plot(graphs, tex_names, 'limits', bkgr_hist = [observed_AN, expected_AN], y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}')
-p.drawBrazilian(output_dir = destination)
+for card in cards_to_read:
+
+    passed_masses = []
+    passed_couplings = []
+    limits = {}
+    for mass in masses:
+        asymptotic_str = 'asymptotic' if args.asymptotic else ''
+        input_folder = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', str(year_to_read), args.selection, args.flavor, 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', asymptotic_str, card)
+        tmp_coupling = sqrt(signal_couplingsquared[args.flavor][mass])
+
+        tmp_limit = extractScaledLimitsPromptHNL(input_folder + '/higgsCombineTest.AsymptoticLimits.mH120.root', tmp_coupling)
+        if tmp_limit is not None and len(tmp_limit) > 4 and mass != 5: 
+            passed_masses.append(mass)
+            passed_couplings.append(tmp_coupling)
+            limits[mass] = tmp_limit
+            
+    graphs = makeGraphs(passed_masses, couplings = passed_couplings, limits=limits)
+    compare_graphs = {}
+
+    if args.compareToCards is not None:
+        for cc in args.compareToCards:
+            if '/' in cc:
+                sname, cname = cc.split('/')
+            else:
+                sname = cc
+                cname = card
+
+            file_list = []
+            for m in passed_masses:
+                file_name  = glob.glob(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', str(args.year), sname, args.flavor, 
+                                        'HNL-'+args.flavor+'-m'+str(m), 'shapes', asymptotic_str+'/'+cname+'/*'))
+
+                if len(file_name) == 0:
+                    file_list.append(None)
+                else:
+                    file_list.append(file_name[0])
+            compare_graphs[sname + ' ' +cname] = makeGraphs(passed_masses, couplings = passed_couplings, limits=None, input_paths = file_list)
+
+    if args.flavor == 'e':
+        observed_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsElectronMixing.root'), 'observed_promptDecays')
+        expected_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsElectronMixing.root'), 'expected_central')
+        tex_names = ['observed (AN-2017-014)', 'expected (AN-2017-014)']
+    elif args.flavor == 'mu':
+        observed_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsMuonMixing.root'), 'observed_promptDecays')
+        expected_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsMuonMixing.root'), 'expected_central')
+        tex_names = ['observed (AN-2017-014)', 'expected (AN-2017-014)']
+
+    else:
+        observed_AN = None
+        expected_AN = None
+        tex_names = None
+
+    print 'graphs', graphs
+    print 'compare_graphs', compare_graphs
+
+    coupling_dict = {'tau':'#tau', 'mu':'#mu', 'e':'e', '2l':'l'}
+    from HNL.Plotting.plot import Plot
+    destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/Results/runAsymptoticLimits/'+args.selection+'/'+args.flavor+'/'+card+'/'+ year_to_read))
+    if observed_AN is None and expected_AN is None:
+        bkgr_hist = None
+    else:
+        bkgr_hist = [observed_AN, expected_AN]
+
+    if args.compareToCards is not None:
+        for compare_key in compare_graphs.keys():
+            if bkgr_hist is None:
+                bkgr_hist = [compare_graphs[compare_key][0]]
+                tex_names = [compare_key]
+            else:
+                bkgr_hist.append(compare_graphs[compare_key][0])
+                tex_names.append(compare_key)
+
+
+    p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}')
+    p.drawBrazilian(output_dir = destination)
 

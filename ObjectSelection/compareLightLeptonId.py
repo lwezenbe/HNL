@@ -18,7 +18,7 @@ argParser.add_argument('--year',     action='store',      default=None,   help='
 argParser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 argParser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
-argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
+argParser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 argParser.add_argument('--flavor', type=int, default=0,  help='flavor of lepton under consideration. 0 = electron, 1 = muon', choices = [0, 1])
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 argParser.add_argument('--includeReco',   action='store_true', default=False, 
@@ -55,15 +55,15 @@ sample_manager = SampleManager(args.year, 'noskim', 'compareTauIdList_'+str(args
 # Submit Jobs
 # TODO: Rewrite so that it checks all ID's in a single event loop instead of using more resources than needed by having jobs for every algorithm
 #
+jobs = []
+for sample_name in sample_manager.sample_names:
+    sample = sample_manager.getSample(sample_name)
+    for njob in xrange(sample.split_jobs):
+        jobs += [(sample.name, str(njob))]
+
 if not args.isChild:
 
     from HNL.Tools.jobSubmitter import submitJobs
-    jobs = []
-    for sample_name in sample_manager.sample_names:
-        sample = sample_manager.getSample(sample_name)
-        for njob in xrange(sample.split_jobs):
-            jobs += [(sample.name, str(njob))]
-
     submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'compareTauID')
     exit(0)
 

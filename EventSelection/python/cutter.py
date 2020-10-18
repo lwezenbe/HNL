@@ -15,6 +15,8 @@ class Cutter():
         if cut_name not in self.list_of_cuts.keys():
             self.list_of_cuts[cut_name] = TH1F(cut_name, cut_name, 1, 0, 1)
             self.order_of_cuts.append(cut_name)
+        # print cut_name, self.list_of_cuts
+
         if passed:
             if self.chain is not None:
                 try:

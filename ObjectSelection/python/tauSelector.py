@@ -149,34 +149,40 @@ def isCleanFromLightLeptons(chain, index):
         
 
 def isLooseTau(chain, index, algo_iso = default_id_algo):
+    if algo_iso is None:
+        algo_iso = default_id_algo
     
     if chain._lFlavor[index] != 2:              return False
     if chain._lPt[index] < 20:                  return False
     if chain._lEta[index] > 2.3:                return False
     if chain._tauDecayMode[index] == 5 or chain._tauDecayMode[index] == 6: return False
     if not tau_DMfinding[algo_iso](chain)[index]:   return False
-    if not tau_id_WP[(algo_iso, 'vvloose')](chain)[index]:   return False
+    if not tau_id_WP[(algo_iso, 'vloose')](chain)[index]:   return False
     if not isCleanFromLightLeptons(chain, index):       return False
     if not passedElectronDiscr(chain, index, algo_iso, 'loose'): return False
     if not passedMuonDiscr(chain, index, algo_iso, 'loose'): return False
     return True
 
 def isFOTau(chain, index, algo = default_id_algo):
-    
+    if algo is None:
+        algo = default_id_algo
     if not isLooseTau(chain, index, algo):              return False
-    if not tau_id_WP[(algo, 'medium')](chain)[index]:   return False
+    # if not tau_id_WP[(algo, 'medium')](chain)[index]:   return False
     return True
 
 def isTightTau(chain, index, algo = default_id_algo): 
-   
+    if algo is None:
+        algo = default_id_algo
     if algo == 'gen_truth': 
         return chain._tauGenStatus[index] == 5
     else:
-        #if not isLooseTau(chain, index, algo, algo_ele, algo_mu):       return False
         if not isFOTau(chain, index, algo):              return False
         if not tau_id_WP[(algo, 'medium')](chain)[index]:   return False
         return True
 
+def isJetFakingTau(chain, index):
+    if chain._tauGenStatus[index] == 6: return True
+    else: return False
 
 # Test function only used in compareTauID
 def isGeneralTau(chain, index, algo_iso, iso_WP, ele_algo, ele_WP, mu_algo, mu_WP, needDMfinding = True):

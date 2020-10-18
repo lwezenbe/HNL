@@ -1,6 +1,6 @@
 #Combine signalRegionSelector and controlRegionSelector here
 from HNL.EventSelection.signalRegionSelector import SignalRegionSelector
-from HNL.EventSelection.controlRegionSelector import ZZCRfilter, WZCRfilter, ConversionCRfilter, TauFakeEnrichedDY
+from HNL.EventSelection.controlRegionSelector import ZZCRfilter, WZCRfilter, ConversionCRfilter, TauFakeEnrichedDY, TauClosureTest, ElectronClosureTest, MuonClosureTest
 
 class EventSelector:
 
@@ -19,9 +19,12 @@ class EventSelector:
             self.selector = ConversionCRfilter(name, selection, objsel, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'TauFakes':
             self.selector = TauFakeEnrichedDY(name, selection, objsel, is_reco_level=is_reco_level, event_categorization = event_categorization)
-
-
-
+        elif self.name == 'TauCT':
+            self.selector = TauClosureTest(name, selection, objsel, is_reco_level=is_reco_level, event_categorization = event_categorization)
+        elif self.name == 'ElectronCT':
+            self.selector = ElectronClosureTest(name, selection, objsel, is_reco_level=is_reco_level, event_categorization = event_categorization)
+        elif self.name == 'MuonCT':
+            self.selector = MuonClosureTest(name, selection, objsel, is_reco_level=is_reco_level, event_categorization = event_categorization)
 
     def passedFilter(self, chain, new_chain, cutter):
         return self.selector.passedFilter(chain, new_chain, cutter)

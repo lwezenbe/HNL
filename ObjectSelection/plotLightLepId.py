@@ -15,11 +15,20 @@ argParser.add_argument('flavor',     action='store',      default=None,   help='
 args = argParser.parse_args()
 
 
+from HNL.Samples.sampleManager import SampleManager
+sample_manager = SampleManager(args.year, 'noskim', 'compareTauIdList_'+str(args.year))
+jobs = []
+for sample_name in sample_manager.sample_names:
+    sample = sample_manager.getSample(sample_name)
+    for njob in xrange(sample.split_jobs):
+        jobs += [(sample.name, str(njob))]
+
 #Merges subfiles if needed
 merge_files = glob.glob(os.getcwd()+'/data/compareLightLeptonId/*')
 for mf in merge_files:
-    if "Results" in mf: continue
-    merge(mf)
+    if "Results" in mf: merge_files.pop(merge_files.index(mf))
+script = os.path.expandvars(os.path.join('$CMSSW', 'src', 'HNL', 'ObjectSelection', 'compareLightLeptonId.py')
+merge(merge_files, script, jobs, ('sample', 'subJob'))
 
 input_signal = glob.glob(os.getcwd()+'/data/compareLightLeptonId/'+args.signal+'/*ROC-'+args.flavor+'.root')
 bkgr_prefix = os.getcwd()+'/data/compareLightLeptonId/'+args.bkgr

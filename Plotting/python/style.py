@@ -32,14 +32,14 @@ def getColor(palette, index):
     elif palette == 'WorkingPoints':
         return getWPcolor(index)
     elif palette == 'Black':
-        return getBlackColor(index)
+        return getBlackColor()
     elif palette == 'AN2017':
         return getAN2017Colors(index)
     else:
         return getHistColor(index)
 
 def getPaletteIndex(palette, index, tex_name):
-    if palette == 'StackTauPOGbyName' or palette == 'WorkingPoints' or palette == 'AN2017':
+    if palette == 'StackTauPOGbyName' or palette == 'WorkingPoints' or palette == 'AN2017' or palette == 'HNL':
         return tex_name
     else:
         return index
@@ -129,17 +129,21 @@ def getHistDidar(index):
     if index == 9:      return ROOT.kYellow
     else:               return ROOT.kBlack
 def getHNLColor(name):
-    if '200' in name:   return TColor.GetColor("#9F4A54")
-    elif '150' in name:   return TColor.GetColor("#51A3A3")
-    elif '120' in name:   return TColor.GetColor("#D1D1D1")
-    elif '100' in name:   return TColor.GetColor("#EAD94C")
-    elif '80' in name:   return TColor.GetColor("#3B3561")
-    elif '60' in name:   return TColor.GetColor("#DD7373")
-    elif '40' in name:   return TColor.GetColor("#3454D1")
-    elif '20' in name:   return TColor.GetColor("#9368B7")
-    elif '10' in name:   return TColor.GetColor("#610F7F")
-    elif '5' in name:   return TColor.GetColor("#613DC1")
-    else:               return TColor.GetColor("#000000")
+    if '600' in name:   return TColor.GetColor("#0000bd")
+    if '500' in name:   return TColor.GetColor("#262626")
+    if '400' in name:   return TColor.GetColor("#5d0016")
+    if '300' in name:   return TColor.GetColor("#f20019")
+    elif '200' in name:   return TColor.GetColor("#827800")
+    elif '150' in name:   return TColor.GetColor("#8f00c7")
+    elif '120' in name:   return TColor.GetColor("#0086fe")
+    elif '100' in name:   return TColor.GetColor("#00800")
+    elif '80' in name:   return TColor.GetColor("#00fefe")
+    elif '60' in name:   return TColor.GetColor("#fe68fe")
+    elif '40' in name:   return TColor.GetColor("#fe8420")
+    elif '20' in name:   return TColor.GetColor("#70fe00")
+    elif '10' in name:   return TColor.GetColor("#fefe00")
+    elif '5' in name:   return TColor.GetColor("#fed38b")
+    else:               return TColor.GetColor("#a0d681")
 
 
 def getAN2017Colors(name):

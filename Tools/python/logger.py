@@ -1,8 +1,11 @@
 #
 # Logger module
 #
-import logging, sys, ROOT
+import logging, sys, ROOT, os
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
+
+
+SUCCESS_MESSAGE = "JOB SUCCESSFULLY COMPLETED. NO NEED TO RESUBMIT"
 
 def getLogger(level='INFO', logFile=None):
     # If it already exist, return it
@@ -45,5 +48,24 @@ def getLogger(level='INFO', logFile=None):
     logger.info('Command: ' + ' '.join(sys.argv))
     return logger
 
+def closeLogger(logger):
+    logger.info(SUCCESS_MESSAGE)
+
 def logLevel(logger, level):
     return logger.getEffectiveLevel() <= logging.getLevelName(level)
+
+def successfullJob(fname):
+    lines = [line.split('%')[0].strip() for line in open(fname)] 
+    passed_lines = [SUCCESS_MESSAGE in line for line in lines]
+    return any(passed_lines)
+
+from HNL.Tools.helpers import makeDirIfNeeded
+def clearLogs(base):
+    new_base = base +'/Latest'
+    last_base = base +'/Previous'
+    makeDirIfNeeded(new_base+'/x')
+    makeDirIfNeeded(last_base+'/x')
+    os.system('rm -r '+last_base+'/*')
+    os.system('scp -r '+new_base+'/* '+last_base+'/.')
+    os.system('rm -r '+new_base+'/*')
+

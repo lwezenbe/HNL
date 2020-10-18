@@ -14,6 +14,14 @@ argParser.add_argument('--wp',     action='store',      default='tight',   help=
 args = argParser.parse_args()
 
 
+from HNL.Samples.sampleManager import SampleManager
+sample_manager = SampleManager(args.year, 'noskim', 'compareTauIdList_'+str(args.year))
+jobs = []
+for sample_name in sample_manager.sample_names:
+    sample = sample_manager.getSample(sample_name)
+    for njob in xrange(sample.split_jobs):
+        jobs += [(sample.name, str(njob))]
+
 #Merges subfiles if needed
 input_file_path = os.getcwd()+'/data/compareTauID/includeReco/'
 if args.onlyReco:
@@ -21,9 +29,10 @@ if args.onlyReco:
 
 merge_files = glob.glob(input_file_path + '*')
 for mf in merge_files:
-    if "Results" in mf: continue
-    if not args.onlyReco and 'onlyReco' in mf: continue
-    merge(mf)
+    if "Results" in mf: merge_files.pop(merge_files.index(mf))
+    if not args.onlyReco and 'onlyReco' in mf: merge_files.pop(merge_files.index(mf))
+script = os.path.expandvars(os.path.join('$CMSSW', 'src', 'HNL', 'ObjectSelection', 'compareTauID.py')
+merge(merge_files, script, jobs, ('sample', 'subJob'))
 
 list_of_bkgr_eff = {}
 list_of_signal_eff = {}

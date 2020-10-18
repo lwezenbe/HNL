@@ -44,6 +44,9 @@ argParser.add_argument('--massRegion',   action='store', default=None,  help='ap
 argParser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
 args = argParser.parse_args()
 
+from HNL.Tools.logger import getLogger, closeLogger
+log = getLogger(args.logLevel)
+
 #
 # Change some settings if this is a test
 #
@@ -82,6 +85,17 @@ elif args.massRegion == 'high':
     search_regions_name = 'oldAN_highMass'
 srm = SearchRegionManager(search_regions_name)
 
+jobs = []
+for sample_name in sample_manager.sample_names:
+    sample = sample_manager.getSample(sample_name)
+    if args.sample and args.sample not in sample.name: continue
+    if args.signalOnly and not 'HNL' in sample.name: continue
+    if args.backgroundOnly and 'HNL' in sample.name: continue
+    if 'HNL' in sample.name and not 'HNL'+args.coupling in sample.name: continue
+    if args.masses is not None and 'HNL' in sample.name and not any([str(m) in sample.name for m in args.masses]): continue
+    for njob in xrange(sample.split_jobs):
+        jobs += [(sample.name, str(njob))]
+
 #
 #   Code to process events
 #
@@ -91,16 +105,6 @@ if not args.makePlots:
     #
     if not args.isChild:
         from HNL.Tools.jobSubmitter import submitJobs
-        jobs = []
-        for sample_name in sample_manager.sample_names:
-            sample = sample_manager.getSample(sample_name)
-            if args.sample and args.sample not in sample.name: continue
-            if args.signalOnly and not 'HNL' in sample.name: continue
-            if args.backgroundOnly and 'HNL' in sample.name: continue
-            if 'HNL' in sample.name and not 'HNL'+args.coupling in sample.name: continue
-            if args.masses is not None and 'HNL' in sample.name and not any([str(m) in sample.name for m in args.masses]): continue
-            for njob in xrange(sample.split_jobs):
-                jobs += [(sample.name, str(njob))]
 
         submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'calcSignalEfficiency')
         exit(0)
@@ -215,6 +219,8 @@ if not args.makePlots:
 
     cutter.saveCutFlow(output_name)
 
+    closeLogger(log)
+
 #
 # Merge if needed
 #
@@ -228,9 +234,8 @@ else:
         in_files = glob.glob(os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/eventsPerCategory/'+selection_str+'/'+mass_str+'/*')) 
     else:
         in_files = glob.glob(os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/testArea/eventsPerCategory/'+selection_str+'/'+mass_str+'/*')) 
-    for f in in_files:
-        if '.txt' in f: continue
-        merge(f)
+
+    merge(in_files, __file__, jobs, ('sample', 'subJob'), argParser)
 
     def mergeSearchRegions(regions_to_merge, values, errors, output_name):
         if not regions_to_merge: 

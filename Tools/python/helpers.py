@@ -253,3 +253,8 @@ def getMassRange(list_of_names):
 
 def tab(entries, column='15'):
     return ''.join(['%25s' % entries[0]] + [(('%'+column+'s') % i) for i in entries[1:]]) + '\n'
+
+def mergeTwoDictionaries(dict1, dict2):
+    out_dict = dict1.copy()
+    out_dict.update(dict2)
+    return out_dict

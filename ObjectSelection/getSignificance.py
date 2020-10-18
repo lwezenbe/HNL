@@ -16,7 +16,7 @@ argParser.add_argument('--year',     action='store',      default=None,   help='
 argParser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 argParser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
-argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
+argParser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 argParser.add_argument('--processExistingFiles',   action='store', default=None,  help='Process the existing files. Leave empty for all choices', choices = ['', 'text', 'plots'])
 argParser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
@@ -27,8 +27,6 @@ args = argParser.parse_args()
 #
 if args.isTest:
     args.isChild = True
-    # args.sample = 'WZTo3LNu'
-    # args.sample = 'HNLtau-60'
     args.sample = 'HNL-tau-m60'
     args.subJob = '0'
     args.year = '2016'
@@ -63,6 +61,13 @@ sample_manager = SampleManager(args.year, 'noskim', 'compareTauIdList_'+str(args
 
 from HNL.Tools.helpers import getFourVec
 
+jobs = []
+for sample_name in sample_manager.sample_names:
+    sample = sample_manager.getSample(sample_name)
+    for njob in xrange(sample.split_jobs):
+        jobs += [(sample.name, str(njob))]
+
+
 if args.processExistingFiles is None:
 #
 # Submit Jobs
@@ -70,12 +75,6 @@ if args.processExistingFiles is None:
     if not args.isChild:
 
         from HNL.Tools.jobSubmitter import submitJobs
-        jobs = []
-        for sample_name in sample_manager.sample_names:
-            sample = sample_manager.getSample(sample_name)
-            for njob in xrange(sample.split_jobs):
-                jobs += [(sample.name, str(njob))]
-
         submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'compareTauID')
         exit(0) 
 
@@ -213,10 +212,8 @@ else:
     from HNL.Tools.mergeFiles import merge
     from HNL.ObjectSelection.tauSelector import getCorrespondingLightLepDiscr
     import glob
-    list_to_merge =   glob.glob(os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.year, '*', '*'))  
-    for f in list_to_merge:
-        if 'TextResults' in f: continue
-        merge(f)
+    list_to_merge =   [f for f in glob.glob(os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.year, '*', '*'))  if not 'TextResults' in f]
+    merge(list_to_merge, __file__, jobs, ('sample', 'subJob'), argParser)
 
     def sortkey(c):
         mass_dir = c.split('/')[-2]

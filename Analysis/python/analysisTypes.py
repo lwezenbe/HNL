@@ -31,12 +31,23 @@ var_reco_3l = {
         'ml13':          (lambda c : c.Ml13,      np.arange(0., 240., 5.),         ('M_{l1l3} [GeV]', 'Events')),
         'met':          (lambda c : c._met,     np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
         'mtOther':      (lambda c : c.mtOther,  np.arange(0., 300., 15.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
+        'mtl1':      (lambda c : c.mtl2,  np.arange(0., 300., 15.),       ('M_{T} (l1) [GeV])', 'Events')),
+        'mtl2':      (lambda c : c.mtl2,  np.arange(0., 300., 15.),       ('M_{T} (l2) [GeV])', 'Events')),
         'l1pt':      (lambda c : c.l_pt[0],       np.arange(0., 300., 15.),       ('p_{T} (l1) [GeV]', 'Events')),
         'l2pt':      (lambda c : c.l_pt[1],       np.arange(0., 300., 15.),       ('p_{T} (l2) [GeV]', 'Events')),
         'l3pt':      (lambda c : c.l_pt[2],       np.arange(0., 300., 15.),       ('p_{T} (l3) [GeV]', 'Events')),
+        'j1pt':      (lambda c : c.j_pt[0],       np.arange(0., 300., 15.),       ('p_{T} (j1) [GeV]', 'Events')),
+        'j2pt':      (lambda c : c.j_pt[1],       np.arange(0., 300., 15.),       ('p_{T} (j2) [GeV]', 'Events')),
         'l1eta':      (lambda c : c.l_eta[0],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l1)', 'Events')),
         'l2eta':      (lambda c : c.l_eta[1],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l2)', 'Events')),
         'l3eta':      (lambda c : c.l_eta[2],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l3)', 'Events')),
+        'j1eta':      (lambda c : c.j_eta[0],       np.arange(-2.5, 3.0, 0.5),       ('#eta (j1)', 'Events')),
+        'j2eta':      (lambda c : c.j_eta[1],       np.arange(-2.5, 3.0, 0.5),       ('#eta (j2)', 'Events')),
+        'l1phi':      (lambda c : c.l_phi[0],       np.arange(-2.5, 3.0, 0.5),       ('#phi (l1)', 'Events')),
+        'l2phi':      (lambda c : c.l_phi[1],       np.arange(-2.5, 3.0, 0.5),       ('#phi (l2)', 'Events')),
+        'l3phi':      (lambda c : c.l_phi[2],       np.arange(-2.5, 3.0, 0.5),       ('#phi (l3)', 'Events')),
+        'j1phi':      (lambda c : c.j_phi[0],       np.arange(-2.5, 3.0, 0.5),       ('#phi (j1)', 'Events')),
+        'j2phi':      (lambda c : c.j_phi[1],       np.arange(-2.5, 3.0, 0.5),       ('#phi (j2)', 'Events')),
         'NJet':      (lambda c : c.njets,       np.arange(0., 12., 1.),       ('#Jets', 'Events')),
         'NbJet':      (lambda c : c.nbjets,       np.arange(0., 12., 1.),       ('#B Jets', 'Events')),
         'drl1l2':      (lambda c : c.dr_l1l2,       np.arange(0., 5.5, .25),       ('#Delta R(l1, l2)', 'Events')),
@@ -56,7 +67,12 @@ var_reco_3l = {
         'maxdrl2':      (lambda c : c.maxdr_l2,       np.arange(0., 5.5, .25),       ('max(#Delta R(l2ln))', 'Events')),
         'mindrl3':      (lambda c : c.mindr_l3,       np.arange(0., 5.5, .25),       ('min(#Delta R(l3ln))', 'Events')),
         'maxdrl3':      (lambda c : c.maxdr_l3,       np.arange(0., 5.5, .25),       ('max(#Delta R(l3ln))', 'Events')),
-        'ptConeLeading':   (lambda c : c.pt_cone[0],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(leading) [GeV]', 'Events'))
+        'ptConeLeading':   (lambda c : c.pt_cone[0],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(leading) [GeV]', 'Events')),
+        # 'ptConeSubLeading':   (lambda c : c.pt_cone[1],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(subleading) [GeV]', 'Events')),
+        # 'ptConeTrailing':   (lambda c : c.pt_cone[2],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(trailing) [GeV]', 'Events')),
+        'mt3':   (lambda c : c.mt3,      np.arange(0., 315., 15.),         ('M_{T}(3l) [GeV]', 'Events')),
+        'LT':   (lambda c : c.LT,      np.arange(0., 915., 15.),         ('L_{T} [GeV]', 'Events')),
+        'HT':   (lambda c : c.HT,      np.arange(0., 915., 15.),         ('H_{T} [GeV]', 'Events'))
     }
 
 var_reco_4l = {
@@ -78,9 +94,35 @@ var_reco_4l = {
         'ptConeLeading':   (lambda c : c.pt_cone[0],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(leading) [GeV]', 'Events'))
     }
 
-def returnVariables(nl, is_reco):
+var_mva = {
+        'mva_high_e':        (lambda c : c.mva_high_e,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_high_mu':        (lambda c : c.mva_high_mu,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_high_tau':        (lambda c : c.mva_high_tau,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_low_e':        (lambda c : c.mva_low_e,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_low_mu':        (lambda c : c.mva_low_mu,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_low_tau':        (lambda c : c.mva_low_tau,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events'))  
+}
+
+from HNL.Tools.helpers import mergeTwoDictionaries
+def returnVariables(nl, is_reco, include_mva = False):
+        var_of_choice = None
         if nl == 4:
-                return var_reco_4l
+                var_of_choice = var_reco_4l
         elif nl == 3:
-                if is_reco: return var_reco_3l
-                else: return var_gen_3l
+                if is_reco: var_of_choice = var_reco_3l
+                else: var_of_choice = var_gen_3l
+
+        if include_mva:
+                var_of_choice = mergeTwoDictionaries(var_of_choice, var_mva)
+        
+        return var_of_choice
+
+
+signal_couplingsquared = {
+        'tau' : {5 : 0.1, 10 : 0.1, 20:0.1, 40:0.1, 60:0.1,  80:0.1,  100:0.1,  120:0.1,  150:0.1,  200:0.1,  400:0.1,  600:0.1,  800:0.1 },
+        'e' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 40:1e-4,  60:1e-4,  80:1e-4,  100:0.1,  120:0.1,  150:0.1,  200:0.1,  400:0.1,  600:0.1,  800:0.1 },
+        'mu' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 40:1e-4,  60:1e-4, 70:1e-4,  80:1e-4, 90:1e-4,  100:0.1,  120:0.1,  150:0.1,  200:0.1,  300:0.1,  400:0.1,  500:0.1,  600:0.1,  800:0.1 },
+}
+
+if __name__ == '__main__':
+        print returnVariables(3, True, True)['mva']

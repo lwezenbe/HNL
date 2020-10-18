@@ -12,15 +12,20 @@ argParser.add_argument('--isChild',  action='store_true', default=False,  help='
 argParser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
 argParser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
-argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
+argParser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 argParser.add_argument('--plotSoftTau',   action='store_true', default=False,  help='Extra overlay of softest tau in the process')
+argParser.add_argument('--year',     action='store',            default=None,   help='Select year', choices=['2016', '2017', '2018'], required=True)
+
 args = argParser.parse_args()
 
 args = argParser.parse_args()
 print 'Loading in samples'
 
 #Load in samples and get the specific sample for this job
+from HNL.Samples.sampleManager import SampleManager
+sample_manager = SampleManager(args.year, 'noskim', 'allsignal_'+str(args.year))
+
 from HNL.Samples.sample import createSampleList, getSampleFromList
 sample_list = createSampleList(os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/signalCompression.conf'))
 
@@ -29,13 +34,14 @@ sample_list = createSampleList(os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/I
 #
 if args.isTest: 
     args.isChild = True
-    args.sample = 'HNLtau-M10'
+    args.sample = 'HNL-tau-m10'
     args.subJob = '0'
 
 if not args.isChild:
     from HNL.Tools.jobSubmitter import submitJobs
     jobs = []
-    for sample in sample_list:
+    for sample_name in sample_manager.sample_names:
+        sample = sample_manager.getSample(sample_name)        
         for njob in xrange(sample.split_jobs): 
             jobs += [(sample.name, str(njob))]
 
@@ -45,7 +51,7 @@ if not args.isChild:
 
 #Initialize chain
 print 'Initializing chain'
-sample = getSampleFromList(sample_list, args.sample)
+sample = sample_manager.getSample(args.sample)
 chain = sample.initTree()
 print 'Chain initialized'
 
@@ -99,7 +105,7 @@ for entry in eventRange:
         if len(taus) > 0: pt_hist[3].Fill(taus[-1][0]) 
         if len(taus) > 1: pt_hist[4].Fill(taus[-2][0]) 
 
-if args.isTest: exit(0)
+# if args.isTest: exit(0)
 
 #Write and plot
 out_file = ROOT.TFile(output_name, 'recreate')
@@ -117,4 +123,3 @@ if args.plotSoftTau and 'tau' in sample.name:
 plot = Plot(pt_hist, legend_names, name = sample.name, x_name = 'p_{T} [GeV]', y_name = 'Events')
 plot_name = os.path.join(os.path.expandvars('$CMSSW_BASE/src/HNL/Test/data'), os.path.basename(__file__).split('.')[0], 'Plots')
 plot.drawHist(plot_name)
-#    DrawHist(pt_hist, 'p_{T} [GeV]', 'Events', ['leading gen p_{T}', 'subleading gen p_{T}', 'trailing gen p_{T}'], plot_name)

@@ -11,7 +11,7 @@
 #
 import numpy as np
 from HNL.ObjectSelection.leptonSelector import isFOLepton
-from HNL.ObjectSelection.leptonSelector import isGoodLepton
+from HNL.ObjectSelection.leptonSelector import isGoodLepton, isGoodLeptonTycho
 from HNL.ObjectSelection.leptonSelector import isGoodGenLepton
 from HNL.ObjectSelection.jetSelector import isGoodJet, isBJet
 from HNL.Tools.helpers import getFourVec, deltaPhi
@@ -45,36 +45,45 @@ def getSortKeyHNLtruth(item):
 #####################################################
 
 #
-# Function to select 3 good leptons and save their variables in the chain
+# Function to select nL good leptons and save their variables in the chain
 # no_tau: turn on to only accept light leptons
 # tau_algo: if set to 'gen_truth', it will still run over all reco taus but instead of using tight taus it will only look if they were matched to a hadronically decayed gen tau
 #
-def select3Leptons(chain, new_chain, no_tau=False, light_algo = None, tau_algo = None, cutter = None, workingpoint = 'tight'):
+def selectLeptonsGeneral(chain, new_chain, nL, object_selection, cutter=None, sort_leptons = True):
 
-    if chain is new_chain:
-        new_chain.l_pt = [0.0]*3
-        new_chain.l_eta = [0.0]*3
-        new_chain.l_phi = [0.0]*3
-        new_chain.l_charge = [0.0]*3
-        new_chain.l_flavor = [0.0]*3
-        new_chain.l_e = [0.0]*3
-        new_chain.l_indices = [0.0]*3
+    collection = chain._nL if not object_selection['notau'] else chain._nLight
+    chain.leptons = []
+    for l in xrange(collection):
+        if chain._lFlavor[l] == 0: workingpoint = object_selection['ele_wp']
+        elif chain._lFlavor[l] == 1: workingpoint = object_selection['mu_wp']
+        elif chain._lFlavor[l] == 2: workingpoint = object_selection['tau_wp']
+        else: raise RuntimeError('In selectLeptonsGeneral: flavor provided is neither an electron, muon or tau')
+    
+        if isGoodLepton(chain, l, algo=object_selection['light_algo'], tau_algo=object_selection['tau_algo'], workingpoint=workingpoint):
+            chain.leptons.append((chain._lPt[l], l))
 
-
-    collection = chain._nL if not no_tau else chain._nLight
-    chain.leptons = [(chain._lPt[l], l) for l in xrange(collection) if isGoodLepton(chain, l, algo = light_algo, tau_algo=tau_algo, workingpoint=workingpoint)]
     if cutter is not None:
         cutter.cut(len(chain.leptons) > 0, 'at_least_1_lep')
         cutter.cut(len(chain.leptons) > 1, 'at_least_2_lep')
         cutter.cut(len(chain.leptons) > 2, 'at_least_3_lep')
-    if len(chain.leptons) != 3:  return False
+    if len(chain.leptons) != nL:  return False
 
-    ptAndIndex = sorted(chain.leptons, reverse=True, key = getSortKey)
- 
-    new_chain.l1 = ptAndIndex[0][1]
-    new_chain.l2 = ptAndIndex[1][1]
-    new_chain.l3 = ptAndIndex[2][1]
-    for i in xrange(3):
+    if chain is new_chain:
+        new_chain.l_pt = [0.0]*nL
+        new_chain.l_eta = [0.0]*nL
+        new_chain.l_phi = [0.0]*nL
+        new_chain.l_charge = [0.0]*nL
+        new_chain.l_flavor = [0.0]*nL
+        new_chain.l_e = [0.0]*nL
+        new_chain.l_indices = [0.0]*nL
+        new_chain.l_istight = [0.0]*nL
+
+    if sort_leptons: 
+        ptAndIndex = sorted(chain.leptons, reverse=True, key = getSortKey)
+    else:
+        ptAndIndex = chain.leptons
+
+    for i in xrange(nL):
         new_chain.l_indices[i] = ptAndIndex[i][1]
         new_chain.l_pt[i] = ptAndIndex[i][0] 
         new_chain.l_eta[i] = chain._lEta[ptAndIndex[i][1]]
@@ -82,8 +91,24 @@ def select3Leptons(chain, new_chain, no_tau=False, light_algo = None, tau_algo =
         new_chain.l_e[i] = chain._lE[ptAndIndex[i][1]]
         new_chain.l_charge[i] = chain._lCharge[ptAndIndex[i][1]]
         new_chain.l_flavor[i] = chain._lFlavor[ptAndIndex[i][1]]
+        new_chain.l_istight[i] = isGoodLepton(chain, ptAndIndex[i][1], algo=object_selection['light_algo'], tau_algo=object_selection['tau_algo'], workingpoint='tight')
 
-    return True  
+    return True
+
+from HNL.ObjectSelection.objectSelection import objectSelectionCollection
+def select3Leptons(chain, new_chain, object_selection, cutter = None):
+
+    object_selection['tau_wp'] = 'tight'
+    object_selection['mu_wp'] = 'tight'
+    object_selection['ele_wp'] = 'tight'
+    return selectLeptonsGeneral(chain, new_chain, 3, object_selection, cutter=cutter, sort_leptons = True)
+
+def select4Leptons(chain, new_chain, object_selection, cutter = None):
+
+    object_selection['tau_wp'] = 'tight'
+    object_selection['mu_wp'] = 'tight'
+    object_selection['ele_wp'] = 'tight'
+    return selectLeptonsGeneral(chain, new_chain, 4, object_selection_collection, cutter=cutter, sort_leptons = True)
 
 def select3GenLeptons(chain, new_chain):
   
@@ -117,38 +142,69 @@ def select3GenLeptons(chain, new_chain):
     
     return True
 
-def selectLeptonsGeneral(chain, new_chain, nL, no_tau=False, light_algo = None, tau_algo = None, cutter = None, workingpoint = 'tight'):
+# def selectLeptonsGeneral(chain, new_chain, nL, no_tau=False, light_algo = None, tau_algo = None, cutter = None, workingpoint = 'tight'):
 
-    collection = chain._nL if not no_tau else chain._nLight
-    chain.leptons = [(chain._lPt[l], l) for l in xrange(collection) if isGoodLepton(chain, l, algo = light_algo, tau_algo=tau_algo, workingpoint=workingpoint)]
-    if cutter is not None:
-        cutter.cut(len(chain.leptons) > 0, 'at_least_1_lep')
-        cutter.cut(len(chain.leptons) > 1, 'at_least_2_lep')
-        cutter.cut(len(chain.leptons) > 2, 'at_least_3_lep')
-    if len(chain.leptons) != nL:  return False
+#     collection = chain._nL if not no_tau else chain._nLight
+#     chain.leptons = [(chain._lPt[l], l) for l in xrange(collection) if isGoodLepton(chain, l, algo = light_algo, tau_algo=tau_algo, workingpoint=workingpoint)]
+#     if cutter is not None:
+#         cutter.cut(len(chain.leptons) > 0, 'at_least_1_lep')
+#         cutter.cut(len(chain.leptons) > 1, 'at_least_2_lep')
+#         cutter.cut(len(chain.leptons) > 2, 'at_least_3_lep')
+#     if len(chain.leptons) != nL:  return False
 
+#     if chain is new_chain:
+#         new_chain.l_pt = [0.0]*nL
+#         new_chain.l_eta = [0.0]*nL
+#         new_chain.l_phi = [0.0]*nL
+#         new_chain.l_charge = [0.0]*nL
+#         new_chain.l_flavor = [0.0]*nL
+#         new_chain.l_e = [0.0]*nL
+#         new_chain.l_indices = [0.0]*nL
+
+
+#     ptAndIndex = sorted(chain.leptons, reverse=True, key = getSortKey)
+
+#     for i in xrange(nL):
+#         chain.l_indices[i] = ptAndIndex[i][1]
+#         new_chain.l_pt[i] = ptAndIndex[i][0] 
+#         new_chain.l_eta[i] = chain._lEta[ptAndIndex[i][1]]
+#         new_chain.l_phi[i] = chain._lPhi[ptAndIndex[i][1]]
+#         new_chain.l_e[i] = chain._lE[ptAndIndex[i][1]]
+#         new_chain.l_charge[i] = chain._lCharge[ptAndIndex[i][1]]
+#         new_chain.l_flavor[i] = chain._lFlavor[ptAndIndex[i][1]]
+
+#     return True
+
+#
+# Meant for training NN, select up to two jets, if less than two jets, 
+#
+def selectFirstTwoJets(chain, new_chain, selection = None):
     if chain is new_chain:
-        new_chain.l_pt = [0.0]*nL
-        new_chain.l_eta = [0.0]*nL
-        new_chain.l_phi = [0.0]*nL
-        new_chain.l_charge = [0.0]*nL
-        new_chain.l_flavor = [0.0]*nL
-        new_chain.l_e = [0.0]*nL
-        new_chain.l_indices = [0.0]*nL
+        new_chain.j_pt = [0.0]*2
+        new_chain.j_eta = [0.0]*2
+        new_chain.j_phi = [0.0]*2
+        new_chain.j_e = [0.0]*2
+        new_chain.j_indices = [0.0]*2
 
+    chain.jets = [(chain._jetPt[j], j) for j in xrange(chain._nJets) if isGoodJet(chain, j, selection = selection)]
 
-    ptAndIndex = sorted(chain.leptons, reverse=True, key = getSortKey)
+    ptAndIndex = sorted(chain.jets, reverse=True, key = getSortKey)
+ 
+    for i in xrange(2):
+        if i < len(chain.jets):
+            new_chain.j_pt[i] = ptAndIndex[i][0] 
+            new_chain.j_eta[i] = chain._jetEta[ptAndIndex[i][1]]
+            new_chain.j_phi[i] = chain._jetPhi[ptAndIndex[i][1]]
+            new_chain.j_e[i] = chain._jetE[ptAndIndex[i][1]]
+            new_chain.j_indices[i] = ptAndIndex[i][0] 
+        else:
+            new_chain.j_pt[i] = 0. 
+            new_chain.j_eta[i] = 0.
+            new_chain.j_phi[i] = 0.
+            new_chain.j_e[i] = 0.
+            new_chain.j_indices[i] = -1
 
-    for i in xrange(nL):
-        chain.l_indices[i] = ptAndIndex[i][1]
-        new_chain.l_pt[i] = ptAndIndex[i][0] 
-        new_chain.l_eta[i] = chain._lEta[ptAndIndex[i][1]]
-        new_chain.l_phi[i] = chain._lPhi[ptAndIndex[i][1]]
-        new_chain.l_e[i] = chain._lE[ptAndIndex[i][1]]
-        new_chain.l_charge[i] = chain._lCharge[ptAndIndex[i][1]]
-        new_chain.l_flavor[i] = chain._lFlavor[ptAndIndex[i][1]]
-
-    return True
+    return True 
 
 
 #########################################
@@ -161,7 +217,14 @@ def selectLeptonsGeneral(chain, new_chain, nL, no_tau=False, light_algo = None, 
 # Function to calculate all kinematic variables to be used later on in the selection steps
 # All variables are stored in the chain so they can be called anywhere
 #
-def calculateGeneralVariables(chain, new_chain, is_reco_level = True):
+def calculateEventVariables(chain, new_chain, nL = None, is_reco_level = True, selection = None):
+    calculateGeneralVariables(chain, new_chain, is_reco_level=is_reco_level, selection=selection)
+    if nL == 3:
+        calculateThreeLepVariables(chain, new_chain, is_reco_level = is_reco_level)
+    if nL == 4:
+        calculateFourLepVariables(chain, new_chain)
+
+def calculateGeneralVariables(chain, new_chain, is_reco_level = True, selection = None):
     if is_reco_level:
         #ptCone
         new_chain.pt_cone = []
@@ -181,12 +244,17 @@ def calculateGeneralVariables(chain, new_chain, is_reco_level = True):
         
     new_chain.hasOSSF = containsOSSF(new_chain)
 
+    new_chain.HT = calcHT(chain, new_chain, selection)
+    new_chain.LT = calcLT(chain, new_chain)
+
+    selectFirstTwoJets(chain, new_chain, selection = selection)
+
 def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
-    # print "NEW"
 
     l1Vec = getFourVec(new_chain.l_pt[l1], new_chain.l_eta[l1], new_chain.l_phi[l1], new_chain.l_e[l1])
     l2Vec = getFourVec(new_chain.l_pt[l2], new_chain.l_eta[l2], new_chain.l_phi[l2], new_chain.l_e[l2])
     l3Vec = getFourVec(new_chain.l_pt[l3], new_chain.l_eta[l3], new_chain.l_phi[l3], new_chain.l_e[l3])
+    metVec = getFourVec(chain._met, 0., chain._metPhi, chain._met)
     lVec = [l1Vec, l2Vec, l3Vec]
 
     #M3l
@@ -265,28 +333,35 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
 
     #Mass variables
     # print min_os
-    chain.minMos = (lVec[min_os[0]]+lVec[min_os[1]]).M() if min_os is not None else -1
-    chain.maxMos = (lVec[max_os[0]]+lVec[max_os[1]]).M() if max_os is not None else -1
-    chain.minMss = (lVec[min_ss[0]]+lVec[min_ss[1]]).M() if min_ss is not None else -1
-    chain.maxMss = (lVec[max_ss[0]]+lVec[max_ss[1]]).M() if max_ss is not None else -1
-    chain.minMossf = (lVec[min_ossf[0]]+lVec[min_ossf[1]]).M() if min_ossf is not None else -1
-    chain.maxMossf = (lVec[max_ossf[0]]+lVec[max_ossf[1]]).M() if max_ossf is not None else -1
-    chain.minMsssf = (lVec[min_sssf[0]]+lVec[min_sssf[1]]).M() if min_sssf is not None else -1
-    chain.maxMsssf = (lVec[max_sssf[0]]+lVec[max_sssf[1]]).M() if max_sssf is not None else -1
-    chain.MZossf = (lVec[z_ossf[0]]+lVec[z_ossf[1]]).M() if z_ossf is not None else -1
+    new_chain.minMos = (lVec[min_os[0]]+lVec[min_os[1]]).M() if min_os is not None else -1
+    new_chain.maxMos = (lVec[max_os[0]]+lVec[max_os[1]]).M() if max_os is not None else -1
+    new_chain.minMss = (lVec[min_ss[0]]+lVec[min_ss[1]]).M() if min_ss is not None else -1
+    new_chain.maxMss = (lVec[max_ss[0]]+lVec[max_ss[1]]).M() if max_ss is not None else -1
+    new_chain.minMossf = (lVec[min_ossf[0]]+lVec[min_ossf[1]]).M() if min_ossf is not None else -1
+    new_chain.maxMossf = (lVec[max_ossf[0]]+lVec[max_ossf[1]]).M() if max_ossf is not None else -1
+    new_chain.minMsssf = (lVec[min_sssf[0]]+lVec[min_sssf[1]]).M() if min_sssf is not None else -1
+    new_chain.maxMsssf = (lVec[max_sssf[0]]+lVec[max_sssf[1]]).M() if max_sssf is not None else -1
+    new_chain.MZossf = (lVec[z_ossf[0]]+lVec[z_ossf[1]]).M() if z_ossf is not None else -1
 
     #MTother
     index_other = [item for item in [0, 1, 2] if item not in min_os][0] if min_os is not None else None
     new_chain.index_other = new_chain.l_indices[index_other] if index_other is not None else -1
 
-
     if new_chain.index_other != -1:
         if is_reco_level:    
             new_chain.mtOther = np.sqrt(2*chain._met*chain._lPt[new_chain.index_other]*(1-np.cos(deltaPhi(chain._lPhi[new_chain.index_other], chain._metPhi))))
+            leading_os = min_os[0] if chain._lPt[min_os[0]] > chain._lPt[min_os[1]] else min_os[1]
+            subleading_os = min_os[0] if chain._lPt[min_os[0]] < chain._lPt[min_os[1]] else min_os[1]
+            new_chain.mtl1 = np.sqrt(2*chain._met*chain._lPt[leading_os]*(1-np.cos(deltaPhi(chain._lPhi[leading_os], chain._metPhi))))
+            new_chain.mtl2 = np.sqrt(2*chain._met*chain._lPt[subleading_os]*(1-np.cos(deltaPhi(chain._lPhi[subleading_os], chain._metPhi))))
         else:
             new_chain.mtOther = np.sqrt(2*chain._gen_met*chain._gen_lPt[new_chain.index_other]*(1-np.cos(deltaPhi(chain._gen_lPhi[new_chain.index_other], chain._gen_metPhi))))
     else:
         new_chain.mtOther = -1
+        new_chain.mtl1 = -1
+        new_chain.mtl2 = -1
+    #MT3 
+    new_chain.mt3 = (l1Vec+l2Vec+l3Vec+metVec).Mt()
 
     #
     # dR variables
@@ -389,7 +464,7 @@ def fourthFOVeto(chain, light_lep_selection = None, tau_selection = None, no_tau
         collection = chain._nL
 
     for lepton in xrange(collection):
-        if lepton in [chain.l1, chain.l2, chain.l3]: continue
+        if lepton in chain.l_indices: continue
         if isFOLepton(chain, lepton, light_lep_selection, tau_selection): return True
     return False
 
@@ -450,6 +525,19 @@ def passesOSSFforZZ(chain):
 def massDiff(m1, m2):
     return abs(m1-m2)
 
+def calcHT(chain, new_chain, selection = None):
+    HT = 0.
+    for jet in xrange(chain._nJets):
+        if not isGoodJet(chain, jet, selection):    continue 
+        HT += chain._jetPt[jet]
+    return HT
+
+def calcLT(chain, new_chain):
+    LT = 0.
+    for lep in new_chain.l_indices:
+        LT += chain._lPt[lep]
+    LT += chain._met
+    return LT
 
 
 #
@@ -511,7 +599,6 @@ def highMassCuts(chain, new_chain, cutter):
     if not cutter.cut(new_chain.l_pt[l2] > 15, 'l2pt>15'):        return False
     if not cutter.cut(new_chain.l_pt[l3] > 10, 'l3pt>10'):        return False
     if not cutter.cut(passesZcuts(chain, new_chain, same_flavor=True), 'M2l_OSSF_Z_veto'):        return False
-    # print new_chain.M3l, new_chain.minMos, new_chain.minMossf
     if not cutter.cut(abs(new_chain.M3l-91) > 15, 'M3l_Z_veto'):        return False 
     return True 
 
@@ -591,19 +678,7 @@ def calculateKinematicVariables(chain, new_chain, is_reco_level = True):
     chain.minMossf = (lVec[min_ossf[0]]+lVec[min_ossf[1]]).M() if all(min_ossf) else 0
     chain.maxMossf = (lVec[max_ossf[0]]+lVec[max_ossf[1]]).M() if all(max_ossf) else 0
     chain.minMsssf = (lVec[min_sssf[0]]+lVec[min_sssf[1]]).M() if all(min_sssf) else 0
-    chain.maxMsssf = (lVec[max_sssf[0]]+lVec[max_sssf[1]]).M() if all(max_sssf) else 0
-
-    # min_mos = 9999999.
-    # min_os = [10, 10]
-    # for i1, l in enumerate([new_chain.l1, new_chain.l2, new_chain.l3]):
-    #     for i2, sl in enumerate([new_chain.l1, new_chain.l2, new_chain.l3]):
-    #         if i2 <= i1:        continue
-    #         if new_chain.l_charge[i1] == new_chain.l_charge[i2]: continue
-    #         tmp_mos = (lVec[i1]+lVec[i2]).M()
-    #         if tmp_mos < min_mos:       
-    #             min_mos = tmp_mos
-    #             min_os = [l, sl]
-    # new_chain.minMos = min_mos        
+    chain.maxMsssf = (lVec[max_sssf[0]]+lVec[max_sssf[1]]).M() if all(max_sssf) else 0  
 
     #MTother
     new_chain.index_other = [item for item in [new_chain.l1, new_chain.l2, new_chain.l3] if item not in min_os][0]   

@@ -16,7 +16,7 @@ argParser.add_argument('--year',     action='store',      default=None,   help='
 argParser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 argParser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
-argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
+argParser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 argParser.add_argument('--makePlots',   action='store_true', default=False,  help='Use existing root files to make the plots')
 argParser.add_argument('--showCuts',   action='store_true', default=False,  help='Show what the pt cuts were for the category in the plots')
@@ -41,6 +41,12 @@ from HNL.EventSelection.eventCategorization import EventCategory
 #
 # Loop over samples and events
 #
+jobs = []
+for sample_name in sample_manager.sample_names:
+    sample = sample_manager.getSample(sample_name)
+    for njob in xrange(sample.split_jobs): 
+        jobs += [(sample.name, str(njob))]
+
 if not args.makePlots:
     #
     # Load in the sample list 
@@ -53,11 +59,6 @@ if not args.makePlots:
     #
     if args.runOnCream and not args.isChild:
         from HNL.Tools.jobSubmitter import submitJobs
-        jobs = []
-        for sample_name in sample_manager.sample_names:
-            sample = sample_manager.getSample(sample_name)
-            for njob in xrange(sample.split_jobs): 
-                jobs += [(sample.name, str(njob))]
 
         submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'plotTau')
         exit(0)
@@ -210,8 +211,7 @@ else:
     hist_list = glob.glob(os.getcwd()+'/data/'+__file__.split('.')[0]+'/'+args.year+'/*')
 
     # Merge files if necessary
-    for n in hist_list:
-        merge(n)
+    merge(hist_list, __file__, jobs, ('sample', 'subJob'), argParser)
 
     list_of_hist = {}
     legend_names = {}

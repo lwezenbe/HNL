@@ -15,7 +15,7 @@ argParser.add_argument('--year',     action='store',      default=None,   help='
 argParser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 argParser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
-argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
+argParser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 argParser.add_argument('--overwrite', action='store_true', default=False,                help='overwrite if valid output file already exists')
 argParser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
@@ -30,7 +30,7 @@ argParser.add_argument('--removeOverlap',  action='store_true',      default=Fal
 
 args = argParser.parse_args()
 
-from HNL.Tools.logger import getLogger
+from HNL.Tools.logger import getLogger, closeLogger
 log = getLogger(args.logLevel)
 
 #
@@ -52,18 +52,17 @@ sample_manager = SampleManager(args.year, 'noskim', file_list)
 #
 # Submit subjobs
 #
+jobs = []
+for sample_name in sample_manager.sample_names:
+    sample = sample_manager.getSample(sample_name)
+    if sample is None:
+        print sample_name, "not found. Will skip this sample"
+        continue
+    for njob in xrange(sample.split_jobs):
+        jobs += [(sample.name, str(njob))]
+        
 if not args.isChild and not args.isTest:
     from HNL.Tools.jobSubmitter import submitJobs
-    jobs = []
-    for sample_name in sample_manager.sample_names:
-        sample = sample_manager.getSample(sample_name)
-        if sample is None:
-            print sample_name, "not found. Will skip this sample"
-            continue
-        for njob in xrange(sample.split_jobs):
-            # if njob > 26: continue
-            jobs += [(sample.name, str(njob))]
-
     submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'skim')
     
     if args.summaryFile:
@@ -131,7 +130,7 @@ output_file.cd('blackJackAndHookers')
 # Switch off unused branches and create outputTree
 #
 
-#delete_branches = ['lhe', 'Lhe', 'ttg', '_ph']
+delete_branches = ['lhe', 'Lhe', 'ttg', '_ph']
 delete_branches = ['ttg', '_ph']
 #delete_branches.extend(['HLT']) #TODO: For now using pass_trigger, this may need to change
 delete_branches.extend(['tauPOG*2015', 'tau*MvaNew']) #Outdated tau
@@ -150,7 +149,7 @@ new_branches = []
 # new_branches.extend(['M3l/F', 'minMos/F', 'pt_cone[20]/F', 'mtOther/F'])
 new_branches.extend(['M3l/F', 'minMos/F', 'mtOther/F'])
 new_branches.extend(['l1/I', 'l2/I', 'l3/I', 'index_other/I'])
-new_branches.extend(['l_pt[3]/F', 'l_eta[3]/F', 'l_phi[3]/F', 'l_e[3]/F', 'l_charge[3]/F', 'l_flavor[3]/I', 'l_indices[3]/I'])
+new_branches.extend(['l_pt[3]/F', 'l_eta[3]/F', 'l_phi[3]/F', 'l_e[3]/F', 'l_charge[3]/F', 'l_flavor[3]/I', 'l_indices[3]/I', 'l_istight[3]/O'])
 new_branches.extend(['lumiweight/F'])
 new_branches.extend(['event_category/I'])
 new_branches.extend(['njets/I', 'nbjets/I'])
@@ -161,20 +160,23 @@ new_vars = makeBranches(output_tree, new_branches)
 #
 # Start event loop
 #
-print len(sample.getEventRange(args.subJob))
 
 if args.isTest:
-    event_range = range(20000)
+    event_range = range(2000)
     # event_range = sample.getEventRange(args.subJob)    
 
 else:
     event_range = sample.getEventRange(args.subJob)   
-
-
      
+#prepare object  and event selection
+from HNL.ObjectSelection.objectSelection import objectSelectionCollection
+if args.oldAnalysisSkim:
+    object_selection = objectSelectionCollection('deeptauVSjets', 'cutbased', 'loose', 'loose', 'loose', True)
+else:
+    object_selection = objectSelectionCollection('deeptauVSjets', 'leptonMVAtop', 'loose', 'loose', 'loose', False)
 
 from HNL.Tools.helpers import progress
-from HNL.EventSelection.eventSelectionTools import calculateThreeLepVariables, calculateGeneralVariables, select3Leptons, select3GenLeptons
+from HNL.EventSelection.eventSelectionTools import calculateThreeLepVariables, calculateGeneralVariables, selectLeptonsGeneral, select3GenLeptons
 from HNL.EventSelection.eventCategorization import EventCategory
 for entry in event_range:
     chain.GetEntry(entry)
@@ -189,22 +191,18 @@ for entry in event_range:
     if args.genSkim:
         if not select3GenLeptons(chain, new_vars):      continue
     elif not args.oldAnalysisSkim:
-        # if not select3Leptons(chain, new_vars, light_algo=args.lightLeptonSelection, tau_algo=args.tauSelection):       continue
-        select3Leptons(chain, new_vars, light_algo=args.lightLeptonSelection, tau_algo=args.tauSelection, workingpoint = 'loose')
+        selectLeptonsGeneral(chain, new_vars, 3, object_selection, cutter = cutter)
         if len(chain.leptons) < 3:       continue
     else:
-        select3Leptons(chain, new_vars, light_algo='cutbased', workingpoint = 'tight', no_tau = True, cutter = cutter)
+        selectLeptonsGeneral(chain, new_vars, 3, object_selection, cutter = cutter)
         if len(chain.leptons) < 3:       continue
-
-
     
     ec = EventCategory(new_vars)
     c = ec.returnCategory()
     new_vars.event_category = c
 
-    print 'calcing'
-    calculateGeneralVariables(chain, new_vars, is_reco_level=not args.genSkim)
-    calculateThreeLepVariables(chain, new_vars, is_reco_level=not args.genSkim)
+    # calculateGeneralVariables(chain, new_vars, is_reco_level=not args.genSkim)
+    # calculateThreeLepVariables(chain, new_vars, is_reco_level=not args.genSkim)
     new_vars.lumiweight = lw.getLumiWeight()
     output_tree.Fill()
 
@@ -213,8 +211,10 @@ cutter.saveCutFlow(output_name.split('.')[-1]+'_cutflow.root')
 
 
 output_tree.AutoSave()
-#if hcounter is not None:
+# if hcounter is not None:
 #    hcounter.Write()
     
 output_file.Close()
+
+closeLogger(log)
 

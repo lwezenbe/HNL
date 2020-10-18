@@ -18,14 +18,19 @@ argParser.add_argument('--year',     action='store',      default=None,   help='
 argParser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 argParser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
-argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
+argParser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 argParser.add_argument('--oldTriggers',   action='store_true', default=False,  help='Use triggers from AN 2017-014')
 argParser.add_argument('--useRef', action='store_true', default=False,  help='pass ref cuts')
 argParser.add_argument('--separateTriggers', action='store', default=None,  
     help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', 
     choices=['single', 'cumulative', 'full'])
+argParser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+
 args = argParser.parse_args()
+
+from HNL.Tools.logger import getLogger, closeLogger
+log = getLogger(args.logLevel)
 
 #
 # Change some settings if this is a test
@@ -43,16 +48,17 @@ if args.isTest:
 from HNL.Samples.sampleManager import SampleManager
 sample_manager = SampleManager(args.year, 'noskim', 'triggerlist_'+str(args.year))
 
+jobs = []
+for sample_name in sample_manager.sample_names:
+    sample = sample_manager.getSample(sample_name)
+    for njob in xrange(sample.split_jobs): 
+        jobs += [(sample.name, str(njob))]
+
 #
 # Submit subjobs
 #
 if not args.isChild:
     from HNL.Tools.jobSubmitter import submitJobs
-    jobs = []
-    for sample_name in sample_manager.sample_names:
-        sample = sample_manager.getSample(sample_name)
-        for njob in xrange(sample.split_jobs): 
-            jobs += [(sample.name, str(njob))]
 
     submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'trigger')
     exit(0)
@@ -192,6 +198,13 @@ if args.isTest:
 else:
     event_range = sample.getEventRange(args.subJob)    
 
+#prepare object  and event selection
+from HNL.ObjectSelection.objectSelection import objectSelectionCollection
+if args.oldTriggers:
+    object_selection = objectSelectionCollection('deeptauVSjets', 'cutbased', 'tight', 'tight', 'tight', True)
+else:
+    object_selection = objectSelectionCollection('deeptauVSjets', 'leptonMVAtop', 'tight', 'tight', 'tight', False)
+
 #
 # Loop over all events
 #
@@ -202,7 +215,7 @@ for entry in event_range:
     chain.GetEntry(entry)
     progress(entry - event_range[0], len(event_range))
 
-    if not select3Leptons(chain, chain, tau_algo = 'gen_truth'): continue
+    if not select3Leptons(chain, chain, object_selection): continue
     if args.useRef and not chain._passTrigger_ref:     continue
 
     weightfactor = 1.
@@ -257,3 +270,5 @@ for i, c in enumerate(categories):
                     if i == 0 and l == 0 and j == 0:       eff[(c, v, t, j)].write(subdirs=['efficiency_'+str(c), v, str(returnCategoryTriggerNames(c)[j])])
                     else:                       eff[(c, v, t, j)].write(append=True, subdirs=['efficiency_'+str(c), v, str(returnCategoryTriggerNames(c)[j])])
 
+
+closeLogger(log)

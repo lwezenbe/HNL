@@ -13,6 +13,7 @@ class Efficiency(object):
         self.subdirs = subdirs
         self.efficiency_num = None
         self.efficiency_denom = None
+        self.efficiency = None
 
         #If bins == None, load in histograms from the path
         bins_check = False
@@ -25,8 +26,6 @@ class Efficiency(object):
             self.efficiency_num = Histogram(name+'_num', self.var, var_tex, bins)
             self.efficiency_denom = Histogram(name+'_denom', self.var, var_tex, bins)
         else:
-            #self.efficiency_num = getObjFromFile(self.path, name+'/'+name+'_num')
-            #self.efficiency_denom = getObjFromFile(self.path, name+'/'+name+'_denom')
             if subdirs is not None:
                 obj_name = ''
                 for d in subdirs:
@@ -38,6 +37,10 @@ class Efficiency(object):
      
         self.isTH2 = self.efficiency_num.isTH2
         if self.isTH2 and not self.efficiency_denom.isTH2:  print "Warning: efficiency numerator and denominator have different dimensions"
+
+    def isVarCorrectSize():
+        if self.isTH2: return (isinstance(self.var, (list,)) and len(self.var))
+        else: return (not isinstance(self.var, (list,)))
 
     def fill(self, chain, weight, passed, index = None):
         self.efficiency_denom.fill(chain, weight, index)
@@ -51,11 +54,36 @@ class Efficiency(object):
         return self.efficiency_denom.getHist().Clone()
 
     def getEfficiency(self, inPercent = False):
-        eff = self.getNumerator().Clone(self.name+'_efficiency')
-        eff.Divide(eff, self.getDenominator(), 1., 1., "B")
-        if inPercent: eff.Scale(100.)
-        return eff
+        if self.efficiency is None:
+            eff = self.getNumerator().Clone('tmp_'+self.name)
+            eff.Divide(eff, self.getDenominator(), 1., 1., "B")
+            if inPercent: eff.Scale(100.)
+            self.efficiency = eff.Clone(self.name+'_efficiency')
+        return self.efficiency
 
+    def evaluateEfficiency(self, chain, index = None, manual_var_entry = None):
+        if self.var is None and manual_var_entry is None:
+            raise RuntimeError('Member "var" in efficiency is None. Either set it or provide the input var manually')
+
+        if index is not None:
+            var = self.var(chain, index) if manual_var_entry is None else manual_var_entry
+        else:
+            var = self.var(chain) if manual_var_entry is None else manual_var_entry
+
+        #Take into account overflow
+        if self.isTH2:
+            var[0] = min(max(self.getEfficiency().GetXaxis().GetBinCenter(1), var[0]), self.getEfficiency().GetXaxis().GetBinCenter(self.getEfficiency().GetXaxis().GetLast()))
+            var[1] = min(max(self.getEfficiency().GetYaxis().GetBinCenter(1), var[1]), self.getEfficiency().GetYaxis().GetBinCenter(self.getEfficiency().GetYaxis().GetLast()))  
+        else:
+            var = min(max(self.getEfficiency().GetXaxis().GetBinCenter(1), var), self.getEfficiency().GetXaxis().GetBinCenter(self.getEfficiency().GetXaxis().GetLast()))
+        
+        if self.isTH2:
+            bin_to_read = self.getEfficiency().FindBin(var[0], var[1])
+        else:
+            bin_to_read = self.getEfficiency().FindBin(var)
+
+        return self.getEfficiency().GetBinContent(bin_to_read)
+    
     def getGraph(self):
         eff = self.getEfficiency()
         graph = ROOT.TGraphAsymmErrors(eff)
@@ -105,10 +133,10 @@ class Efficiency(object):
         if name is not None:
             self.efficiency_num.getHist().Write(name+'_num')
             self.efficiency_denom.getHist().Write(name+'_denom')
-            self.getEfficiency().Write(name+'_efficiency')
+            # self.getEfficiency().Write(name+'_efficiency')
         else:
             self.efficiency_num.getHist().Write()
             self.efficiency_denom.getHist().Write()
-            self.getEfficiency().Write()
+            # self.getEfficiency().Write()
         output_file.Close()
 

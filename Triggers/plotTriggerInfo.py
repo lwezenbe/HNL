@@ -19,11 +19,27 @@ args = argParser.parse_args()
 
 if args.separateTriggers is None:       args.separateTriggers = ''
 
+
+#
+# Load in the sample list 
+#
+from HNL.Samples.sampleManager import SampleManager
+sample_manager = SampleManager(args.year, 'noskim', 'triggerlist_'+str(args.year))
+
+jobs = []
+for sample_name in sample_manager.sample_names:
+    sample = sample_manager.getSample(sample_name)
+    for njob in xrange(sample.split_jobs): 
+        jobs += [(sample.name, str(njob))]
+
 #Merges subfiles if needed
 merge_files = glob.glob(os.getcwd()+'/data/calcTriggerEff/*/'+args.separateTriggers)
 for mf in merge_files:
-    if "Results" in mf: continue
-    merge(mf)
+    if "Results" in mf: merge_files.pop(merge_files.index(mf))
+
+script = os.path.expandvars(os.path.join('$CMSSW', 'src', 'HNL', 'Triggers', 'calcTriggerEff.py')
+
+merge(merge_files, script, jobs, ('sample', 'subJob'))
 
 input_files = glob.glob(os.getcwd()+'/data/calcTriggerEff/*/'+args.separateTriggers+'/*.root')
 sample_names = {in_file_name.split('/')[-3] for in_file_name in input_files}

@@ -10,6 +10,7 @@ argParser.add_argument('--plots',     action='store_true',      default=False,  
 argParser.add_argument('--skipTraining',     action='store_true',      default=False,   help='Store plots')
 args = argParser.parse_args()
 
+ROOT.gROOT.SetBatch(True)
 
 from HNL.TMVA.inputHandler import InputHandler
 ih = InputHandler(os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'InputLists', args.year+'.conf')))
@@ -17,22 +18,28 @@ ih = InputHandler(os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', '
 #
 # List the input variables here
 #
-input_var = ['M3l/F', 'minMos/F', 'mtOther/F', 'njets/I']
+from HNL.TMVA.mvaVariables import getVariableList
 
+print "CHECK IF SOMETHING IS WRONG IN SKIMMER, WE WENT FROM INPUT_FILES WITH 35.5MB TO 14 MB"
 
 for signal in ih.signal_names:
 
-	out_file_name = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'training', signal, signal+'.root'))
+	print 'Processing', signal 
+
+	input_var = getVariableList(signal)
+
+	out_file_name = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'training', args.year, signal, signal+'.root'))
 
 	if not args.skipTraining:
 		makeDirIfNeeded(out_file_name)
 		out_file = ROOT.TFile(out_file_name, 'RECREATE') 
 		factory = ROOT.TMVA.Factory("factory", out_file,"")
 
-		loader = ih.getLoader(signal, input_var)
+		loader = ih.getLoader(signal, input_var, args.year)
 
 		preselection = ROOT.TCut("")
-		options = ""
+		# options = ""
+		options = "nTrain_Signal="+str(700)+':nTrain_Background='+str(4000)+ "nTest_Signal="+str(100)+ "nTest_Background="+str(500)
 		if ih.numbers is not None:
 			n_train_s = ih.numbers[0] 
 			n_train_b = ih.numbers[1] 
@@ -51,13 +58,13 @@ for signal in ih.signal_names:
 
 	if args.plots:
 		ROOT.gROOT.SetBatch(True)
-		ROOT.TMVA.variables('data/training/'+signal+'/kBDT', out_file_name)
-		ROOT.TMVA.correlationscatters('data/training/'+signal+'/kBDT', out_file_name)
-		ROOT.TMVA.correlations('data/training/'+signal+'/kBDT', out_file_name)
-		ROOT.TMVA.mvas('data/training/'+signal+'/kBDT', out_file_name)
-		# ROOT.TMVA.mvaeffs('data/training/'+signal+'/kBDT', out_file_name)
-		ROOT.TMVA.efficiencies('data/training/'+signal+'/kBDT', out_file_name)
-		ROOT.TMVA.paracoor('data/training/'+signal+'/kBDT', out_file_name)
+		ROOT.TMVA.variables('data/training/'+str(args.year)+'/'+signal+'/kBDT', out_file_name)
+		ROOT.TMVA.correlationscatters('data/training/'+str(args.year)+'/'+signal+'/kBDT', out_file_name)
+		ROOT.TMVA.correlations('data/training/'+str(args.year)+'/'+signal+'/kBDT', out_file_name)
+		ROOT.TMVA.mvas('data/training/'+str(args.year)+'/'+signal+'/kBDT', out_file_name)
+		# ROOT.TMVA.mvaeffs('data/training/'+str(args.year)+'/'+signal+'/kBDT', out_file_name)
+		ROOT.TMVA.efficiencies('data/training/'+str(args.year)+'/'+signal+'/kBDT', out_file_name)
+		ROOT.TMVA.paracoor('data/training/'+str(args.year)+'/'+signal+'/kBDT', out_file_name)
 
 	### open gui
 	if args.gui:

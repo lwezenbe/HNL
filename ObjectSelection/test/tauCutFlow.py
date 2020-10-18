@@ -15,7 +15,7 @@ argParser.add_argument('--sample',   action='store',      default=None,   help='
 argParser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
 argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
-argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
+argParser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 argParser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
 argParser.add_argument('--plotCutFlow', action='store_true', default=False,  help='plot the cut flow')
 argParser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')

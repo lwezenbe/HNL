@@ -21,10 +21,11 @@ argParser.add_argument('--year',     action='store',      default=None,   help='
 argParser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 argParser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
-argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
+argParser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-argParser.add_argument('--oldANcuts',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-argParser.add_argument('--massRegion',   action='store', default=None,  help='apply the cuts of high or low mass regions', choices=['high', 'low'])
+argParser.add_argument('--selection', action='store', default='cut-based', type=str,  help='What type of analysis do you want to run?', choices=['cut-based', 'AN2017014', 'MVA'])
+argParser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', 
+    choices=['baseline', 'lowMassSR', 'highMassSR'])
 argParser.add_argument('--FOcut',   action='store_true', default=False,  help='Perform baseline FO cut')
 argParser.add_argument('--divideByCategory',   action='store_true', default=False,  help='Look at the efficiency per event category')
 argParser.add_argument('--genLevel',   action='store_true', default=False,  help='Check how many events pass cuts on gen level')
@@ -32,9 +33,13 @@ argParser.add_argument('--compareTriggerCuts', action='store', default=None,
     help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', 
     choices=['single', 'cumulative', 'full'])
 argParser.add_argument('--flavor', action='store', default=None,  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
+argParser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+
 
 args = argParser.parse_args()
 
+from HNL.Tools.logger import getLogger, closeLogger
+log = getLogger(args.logLevel)
 
 #
 # Change some settings if this is a test
@@ -53,31 +58,24 @@ if args.isTest:
 from HNL.Samples.sampleManager import SampleManager
 sample_manager = SampleManager(args.year, 'noskim', 'signallist_'+str(args.year))
 
+
+jobs = []
+flavors = ['tau', 'e', 'mu', '2l'] if args.flavor is None else [args.flavor]
+for sample_name in sample_manager.sample_names:
+    for flavor in flavors:
+        if not '-'+flavor+'-' in sample_name: continue
+        sample = sample_manager.getSample(sample_name)
+        for njob in xrange(sample.split_jobs): 
+            jobs += [(sample.name, str(njob), flavor)]
+
+
 #
 # Submit subjobs
 #
 if not args.isChild:
     from HNL.Tools.jobSubmitter import submitJobs
-    jobs = []
-    if args.flavor is None:
-        for sample_name in sample_manager.sample_names:
-            for flavor in ['tau', 'e', 'mu', '2l']:
-                if not '-'+flavor+'-' in sample_name: continue
-                sample = sample_manager.getSample(sample_name)
-                for njob in xrange(sample.split_jobs): 
-                    jobs += [(sample.name, str(njob), flavor)]
-
-        submitJobs(__file__, ('sample', 'subJob', 'flavor'), jobs, argParser, jobLabel = 'calcSignalEfficiency')
-        exit(0)
-    else:
-        for sample_name in sample_manager.sample_names:
-            if not '-'+args.flavor+'-' in sample_name: continue
-            sample = sample_manager.getSample(sample_name)
-            for njob in xrange(sample.split_jobs): 
-                jobs += [(sample.name, str(njob))]
-
-        submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'calcSignalEfficiency')
-        exit(0)
+    submitJobs(__file__, ('sample', 'subJob', 'flavor'), jobs, argParser, jobLabel = 'calcSignalEfficiency')
+    exit(0)
 
 
 #
@@ -90,13 +88,13 @@ subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
 category_split_str = 'allCategories' if not args.divideByCategory else 'divideByCategory'
 trigger_str = args.compareTriggerCuts if args.compareTriggerCuts is not None else 'regularRun'
 flavor_name = args.flavor if args.flavor else 'allFlavor'
-if args.massRegion is not None: mass_str = args.massRegion+'MassCuts'
-else: mass_str = 'noMassCuts'
+
 
 if not args.isTest: 
-    output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], category_split_str, trigger_str, mass_str, flavor_name, sample.output)
+    output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'),'src', 'EventSelection', 'data', __file__.split('.')[0], category_split_str, trigger_str, args.region, flavor_name, sample.output)
 else:
-    output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0], category_split_str, trigger_str, mass_str, flavor_name, sample.output)
+    output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'),'src', 'EventSelection', 'data', 'testArea', __file__.split('.')[0], category_split_str, trigger_str, args.region, flavor_name, sample.output)
+
 
 if args.isChild:
     output_name += '/tmp_'+sample.output
@@ -188,6 +186,17 @@ def passedPtCutsByCategory(in_chain, cat):
     passes_cuts = [passedCustomPtCuts(in_chain, cut) for cut in cuts_collection]
     return any(passes_cuts)
 
+#
+# Object Selection
+#
+from HNL.ObjectSelection.objectSelection import objectSelectionCollection
+if args.selection == 'AN2017014':
+    object_selection = objectSelectionCollection('deeptauVSjets', 'cutbased', 'tight', 'tight', 'tight', True)
+else:
+    object_selection = objectSelectionCollection('deeptauVSjets', 'leptonMVAtop', 'tight', 'tight', 'tight', False)
+
+from HNL.EventSelection.eventSelector import EventSelector
+es = EventSelector(args.region, args.selection, object_selection, True, ec)    
 
 for entry in event_range:
     
@@ -207,23 +216,9 @@ for entry in event_range:
         if len(tmp) < 3: continue   
    
     if not args.genLevel:
-        if args.oldANcuts:
-            passed = False
-            if select3Leptons(chain, chain, no_tau=True, light_algo='cutbased', cutter = cutter):
-                if args.massRegion == 'low' and lowMassCuts(chain, chain, cutter):
-                    passed = True
-                elif args.massRegion == 'high' and highMassCuts(chain, chain, cutter):
-                    passed = True
-        else:
-            passed = False
-            if select3Leptons(chain, chain, cutter = cutter) and passBaseCuts(chain, chain, cutter):
-                if args.massRegion == 'low' and lowMassCuts(chain, chain, cutter):
-                    passed = True
-                elif args.massRegion == 'high' and highMassCuts(chain, chain, cutter):
-                    passed = True 
+        passed = es.passedFilter(chain, chain, cutter)
     else:
         passed = True
-
 
     weight = lw.getLumiWeight()
     if args.divideByCategory:
@@ -253,6 +248,8 @@ for i, c_key in enumerate(efficiency.keys()):
         if i == 0 and j == 0:       efficiency[c_key][t_key].write(subdirs=['efficiency_'+str(c_key), 'l1_'+str(t_key[0])+'_l2_'+str(t_key[1])+'_l3_'+str(t_key[2])])
         else:                       efficiency[c_key][t_key].write(append=True, subdirs=['efficiency_'+str(c_key), 'l1_'+str(t_key[0])+'_l2_'+str(t_key[1])+'_l3_'+str(t_key[2])])
         
+
+closeLogger(log)
 
 # if args.divideByCategory:
 #     for i, c in enumerate(ec.categories):

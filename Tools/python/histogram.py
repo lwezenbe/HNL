@@ -95,15 +95,18 @@ class Histogram:
     def getHist(self):
         return self.hist
 
-    def write(self, path, append = False):
+    def write(self, path, write_name = None, append = False):
         append_string = 'recreate'
         if append and isValidRootFile(path): append_string = 'update'
 
         makeDirIfNeeded(path)
         output_file = ROOT.TFile(path, append_string)
-        output_file.mkdir(self.name)
-        output_file.cd(self.name)
-        self.hist.Write()
+        if write_name is None:
+            output_file.mkdir(self.name)
+            output_file.cd(self.name)
+            self.hist.Write()
+        else:
+            self.hist.Write(write_name)
         output_file.Close()
 
     def clone(self, out_name):
@@ -127,3 +130,72 @@ def returnSqrt(th1):
             sqrt.SetBinError(xbin, 0.5*th1.GetBinError(xbin)/sqrt_x)
         sqrt.SetBinContent(xbin, sqrt_x)
     return sqrt
+
+#Class for histograms with similar properties:
+#   var, bins and dimensions
+
+from HNL.Tools.helpers import getObjFromFile
+class HistogramCollection(object):
+    def __init__(self, collection_name, sub_names, var, var_tex, path, bins=None, subdirs=None):
+        self.collection_name = collection_name
+        self.sub_names = sub_names
+        self.path = path
+        self.var = var
+        self.var_tex = var_tex
+        self.bins = bins
+        self.subdirs = subdirs
+        self.histograms = {}
+
+        #If bins == None, load in histograms from the path
+        bins_check = False
+        try:
+            if bins:    bins_check = True
+        except:
+            if bins.any():      bins_check = True
+       
+        if bins_check:
+            for n in self.sub_names:
+                self.histograms[n] = Histogram(self.collection_name+'_'+n, self.var, self.var_tex, self.bins)
+        else:
+            if subdirs is not None:
+                obj_name = ''
+                for d in subdirs:
+                    obj_name += d+'/'
+            else:
+                obj_name = self.collection_name + '/'
+            for n in self.sub_names:
+                self.histograms[n] = Histogram(getObjFromFile(self.path, obj_name+self.collection_name+'_'+n))
+     
+        self.isTH2 = self.histograms[self.sub_names[0]].isTH2
+        for n in self.sub_names[1:]:
+            if self.isTH2 and not self.histograms[n].isTH2:  raise RuntimeError("histograms in HistogramCollection object have different dimensions")
+
+    def fill(self, sub_name, chain, weight, index = None):
+        self.histograms[sub_name].fill(chain, weight, index)
+
+    def getHistogram(self, sub_name):
+        h = self.histograms[sub_name].getHist().Clone()
+        return h
+
+    def write(self, append = False, name=None, subdirs = None):
+        append_string = 'recreate'
+        if append and isValidRootFile(self.path): append_string = 'update'
+
+        makeDirIfNeeded(self.path)
+        output_file = ROOT.TFile(self.path, append_string)
+        if subdirs is None:
+            output_file.mkdir(self.collection_name)
+            output_file.cd(self.collection_name)
+        else:
+            nomo = ''
+            for d in subdirs:
+                nomo += d + '/'
+                output_file.mkdir(nomo)
+                output_file.cd(nomo)
+        if name is not None:
+            for n in self.sub_names:
+                self.histograms[n].getHist().Write(name+'_'+n)
+        else:
+            for n in self.sub_names:
+                self.histograms[n].getHist().Write()
+        output_file.Close()

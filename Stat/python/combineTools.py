@@ -8,6 +8,7 @@
 import os
 import glob
 from HNL.Tools.helpers import makeDirIfNeeded, tab, getObjFromFile
+import ROOT
 
 #
 # Information about Combine release
@@ -20,15 +21,15 @@ version        = 'v8.0.1'
 # Function to write out a data card, these data cards all contain 1 bin to be clear, readable and flexible
 # and should be combined later on
 #
-def makeDataCard(bin_name, flavor, year, obs_yield, sig_name, bkgr_names, sig_yield=None, bkgr_yields= None, shapes=False, coupling_sq = 1e-4):
+def makeDataCard(bin_name, flavor, year, obs_yield, sig_name, bkgr_names, selection, sig_yield=None, bkgr_yields= None, shapes=False, coupling_sq = 1e-4):
 
     if not shapes and len(bkgr_yields) != len(bkgr_names):
         raise RuntimeError("length of background yields and names is inconsistent")
 
     if not shapes:
-        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'dataCards', str(year), flavor, sig_name, 'cutAndCount',  bin_name+'.txt')
+        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'dataCards', str(year), selection, flavor, sig_name, 'cutAndCount',  bin_name+'.txt')
     else:
-        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'dataCards', str(year), flavor, sig_name, 'shapes', bin_name+'.txt')
+        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'dataCards', str(year), selection, flavor, sig_name, 'shapes', bin_name+'.txt')
     makeDirIfNeeded(out_name)
     out_file = open(out_name, 'w')
 
@@ -38,7 +39,7 @@ def makeDataCard(bin_name, flavor, year, obs_yield, sig_name, bkgr_names, sig_yi
     out_file.write('kmax    * \n')
     out_file.write('-'*400 + '\n')
     if shapes:
-        shapes_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', str(year), flavor, sig_name, bin_name+'.shapes.root')
+        shapes_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', str(year), selection, flavor, sig_name, bin_name+'.shapes.root')
         out_file.write('shapes * * \t' +shapes_path + ' $PROCESS $PROCESS_SYSTEMATIC')
     out_file.write('-'*400 + '\n')
     out_file.write('bin             '+bin_name+ ' \n')
@@ -89,46 +90,63 @@ def runCombineCommand(command, output = None):
 
 from ROOT import TGraph
 def extractRawLimits(input_file_path):
-    tree = getObjFromFile(input_file_path, 'limit')
+    in_file = ROOT.TFile(input_file_path, 'read')
+    tree = in_file.Get('limit')
     limits = {}
     for entry in xrange(tree.GetEntries()):
         tree.GetEntry(entry)
         limits[tree.quantileExpected] = tree.limit
+    in_file.Close()
     return limits
 
 def extractScaledLimitsPromptHNL(input_file_path, coupling):
-    tree = getObjFromFile(input_file_path, 'limit')
+    in_file = ROOT.TFile(input_file_path, 'read')
+    tree = in_file.Get('limit')
     exclusion_coupling = {}
     try:
         for entry in xrange(tree.GetEntries()):
             tree.GetEntry(entry)
             exclusion_coupling[round(tree.quantileExpected, 3)] = tree.limit * coupling**2
+        in_file.Close()
         return exclusion_coupling
     except:
+        in_file.Close()
         return None
 
 def makeGraphs(x_values, couplings, limits = None, input_paths = None):
     if limits is None and input_paths is None:
         raise RuntimeError('Invalid input: both "limits" and "input_paths" are None in CombineTools.makeGraphs')
 
-    npoints = len(x_values)
+    if limits is None:
+        limits = {}
+        for i, (m, p) in enumerate(zip(x_values, input_paths)):
+            try:
+                limits[m] = extractScaledLimitsPromptHNL(p, couplings[i])
+            except:
+                limits[m] = None
+        passed_masses = [x for x in x_values if limits[x] is not None]
+    else:
+        passed_masses = x_values
+
+    
+    npoints = len(passed_masses)
+
     graphs = {
         'expected': TGraph(npoints),
         '1sigma': TGraph(npoints*2),
         '2sigma': TGraph(npoints*2)
     }
 
-    if limits is None:
-        limits = {}
-        for i, (m, p) in enumerate(zip(x_values, input_paths)):
-            limits[m] = extractScaledLimitsPromptHNL(p, couplings[i])
 
-    for i, m in enumerate(x_values):
-        graphs['2sigma'].SetPoint(i, m, limits[m][0.975])
-        graphs['1sigma'].SetPoint(i, m, limits[m][0.84])
-        graphs['expected'].SetPoint(i, m, limits[m][0.5])
-        graphs['1sigma'].SetPoint(npoints*2-1-i, m, limits[m][0.16])
-        graphs['2sigma'].SetPoint(npoints*2-1-i, m, limits[m][0.025])
+    for i, m in enumerate(passed_masses):
+        try:
+            graphs['2sigma'].SetPoint(i, m, limits[m][0.975])
+            graphs['1sigma'].SetPoint(i, m, limits[m][0.84])
+            graphs['expected'].SetPoint(i, m, limits[m][0.5])
+            graphs['1sigma'].SetPoint(npoints*2-1-i, m, limits[m][0.16])
+            graphs['2sigma'].SetPoint(npoints*2-1-i, m, limits[m][0.025])
+        except:
+            pass
 
     return [graphs['expected'], graphs['1sigma'], graphs['2sigma']]
 

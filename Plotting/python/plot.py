@@ -93,7 +93,10 @@ class Plot:
                 self.y_name = self.s[0].GetYaxis().GetTitle()
             elif len(self.b) > 0:
                 self.y_name = self.b[0].GetYaxis().GetTitle()
-        if not isinstance(self.x_name, list) and not isinstance(self.x_name, dict): self.y_name = self.getYName()
+        try:
+            if not isinstance(self.x_name, list) and not isinstance(self.x_name, dict): self.y_name = self.getYName()
+        except:
+            pass
 
         self.canvas = None #Can not be created until gROOT and gStyle settings are set
         self.plotpad = None
@@ -182,8 +185,8 @@ class Plot:
 
                 self.min_to_set = min_cutoff if min_cutoff is not None else 0.3*self.overall_min
             else:
-                # self.max_to_set = 1.4*self.overall_max
-                self.max_to_set = 23
+                self.max_to_set = 1.4*self.overall_max
+                # self.max_to_set = 23
                 self.min_to_set = min_cutoff if min_cutoff is not None else 0.7*self.overall_min
 
             #
@@ -783,7 +786,7 @@ class Plot:
         self.canvas.cd()
         #Create Legend
         legend = ROOT.TLegend(0.5, .7, .9, .9)
-        legend.SetNColumns(3)
+        legend.SetNColumns(1)
        
         loop_obj = [item for item in self.s]
         if len(self.b) > 0: loop_obj.extend(self.b)
@@ -1053,8 +1056,13 @@ class Plot:
         except:
             observed = None
 
-        max_y = max([v for v in yellow.GetY()])
-        min_y = min([v for v in yellow.GetY()])
+        val_to_check = [v for v in yellow.GetY()]
+        print self.b
+        if self.b is not None:
+            for b in self.b:
+                val_to_check.extend([v for v in b.GetY()])
+        max_y = max(val_to_check)
+        min_y = min(val_to_check)
         values = [x for x in median.GetX()]
 
         frame = self.plotpad.DrawFrame(1.4, 0.001, 410, 10)

@@ -17,17 +17,33 @@ argParser.add_argument('--flavor', action='store', default='',  help='Which coup
 argParser.add_argument('--massRegion',   action='store', default=None,  help='apply the cuts of high or low mass regions', choices=['high', 'low'])
 args = argParser.parse_args()
 
+
+#
+# Load in the sample list 
+#
+from HNL.Samples.sampleManager import SampleManager
+sample_manager = SampleManager(args.year, 'noskim', 'signallist_'+str(args.year))
+
+
+jobs = []
+flavors = ['tau', 'e', 'mu', '2l'] if args.flavor is None else [args.flavor]
+for sample_name in sample_manager.sample_names:
+    for flavor in flavors:
+        if not '-'+flavor+'-' in sample_name: continue
+        sample = sample_manager.getSample(sample_name)
+        for njob in xrange(sample.split_jobs): 
+            jobs += [(sample.name, str(njob), flavor)]
+
 #Merges subfiles if needed
 category_split_str = 'allCategories' if not args.divideByCategory else 'divideByCategory'
 trigger_str = args.compareTriggerCuts if args.compareTriggerCuts is not None else 'regularRun'
 mass_str = args.massRegion+'MassCuts' if args.massRegion is not None else 'noMassCuts'
 flavor_name = args.flavor if args.flavor else 'allFlavor'
 
-# input_name  = os.path.join(os.getcwd(), 'data', 'calcSignalEfficiency', category_split_str, trigger_str, mass_str, flavor_name, '*')
-# merge_files = glob.glob(input_name)
-# for mf in merge_files:
-#     if "Results" in mf: continue
-#     merge(mf)
+input_name  = os.path.join(os.getcwd(), 'data', 'calcSignalEfficiency', category_split_str, trigger_str, mass_str, flavor_name, '*')
+merge_files = glob.glob(input_name)
+script = os.path.expandvars(os.path.join('$CMSSW', 'src', 'HNL', 'EventSelection', 'calcSignalEfficiency.py')
+merge(merge_files, __file__, jobs, ('sample', 'subJob', 'flavor'))
 
 input_name  = os.path.join(os.getcwd(), 'data', 'calcSignalEfficiency', category_split_str, trigger_str, mass_str, flavor_name)
 

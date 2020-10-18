@@ -9,6 +9,7 @@ class InputHandler:
         self.numbers = None
         self.signal_names = None
         self.background_names = None
+        self.numbers_not_in_file = False
         self.readInFile()
 
         self.background_paths = None
@@ -35,6 +36,7 @@ class InputHandler:
             numbers = [int(n) for n in numbers_list.split(' ')]
         else:
             numbers = None
+            self.numbers_not_in_file = True
 
         self.numbers = numbers
         self.signal_names = signal_list
@@ -48,7 +50,7 @@ class InputHandler:
         background_paths = []
         for signal in self.signal_names:
             if self.background_names is None:
-                signal_paths[signal] = os.path.join(INPUT_BASE, 'Combined', signal+'.root')
+                signal_paths[signal] = os.path.join(INPUT_BASE, 'Combined/SingleTree', signal+'.root')
             else:
                 signal_paths[signal] = os.path.join(INPUT_BASE, 'Signal', signal+'.root')
         
@@ -71,14 +73,20 @@ class InputHandler:
                 in_tree.Add(b)
         return in_tree
 
-    def getLoader(self, signal, input_variables):
+    def getLoader(self, signal, input_variables, year):
 
         in_tree = self.getTree(signal)
+        nsignal = min(15000, in_tree.Draw("1", "is_signal"))
+        nbkgr = min(15000, in_tree.Draw("1", "!is_signal"))
 
-        loader = ROOT.TMVA.DataLoader('data/training/'+signal+'/kBDT')
+        if self.numbers_not_in_file:
+            self.numbers = [int(nsignal*0.9), int(nbkgr*0.9), int(nsignal*0.1), int(nbkgr*0.1)]
+
+        loader = ROOT.TMVA.DataLoader('data/training/'+str(year)+'/'+signal+'/kBDT')
         cuts = ROOT.TCut("is_signal")
         cutb = ROOT.TCut("!is_signal")
         loader.SetInputTrees(in_tree, cuts, cutb)
+        loader.SetWeightExpression("event_weight")
 
         #Set input variables
         for var in input_variables:

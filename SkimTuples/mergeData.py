@@ -12,8 +12,8 @@ argParser.add_argument('--skim',        action='store',         default='Reco')
 
 args = argParser.parse_args()
 
-output_folder = '/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/OldAnalysis/'+args.year+ '/' + args.skim +'/tmp_DataFiltered'
-makeDirIfNeeded(output_folder)
+output_folder = '/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/'+args.year+ '/' + args.skim +'/tmp_DataFiltered'
+makeDirIfNeeded(output_folder+'/x')
 
 event_information_set = set()
 
@@ -55,7 +55,7 @@ event_information_set = set()
 #os.system('rm -r '+output_folder)
 
 
-file_list =  glob.glob('/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/OldAnalysis/'+args.year+ '/' + args.skim +'/tmp_Data/*.root')
+file_list =  glob.glob('/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/'+args.year+ '/' + args.skim +'/tmp_Data/*.root')
 for i, sub_f_name in enumerate(file_list):
     progress(i, len(file_list))
 

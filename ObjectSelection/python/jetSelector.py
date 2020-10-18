@@ -15,7 +15,10 @@ def isCleanFromLeptons(chain, index):
 def isGoodJetAN2017014(chain, index, cleaned = True):
     if chain._jetPt[index] < 25:        return False
     if abs(chain._jetEta[index]) > 2.4: return False
-    if not chain._jetIsLoose[index]:    return False
+    if chain.year != 2018:
+        if not chain._jetIsLoose[index]:    return False
+    else:
+        if not chain._jetIsTight[index]:    return False
     if cleaned and not isCleanFromLeptons(chain, index):       return False
     return True
 
@@ -36,8 +39,10 @@ def isBJet(chain, index, algo, wp, cleaned = True, selection = None):
     if readBTagValue(chain, index, algo) < getBTagWP(chain.year, wp, algo): return False
     return True
     
-def isGoodJet(chain, index, cleaned = True, selection = default_jet_selection):
-    if selection == 'cut-based':
+def isGoodJet(chain, index, cleaned = True, selection = None):
+    if selection is None: selection = default_jet_selection
+
+    if selection == 'cut-based' or selection == 'MVA':
         return isGoodJetCutBased(chain, index, cleaned = cleaned)
     elif selection == 'AN2017014':
         return isGoodJetAN2017014(chain, index, cleaned = cleaned)
