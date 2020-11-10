@@ -139,12 +139,14 @@ def isFOMuonTTT(chain, index):
     if chain._lPt[index]*(1+max(0., chain._miniIso[index]-0.4)) < 10: return False
     if chain._leptonMvaTOP[index] <= 0.4:
         if chain._ptRatio[index] < 0.45:        return False
-        if chain._closestJetDeepFlavor[index] >= slidingCutTTT(chain, index, 0.025, 0.015): return False        
+        # if chain._closestJetDeepFlavor[index] >= slidingCutTTT(chain, index, 0.025, 0.015): return False        
+        if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutTTT(chain, index, 0.025, 0.015): return False        
     return True
 
 def isTightMuonTTT(chain, index):
-    if not isFOMuonTTT(chain, index):           return False
-    if chain._leptonMvaTOP[index] <= 0.9:       return False
+    if not isLooseMuonTTT(chain, index):        return False
+    if chain._lPt[index]*(1+max(0., chain._miniIso[index]-0.4)) < 10: return False
+    if chain._leptonMvaTOP[index] <= 0.4:   return False 
     return True
 
 #

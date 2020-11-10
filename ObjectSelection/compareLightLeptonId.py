@@ -41,9 +41,8 @@ if args.isTest:
 # If you want to add a new algorithm, add a line below
 # Make sure all algo keys and WP have a corresponding entry in HNL.ObjectSelection.tauSelector
 #
-algos = {'cutbased': ['tight'],
-            'leptonMVAtZq' : ['tight'],
-            'leptonMVAttH' : ['tight']}
+algos = {'cutbased': ['loose', 'FO', 'tight'],
+            'leptonMVAtop' : ['loose', 'FO', 'tight']}
 
 #
 # Load in the sample list 
@@ -118,15 +117,15 @@ for algo in algos:
 
 #Determine if testrun so it doesn't need to calculate the number of events in the getEventRange
 if args.isTest:
-    event_range = xrange(150)
+    event_range = xrange(1000)
 else:
     event_range = sample.getEventRange(int(args.subJob))
 
 from HNL.Tools.helpers import progress
 from HNL.ObjectSelection.electronSelector import isBaseElectron
 from HNL.ObjectSelection.muonSelector import isBaseMuon
-from HNL.ObjectSelection.leptonSelector import isTightLightLepton
-from HNL.EventSelection.eventSelectionTools import select3GenLeptons
+from HNL.ObjectSelection.leptonSelector import isGoodLepton
+from HNL.EventSelection.eventSelectionTools import selectGenLeptonsGeneral
 from HNL.Tools.helpers import deltaR
 
 def matchGenToReco(in_chain, l):
@@ -150,7 +149,7 @@ for entry in event_range:
 
     #Loop over generator level taus if reco and id are measured
     if args.includeReco:
-        if not select3GenLeptons(chain, chain): continue
+        if not selectGenLeptonsGeneral(chain, chain, 3): continue
         chain.pt_l = chain.l_pt[0]
         chain.eta_l = chain.l_eta[0]   
         matched_l = matchGenToReco(chain, chain.l1)
@@ -182,8 +181,8 @@ for entry in event_range:
 
                 if chain._lIsPrompt[lepton]:
                     passed_tot = []
-                    for index, wp in enumerate(algos[algo]):
-                        passed = isTightLightLepton(chain, lepton, algo)
+                    for wp in algos[algo]:
+                        passed = isGoodLepton(chain, lepton, algo = algo, workingpoint = wp)
                         passed_tot.append(passed)
                         for v in list_of_var_hist['efficiency'][algo].keys():
                             list_of_var_hist['efficiency'][algo][v][wp].fill(chain, 1., passed)
@@ -192,8 +191,8 @@ for entry in event_range:
 
                 else:
                     passed_tot = []
-                    for index, wp in enumerate(algos[algo]):
-                        passed = isTightLightLepton(chain, lepton, algo)
+                    for wp in algos[algo]:
+                        passed = isGoodLepton(chain, lepton, algo = algo, workingpoint = wp)
                         for v in list_of_var_hist['fakerate'][algo].keys():
                             list_of_var_hist['fakerate'][algo][v][wp].fill(chain, 1., passed)
                         passed_tot.append(passed)

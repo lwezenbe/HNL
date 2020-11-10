@@ -138,6 +138,7 @@ def isGoodGenTau(chain, index):
     if not chain._gen_lIsPrompt[index]:         return False
     if not chain._gen_lDecayedHadr[index]:      return False
     if abs(chain._gen_lEta[index]) > 2.3:            return False
+    if abs(chain._gen_lVisPt[index]) < 20:            return False
     return True             
 
 def isCleanFromLightLeptons(chain, index):

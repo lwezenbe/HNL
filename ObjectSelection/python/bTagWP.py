@@ -31,8 +31,8 @@ def getBTagWP(year, working_point, algo = 'Deep'):
 
 def readBTagValue(chain, jet, algo = 'Deep'):
     if algo == 'Deep':
-        # return chain._jetDeepCsv_b[jet] + chain._jetDeepCsv_bb[jet]
-        return chain._jetDeepFlavor[jet]
+        return chain._jetDeepFlavor_b[jet] + chain._jetDeepFlavor_bb[jet] + chain._jetDeepFlavor_lepb[jet]
+        # return chain._jetDeepFlavor[jet]
     elif algo == 'CSV':
         return chain._jetDeepCsv[jet]
     elif algo == 'AN2017014':
@@ -51,5 +51,3 @@ def slidingDeepFlavorThreshold(year, pt, algo='Deep' ):
         return looseWP
     else:
         return ( mediumWP - ( mediumWP - looseWP ) / ( maxPt - minPt ) * ( pt - minPt ) )
-
-

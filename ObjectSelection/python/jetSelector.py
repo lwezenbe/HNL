@@ -1,14 +1,14 @@
 from HNL.Tools.helpers import deltaR
-from HNL.ObjectSelection.leptonSelector import isTightLepton
+from HNL.ObjectSelection.leptonSelector import isGoodLepton
 
-default_jet_selection = 'cut-based'
+default_jet_selection = 'Deep'
 
 #
 #       Defines jet WP and b-tagging
 #
 def isCleanFromLeptons(chain, index):
     for l in xrange(chain._nL):
-        if not isTightLepton(chain, l): continue
+        if not isGoodLepton(chain, l, chain.obj_sel['light_algo'], chain.obj_sel['tau_algo'], 'tight'): continue
         if deltaR(chain._lEta[l], chain._jetEta[index], chain._lPhi[l], chain._jetPhi[index]) < 0.4: return False
     return True
 
@@ -48,4 +48,3 @@ def isGoodJet(chain, index, cleaned = True, selection = None):
         return isGoodJetAN2017014(chain, index, cleaned = cleaned)
     else:
         return True
-    

@@ -3,6 +3,7 @@ from HNL.Tools.mergeFiles import merge
 import os
 import glob
 from HNL.Tools.helpers import makePathTimeStamped, getObjFromFile
+from HNL.Plotting.plottingTools import extraTextFormat
 
 #
 # Argument parser and logging
@@ -16,7 +17,7 @@ args = argParser.parse_args()
 
 
 from HNL.Samples.sampleManager import SampleManager
-sample_manager = SampleManager(args.year, 'noskim', 'compareTauIdList_'+str(args.year))
+sample_manager = SampleManager(2016, 'noskim', 'compareTauIdList_2016')
 jobs = []
 for sample_name in sample_manager.sample_names:
     sample = sample_manager.getSample(sample_name)
@@ -27,7 +28,7 @@ for sample_name in sample_manager.sample_names:
 merge_files = glob.glob(os.getcwd()+'/data/compareLightLeptonId/*')
 for mf in merge_files:
     if "Results" in mf: merge_files.pop(merge_files.index(mf))
-script = os.path.expandvars(os.path.join('$CMSSW', 'src', 'HNL', 'ObjectSelection', 'compareLightLeptonId.py')
+script = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'ObjectSelection', 'compareLightLeptonId.py'))
 merge(merge_files, script, jobs, ('sample', 'subJob'))
 
 input_signal = glob.glob(os.getcwd()+'/data/compareLightLeptonId/'+args.signal+'/*ROC-'+args.flavor+'.root')
@@ -38,12 +39,15 @@ from HNL.Plotting.plot import Plot
 output_dir = makePathTimeStamped(os.getcwd()+'/data/Results/compareLightLeptonId/ROC/'+args.signal+'-'+args.bkgr)
 curves = []
 ordered_f_names = []
+extra_text = [extraTextFormat('efficiency: '+args.signal, xpos = 0.2, ypos = 0.82, textsize = 1.2, align = 12)]  #Text to display event type in plot
+extra_text.append(extraTextFormat('misid: '+args.bkgr, textsize = 1.2, align = 12))  #Text to display event type in plot
+
 for f_path in input_signal:
     f_name = f_path.rsplit('/', 1)[1].split('.')[0]
-    ordered_f_names.append(f_name)
-    roc_curve = ROC(f_name.split('-')[0], 1., '', f_path, misid_path =bkgr_prefix + '/'+f_name+'.root')
+    ordered_f_names.append(f_name.split('-')[0])
+    roc_curve = ROC(f_name.split('-')[0], f_path, misid_path =bkgr_prefix + '/'+f_name+'.root')
     curves.append(roc_curve.returnGraph())
-p = Plot(curves, ordered_f_names, args.signal+'_'+args.flavor, 'efficiency', 'misid', y_log=True)
+p = Plot(curves, ordered_f_names, args.signal+'_'+args.flavor, 'efficiency', 'misid', y_log=True, extra_text=extra_text)
 p.drawGraph(output_dir = output_dir)
        
 from HNL.Tools.efficiency import Efficiency
@@ -76,10 +80,3 @@ for eff_name in ['efficiency', 'fakerate']:
                 p = Plot([efficiency.getEfficiency() for efficiency in tmp_list], [i+' '+fk for i in list_of_eff[fk].keys()]+['lepton distribution']
                         ,  eff_name+'_'+args.flavor+'_'+v, bkgr_hist = bkgr_hist)
                 p.drawHist(output_dir = os.getcwd()+'/data/Results/compareLightLeptonId/'+fk+'/var/'+sample, draw_option = 'Hist')
-                
-        
- 
-#graph = roc_curve.return_graph()
-#import ROOT
-#c = ROOT.TCanvas('x', 'x')
-#graph.Draw()

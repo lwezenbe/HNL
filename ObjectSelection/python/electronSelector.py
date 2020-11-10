@@ -285,11 +285,11 @@ def isFOElectronTTT(chain, index):
         if not passMVAloose(chain, index):  return False
         if chain._ptRatio[index] < 0.5:     return False
         if chain.year == 2016:
-            if chain._closestJetDeepFlavor[index] >= slidingCutTTT(chain, index, 0.5, 0.05): return False        
+            if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutTTT(chain, index, 0.5, 0.05): return False        
         elif chain.year == 2017:
-            if chain._closestJetDeepFlavor[index] >= slidingCutTTT(chain, index, 0.5, 0.08): return False        
+            if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutTTT(chain, index, 0.5, 0.08): return False        
         elif chain.year == 2018:
-            if chain._closestJetDeepFlavor[index] >= slidingCutTTT(chain, index, 0.4, 0.05): return False        
+            if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutTTT(chain, index, 0.4, 0.05): return False        
     return True
 
 def isTightElectronTTT(chain, index):
