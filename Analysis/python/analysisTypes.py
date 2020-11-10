@@ -9,11 +9,14 @@ var_gen_3l = {'minMos':        (lambda c : c.minMos,   np.arange(0., 120., 12.),
         'ml12':          (lambda c : c.Ml12,      np.arange(0., 240., 5.),         ('M_{l1l2} [GeV]', 'Events')),
         'ml23':          (lambda c : c.Ml23,      np.arange(0., 240., 5.),         ('M_{l2l3} [GeV]', 'Events')),
         'ml13':          (lambda c : c.Ml13,      np.arange(0., 240., 5.),         ('M_{l1l3} [GeV]', 'Events')),
-        'met':          (lambda c : c._met,     np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
+        'met':          (lambda c : c._gen_met,     np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
         'mtOther':      (lambda c : c.mtOther,  np.arange(0., 300., 5.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
         'l1pt':      (lambda c : c.l_pt[l1],       np.arange(0., 300., 5.),       ('p_{T} (l1) [GeV]', 'Events')),
         'l2pt':      (lambda c : c.l_pt[l2],       np.arange(0., 300., 5.),       ('p_{T} (l2) [GeV]', 'Events')),
-        'l3pt':      (lambda c : c.l_pt[l3],       np.arange(0., 300., 5.),       ('p_{T} (l3) [GeV]', 'Events'))
+        'l3pt':      (lambda c : c.l_pt[l3],       np.arange(0., 300., 5.),       ('p_{T} (l3) [GeV]', 'Events')),
+        'l1vispt':      (lambda c : c.l_vispt[l1],       np.arange(0., 100., 2.),       ('p_{T}^{vis} (l1) [GeV]', 'Events')),
+        'l2vispt':      (lambda c : c.l_vispt[l2],       np.arange(0., 100., 2.),       ('p_{T}^{vis} (l2) [GeV]', 'Events')),
+        'l3vispt':      (lambda c : c.l_vispt[l3],       np.arange(0., 100., 2.),       ('p_{T}^{vis} (l3) [GeV]' 'Events'))
         }
 
 var_reco_3l = {
@@ -119,7 +122,7 @@ def returnVariables(nl, is_reco, include_mva = False):
 
 
 signal_couplingsquared = {
-        'tau' : {5 : 0.1, 10 : 0.1, 20:0.1, 40:0.1, 60:0.1,  80:0.1,  100:0.1,  120:0.1,  150:0.1,  200:0.1,  400:0.1,  600:0.1,  800:0.1 },
+        'tau' : {5 : 0.1, 10 : 0.1, 20:0.1, 30:0.1, 30.2:0.1, 40:0.1, 60:0.1,  80:0.1,  100:0.1,  120:0.1, 130:0.1, 150:0.1,  200:0.1,  400:0.1,  600:0.1,  800:0.1 },
         'e' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 40:1e-4,  60:1e-4,  80:1e-4,  100:0.1,  120:0.1,  150:0.1,  200:0.1,  400:0.1,  600:0.1,  800:0.1 },
         'mu' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 40:1e-4,  60:1e-4, 70:1e-4,  80:1e-4, 90:1e-4,  100:0.1,  120:0.1,  150:0.1,  200:0.1,  300:0.1,  400:0.1,  500:0.1,  600:0.1,  800:0.1 },
 }

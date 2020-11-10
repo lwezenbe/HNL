@@ -10,18 +10,16 @@ class FakeRate(Efficiency):
         return ttl/(1-ttl)
 
     def returnFakeWeight(self, chain, flavor):
-        weight = 1.
+        weight = -1.
         nleptons = 0
         for i in xrange(len(chain.l_indices)):
             if not chain.l_flavor[i] == flavor: continue
             if not chain.l_istight[i]:
-                weight *= self.returnFakeFactor(chain, l_index = i)
+                weight *= -1*self.returnFakeFactor(chain, l_index = i)
                 nleptons += 1
 
         if nleptons == 0:
             return -999.
-        elif (nleptons % 2) == 0:
-            return -weight
         else:
             return weight
 

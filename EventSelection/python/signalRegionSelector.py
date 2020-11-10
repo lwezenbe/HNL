@@ -17,9 +17,9 @@ class SignalRegionSelector:
 
     def initEvent(self, chain, new_chain, cutter):
         if self.is_reco_level and not cutter.cut(est.select3Leptons(chain, new_chain, self.objsel, cutter=cutter), 'select leptons'): return False
-        if not self.is_reco_level and not cutter.cut(est.select3GenLeptons(chain, new_chain), 'select leptons'): return False
+        if not self.is_reco_level and not cutter.cut(est.selectGenLeptonsGeneral(chain, new_chain, 3, cutter=cutter), 'select leptons'): return False
         est.calculateEventVariables(chain, new_chain, 3, is_reco_level=self.is_reco_level, selection=self.selection)
-        chain.category = self.ec.returnCategory()
+        if self.ec is not None: chain.category = self.ec.returnCategory()
         return True
 
     def initSkim(self, chain, new_chain, cutter):
@@ -62,16 +62,19 @@ class SignalRegionSelector:
 
     
     #Low mass selection
-    @classmethod
+    # @classmethod
     def passLowMassSelection(self, chain, new_chain, cutter):
         if not cutter.cut(new_chain.l_pt[l1] < 55, 'l1pt<55'):      return False
         if not cutter.cut(new_chain.M3l < 80, 'm3l<80'):            return False
-        if not cutter.cut(chain._met < 75, 'MET < 75'):             return False
+        if self.is_reco_level:
+            if not cutter.cut(chain._met < 75, 'MET < 75'):             return False
+        else:
+            if not cutter.cut(chain._gen_met < 75, 'MET < 75'):             return False
         if not cutter.cut(not est.containsOSSF(chain), 'no OSSF'):      return False
         return True 
     
     #High mass selection
-    @classmethod
+    # @classmethod
     def passHighMassSelection(self, chain, new_chain, cutter):
         if not cutter.cut(new_chain.l_pt[l1] > 55, 'l1pt>55'):        return False
         if not cutter.cut(new_chain.l_pt[l2] > 15, 'l2pt>15'):        return False
@@ -84,6 +87,8 @@ class SignalRegionSelector:
 
     def passedFilter(self, chain, new_chain, cutter):
         if not self.initEvent(chain, new_chain, cutter): return False
+
+        if not self.is_reco_level:  return True #It has passed the basic selection
 
         if not self.passBaseCuts(chain, new_chain, cutter): return False
 

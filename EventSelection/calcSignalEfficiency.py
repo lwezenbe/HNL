@@ -91,9 +91,9 @@ flavor_name = args.flavor if args.flavor else 'allFlavor'
 
 
 if not args.isTest: 
-    output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'),'src', 'EventSelection', 'data', __file__.split('.')[0], category_split_str, trigger_str, args.region, flavor_name, sample.output)
+    output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'),'src', 'EventSelection', 'data', __file__.split('.')[0].rsplit('/')[-1], category_split_str, trigger_str, args.region, flavor_name, sample.output)
 else:
-    output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'),'src', 'EventSelection', 'data', 'testArea', __file__.split('.')[0], category_split_str, trigger_str, args.region, flavor_name, sample.output)
+    output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'),'src', 'EventSelection', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], category_split_str, trigger_str, args.region, flavor_name, sample.output)
 
 
 if args.isChild:
@@ -177,7 +177,7 @@ cutter = Cutter(chain = chain)
 # Loop over all events
 #
 from HNL.Tools.helpers import progress
-from HNL.EventSelection.eventSelectionTools import select3Leptons, select3GenLeptons, lowMassCuts, highMassCuts, passedCustomPtCuts, passBaseCuts
+from HNL.EventSelection.eventSelectionTools import select3Leptons, selectGenLeptonsGeneral, lowMassCuts, highMassCuts, passedCustomPtCuts, passBaseCuts
 from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
 from HNL.ObjectSelection.leptonSelector import isFOLepton
 
@@ -203,7 +203,7 @@ for entry in event_range:
     chain.GetEntry(entry)
     progress(entry - event_range[0], len(event_range))
     
-    if not select3GenLeptons(chain, chain):   continue
+    if not selectGenLeptonsGeneral(chain, chain, 3):   continue
     
     if args.genLevel:
         slm = SignalLeptonMatcher(chain)

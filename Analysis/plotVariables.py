@@ -25,7 +25,7 @@ argParser.add_argument('--showCuts',   action='store_true',     default=False,  
 argParser.add_argument('--genLevel',   action='store_true',     default=False,  help='Use gen level variables')
 argParser.add_argument('--signalOnly',   action='store_true',   default=False,  help='Run or plot a only the signal')
 argParser.add_argument('--bkgrOnly',   action='store_true',     default=False,  help='Run or plot a only the background')
-argParser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
+argParser.add_argument('--masses', type=float, nargs='*',  help='Only run or plot signal samples with mass given in this list')
 argParser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l', ''])
 argParser.add_argument('--coupling', action='store', default=0.01, type=float,  help='How large is the coupling?')
 argParser.add_argument('--selection', action='store', default='cut-based', type=str,  help='What type of analysis do you want to run?', choices=['cut-based', 'AN2017014', 'MVA'])
@@ -77,6 +77,8 @@ nl = 3 if args.region != 'ZZCR' else 4
 if args.isTest:
     if args.year is None: args.year = '2016'
     if args.sample is None: args.sample = 'DYJetsToLL-M-50'
+    args.isChild = True
+    args.subJob = '0'
 
 
 #
@@ -151,7 +153,7 @@ if not args.makePlots and not args.makeDataCards:
     #
     # Submit subjobs
     #
-    if args.runOnCream and not args.isChild:
+    if not args.isChild:
         from HNL.Tools.jobSubmitter import submitJobs
         submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'plotVar')
         exit(0)
@@ -170,7 +172,7 @@ if not args.makePlots and not args.makeDataCards:
     for sample in sample_manager.sample_list:
         if sample.name not in sample_manager.sample_names: continue
        
-        if args.runOnCream and sample.name != args.sample: continue
+        if sample.name != args.sample: continue
         if args.sample and sample.name != args.sample: continue
         if not args.includeData and sample.name == 'Data': continue
 
@@ -179,6 +181,7 @@ if not args.makePlots and not args.makeDataCards:
         #
         chain = sample.initTree(needhcount=False)
         sample_names.append(sample.name)
+        chain.obj_sel = object_selection
 
         #
         # Check if sample is a signal or background sample
@@ -204,14 +207,13 @@ if not args.makePlots and not args.makeDataCards:
         # Set event range
         #
         if args.isTest:
-            if len(sample.getEventRange(0)) < 1000:
+            up_limit = 1000
+            if len(sample.getEventRange(0)) < up_limit:
                 event_range = sample.getEventRange(0)
             else:
-                event_range = xrange(1000)
-        elif args.runOnCream:
-            event_range = sample.getEventRange(args.subJob)
+                event_range = xrange(up_limit)
         else:
-            event_range = xrange(chain.GetEntries())
+            event_range = sample.getEventRange(args.subJob)
 
         #
         # Some basic variables about the sample to store in the chain
@@ -265,11 +267,12 @@ if not args.makePlots and not args.makeDataCards:
             #
             if not es.passedFilter(chain, chain, cutter): continue
             if len(chain.l_flavor) == chain.l_flavor.count(2): continue #Not all taus
+
             nprompt = 0
             if sample.name != 'Data':
                 for index in chain.l_indices:
                     if chain._lIsPrompt[index]: nprompt += 1
-            
+                
             prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
 
             if args.selection == 'MVA':
@@ -323,10 +326,10 @@ else:
     from HNL.Analysis.analysisTypes import signal_couplingsquared
 
     # Collect signal file locations
-    if args.genLevel and args.signalOnly:
-        signal_list = glob.glob(output_name('signal')+'/signalOrdering/*'+args.flavor+'-*')
+    # if args.genLevel and args.signalOnly:
+    #     signal_list = glob.glob(output_name('signal')+'/signalOrdering/*'+args.flavor+'-*')
         
-    elif not args.bkgrOnly:
+    if not args.bkgrOnly:
         signal_list = glob.glob(output_name('signal')+'/*'+args.flavor+'-*')
         for i, s in enumerate(signal_list):
             if 'signalOrdering' in s:
@@ -365,7 +368,6 @@ else:
         for v in var:
             list_of_hist[c][v] = {'signal':{}, 'bkgr':{}}
 
-
     # Load in the signal histograms from the files
     for c in categories: 
         print 'loading signal ', c
@@ -373,8 +375,9 @@ else:
             if not args.bkgrOnly:
                 for s in signal_list:
                     sample_name = s.split('/')[-1]
+                    if args.sample is not None and args.sample != sample_name: continue
                     # print sample_name
-                    sample_mass = int(sample_name.split('-m')[-1])
+                    sample_mass = float(sample_name.split('-m')[-1])
                     if args.masses is not None and sample_mass not in args.masses: continue
                     list_of_hist[c][v]['signal'][sample_name] = Histogram(getObjFromFile(s+'/variables.root', v+'/'+str(c)+'-'+v+'-'+sample_name+'-total')) 
 
@@ -397,6 +400,8 @@ else:
             if not args.signalOnly:
                 for b in bkgr_list:
                     bkgr = b.split('/')[-1]
+                    if args.sample is not None and args.sample != bkgr: continue
+
                     tmp_hist_total = Histogram(getObjFromFile(b+'/variables.root', v+'/'+str(c)+'-'+v+'-'+bkgr+'-total'))
                     tmp_hist_prompt = Histogram(getObjFromFile(b+'/variables.root', v+'/'+str(c)+'-'+v+'-'+bkgr+'-prompt'))
                     tmp_hist_nonprompt = Histogram(getObjFromFile(b+'/variables.root', v+'/'+str(c)+'-'+v+'-'+bkgr+'-nonprompt'))
@@ -435,7 +440,7 @@ else:
                     list_of_hist[ac][v]['signal'] = {}
                     for s in signal_list:
                         sample_name = s.split('/')[-1]
-                        sample_mass = int(sample_name.split('-m')[-1])
+                        sample_mass = float(sample_name.split('-m')[-1])
                         if args.masses is not None and sample_mass not in args.masses: continue
                         list_of_hist[ac][v]['signal'][sample_name] = list_of_hist[cat.ANALYSIS_CATEGORIES[ac][0]][v]['signal'][sample_name].clone(ac)
                         if len(cat.ANALYSIS_CATEGORIES[ac]) > 1:
@@ -460,7 +465,7 @@ else:
                     list_of_hist[ac][v]['signal'] = {}
                     for s in signal_list:
                         sample_name = s.split('/')[-1]
-                        sample_mass = int(sample_name.split('-m')[-1])
+                        sample_mass = float(sample_name.split('-m')[-1])
                         if args.masses is not None and sample_mass not in args.masses: continue
                         list_of_hist[ac][v]['signal'][sample_name] = list_of_hist[cat.SUPER_CATEGORIES[ac][0]][v]['signal'][sample_name].clone(ac)
                         if len(cat.SUPER_CATEGORIES[ac]) > 1:
@@ -479,8 +484,6 @@ else:
 #
 #       Plot!
 #
-if args.runOnCream or args.isTest: 
-    exit(0)
 
 #
 # Necessary imports
@@ -497,7 +500,6 @@ if args.makeDataCards:
     # If we want to use shapes, first make shape histograms, then make datacards
     #
     for ac in cat.SUPER_CATEGORIES.keys():
-
         # # Observed
         # shape_hist['data_obs'] = ROOT.TH1D('data_obs', 'data_obs', n_search_regions, 0.5, n_search_regions+0.5)
         # shape_hist['data_obs'].SetBinContent(1, 1.)
@@ -512,13 +514,12 @@ if args.makeDataCards:
         # Signal 
         for s in signal_list:
             sample_name = s.split('/')[-1]
-            sample_mass = int(sample_name.split('-m')[-1])
+            sample_mass = float(sample_name.split('-m')[-1])
             if sample_mass not in args.masses: continue
             if sample_mass <= 80:
                 mva_to_use = 'mva_low_'+args.flavor
             else:
                 mva_to_use = 'mva_high_'+args.flavor
-
             out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', str(args.year), args.selection, args.flavor, sample_name, ac+'.shapes.root')
             makeDirIfNeeded(out_path)
             # out_shape_file = ROOT.TFile(out_path, 'recreate')
@@ -541,7 +542,11 @@ if args.makePlots:
     #
     # Set output directory, taking into account the different options
     #
-    output_dir = os.path.join(os.getcwd(), 'data', 'Results', 'plotVariables', args.year, args.selection, reco_or_gen_str, args.region)
+    if not args.isTest:
+        output_dir = os.path.join(os.getcwd(), 'data', 'Results', 'plotVariables', args.year, args.selection, reco_or_gen_str, args.region)
+    else:
+        output_dir = os.path.join(os.getcwd(), 'data', 'testArea', 'Results', 'plotVariables', args.year, args.selection, reco_or_gen_str, args.region)
+
 
 
     if args.signalOnly:
@@ -570,34 +575,49 @@ if args.makePlots:
         # c_name = CATEGORY_NAMES[c] if c not in cat.SUPER_CATEGORIES.keys() else c
         c_name = c
 
-        printSelections(mixed_list[0]+'/variables.root', os.path.join(output_dir, c_name, 'Selections.txt'))
+        # printSelections(mixed_list[0]+'/variables.root', os.path.join(output_dir, c_name, 'Selections.txt'))
 
-        extra_text = [extraTextFormat(cat.returnTexName(c), xpos = 0.2, ypos = 0.82, textsize = None, align = 12)]  #Text to display event type in plot
+        # extra_text = [extraTextFormat(cat.returnTexName(c), xpos = 0.2, ypos = 0.82, textsize = None, align = 12)]  #Text to display event type in plot
+        extra_text = [extraTextFormat(c_name, xpos = 0.2, ypos = 0.82, textsize = None, align = 12)]  #Text to display event type in plot
         if not args.bkgrOnly:
             extra_text.append(extraTextFormat('V_{'+args.flavor+'N} = '+str(args.coupling)))  #Text to display event type in plot
-            extra_text.append(extraTextFormat('Signal scaled to background', textsize = 0.7))  #Text to display event type in plot
+            if not args.signalOnly: extra_text.append(extraTextFormat('Signal scaled to background', textsize = 0.7))  #Text to display event type in plot
 
         # Plots that display chosen for chosen signal masses and backgrounds the distributions for the different variables
         # S and B in same canvas for each variable
         for v in var:
-            legend_names = list_of_hist[c][v]['signal'].keys()+list_of_hist[c][v]['bkgr'].keys()
-            
+            bkgr_legendnames = []
             # Make list of background histograms for the plot object (or None if no background)
             if args.signalOnly or not list_of_hist[c][v]['bkgr'].values(): 
                 bkgr_hist = None
             else:
-                bkgr_hist = list_of_hist[c][v]['bkgr'].values()
+                for bk in list_of_hist[c][v]['bkgr'].keys():
+                    bkgr_hist = list_of_hist[c][v]['bkgr'][bk]
+                    bkgr_legendnames.append(bk)
         
             # Make list of signal histograms for the plot object
+            signal_legendnames = []
             if args.bkgrOnly or not list_of_hist[c][v]['signal'].values(): 
                 signal_hist = None
             else:
-                signal_hist = list_of_hist[c][v]['signal'].values()
+                for sk in list_of_hist[c][v]['signal'].keys():
+                    signal_hist = list_of_hist[c][v]['signal'].values()
+                    # if 'filtered' in sk:
+                    #     signal_legendnames.append('HNL m_{N} = 30 GeV w Pythia filter')
+                    # else:
+                    signal_legendnames.append('HNL m_{N} = '+sk.split('-m')[-1]+ ' GeV')
 
             if args.includeData:
                 observed_hist = list_of_hist[c][v]['data']
             else:
                 observed_hist = None
+
+            if not args.signalOnly and not args.bkgrOnly:
+                legend_names = signal_legendnames+bkgr_legendnames
+            elif args.signalOnly:
+                legend_names = signal_legendnames
+            else:
+                legend_names = bkgr_legendnames
 
             # Create plot object (if signal and background are displayed, also show the ratio)
 
@@ -609,7 +629,9 @@ if args.makePlots:
 
 
             # Draw
-            p.drawHist(output_dir = os.path.join(output_dir, c_name), normalize_signal = draw_ratio, draw_option='Hist', min_cutoff = 1)
+            p.drawHist(output_dir = os.path.join(output_dir, c_name), normalize_signal = draw_ratio, draw_option='EHist', min_cutoff = 1)
+
+        # if args.
         
         #TODO: I broke this when changing the eventCategorization, fix this again
         # # If looking at signalOnly, also makes plots that compares the three lepton pt's for every mass point

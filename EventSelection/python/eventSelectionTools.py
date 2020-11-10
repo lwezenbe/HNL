@@ -11,7 +11,7 @@
 #
 import numpy as np
 from HNL.ObjectSelection.leptonSelector import isFOLepton
-from HNL.ObjectSelection.leptonSelector import isGoodLepton, isGoodLeptonTycho
+from HNL.ObjectSelection.leptonSelector import isGoodLepton, isGoodLeptonTycho, isFakeLepton
 from HNL.ObjectSelection.leptonSelector import isGoodGenLepton
 from HNL.ObjectSelection.jetSelector import isGoodJet, isBJet
 from HNL.Tools.helpers import getFourVec, deltaPhi
@@ -77,6 +77,7 @@ def selectLeptonsGeneral(chain, new_chain, nL, object_selection, cutter=None, so
         new_chain.l_e = [0.0]*nL
         new_chain.l_indices = [0.0]*nL
         new_chain.l_istight = [0.0]*nL
+        new_chain.l_isfake = [0.0]*nL
 
     if sort_leptons: 
         ptAndIndex = sorted(chain.leptons, reverse=True, key = getSortKey)
@@ -92,6 +93,7 @@ def selectLeptonsGeneral(chain, new_chain, nL, object_selection, cutter=None, so
         new_chain.l_charge[i] = chain._lCharge[ptAndIndex[i][1]]
         new_chain.l_flavor[i] = chain._lFlavor[ptAndIndex[i][1]]
         new_chain.l_istight[i] = isGoodLepton(chain, ptAndIndex[i][1], algo=object_selection['light_algo'], tau_algo=object_selection['tau_algo'], workingpoint='tight')
+        new_chain.l_isfake[i] = isFakeLepton(chain, ptAndIndex[i][1])
 
     return True
 
@@ -110,33 +112,40 @@ def select4Leptons(chain, new_chain, object_selection, cutter = None):
     object_selection['ele_wp'] = 'tight'
     return selectLeptonsGeneral(chain, new_chain, 4, object_selection_collection, cutter=cutter, sort_leptons = True)
 
-def select3GenLeptons(chain, new_chain):
+def selectGenLeptonsGeneral(chain, new_chain, nL, cutter=None):
   
     if chain is new_chain:
-        new_chain.l_pt = [0.0]*3
-        new_chain.l_eta = [0.0]*3
-        new_chain.l_phi = [0.0]*3
-        new_chain.l_charge = [0.0]*3
-        new_chain.l_flavor = [0.0]*3
-        new_chain.l_e = [0.0]*3
+        new_chain.l_indices = [0.0]*nL
+        new_chain.l_pt = [0.0]*nL
+        new_chain.l_eta = [0.0]*nL
+        new_chain.l_phi = [0.0]*nL
+        new_chain.l_vispt = [0.0]*nL
+        new_chain.l_viseta = [0.0]*nL
+        new_chain.l_visphi = [0.0]*nL
+        new_chain.l_charge = [0.0]*nL
+        new_chain.l_flavor = [0.0]*nL
+        new_chain.l_e = [0.0]*nL
+        new_chain.l_vise = [0.0]*nL
  
     chain.leptons = []
     for l in xrange(chain._gen_nL):
         if isGoodGenLepton(chain, l): 
             chain.leptons.append((chain._gen_lPt[l], l))  
 
-    if len(chain.leptons) != 3:  return False
+    if len(chain.leptons) != nL:  return False
 
     ptAndIndex = sorted(chain.leptons, reverse=True, key = getSortKey)
 
-    new_chain.l1 = ptAndIndex[0][1]
-    new_chain.l2 = ptAndIndex[1][1]
-    new_chain.l3 = ptAndIndex[2][1]
-    for i in xrange(3):
+    for i in xrange(nL):
+        new_chain.l_indices[i] = ptAndIndex[i][1]
         new_chain.l_pt[i] = ptAndIndex[i][0] 
         new_chain.l_eta[i] = chain._gen_lEta[ptAndIndex[i][1]]
         new_chain.l_phi[i] = chain._gen_lPhi[ptAndIndex[i][1]]
         new_chain.l_e[i] = chain._gen_lE[ptAndIndex[i][1]]
+        new_chain.l_vispt[i] = chain._gen_lVisPt[ptAndIndex[i][1]] 
+        new_chain.l_viseta[i] = chain._gen_lVisEta[ptAndIndex[i][1]]
+        new_chain.l_visphi[i] = chain._gen_lVisPhi[ptAndIndex[i][1]]
+        new_chain.l_vise[i] = chain._gen_lVisE[ptAndIndex[i][1]]
         new_chain.l_charge[i] = chain._gen_lCharge[ptAndIndex[i][1]]
         new_chain.l_flavor[i] = chain._gen_lFlavor[ptAndIndex[i][1]]
     
@@ -231,30 +240,32 @@ def calculateGeneralVariables(chain, new_chain, is_reco_level = True, selection 
         for l in xrange(chain._nLight):
             new_chain.pt_cone.append(chain._lPt[l]*(1+max(0., chain._miniIso[l]-0.4))) #TODO: is this the correct definition?
 
-    #calculate #jets and #bjets
-    njets = 0
-    nbjets = 0
-    for jet in xrange(chain._nJets):
-        if isGoodJet(chain, jet):     
-            njets += 1        
-            if isBJet(chain, jet, 'Deep', 'loose'): nbjets += 1
+        #calculate #jets and #bjets
+        njets = 0
+        nbjets = 0
+        for jet in xrange(chain._nJets):
+            if isGoodJet(chain, jet):     
+                njets += 1        
+                if isBJet(chain, jet, 'Deep', 'loose'): nbjets += 1
 
-    new_chain.njets = njets
-    new_chain.nbjets = nbjets
-        
+        new_chain.njets = njets
+        new_chain.nbjets = nbjets
+        new_chain.HT = calcHT(chain, new_chain, selection)
+        selectFirstTwoJets(chain, new_chain, selection = selection)
+
     new_chain.hasOSSF = containsOSSF(new_chain)
 
-    new_chain.HT = calcHT(chain, new_chain, selection)
     new_chain.LT = calcLT(chain, new_chain)
-
-    selectFirstTwoJets(chain, new_chain, selection = selection)
 
 def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
 
     l1Vec = getFourVec(new_chain.l_pt[l1], new_chain.l_eta[l1], new_chain.l_phi[l1], new_chain.l_e[l1])
     l2Vec = getFourVec(new_chain.l_pt[l2], new_chain.l_eta[l2], new_chain.l_phi[l2], new_chain.l_e[l2])
     l3Vec = getFourVec(new_chain.l_pt[l3], new_chain.l_eta[l3], new_chain.l_phi[l3], new_chain.l_e[l3])
-    metVec = getFourVec(chain._met, 0., chain._metPhi, chain._met)
+    if is_reco_level:
+        metVec = getFourVec(chain._met, 0., chain._metPhi, chain._met)
+    else:
+        metVec = getFourVec(chain._gen_met, 0., chain._gen_metPhi, chain._gen_met)
     lVec = [l1Vec, l2Vec, l3Vec]
 
     #M3l
@@ -327,9 +338,6 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
                     if tmp_mass > tmp_maxossf: 
                         max_ossf = [i1, i2]
                         tmp_maxossf = tmp_mass
-            
-
-
 
     #Mass variables
     # print min_os
@@ -344,18 +352,21 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
     new_chain.MZossf = (lVec[z_ossf[0]]+lVec[z_ossf[1]]).M() if z_ossf is not None else -1
 
     #MTother
-    index_other = [item for item in [0, 1, 2] if item not in min_os][0] if min_os is not None else None
-    new_chain.index_other = new_chain.l_indices[index_other] if index_other is not None else -1
+    new_chain.index_other = [item for item in [0, 1, 2] if item not in min_os][0] if min_os is not None else None
 
-    if new_chain.index_other != -1:
+    if new_chain.index_other is not None:
         if is_reco_level:    
-            new_chain.mtOther = np.sqrt(2*chain._met*chain._lPt[new_chain.index_other]*(1-np.cos(deltaPhi(chain._lPhi[new_chain.index_other], chain._metPhi))))
-            leading_os = min_os[0] if chain._lPt[min_os[0]] > chain._lPt[min_os[1]] else min_os[1]
-            subleading_os = min_os[0] if chain._lPt[min_os[0]] < chain._lPt[min_os[1]] else min_os[1]
-            new_chain.mtl1 = np.sqrt(2*chain._met*chain._lPt[leading_os]*(1-np.cos(deltaPhi(chain._lPhi[leading_os], chain._metPhi))))
-            new_chain.mtl2 = np.sqrt(2*chain._met*chain._lPt[subleading_os]*(1-np.cos(deltaPhi(chain._lPhi[subleading_os], chain._metPhi))))
+            new_chain.mtOther = np.sqrt(2*chain._met*chain.l_pt[new_chain.index_other]*(1-np.cos(deltaPhi(chain.l_phi[new_chain.index_other], chain._metPhi))))
+            leading_os = min_os[0] if chain.l_pt[min_os[0]] > chain.l_pt[min_os[1]] else min_os[1]
+            subleading_os = min_os[0] if chain.l_pt[min_os[0]] < chain.l_pt[min_os[1]] else min_os[1]
+            new_chain.mtl1 = np.sqrt(2*chain._met*chain.l_pt[leading_os]*(1-np.cos(deltaPhi(chain.l_phi[leading_os], chain._metPhi))))
+            new_chain.mtl2 = np.sqrt(2*chain._met*chain.l_pt[subleading_os]*(1-np.cos(deltaPhi(chain.l_phi[subleading_os], chain._metPhi))))
         else:
-            new_chain.mtOther = np.sqrt(2*chain._gen_met*chain._gen_lPt[new_chain.index_other]*(1-np.cos(deltaPhi(chain._gen_lPhi[new_chain.index_other], chain._gen_metPhi))))
+            new_chain.mtOther = np.sqrt(2*chain._gen_met*chain.l_pt[new_chain.index_other]*(1-np.cos(deltaPhi(chain.l_phi[new_chain.index_other], chain._gen_metPhi))))
+            leading_os = min_os[0] if chain.l_pt[min_os[0]] > chain.l_pt[min_os[1]] else min_os[1]
+            subleading_os = min_os[0] if chain.l_pt[min_os[0]] < chain.l_pt[min_os[1]] else min_os[1]
+            new_chain.mtl1 = np.sqrt(2*chain._gen_met*chain.l_pt[leading_os]*(1-np.cos(deltaPhi(chain.l_phi[leading_os], chain._gen_metPhi))))
+            new_chain.mtl2 = np.sqrt(2*chain._gen_met*chain.l_pt[subleading_os]*(1-np.cos(deltaPhi(chain.l_phi[subleading_os], chain._gen_metPhi))))
     else:
         new_chain.mtOther = -1
         new_chain.mtl1 = -1
@@ -491,6 +502,33 @@ def passesPtCutsAN2017014(chain):
 
     return True
 
+def passesPtCutsUpdated(chain):
+    #
+    # Copy cuts from last analysis for 
+    #
+    if not passesPtCutsAN2017014(chain):    return False
+
+    if chain.category == CATEGORY_FROM_NAME['OS-TauEleEle'] or chain.category == CATEGORY_FROM_NAME['OS-EleTauEle']:
+        tau_index = chain.l_flavor.index(2)
+        other_indices = [s for s in range(3) if s != tau_index]
+        if chain.l_pt[other_indices[0]] > 30: return True
+        else: return chain.l_pt[other_indices[0]] > 25 and chain.l_pt[other_indices[1]] > 15
+    elif chain.category == CATEGORY_FROM_NAME['OS-TauMuMu'] or chain.category == CATEGORY_FROM_NAME['OS-MuTauMu']:
+        tau_index = chain.l_flavor.index(2)
+        other_indices = [s for s in range(3) if s != tau_index]
+        if chain.l_pt[other_indices[0]] > 30: return True
+        else: return chain.l_pt[other_indices[0]] > 20 and chain.l_pt[other_indices[1]] > 9
+    elif chain.category == CATEGORY_FROM_NAME['EleTauMu']:
+        tau_index = chain.l_flavor.index(2)
+        other_indices = [s for s in range(3) if s != tau_index]
+        if chain.l_flavor[other_indices[1]] == 1:
+            if chain.l_pt[other_indices[1]] > 8:    return chain.l_pt[other_indices[0]] > 23
+            else:   return chain.l_pt[other_indices[0]] > 30
+        else:
+            return chain.l_pt[other_indices[0]] > 23 and chain.l_pt[other_indices[1]] > 12
+
+    return True
+
 def passedCustomPtCuts(chain, cuts):
     multiple_cut_collections = isinstance(cuts[0], (tuple,))   #cuts should always be an array of cuts for the three leptons, so no error expected
     if multiple_cut_collections:
@@ -513,8 +551,8 @@ def isOSSF(chain, first_lepton, second_lepton):
     return True  
 
 def containsOSSF(chain):
-    for first_lepton in [l1, l2]:
-        for second_lepton in [l2, l3]:
+    for first_lepton in xrange(len(chain.l_indices)-1):
+        for second_lepton in xrange(first_lepton + 1, len(chain.l_indices)):
             if isOSSF(chain, first_lepton, second_lepton): return True
     return False
 
@@ -532,11 +570,12 @@ def calcHT(chain, new_chain, selection = None):
         HT += chain._jetPt[jet]
     return HT
 
-def calcLT(chain, new_chain):
+def calcLT(chain, new_chain, is_reco_level = True):
     LT = 0.
-    for lep in new_chain.l_indices:
-        LT += chain._lPt[lep]
-    LT += chain._met
+    for lep in xrange(len(new_chain.l_indices)):
+        LT += chain.l_pt[lep]
+    if is_reco_level:   LT += chain._met
+    else:               LT += chain._gen_met
     return LT
 
 
@@ -636,8 +675,8 @@ def calculateKinematicVariables(chain, new_chain, is_reco_level = True):
     tmp_maxss = 0
     tmp_maxossf = 0
     tmp_maxsssf = 0
-    for i1, l in enumerate([new_chain.l1, new_chain.l2, new_chain.l3]):
-        for i2, sl in enumerate([new_chain.l1, new_chain.l2, new_chain.l3]):
+    for i1, l in enumerate(new_chain.l_indices):
+        for i2, sl in enumerate(new_chain.l_indices):
             if i2 <= i1:        continue
             tmp_mass = (lVec[i1]+lVec[i2]).M()
             if new_chain.l_charge[i1] == new_chain.l_charge[i2]:
@@ -681,7 +720,7 @@ def calculateKinematicVariables(chain, new_chain, is_reco_level = True):
     chain.maxMsssf = (lVec[max_sssf[0]]+lVec[max_sssf[1]]).M() if all(max_sssf) else 0  
 
     #MTother
-    new_chain.index_other = [item for item in [new_chain.l1, new_chain.l2, new_chain.l3] if item not in min_os][0]   
+    new_chain.index_other = [item for item in new_chain.l_indices if item not in min_os][0]   
 
     #TODO: Seems like there must be a better way to do this
     if is_reco_level:    

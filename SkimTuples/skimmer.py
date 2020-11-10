@@ -176,7 +176,7 @@ else:
     object_selection = objectSelectionCollection('deeptauVSjets', 'leptonMVAtop', 'loose', 'loose', 'loose', False)
 
 from HNL.Tools.helpers import progress
-from HNL.EventSelection.eventSelectionTools import calculateThreeLepVariables, calculateGeneralVariables, selectLeptonsGeneral, select3GenLeptons
+from HNL.EventSelection.eventSelectionTools import calculateThreeLepVariables, calculateGeneralVariables, selectLeptonsGeneral, selectGenLeptonsGeneral
 from HNL.EventSelection.eventCategorization import EventCategory
 for entry in event_range:
     chain.GetEntry(entry)
@@ -189,7 +189,7 @@ for entry in event_range:
         if sample.name == 'ZG' and chain._hasInternalConversion: continue
 
     if args.genSkim:
-        if not select3GenLeptons(chain, new_vars):      continue
+        if not selectGenLeptonsGeneral(chain, new_vars, 3):      continue
     elif not args.oldAnalysisSkim:
         selectLeptonsGeneral(chain, new_vars, 3, object_selection, cutter = cutter)
         if len(chain.leptons) < 3:       continue

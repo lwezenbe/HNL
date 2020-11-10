@@ -40,7 +40,7 @@ argParser.add_argument('--groupSamples',   action='store_true', default=False,  
 
 argParser.add_argument('--selection',   action='store', default='cut-based',  help='Select the strategy to use to separate signal from background', choices=['cut-based', 'AN2017014', 'MVA'])
 argParser.add_argument('--region',   action='store', default='baseline',  help='apply the cuts of high or low mass regions, use "all" to run both simultaniously', 
-    choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZ', 'WZ', 'Conversion'])
+    choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZ', 'WZ', 'ConversionCR'])
 argParser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data samples')
 
 argParser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
@@ -74,7 +74,7 @@ if args.isTest:
 
     if args.sample is None: args.sample = 'DYJetsToLL-M-50' if not args.signalOnly else 'HNL-tau-m40'
     args.subJob = '0'
-    args.year = '2016'
+    if args.year is None: args.year = '2016'
 
 #
 # Load in the sample list 
@@ -86,7 +86,6 @@ else:
     skim_str = 'Old' if args.selection == 'AN2017014' else 'Reco'
 
 sample_manager = SampleManager(args.year, skim_str, 'yields_'+str(args.year))
-# sample_manager = SampleManager(args.year, skim_str, 'allsignal_2016')
 
 #
 # function to have consistent categories in running and plotting
@@ -94,10 +93,10 @@ sample_manager = SampleManager(args.year, skim_str, 'yields_'+str(args.year))
 from HNL.EventSelection.eventCategorization import CATEGORIES, SUPER_CATEGORIES
 from HNL.EventSelection.eventCategorization import CATEGORY_TEX_NAMES
 def listOfCategories(region):
-    if region in ['baseline', 'highMassSR', 'lowMassSR']:
-        return CATEGORIES
-    else:
-        return [max(CATEGORIES)]
+    # if region in ['baseline', 'highMassSR', 'lowMassSR']:
+    return CATEGORIES
+    # else:
+    #     return [max(CATEGORIES)]
 
 #
 # Extra imports for dividing by region
@@ -194,6 +193,7 @@ if not args.makePlots and args.makeDataCards is None:
             object_selection = objectSelectionCollection('deeptauVSjets', 'cutbased', 'FO', 'tight', 'tight', True)
         else:
             object_selection = objectSelectionCollection('deeptauVSjets', 'leptonMVAtop', 'FO', 'tight', 'tight', False)
+        chain.obj_sel = object_selection
 
         es = EventSelector(args.region, args.selection, object_selection, True, ec)
 
@@ -208,9 +208,9 @@ if not args.makePlots and args.makeDataCards is None:
 
         def getOutputName(prompt_string):
             if not args.isTest:
-                output_string = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.selection, args.region, sample.output, prompt_string)
+                output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', __file__.split('.')[0].rsplit('/')[-1], args.year, args.selection, args.region, sample.output, prompt_string)
             else:
-                output_string = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0], args.selection, args.region, sample.output, prompt_string)
+                output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year, args.selection, args.region, sample.output, prompt_string)
 
             if args.isChild:
                 output_string += '/tmp_'+sample.output
@@ -242,7 +242,7 @@ if not args.makePlots and args.makeDataCards is None:
             #Event selection            
             if not es.passedFilter(chain, chain, cutter): continue
             nprompt = 0
-            for index in [chain.l1, chain.l2, chain.l3]:
+            for index in chain.l_indices:
                 if chain._lIsPrompt[index]: nprompt += 1
             
             prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
@@ -277,16 +277,17 @@ else:
 
     from HNL.Tools.helpers import makePathTimeStamped
     from HNL.Plotting.plottingTools import extraTextFormat
-    from HNL.Tools.helpers import getObjFromFile, tab
+    from HNL.Tools.helpers import getObjFromFile, tab, isValidRootFile
     from HNL.Analysis.analysisTypes import signal_couplingsquared
 
     #
     # Check status of the jobs and merge
     #
     if not args.isTest:
-        base_path = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.selection, args.region)
+        base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', __file__.split('.')[0].rsplit('/')[-1], args.year, args.selection, args.region)
     else:
-        base_path = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0], args.selection, args.region)
+        base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year, args.selection, args.region)
+
     in_files = glob.glob(os.path.join(base_path, '*', '*'))
     merge(in_files, __file__, jobs, ('sample', 'subJob'), argParser)
 
@@ -323,6 +324,7 @@ else:
         if not args.includeData and sample.name == 'Data': continue
         if args.masses is not None and is_signal and not any([str(m) == sample.output.rsplit('-m')[-1] for m in args.masses]): continue
 
+        if not isValidRootFile(os.path.join(base_path, sample.output, 'total/events.root')): continue
         if is_signal: 
             signal_names.append(sample.output)
         else:
@@ -375,7 +377,6 @@ else:
         path_name_nonprompt = os.path.join(base_path, bkgr, 'nonprompt/events.root')
 
         for c in listOfCategories(args.region):
-            # print path_name_prompt
             tmp_hist_prompt = getObjFromFile(path_name_prompt, '_'.join([str(c), 'prompt'])+'/'+'_'.join([str(c), 'prompt']))
             tmp_hist_nonprompt = getObjFromFile(path_name_nonprompt, '_'.join([str(c), 'nonprompt'])+'/'+'_'.join([str(c), 'nonprompt']))
             tmp_hist_total = getObjFromFile(path_name_total, '_'.join([str(c), 'total'])+'/'+'_'.join([str(c), 'total']))
@@ -446,6 +447,12 @@ else:
 
     destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Analysis/data/Results/calcYields/'+args.selection+'/'+args.region+'/'+args.flavor))
 
+    def protectHist(hist):    
+        if hist.Integral() < 0.00001:
+            for i in range(1, hist.GetNbinsX()+1):
+                if hist.GetBinContent(i) <= 0.00001: hist.SetBinContent(i, 0.00001)
+        return hist
+
     if args.makeDataCards is not None:
         from HNL.Stat.combineTools import makeDataCard
 
@@ -478,6 +485,7 @@ else:
                     for sr in xrange(1, n_search_regions+1):
                         shape_hist[sample_name].SetBinContent(sr, list_of_values['bkgr'][sample_name][ac][sr])
                         shape_hist[sample_name].SetBinError(sr, list_of_errors['bkgr'][sample_name][ac][sr])
+                        shape_hist[sample_name] = protectHist(shape_hist[sample_name])
                 
                 # Signal 
                 for sample_name in list_of_values['signal'].keys():
@@ -489,6 +497,7 @@ else:
                     for sr in xrange(1, n_search_regions+1):
                         shape_hist[sample_name].SetBinContent(sr, list_of_values['signal'][sample_name][ac][sr])
                         shape_hist[sample_name].SetBinError(sr, list_of_errors['signal'][sample_name][ac][sr])
+                        shape_hist[sample_name] = protectHist(shape_hist[sample_name])
                     shape_hist[sample_name].Write(sample_name)
                     bkgr_names = []
                     for bkgr_sample_name in background_collection+['data_obs']:

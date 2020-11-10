@@ -43,9 +43,9 @@ def listOfTriggersAN2017014(chain):
 
 def listOfTriggers2016(chain):
     list_of_triggers = []
-    list_of_triggers.append(chain._HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg)
-    list_of_triggers.append(chain._passTrigger_mt)
-    list_of_triggers.append(chain._passTrigger_et)
+    # list_of_triggers.append(chain._HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg)
+    # list_of_triggers.append(chain._passTrigger_mt)
+    # list_of_triggers.append(chain._passTrigger_et)
     list_of_triggers.append(chain._passTrigger_eee)
     list_of_triggers.append(chain._passTrigger_eem)
     list_of_triggers.append(chain._passTrigger_emm)
@@ -66,8 +66,3 @@ def passTriggers(chain, year, oldAN=False):
     elif year == 2017 and any(listOfTriggers2017(chain)): return True
     elif year == 2018 and any(listOfTriggers2018(chain)): return True
     return False
-
-
-    
-
-

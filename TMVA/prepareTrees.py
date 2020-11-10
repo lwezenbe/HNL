@@ -137,22 +137,15 @@ if not args.merge:
     from HNL.EventSelection.eventCategorization import EventCategory
     ec = EventCategory(chain)
 
-    #
-    # Object ID param
-    #
+    #prepare object  and event selection
+    from HNL.ObjectSelection.objectSelection import objectSelectionCollection
     if args.selection == 'AN2017014':
-        object_selection_param = {
-            'no_tau' : True,
-            'light_algo' : 'cutbased',
-            'workingpoint' : 'tight'
-        }
+        object_selection = objectSelectionCollection('deeptauVSjets', 'cutbased', 'tight', 'tight', 'tight', True)
     else:
-        object_selection_param = {
-            'no_tau' : False,
-            'light_algo' : 'leptonMVAtop',
-            'workingpoint' : 'medium'
-        }
-    es = EventSelector(args.region, args.selection, object_selection_param, True, ec)
+        object_selection = objectSelectionCollection('deeptauVSjets', 'leptonMVAtop', 'tight', 'tight', 'tight', False)
+
+    chain.obj_sel = object_selection
+    es = EventSelector(args.region, args.selection, object_selection, True, ec)
 
     for entry in event_range:
         chain.GetEntry(entry)
@@ -301,4 +294,3 @@ else:
             signal_infile.Close()
 
     bkgr_infile.Close()
-

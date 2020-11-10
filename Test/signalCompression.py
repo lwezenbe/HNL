@@ -24,23 +24,25 @@ print 'Loading in samples'
 
 #Load in samples and get the specific sample for this job
 from HNL.Samples.sampleManager import SampleManager
-sample_manager = SampleManager(args.year, 'noskim', 'allsignal_'+str(args.year))
+# sample_manager = SampleManager(args.year, 'noskim', 'allsignal_'+str(args.year))
+sample_manager = SampleManager(args.year, 'noskim', 'signalCompression')
 
-from HNL.Samples.sample import createSampleList, getSampleFromList
-sample_list = createSampleList(os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/signalCompression.conf'))
+# from HNL.Samples.sample import createSampleList, getSampleFromList
+# sample_list = createSampleList(os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/signalCompression.conf'))
 
 #
 # Change some settings if this is a test
 #
 if args.isTest: 
     args.isChild = True
-    args.sample = 'HNL-tau-m10'
+    args.sample = 'HNL-tau-filtered-m30'
     args.subJob = '0'
 
 if not args.isChild:
     from HNL.Tools.jobSubmitter import submitJobs
     jobs = []
     for sample_name in sample_manager.sample_names:
+        print sample_name
         sample = sample_manager.getSample(sample_name)        
         for njob in xrange(sample.split_jobs): 
             jobs += [(sample.name, str(njob))]
@@ -53,6 +55,8 @@ if not args.isChild:
 print 'Initializing chain'
 sample = sample_manager.getSample(args.sample)
 chain = sample.initTree()
+chain.HNLmass = sample.getMass()
+chain.year = int(args.year)
 print 'Chain initialized'
 
 #Set output dir
@@ -75,13 +79,27 @@ if args.plotSoftTau and 'tau' in sample.name: pt_hist.append(ROOT.TH1D('subleadi
 
 #Determine if testrun so it doesn't need to calculate the number of events in the getEventRange
 if args.isTest:
-    eventRange = xrange(1000)
+    # eventRange = xrange(1000)
+    eventRange = sample.getEventRange(0)
 else:
     eventRange = sample.getEventRange(int(args.subJob))
 
 from HNL.Tools.helpers import progress 
 
 def getSortKey(item): return item[0]
+
+from HNL.EventSelection.eventSelector import EventSelector
+from HNL.EventSelection.eventCategorization import EventCategory, filterSuperCategory
+from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
+es = EventSelector('baseline', 'MVA', None, is_reco_level = False)
+slm = SignalLeptonMatcher(chain)
+ec = EventCategory(chain)
+
+#
+# Create cutter to provide cut flow
+#
+from HNL.EventSelection.cutter import Cutter
+cutter = Cutter(chain = chain)
 
 #Loop over events
 for entry in eventRange:
@@ -90,20 +108,27 @@ for entry in eventRange:
     progress(entry-eventRange[0], len(eventRange))
     chain.GetEntry(entry)
 
-    if chain._gen_nL < 3: continue
+    if not es.passedFilter(chain, chain, cutter): continue
+    slm.saveNewOrder()
+    category = ec.returnCategory()
+    if not filterSuperCategory('SingleTau', category): continue
+    print category, entry
+    # if chain._gen_nL < 3: continue
 
-    lep = [(chain._gen_lPt[i], i) for i in xrange(chain._gen_nL)]
-    pts = sorted(lep, reverse=True, key = getSortKey)
-    taus = [pts[i] for i in xrange(3) if chain._gen_lFlavor[pts[i][1]] == 2]
+    # lep = [(chain._gen_lPt[i], i) for i in xrange(chain._gen_nL)]
+    # pts = sorted(lep, reverse=True, key = getSortKey)
+    # taus = [pts[i] for i in xrange(3) if chain._gen_lFlavor[pts[i][1]] == 2]
 
-    pt_hist[0].Fill(pts[0][0])
-    pt_hist[1].Fill(pts[1][0])
-    pt_hist[2].Fill(pts[2][0])
+    pt_hist[0].Fill(chain.l_pt[0])
+    pt_hist[1].Fill(chain.l_pt[1])
+    pt_hist[2].Fill(chain.l_pt[2])
 
-    if args.plotSoftTau and 'tau' in sample.name:
-        print len(taus)
-        if len(taus) > 0: pt_hist[3].Fill(taus[-1][0]) 
-        if len(taus) > 1: pt_hist[4].Fill(taus[-2][0]) 
+    print chain.l_flavor
+
+    # if args.plotSoftTau and 'tau' in sample.name:
+    #     print len(taus)
+    #     if len(taus) > 0: pt_hist[3].Fill(taus[-1][0]) 
+    #     if len(taus) > 1: pt_hist[4].Fill(taus[-2][0]) 
 
 # if args.isTest: exit(0)
 
@@ -116,7 +141,8 @@ out_file.Close()
 
 
 from HNL.Plotting.plot import Plot
-legend_names = ['leading gen p_{T}', 'subleading gen p_{T}', 'trailing gen p_{T}']
+# legend_names = ['leading gen p_{T}', 'subleading gen p_{T}', 'trailing gen p_{T}']
+legend_names = ['l1 p_{T}', 'l2 p_{T}', 'l3 p_{T}']
 if args.plotSoftTau and 'tau' in sample.name:
     legend_names.append('softest gen tau p_{T}')
     legend_names.append('subleading gen tau p_{T}')
