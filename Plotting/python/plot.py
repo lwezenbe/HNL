@@ -1110,7 +1110,7 @@ class Plot:
         
         #Create Legend
         self.canvas.cd()
-        legend = ROOT.TLegend(0.5, .8, .9, .9)
+        legend = ROOT.TLegend(0.5, .7, .9, .9)
         legend.AddEntry(median, "Asymptotic CL_{s} expected",'L')
         legend.AddEntry(green, "#pm 1 std. deviation",'f')
         legend.AddEntry(yellow, "#pm 2 std. deviation",'f')
