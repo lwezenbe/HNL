@@ -39,8 +39,10 @@ def combineYears(mass, cardname):
     if len(args.year) == 1:
         return
     else:
+        datacard_massbase = os.path.join(datacards_base('-'.join(args.year)), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
         datacard_path = lambda year : os.path.join(datacards_base(year), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', cardname+'.txt')
         categories = [datacard_path(y) for y in args.year if os.path.isfile(datacard_path(year))]
+        makeDirIfNeeded(datacard_massbase+'/'+cardname+'.txt')
         runCombineCommand('combineCards.py '+' '.join(categories)+' > '+datacard_massbase+'/'+cardname+'.txt')
 
 
@@ -84,8 +86,9 @@ for year in args.year:
     all_signal[year] = glob.glob(datacards_base(year)+'/*')
     masses_py[year] = [int(signal.split('/')[-1].split('-m')[-1]) for signal in all_signal[year]]
 masses = []
-for year in args.year:
-    masses += (list(set(masses_py[year])-set(masses)))
+# for year in args.year:
+#     masses += (list(set(masses_py[year])-set(masses)))
+masses = masses_py['2016']
 masses = sorted(masses)
 
 if not args.useExistingLimits:
@@ -107,6 +110,7 @@ for card in cards_to_read:
     passed_couplings = []
     limits = {}
     for mass in masses:
+        if mass not in args.masses: continue
         asymptotic_str = 'asymptotic' if args.asymptotic else ''
         input_folder = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', str(year_to_read), args.selection, args.flavor, 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', asymptotic_str, card)
         tmp_coupling = sqrt(signal_couplingsquared[args.flavor][mass])
@@ -142,11 +146,11 @@ for card in cards_to_read:
     if args.flavor == 'e':
         observed_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsElectronMixing.root'), 'observed_promptDecays')
         expected_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsElectronMixing.root'), 'expected_central')
-        tex_names = ['observed (AN-2017-014)', 'expected (AN-2017-014)']
+        tex_names = ['observed (EXO-17-012)']
     elif args.flavor == 'mu':
         observed_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsMuonMixing.root'), 'observed_promptDecays')
         expected_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsMuonMixing.root'), 'expected_central')
-        tex_names = ['observed (AN-2017-014)', 'expected (AN-2017-014)']
+        tex_names = ['observed (EXO-17-012)']
 
     else:
         observed_AN = None
@@ -162,7 +166,7 @@ for card in cards_to_read:
     if observed_AN is None and expected_AN is None:
         bkgr_hist = None
     else:
-        bkgr_hist = [observed_AN, expected_AN]
+        bkgr_hist = [observed_AN]
 
     if args.compareToCards is not None:
         for compare_key in compare_graphs.keys():
@@ -173,7 +177,6 @@ for card in cards_to_read:
                 bkgr_hist.append(compare_graphs[compare_key][0])
                 tex_names.append(compare_key)
 
-
-    p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}')
+    year = args.year if len(args.year) == 1 else 'all'
+    p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=False, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', year = )
     p.drawBrazilian(output_dir = destination)
-
