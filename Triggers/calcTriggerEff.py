@@ -88,9 +88,9 @@ def getOutputName(var, istest=False):
 
     if var == 'HNLmass':
         if args.isTest:
-            output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0], 'HNLmass')
+            output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], 'HNLmass')
         else:
-            output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], 'HNLmass')
+            output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0].rsplit('/')[-1], 'HNLmass')
         if args.separateTriggers is not None:
             output_name += '/'+args.separateTriggers
         if args.isChild:
@@ -100,9 +100,9 @@ def getOutputName(var, istest=False):
 
     else:
         if args.isTest:
-            output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0], sample.output)
+            output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], sample.output)
         else:
-            output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], sample.output)
+            output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0].rsplit('/')[-1], sample.output)
 
         if args.separateTriggers is not None:
             output_name += '/'+args.separateTriggers
