@@ -15,6 +15,7 @@ from HNL.ObjectSelection.leptonSelector import isGoodLepton, isGoodLeptonTycho, 
 from HNL.ObjectSelection.leptonSelector import isGoodGenLepton
 from HNL.ObjectSelection.jetSelector import isGoodJet, isBJet
 from HNL.Tools.helpers import getFourVec, deltaPhi
+from HNL.Weights.tauEnergyScale import TauEnergyScale
 
 
 
@@ -49,17 +50,17 @@ def getSortKeyHNLtruth(item):
 # no_tau: turn on to only accept light leptons
 # tau_algo: if set to 'gen_truth', it will still run over all reco taus but instead of using tight taus it will only look if they were matched to a hadronically decayed gen tau
 #
-def selectLeptonsGeneral(chain, new_chain, nL, object_selection, cutter=None, sort_leptons = True):
+def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True):
 
-    collection = chain._nL if not object_selection['notau'] else chain._nLight
+    collection = chain._nL if not chain.obj_sel['notau'] else chain._nLight
     chain.leptons = []
     for l in xrange(collection):
-        if chain._lFlavor[l] == 0: workingpoint = object_selection['ele_wp']
-        elif chain._lFlavor[l] == 1: workingpoint = object_selection['mu_wp']
-        elif chain._lFlavor[l] == 2: workingpoint = object_selection['tau_wp']
+        if chain._lFlavor[l] == 0: workingpoint = chain.obj_sel['ele_wp']
+        elif chain._lFlavor[l] == 1: workingpoint = chain.obj_sel['mu_wp']
+        elif chain._lFlavor[l] == 2: workingpoint = chain.obj_sel['tau_wp']
         else: raise RuntimeError('In selectLeptonsGeneral: flavor provided is neither an electron, muon or tau')
     
-        if isGoodLepton(chain, l, algo=object_selection['light_algo'], tau_algo=object_selection['tau_algo'], workingpoint=workingpoint):
+        if isGoodLepton(chain, l, algo=chain.obj_sel['light_algo'], tau_algo=chain.obj_sel['tau_algo'], workingpoint=workingpoint, analysis = chain.obj_sel['analysis']):
             chain.leptons.append((chain._lPt[l], l))
 
     if cutter is not None:
@@ -67,6 +68,8 @@ def selectLeptonsGeneral(chain, new_chain, nL, object_selection, cutter=None, so
         cutter.cut(len(chain.leptons) > 1, 'at_least_2_lep')
         cutter.cut(len(chain.leptons) > 2, 'at_least_3_lep')
     if len(chain.leptons) != nL:  return False
+
+    tes = TauEnergyScale(chain.year, chain.obj_sel['tau_algo'])
 
     if chain is new_chain:
         new_chain.l_pt = [0.0]*nL
@@ -86,31 +89,34 @@ def selectLeptonsGeneral(chain, new_chain, nL, object_selection, cutter=None, so
 
     for i in xrange(nL):
         new_chain.l_indices[i] = ptAndIndex[i][1]
-        new_chain.l_pt[i] = ptAndIndex[i][0] 
+        new_chain.l_flavor[i] = chain._lFlavor[ptAndIndex[i][1]]
+        new_chain.l_pt[i] = ptAndIndex[i][0]
         new_chain.l_eta[i] = chain._lEta[ptAndIndex[i][1]]
         new_chain.l_phi[i] = chain._lPhi[ptAndIndex[i][1]]
         new_chain.l_e[i] = chain._lE[ptAndIndex[i][1]]
         new_chain.l_charge[i] = chain._lCharge[ptAndIndex[i][1]]
-        new_chain.l_flavor[i] = chain._lFlavor[ptAndIndex[i][1]]
-        new_chain.l_istight[i] = isGoodLepton(chain, ptAndIndex[i][1], algo=object_selection['light_algo'], tau_algo=object_selection['tau_algo'], workingpoint='tight')
+        new_chain.l_istight[i] = isGoodLepton(chain, ptAndIndex[i][1], algo=chain.obj_sel['light_algo'], tau_algo=chain.obj_sel['tau_algo'], workingpoint='tight', analysis = chain.obj_sel['analysis'])
         new_chain.l_isfake[i] = isFakeLepton(chain, ptAndIndex[i][1])
+        
+        #Apply tau energy scale
+        if chain.is_data and new_chain.l_flavor[i] == 2:
+            tlv = getFourVec(new_chain.l_pt[i], new_chain.l_eta[i], new_chain.l_phi[i], new_chain.l_e[i])
+            new_chain.l_pt *= tes.readES(tlv, chain._tauDecayMode[new_chain.l_indices[i]], chain._tauGenStatus[new_chain.l_indices[i]])
+            new_chain.l_e *= tes.readES(tlv, chain._tauDecayMode[new_chain.l_indices[i]], chain._tauGenStatus[new_chain.l_indices[i]])
 
     return True
 
-from HNL.ObjectSelection.objectSelection import objectSelectionCollection
-def select3Leptons(chain, new_chain, object_selection, cutter = None):
+def select3Leptons(chain, new_chain, cutter = None):
+    chain.obj_sel['tau_wp'] = 'tight'
+    chain.obj_sel['mu_wp'] = 'tight'
+    chain.obj_sel['ele_wp'] = 'tight'
+    return selectLeptonsGeneral(chain, new_chain, 3, cutter=cutter, sort_leptons = True)
 
-    object_selection['tau_wp'] = 'tight'
-    object_selection['mu_wp'] = 'tight'
-    object_selection['ele_wp'] = 'tight'
-    return selectLeptonsGeneral(chain, new_chain, 3, object_selection, cutter=cutter, sort_leptons = True)
-
-def select4Leptons(chain, new_chain, object_selection, cutter = None):
-
-    object_selection['tau_wp'] = 'tight'
-    object_selection['mu_wp'] = 'tight'
-    object_selection['ele_wp'] = 'tight'
-    return selectLeptonsGeneral(chain, new_chain, 4, object_selection_collection, cutter=cutter, sort_leptons = True)
+def select4Leptons(chain, new_chain, cutter = None):
+    chain.obj_sel['tau_wp'] = 'tight'
+    chain.obj_sel['mu_wp'] = 'tight'
+    chain.obj_sel['ele_wp'] = 'tight'
+    return selectLeptonsGeneral(chain, new_chain, 4, cutter=cutter, sort_leptons = True)
 
 def selectGenLeptonsGeneral(chain, new_chain, nL, cutter=None):
   
@@ -463,6 +469,11 @@ def calculateFourLepVariables(chain, new_chain):
 
 #################################################
 
+def nBjets(chain, algo, wp, cleaned = True, selection = None):
+    nbjets = 0
+    for jet in xrange(chain._nJets):
+        if isBJet(chain, jet, algo, wp, cleaned=cleaned, selection = selection): nbjets += 1
+    return nbjets
 
 def bVeto(chain, algo, cleaned = True, selection = None):
     for jet in xrange(chain._nJets):

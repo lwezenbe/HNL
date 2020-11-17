@@ -22,14 +22,12 @@ def isBaseElectron(chain, index):
 # We dont use electrons that fall within dr 0.05 of a loose muon
 #
 from HNL.ObjectSelection.muonSelector import isLooseMuon
-def isCleanFromMuons(chain, index, mu_algo = 'leptonMVAtZq'):
+def isCleanFromMuons(chain, index, algo = None):
     
     for mu in xrange(chain._nMu):
-        if not isLooseMuon(chain, mu, mu_algo):  continue
+        if not isLooseMuon(chain, mu, algo):  continue
         if deltaR(chain._lEta[mu], chain._lEta[index], chain._lPhi[mu], chain._lPhi[index]) < 0.05: return False
     return True
-
-default_electron_selection = 'leptonMVAtop'
 
 #
 # WP as defined in AN 2017/014
@@ -88,6 +86,51 @@ def isTightElectronCutBased(chain, index):
     if not isFOElectronCutBased(chain, index):          return False
     if chain._relIso[index] >= 0.1:                    return False
     if cutBasedMVA(chain, index, 'tight', chain._lPt[index]) >= chain._lElectronSummer16MvaGP[index]: return False
+    return True
+
+#
+# Ewkino Working Points
+#
+def isLooseElectronEwkino(chain, index):
+    if chain._lFlavor[index] != 0: return False
+    if(abs(chain._dxy[index])>= 0.05 or abs(chain._dz[index])>= 0.1 or chain._3dIPSig[index] >= 8): return False    
+    if chain._miniIso[index] >= 0.4:    return False
+    if chain._lPt[index] <= 7 or abs(chain._lEta[index]) >= 2.5:       return False
+    if chain._lElectronMissingHits[index] > 1: return False
+    if not isCleanFromMuons(chain, index):      return False
+    return True #isLooseMuon From heavyNeutrino already included in basic muon cuts
+
+def isFOElectronEwkino(chain, index):
+    if not isLooseElectronEwkino(chain, index):       return False
+    if chain._lPt[index] <= 10:       return False
+    if chain._lElectronMissingHits[index] != 0: return False
+    if abs(chain._lEta[index]) < 1.479 and chain._lElectronSigmaIetaIeta[index] > 0.011: return False
+    if 1.479 < abs(chain._lEta[index]) and chain._lElectronSigmaIetaIeta[index] > 0.033: return False
+    if chain._lElectronEInvMinusPInv[index] < -0.04: return False
+    if not chain._lElectronPassConvVeto[index]:       return False
+    if chain._lElectronHOverE[index] > 0.1: return False
+    if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >=   getBTagWP(chain.year, 'tight', 'Deep'): return False       
+    if chain._leptonMvaTTH[index] <= 0.4:
+        if not passMVAWP90(chain, index): return False
+        if chain.year == 2018:
+            if chain._ptRatio[index] < 0.6:        return False
+        else:
+            if chain._ptRatio[index] < 0.7:        return False
+    else:
+        if not passMVAloose(chain, index): return False
+    return True
+
+def isTightElectronEwkino(chain, index):
+    if not isLooseElectronEwkino(chain, index):       return False
+    if chain._lPt[index] <= 10:       return False
+    if chain._lElectronMissingHits[index] != 0: return False
+    if abs(chain._lEta[index]) < 1.479 and chain._lElectronSigmaIetaIeta[index] > 0.011: return False
+    if 1.479 < abs(chain._lEta[index]) and chain._lElectronSigmaIetaIeta[index] > 0.033: return False
+    if chain._lElectronEInvMinusPInv[index] < -0.04: return False
+    if chain._lElectronHOverE[index] > 0.1: return False
+    if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= getBTagWP(chain.year, 'tight', 'Deep'): return False  
+    if not chain._lElectronPassConvVeto[index]:       return False
+    if chain._leptonMvaTTH[index] <= 0.4:   return False
     return True
 
 #
@@ -312,32 +355,53 @@ def isTightElectronTTT(chain, index):
 #
 # General functions for selection
 #
-def isLooseElectron(chain, index, algo = default_electron_selection):
-    if algo == 'cutbased':       return isLooseElectronCutBased(chain, index)
+from HNL.ObjectSelection.objectSelection import objectSelectionCollection
+def checkAlgorithm(algo, chain):
+    if algo is None:
+        try:
+            chain.obj_sel
+        except:
+            #Initiate default object selection
+            chain.obj_sel = objectSelectionCollection()
+        return chain.obj_sel['light_algo']
+    else:
+        return algo
+
+def isLooseElectron(chain, index, algo = None):
+    algo = checkAlgorithm(algo, chain)
+
+    if algo == 'cutbased':              return isLooseElectronCutBased(chain, index)
     elif algo == 'leptonMVAttH':        return isLooseElectronttH(chain, index)
     elif algo == 'leptonMVAtZq':        return isLooseElectrontZq(chain, index)
     elif algo == 'leptonMVAtop':        return isLooseElectronTop(chain, index)
     elif algo == 'TTT':                 return isLooseElectronTTT(chain, index)
+    elif algo == 'ewkino':              return isLooseElectronEwkino(chain, index)
     else:
         print 'Wrong input for "algo" in isLooseElectron'
         return False
 
-def isFOElectron(chain, index, algo = default_electron_selection):
-    if algo == 'cutbased':       return isFOElectronCutBased(chain, index)
+def isFOElectron(chain, index, algo = None):
+    algo = checkAlgorithm(algo, chain)
+
+    if algo == 'cutbased':              return isFOElectronCutBased(chain, index)
     elif algo == 'leptonMVAttH':        return isFOElectronttH(chain, index)
     elif algo == 'leptonMVAtZq':        return isFOElectrontZq(chain, index)
     elif algo == 'leptonMVAtop':        return isFOElectronTop(chain, index)
     elif algo == 'TTT':                 return isFOElectronTTT(chain, index)
+    elif algo == 'ewkino':              return isFOElectronEwkino(chain, index)
     else:
         print 'Wrong input for "algo" in isFOElectron'
         return False
 
-def isTightElectron(chain, index, algo = default_electron_selection):
-    if algo == 'cutbased':       return isTightElectronCutBased(chain, index)
+def isTightElectron(chain, index, algo = None):
+    algo = checkAlgorithm(algo, chain)
+
+    if algo == 'cutbased':              return isTightElectronCutBased(chain, index)
     elif algo == 'leptonMVAttH':        return isTightElectronttH(chain, index)
     elif algo == 'leptonMVAtZq':        return isTightElectrontZq(chain, index)
     elif algo == 'leptonMVAtop':        return isFOElectronTop(chain, index)
     elif algo == 'TTT':                 return isTightElectronTTT(chain, index)
+    elif algo == 'ewkino':              return isTightElectronEwkino(chain, index)
     else:
         print 'Wrong input for "algo" in isTightElectron'
         return False

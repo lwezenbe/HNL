@@ -21,11 +21,9 @@ from HNL.ObjectSelection.muonSelector import isLooseMuon
 def isLooseLightLepton(chain, index, algo = None):
     
     if chain._lFlavor[index] == 0:
-        if algo is None: return isLooseElectron(chain, index)
-        else: return isLooseElectron(chain, index, algo)
+        return isLooseElectron(chain, index, algo)
  
     if chain._lFlavor[index] == 1:
-        if algo is None: return isLooseMuon(chain, index)
         return isLooseMuon(chain, index, algo)
 
     return False
@@ -39,11 +37,9 @@ from HNL.ObjectSelection.muonSelector import isFOMuon
 def isFOLightLepton(chain, index, algo = None):
 
     if chain._lFlavor[index] == 0:
-        if algo is None: return isFOElectron(chain, index)
-        else: return isFOElectron(chain, index, algo)
+        return isFOElectron(chain, index, algo)
  
     if chain._lFlavor[index] == 1:
-        if algo is None: return isFOMuon(chain, index)
         return isFOMuon(chain, index, algo)
 
     return False
@@ -57,11 +53,9 @@ from HNL.ObjectSelection.muonSelector import isTightMuon
 def isTightLightLepton(chain, index, algo = None):
     
     if chain._lFlavor[index] == 0:
-        if algo is None: return isTightElectron(chain, index)
-        else: return isTightElectron(chain, index, algo)
+        return isTightElectron(chain, index, algo)
  
     if chain._lFlavor[index] == 1:
-        if algo is None: return isTightMuon(chain, index)
         return isTightMuon(chain, index, algo)
 
     return False
@@ -71,52 +65,48 @@ def isTightLightLepton(chain, index, algo = None):
 #
 from HNL.ObjectSelection.tauSelector import isLooseTau, isFOTau, isTightTau
 
-def isLooseLepton(chain, index, algo = None, tau_algo = None):
+def isLooseLepton(chain, index, algo = None, tau_algo = None, analysis = 'HNL'):
    
     if chain._lFlavor[index] != 2: return isLooseLightLepton(chain, index, algo) 
     if chain._lFlavor[index] == 2: 
-        if tau_algo:    return isLooseTau(chain, index, tau_algo)
-        else:           return isLooseTau(chain, index)
+        return isLooseTau(chain, index, algo = tau_algo, analysis = analysis)
     return False
 
 #
 # FO WP for leptons
 #
-def isFOLepton(chain, index, algo = None, tau_algo = None):
+def isFOLepton(chain, index, algo = None, tau_algo = None, analysis = 'HNL'):
     
     if chain._lFlavor[index] != 2: return isFOLightLepton(chain, index, algo)
     if chain._lFlavor[index] == 2: 
-        if tau_algo:    return isFOTau(chain, index, tau_algo)
-        else:           return isFOTau(chain, index)
+        return isFOTau(chain, index, algo = tau_algo, analysis = analysis)
     return False
 
 #
 # Tight WP for leptons
 #
-def isTightLepton(chain, index, algo = None, tau_algo = None):
+def isTightLepton(chain, index, algo = None, tau_algo = None, analysis = 'HNL'):
     
     if chain._lFlavor[index] != 2: return isTightLightLepton(chain, index, algo)
     if chain._lFlavor[index] == 2: 
-        if tau_algo:    return isTightTau(chain, index, tau_algo)
-        else:           return isTightTau(chain, index)
+        return isTightTau(chain, index, algo = tau_algo, analysis = analysis)
     return False
 
-def isGoodLepton(chain, index, algo = None, tau_algo = None, workingpoint = 'tight'):
+def isGoodLepton(chain, index, algo = None, tau_algo = None, workingpoint = 'tight', analysis = 'HNL'):
 
     if workingpoint == 'loose':
-        return isLooseLepton(chain, index, algo = algo, tau_algo = tau_algo)
+        return isLooseLepton(chain, index, algo = algo, tau_algo = tau_algo, analysis = analysis)
     elif workingpoint == 'FO':
-        return isFOLepton(chain, index, algo = algo, tau_algo = tau_algo)
+        return isFOLepton(chain, index, algo = algo, tau_algo = tau_algo, analysis = analysis)
     elif workingpoint == 'tight':
-        return isTightLepton(chain, index, algo = algo, tau_algo = tau_algo)
+        return isTightLepton(chain, index, algo = algo, tau_algo = tau_algo, analysis = analysis)
     else:
         raise RuntimeError('Defined working point does not exist: ' +str(workingpoint))
 
 def isGoodLeptonTycho(chain, index, algo = None, tau_algo = None):
     if chain._lFlavor[index] != 2: return isTightLightLepton(chain, index, algo)
     if chain._lFlavor[index] == 2: 
-        if tau_algo:    return isLooseTau(chain, index, tau_algo)
-        else:           return isLooseTau(chain, index)
+        return isLooseTau(chain, index, algo = tau_algo)
     return False
 
 from HNL.ObjectSelection.tauSelector import isJetFakingTau

@@ -58,11 +58,22 @@ def listOfTriggers2016(chain):
     list_of_triggers.append(chain._HLT_IsoTkMu24)
     return list_of_triggers
 
-def passTriggers(chain, year, oldAN=False):
-    if oldAN:
-        return any(listOfTriggersAN2017014(chain))
+def listOfTriggersEwkino(chain):
+    list_of_triggers = []
+    list_of_triggers.append(chain._passTrigger_em)
+    list_of_triggers.append(chain._passTrigger_mm)
+    list_of_triggers.append(chain._passTrigger_ee)
+    list_of_triggers.append(chain._passTrigger_m)
+    list_of_triggers.append(chain._passTrigger_e)
+    return list_of_triggers
 
-    if year == 2016 and any(listOfTriggers2016(chain)): return True
-    elif year == 2017 and any(listOfTriggers2017(chain)): return True
-    elif year == 2018 and any(listOfTriggers2018(chain)): return True
+def passTriggers(chain, analysis = 'HNL'):
+    if analysis == 'HNL_old':
+        return applyCustomTriggers(listOfTriggersAN2017014(chain))
+    elif analysis == 'ewkino':
+        return applyCustomTriggers(listOfTriggersEwkino(chain))
+    else:
+        if chain.year == 2016 and any(listOfTriggers2016(chain)): return True
+        elif chain.year == 2017 and any(listOfTriggers2017(chain)): return True
+        elif chain.year == 2018 and any(listOfTriggers2018(chain)): return True
     return False
