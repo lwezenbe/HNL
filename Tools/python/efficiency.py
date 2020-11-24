@@ -14,6 +14,7 @@ class Efficiency(object):
         self.efficiency_num = None
         self.efficiency_denom = None
         self.efficiency = None
+        self.subdirs = subdirs
 
         #If bins == None, load in histograms from the path
         bins_check = False
@@ -115,18 +116,18 @@ class Efficiency(object):
         return
     
 
-    def write(self, append = False, name=None, subdirs = None):
+    def write(self, append = False, name=None):
         append_string = 'recreate'
         if append and isValidRootFile(self.path): append_string = 'update'
 
         makeDirIfNeeded(self.path)
         output_file = ROOT.TFile(self.path, append_string)
-        if subdirs is None:
+        if self.subdirs is None:
             output_file.mkdir(self.name)
             output_file.cd(self.name)
         else:
             nomo = ''
-            for d in subdirs:
+            for d in self.subdirs:
                 nomo += d + '/'
                 output_file.mkdir(nomo)
                 output_file.cd(nomo)

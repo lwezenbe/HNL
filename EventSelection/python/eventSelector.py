@@ -1,30 +1,33 @@
 #Combine signalRegionSelector and controlRegionSelector here
 from HNL.EventSelection.signalRegionSelector import SignalRegionSelector
-from HNL.EventSelection.controlRegionSelector import ZZCRfilter, WZCRfilter, ConversionCRfilter, TauFakeEnrichedDY, TauClosureTest, ElectronClosureTest, MuonClosureTest
+from HNL.EventSelection.controlRegionSelector import ZZCRfilter, WZCRfilter, ConversionCRfilter, TauFakeEnrichedDY, TauFakeEnrichedTT, TauClosureTest, ElectronClosureTest, MuonClosureTest
 
 class EventSelector:
 
-    def __init__(self, name, selection, objsel, is_reco_level=True, event_categorization = None):
+    def __init__(self, name, chain, new_chain, selection, is_reco_level=True, event_categorization = None):
         self.name = name
         self.selection = selection
-        self.objsel = objsel
+        self.chain = chain
+        self.new_chain = new_chain
         self.is_reco_level = is_reco_level
         if self.name in ['baseline', 'lowMassSR', 'highMassSR']:
-            self.selector = SignalRegionSelector(name, selection, objsel, is_reco_level=is_reco_level, event_categorization = event_categorization)
+            self.selector = SignalRegionSelector(name, chain, new_chain, selection, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'ZZCR':
-            self.selector = ZZCRfilter(name, selection, objsel, is_reco_level=is_reco_level)
+            self.selector = ZZCRfilter(name, chain, new_chain, selection, is_reco_level=is_reco_level)
         elif self.name == 'WZCR':
-            self.selector = WZCRfilter(name, selection, objsel, is_reco_level=is_reco_level)
+            self.selector = WZCRfilter(name, chain, new_chain, selection, is_reco_level=is_reco_level)
         elif self.name == 'ConversionCR':
-            self.selector = ConversionCRfilter(name, selection, objsel, is_reco_level=is_reco_level, event_categorization = event_categorization)
-        elif self.name == 'TauFakes':
-            self.selector = TauFakeEnrichedDY(name, selection, objsel, is_reco_level=is_reco_level, event_categorization = event_categorization)
+            self.selector = ConversionCRfilter(name, chain, new_chain, selection, is_reco_level=is_reco_level, event_categorization = event_categorization)
+        elif self.name == 'TauFakesDY':
+            self.selector = TauFakeEnrichedDY(name, chain, new_chain, selection, is_reco_level=is_reco_level, event_categorization = event_categorization)
+        elif self.name == 'TauFakesTT':
+            self.selector = TauFakeEnrichedTT(name, chain, new_chain, selection, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'TauCT':
-            self.selector = TauClosureTest(name, selection, objsel, is_reco_level=is_reco_level, event_categorization = event_categorization)
+            self.selector = TauClosureTest(name, chain, new_chain, selection, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'ElectronCT':
-            self.selector = ElectronClosureTest(name, selection, objsel, is_reco_level=is_reco_level, event_categorization = event_categorization)
+            self.selector = ElectronClosureTest(name, chain, new_chain, selection, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'MuonCT':
-            self.selector = MuonClosureTest(name, selection, objsel, is_reco_level=is_reco_level, event_categorization = event_categorization)
+            self.selector = MuonClosureTest(name, chain, new_chain, selection, is_reco_level=is_reco_level, event_categorization = event_categorization)
 
-    def passedFilter(self, chain, new_chain, cutter):
-        return self.selector.passedFilter(chain, new_chain, cutter)
+    def passedFilter(self, cutter):
+        return self.selector.passedFilter(cutter)
