@@ -8,7 +8,7 @@ import os
 # No need to include the extensions in the sublists, it will handle that
 #
 
-ALLOWED_SKIMS = ['noskim', 'Reco', 'Gen', 'Old']
+ALLOWED_SKIMS = ['noskim', 'Reco', 'TTT']
 BASE_PATH = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Samples', 'InputFiles')
 SAMPLE_GROUPS = {
     'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],
@@ -32,8 +32,8 @@ class SampleManager:
         self.skim = skim
         self.path = os.path.join(BASE_PATH, '_'.join(['sampleList', str(self.year), skim+'.conf']))
 
-        sample_names_file_full = os.path.join(BASE_PATH, 'Sublists', sample_names_file+'.conf')
-        self.sample_names = self.getSampleNames(sample_names_file_full)
+        self.sample_names_file_full = os.path.join(BASE_PATH, 'Sublists', sample_names_file+'.conf')
+        self.sample_names = self.getSampleNames(self.sample_names_file_full)
         self.sample_list = createSampleList(self.path)
         self.sample_groups = SAMPLE_GROUPS
 
@@ -74,8 +74,14 @@ class SampleManager:
         sample_infos = [line.split() for line in sample_infos if line]                              # Get lines into tuples
         for sample in sample_infos:
             if sample[0] == name: return sample[1]
-        return None        
+        return None      
 
+    def getOutputs(self):  
+        sample_infos = [line.split('%')[0].strip() for line in open(self.path)]                     # Strip % comments and \n charachters
+        sample_infos = [line.split() for line in sample_infos if line] 
+        sample_infos = [info[2] for info in sample_infos if info[0] in self.sample_names]
+        output_set = {info for info in sample_infos}
+        return output_set
 
 if __name__ == '__main__':
     sample_manager = SampleManager(2016, 'noskim', 'test')
