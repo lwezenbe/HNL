@@ -45,6 +45,9 @@ def getReweightingFunction(year, variation='central', useMC=None):
 
 if __name__ == '__main__':
     from HNL.Samples.sample import createSampleList, getSampleFromList
+    from HNL.Tools.logger import getLogger, closeLogger
+    log = getLogger('INFO')
+
     input_file = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/samples_for_testing.conf')
     sample_list = createSampleList(input_file)
     sample = getSampleFromList(sample_list, 'DYJetsToLL-M-10to50')
@@ -54,3 +57,4 @@ if __name__ == '__main__':
     chain.year = 2016
     pu = getReweightingFunction(chain.year, 'central')
     print pu(chain._nTrueInt)
+    closeLogger(log)

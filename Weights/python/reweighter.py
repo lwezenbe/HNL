@@ -42,6 +42,8 @@ if __name__ == '__main__':
     from HNL.Samples.sample import createSampleList, getSampleFromList
     from HNL.Samples.sampleManager import SampleManager
     import os
+    from HNL.Tools.logger import getLogger, closeLogger
+    log = getLogger('INFO')
 
     sm = SampleManager(2016, 'noskim', 'test')
 
@@ -59,3 +61,5 @@ if __name__ == '__main__':
     print reweighter.getTotalWeight() 
 
     print chain._nTrueInt
+
+    closeLogger(log)

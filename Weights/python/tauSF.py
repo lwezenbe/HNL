@@ -52,30 +52,32 @@ if __name__ == "__main__":
     import numpy as np
     import os
     from HNL.Tools.helpers import makeDirIfNeeded
+    from HNL.Tools.logger import getLogger, closeLogger
+    log = getLogger('INFO')
     pt_range = np.arange(30, 70, 10)
 
     out_name_tex = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Weights', 'data', 'Results', __file__.split('.')[0], 'deeptauVSjets.txt')
     makeDirIfNeeded(out_name_tex)
-    out_file_tex = open(out_name_tex, 'w')
-    out_file_tex.write('\\begin{table}[] \n')
+    # out_file_tex = open(out_name_tex, 'w')
+    # out_file_tex.write('\\begin{table}[] \n')
     column_str = '|'.join(['c' for _ in pt_range])
-    out_file_tex.write("\\begin{tabular}{|c|"+column_str+"|} \n")
-    out_file_tex.write("\hline \n")
-    out_file_tex.write('& '+'&'.join(['$p_T = $'+str(m)+ ' GeV' for m in pt_range])+' \\\\ \n')
-    out_file_tex.write("\hline \n")
+    # out_file_tex.write("\\begin{tabular}{|c|"+column_str+"|} \n")
+    # out_file_tex.write("\hline \n")
+    # out_file_tex.write('& '+'&'.join(['$p_T = $'+str(m)+ ' GeV' for m in pt_range])+' \\\\ \n')
+    # out_file_tex.write("\hline \n")
 
     for iso in iso_wp:
         tausftool = TauSF(2016, 'deeptauVSjets', iso, ele_wp[0], mu_wp[0])
-        out_file_tex.write(iso)
+        # out_file_tex.write(iso)
         for pt in pt_range:
             sf = tausftool.sftool_iso.getSFvsPT(pt)
             up = tausftool.sftool_iso.getSFvsPT(pt, unc='Up') - tausftool.sftool_iso.getSFvsPT(pt)
             down = tausftool.sftool_iso.getSFvsPT(pt) - tausftool.sftool_iso.getSFvsPT(pt, unc='Down')
-            out_file_tex.write(' & $%.3f'%sf+'^{+%.3f'%up+'}_{-%.3f'%down+'}$')
-        out_file_tex.write('\\\\ \hline \n')
-    out_file_tex.write('\end{tabular} \n')
-    out_file_tex.write('\end{table} \n')
-    out_file_tex.close()
+            # out_file_tex.write(' & $%.3f'%sf+'^{+%.3f'%up+'}_{-%.3f'%down+'}$')
+        # out_file_tex.write('\\\\ \hline \n')
+    # out_file_tex.write('\end{tabular} \n')
+    # out_file_tex.write('\end{table} \n')
+    # out_file_tex.close()
 
 
 
@@ -83,49 +85,51 @@ if __name__ == "__main__":
 
     out_name_tex = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Weights', 'data', 'Results', __file__.split('.')[0], 'deeptauVSe.txt')
     makeDirIfNeeded(out_name_tex)
-    out_file_tex = open(out_name_tex, 'w')
-    out_file_tex.write('\\begin{table}[] \n')
+    # out_file_tex = open(out_name_tex, 'w')
+    # out_file_tex.write('\\begin{table}[] \n')
     column_str = '|'.join(['c' for _ in eta_range])
-    out_file_tex.write("\\begin{tabular}{|c|"+column_str+"|} \n")
-    out_file_tex.write("\hline \n")
-    out_file_tex.write('& '+'&'.join(['$|\eta| = $'+str(m) for m in eta_range])+' \\\\ \n')
-    out_file_tex.write("\hline \n")
+    # out_file_tex.write("\\begin{tabular}{|c|"+column_str+"|} \n")
+    # out_file_tex.write("\hline \n")
+    # out_file_tex.write('& '+'&'.join(['$|\eta| = $'+str(m) for m in eta_range])+' \\\\ \n')
+    # out_file_tex.write("\hline \n")
 
     for ele in ele_wp:
         tausftool = TauSF(2016, 'deeptauVSjets', iso_wp[0], ele, mu_wp[0])
-        out_file_tex.write(ele)
+        # out_file_tex.write(ele)
         for eta in eta_range:
             sf = tausftool.sftool_e.getSFvsEta(eta, 1)
             up = tausftool.sftool_e.getSFvsEta(eta, 1, unc='Up') - tausftool.sftool_e.getSFvsEta(eta, 1)
             down = tausftool.sftool_e.getSFvsEta(eta, 1) - tausftool.sftool_e.getSFvsEta(eta, 1, unc='Down')
-            out_file_tex.write(' & $%.2f'%sf+'^{+%.2f'%up+'}_{-%.2f'%down+'}$')
-        out_file_tex.write('\\\\ \hline \n')
-    out_file_tex.write('\end{tabular} \n')
-    out_file_tex.write('\end{table} \n')
-    out_file_tex.close()
+            # out_file_tex.write(' & $%.2f'%sf+'^{+%.2f'%up+'}_{-%.2f'%down+'}$')
+        # out_file_tex.write('\\\\ \hline \n')
+    # out_file_tex.write('\end{tabular} \n')
+    # out_file_tex.write('\end{table} \n')
+    # out_file_tex.close()
 
     eta_range = [0.2, 0.6, 1, 1.5, 2.]
 
 
     out_name_tex = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Weights', 'data', 'Results', __file__.split('.')[0], 'deeptauVSmu.txt')
     makeDirIfNeeded(out_name_tex)
-    out_file_tex = open(out_name_tex, 'w')
-    out_file_tex.write('\\begin{table}[] \n')
+    # out_file_tex = open(out_name_tex, 'w')
+    # out_file_tex.write('\\begin{table}[] \n')
     column_str = '|'.join(['c' for _ in eta_range])
-    out_file_tex.write("\\begin{tabular}{|c|"+column_str+"|} \n")
-    out_file_tex.write("\hline \n")
-    out_file_tex.write('& '+'&'.join(['$|\eta| = $'+str(m) for m in eta_range])+' \\\\ \n')
-    out_file_tex.write("\hline \n")
+    # out_file_tex.write("\\begin{tabular}{|c|"+column_str+"|} \n")
+    # out_file_tex.write("\hline \n")
+    # out_file_tex.write('& '+'&'.join(['$|\eta| = $'+str(m) for m in eta_range])+' \\\\ \n')
+    # out_file_tex.write("\hline \n")
 
     for mu in mu_wp:
         tausftool = TauSF(2016, 'deeptauVSjets', iso_wp[0], ele_wp[0], mu)
-        out_file_tex.write(mu)
+        # out_file_tex.write(mu)
         for eta in eta_range:
             sf = tausftool.sftool_mu.getSFvsEta(eta, 2)
             up = tausftool.sftool_mu.getSFvsEta(eta, 2, unc='Up') - tausftool.sftool_mu.getSFvsEta(eta, 2)
             down = tausftool.sftool_mu.getSFvsEta(eta, 2) - tausftool.sftool_mu.getSFvsEta(eta, 2, unc='Down')
-            out_file_tex.write(' & $%.2f'%sf+'^{+%.2f'%up+'}_{-%.2f'%down+'}$')
-        out_file_tex.write('\\\\ \hline \n')
-    out_file_tex.write('\end{tabular} \n')
-    out_file_tex.write('\end{table} \n')
-    out_file_tex.close()
+            # out_file_tex.write(' & $%.2f'%sf+'^{+%.2f'%up+'}_{-%.2f'%down+'}$')
+        # out_file_tex.write('\\\\ \hline \n')
+    # out_file_tex.write('\end{tabular} \n')
+    # out_file_tex.write('\end{table} \n')
+    # out_file_tex.close()
+
+    closeLogger(log)

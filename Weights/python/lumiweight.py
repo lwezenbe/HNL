@@ -1,8 +1,8 @@
 from HNL.Samples.sample import getListOfPathsWithSameOutput 
 LUMINOSITY_MAP = {
                     # 2016 : 35546.,
-                    2016 : 35900.,
-                    # 2016 : 8323.394133,
+                    # 2016 : 35900.,
+                    2016 : 35545.499064,
                     2017 : 41529.548819,
                     2018 : 59688.059536,
                     }
@@ -38,6 +38,8 @@ if __name__ == '__main__':
     from HNL.Samples.sample import createSampleList, getSampleFromList
     from HNL.Samples.sampleManager import SampleManager
     import os
+    from HNL.Tools.logger import getLogger, closeLogger
+    log = getLogger('INFO')
 
     sm = SampleManager(2016, 'noskim', 'fulllist_2016')
 
@@ -55,3 +57,5 @@ if __name__ == '__main__':
     print 'xsec ', s.xsec, lw.sample.xsec, 'expected 18610'
     print 'luminosity ', LUMINOSITY_MAP[chain.year], 'expected 35546.'
     print 'hCount ', s.hcount, lw.total_hcount, 'more than 2.05023673303e+12'
+
+    closeLogger(log)

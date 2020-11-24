@@ -24,7 +24,6 @@ argParser.add_argument('--batchSystem', action='store',         default='HTCondo
 argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 argParser.add_argument('--makePlots',   action='store_true', default=False,  help='Use existing root files to make the plots')
 argParser.add_argument('--showCuts',   action='store_true', default=False,  help='Show what the pt cuts were for the category in the plots')
-argParser.add_argument('--runOnCream',   action='store_true', default=False,  help='Submit jobs on the cluster')
 argParser.add_argument('--genLevel',   action='store_true', default=False,  help='Use gen level variables')
 args = argParser.parse_args()
 
@@ -65,7 +64,7 @@ if not args.makePlots:
     #
     # Submit subjobs
     #
-    if args.runOnCream and not args.isChild:
+    if not args.isChild:
         from HNL.Tools.jobSubmitter import submitJobs
         submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'plotTau')
         exit(0)
@@ -76,7 +75,7 @@ if not args.makePlots:
     for sample in sample_manager.sample_list:
         if sample.name not in sample_manager.sample_names: continue
        
-        if args.runOnCream and sample.name != args.sample: continue
+        if sample.name != args.sample: continue
         if args.sample and sample.name != args.sample: continue
 
         list_of_hist[sample.name] = {}
@@ -102,10 +101,8 @@ if not args.makePlots:
                 event_range = sample.getEventRange(0)
             else:
                 event_range = xrange(1000)
-        elif args.runOnCream:
-            event_range = sample.getEventRange(args.subJob)
         else:
-            event_range = xrange(chain.GetEntries())
+            event_range = sample.getEventRange(args.subJob)
 
         chain.HNLmass = sample.getMass()
         chain.year = int(args.year)
@@ -184,7 +181,7 @@ else:
 #
 #       Plot!
 #
-if args.runOnCream or args.isTest: 
+if args.isTest: 
     exit(0)
 
 #

@@ -9,9 +9,16 @@
 #
 import os
 import argparse
+from HNL.Tools.jobSubmitter import launchCream02
+from HNL.Tools.helpers import makeDirIfNeeded
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--allCombinations',  action='store_true', default=False,  help='Run code that makes long list of all arguments to be combined in tests')
+argParser.add_argument('--checkLogs',  action='store_true', default=False,  help='Run code that makes long list of all arguments to be combined in tests')
 args = argParser.parse_args()
+
+if not args.checkLogs:
+    confirmation = raw_input("You are about to submit new jobs, are you sure you want to do this? Y/N \n")
+    if confirmation == 'n' or confirmation == 'N': exit(0)
 
 #
 # Functions to be used later on
@@ -61,7 +68,7 @@ def createCommandList(input_list):
 import time
 base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL')
 
-
+from HNL.Tools.logger import successfullJob
 #
 # Run exhaustive mode
 #
@@ -82,11 +89,25 @@ if args.allCombinations:
     out_file = open(out_name, 'w')
     out_file.close()
 
+    if args.checkLogs:
+        failed_jobs = []
+
     for code in code_to_test:
+        out_name_base = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Tools', 'codeReview', 'data', 'output', 'runTests', code[0].split(' ')[0].split('.')[0]))
+        makeDirIfNeeded(out_name_base+'/x')
         combinations = createCommandList(code)
-        for comb in combinations:
-            # out_file.write('RUNNING '+ comb + ' \n')
-            os.system('python '+os.path.join(base_path, comb) + ' >> '+out_name)
+        for i, comb in enumerate(combinations):
+            out_name = str(i)+'.txt'
+            log_name = os.path.join(out_name_base, out_name)
+            if args.checkLogs and not successfullJob(log_name): failed_jobs.append(log_name)
+            if not args.checkLogs: launchCream02(os.path.join(base_path, comb), log_name, jobLabel='test')
+    if args.checkLogs:
+        if len(failed_jobs) != 0:
+            print "FOLLOWING JOBS FAILED"
+            for l in failed_jobs:
+                print l
+        else:
+            print "All jobs completed successfully!"
 
 else:
     print "This mode requires input in data/input/codeToTest_custom.conf. Make sure you have done that"
@@ -96,10 +117,6 @@ else:
     for code in code_to_test:
         print '\x1b[6;30;42m' + 'RUNNING '+ code + ' \x1b[0m'
         os.system('python '+os.path.join(base_path, code))
-
-
-
-
 
 #
 # Backup
