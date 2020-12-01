@@ -23,15 +23,17 @@ def isGoodJetAN2017014(chain, index, cleaned = True):
     return True
 
 def isGoodJetCutBased(chain, index, cleaned = True):
-    # print "new jet"
     if chain._jetPt[index] < 25:        return False
-    # print 'jet pt'
     if abs(chain._jetEta[index]) > 2.4: return False
-    # print 'jet eta'
     if not chain._jetIsTight[index]:    return False
-    # print 'istight'
     if cleaned and not isCleanFromLeptons(chain, index):       return False
-    # print 'cleaned'
+    return True
+
+def isGoodJetLeptonFakes(chain, index, cleaned = True):
+    if chain._jetSmearedPt[index] < 30:        return False
+    if abs(chain._jetEta[index]) > 2.4: return False
+    if not chain._jetIsTight[index]:    return False
+    if cleaned and not isCleanFromLeptons(chain, index):       return False
     return True
 
 from HNL.ObjectSelection.bTagWP import getBTagWP, readBTagValue
@@ -55,5 +57,7 @@ def isGoodJet(chain, index, cleaned = True, selection = None):
         return isGoodJetCutBased(chain, index, cleaned = cleaned)
     elif selection == 'AN2017014':
         return isGoodJetAN2017014(chain, index, cleaned = cleaned)
+    elif selection == 'lightlepfakes' or selection == 'TTT':
+        return isGoodJetLeptonFakes(chain, index, cleaned = cleaned)
     else:
         return True

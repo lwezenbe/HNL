@@ -165,7 +165,7 @@ def isLooseTauHNL(chain, index, algo_iso = default_id_algo):
 
     if not isBaseTau(chain, index): return False
     if not tau_DMfinding[algo_iso](chain)[index]:   return False
-    if not tau_id_WP[(algo_iso, 'vloose')](chain)[index]:   return False
+    if not tau_id_WP[(algo_iso, 'vvvloose')](chain)[index]:   return False
     if not passedElectronDiscr(chain, index, algo_iso, 'loose'): return False
     if not passedMuonDiscr(chain, index, algo_iso, 'loose'): return False
     return True
@@ -269,3 +269,9 @@ def matchGenToReco(chain, l):
             min_dr = dr
         
     return matched_l
+
+#
+# Cone correction
+#
+def tauConeCorrection(chain, index, algo = None):
+    return 1.

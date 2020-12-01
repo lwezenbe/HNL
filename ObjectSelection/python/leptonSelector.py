@@ -37,9 +37,11 @@ from HNL.ObjectSelection.muonSelector import isFOMuon
 def isFOLightLepton(chain, index, algo = None):
 
     if chain._lFlavor[index] == 0:
+        # print 'is electron'
         return isFOElectron(chain, index, algo)
  
     if chain._lFlavor[index] == 1:
+        # print 'is muon', algo
         return isFOMuon(chain, index, algo)
 
     return False
@@ -67,7 +69,8 @@ from HNL.ObjectSelection.tauSelector import isLooseTau, isFOTau, isTightTau
 
 def isLooseLepton(chain, index, algo = None, tau_algo = None, analysis = 'HNL'):
    
-    if chain._lFlavor[index] != 2: return isLooseLightLepton(chain, index, algo) 
+    if chain._lFlavor[index] != 2: 
+        return isLooseLightLepton(chain, index, algo) 
     if chain._lFlavor[index] == 2: 
         return isLooseTau(chain, index, algo = tau_algo, analysis = analysis)
     return False
@@ -117,3 +120,14 @@ def isFakeLepton(chain, index):
     if chain._lFlavor[index] == 1: return isFakeMuon(chain, index)
     if chain._lFlavor[index] == 2: return isJetFakingTau(chain, index)
     return False
+
+#
+# Cone correction
+#
+from HNL.ObjectSelection.tauSelector import tauConeCorrection
+from HNL.ObjectSelection.electronSelector import electronConeCorrection
+from HNL.ObjectSelection.muonSelector import muonConeCorrection
+def coneCorrection(chain, index, algo = None):
+    if chain._lFlavor[index] == 0: return electronConeCorrection(chain, index, algo)
+    if chain._lFlavor[index] == 1: return muonConeCorrection(chain, index, algo)
+    if chain._lFlavor[index] == 2: return tauConeCorrection(chain, index, algo)

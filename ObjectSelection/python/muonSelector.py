@@ -8,6 +8,16 @@ def isBaseMuon(chain, index):
     if chain._lPt[index] <= 5:                   return False
     return True
 
+def slidingCutMuon(chain, index, lowpt, lowptwp, highpt, highptwp):
+    
+    slope = (highptwp - lowptwp)/(highpt-lowpt)
+    if chain._lPt[index] < lowpt:
+        return lowptwp
+    elif chain._lPt[index] > highptwp:
+        return highptwp
+    else:
+        return lowptwp + slope*(chain._lPt[index]-lowpt)
+
 #
 # Cut-based selection
 #
@@ -35,10 +45,6 @@ from HNL.ObjectSelection.bTagWP import slidingDeepFlavorThreshold, getBTagWP
 #
 # ewkino selection
 #
-def slidingCutEWKmu(chain, index, high, low):
-    slope = (high - low)/40.
-    return min(low, max(high, low + slope*(chain._lPt[index]-10.)))
-
 def isLooseMuonEwkino(chain, index):
     if chain._lFlavor[index] != 1: return False
     if(abs(chain._dxy[index])>= 0.05 or abs(chain._dz[index])>= 0.1 or chain._3dIPSig[index] >= 8): return False    
@@ -56,9 +62,9 @@ def isFOMuonEwkino(chain, index):
         looseWP = getBTagWP(chain.year, 'loose', 'Deep')
         mediumWP = getBTagWP(chain.year, 'medium', 'Deep')
         if chain.year == 2016:
-            if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutEWKmu(chain, index, looseWP/5., mediumWP/2.): return False       
+            if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutMuon(chain, index, 10., looseWP/1.5, 50., looseWP/5.): return False       
         else:
-            if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutEWKmu(chain, index, looseWP/5., looseWP/1.5): return False
+            if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutMuon(chain, index, 10., mediumWP/2., 50., looseWP/5.): return False
     return True
 
 def isTightMuonEwkino(chain, index):
@@ -137,29 +143,32 @@ def topPreselection(chain, index):
 def isLooseMuonTop(chain, index):
     if not topPreselection(chain, index):       return False
     if chain._leptonMvaTOP[index] <= 0.05:       return False
+
     return True
-   
+
+# Taken from Luka
+# https://github.com/wverbeke/ewkino/blob/tZq_new/objectSelection/MuonSelector.cc
+muon_top_FO_dfdict = { 2016 : 0.015, 2017 : 0.02, 2018 : 0.02}
+muon_top_FO_ptratiodict = { 2016 : 0.5, 2017 : 0.6, 2018 : 0.6}
+
 def isFOMuonTop(chain, index):
     if not isLooseMuonTop(chain, index):        return False
-    if chain._leptonMvaTOP[index] <= 0.65:       return False
+    if chain._ptRatio[index] < muon_top_FO_ptratiodict[chain.year]: return False
+    if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) > muon_top_FO_dfdict[chain.year]: return False
     return True
 
 def isTightMuonTop(chain, index):
     if not isFOMuonTop(chain, index):           return False
-    if chain._leptonMvaTOP[index] <= 0.9:       return False
+    # if chain._leptonMvaTOP[index] <= 0.9:       return False          #Tight leptonMVA
+    if chain._leptonMvaTOP[index] <= 0.65:       return False           #Medium leptonMVA
     return True
 
 #
 # Tu Thong's selection
 #
-def slidingCutTTT(chain, index, high, low):
-    
-    slope = (high - low)/20.
-    return min(low, max(high, low + slope*(chain._lPt[index]-20.)))
-
 def isLooseMuonTTT(chain, index):
     if chain._lFlavor[index] != 1:              return False
-    if chain._lPt[index]*(1+max(0., chain._miniIso[index]-0.4)) < 5: return False
+    if chain._lPt[index] < 5: return False
     if abs(chain._lEta[index]) > 2.4:           return False
     if abs(chain._dxy[index]) >= 0.05:          return False
     if abs(chain._dz[index]) >= 0.1:            return False
@@ -170,16 +179,23 @@ def isLooseMuonTTT(chain, index):
    
 def isFOMuonTTT(chain, index):
     if not isLooseMuonTTT(chain, index):        return False
-    if chain._lPt[index]*(1+max(0., chain._miniIso[index]-0.4)) < 10: return False
+    # print 'loose muon'
+    if chain._lPt[index] < 10: return False
+    # print 'pt < 10'
     if chain._leptonMvaTOP[index] <= 0.4:
+        # print 'mva < .4'
         if chain._ptRatio[index] < 0.45:        return False
-        # if chain._closestJetDeepFlavor[index] >= slidingCutTTT(chain, index, 0.025, 0.015): return False        
-        if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutTTT(chain, index, 0.025, 0.015): return False        
+        # print 'ptratio'
+        if chain.year == 2016:
+            # print (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]), slidingCutTTT(chain, index, 20., 0.02, 40., 0.015)
+            if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutMuon(chain, index, 20., 0.02, 40., 0.015): return False 
+        else:
+            if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutMuon(chain, index, 20., 0.025, 40., 0.015): return False 
     return True
 
 def isTightMuonTTT(chain, index):
     if not isLooseMuonTTT(chain, index):        return False
-    if chain._lPt[index]*(1+max(0., chain._miniIso[index]-0.4)) < 10: return False
+    if chain._lPt[index] < 10: return False
     if chain._leptonMvaTOP[index] <= 0.4:   return False 
     return True
 
@@ -230,7 +246,7 @@ def isTightMuon(chain, index, algo = None):
     if algo == 'cutbased':       return isTightMuonCutBased(chain, index)
     elif algo == 'leptonMVAttH':        return isTightMuonttH(chain, index)
     elif algo == 'leptonMVAtZq':        return isTightMuontZq(chain, index)
-    elif algo == 'leptonMVAtop':        return isFOMuonTop(chain, index)
+    elif algo == 'leptonMVAtop':        return isTightMuonTop(chain, index)
     elif algo == 'TTT':                 return isTightMuonTTT(chain, index)
     elif algo == 'ewkino':              return isTightMuonEwkino(chain, index)
     else:
@@ -242,3 +258,15 @@ def isTightMuon(chain, index, algo = None):
 #
 def isFakeMuon(chain, index):
     return not chain._lIsPrompt[index]
+
+#
+# Cone correction
+#
+def muonConeCorrection(chain, index, algo = None):
+    algo = checkAlgorithm(algo, chain)
+    if algo == 'cutbased':
+        return 1+max(0., chain._relIso[l]-0.1)
+    elif algo == 'TTT':
+        return 0.67/chain._ptRatio[index]
+    else:
+        return 0.8/chain._ptRatio[index]
