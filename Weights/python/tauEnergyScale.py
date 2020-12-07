@@ -9,8 +9,8 @@ YEARLIB = {2016 : '2016Legacy',
             2017: '2017ReReco',
             2018: '2018ReReco'}
 
-ALGOLIB = {'deeptauVSjets' : 'DeepTau2017v2p1VSjet',
-            'MVA2017v2'  :  'MVAoldDM2017v2' }
+ALGOLIB = {'HNL' : 'DeepTau2017v2p1VSjet',
+            'ewkino'  :  'MVAoldDM2017v2' }
 
 class TauEnergyScale:
     
