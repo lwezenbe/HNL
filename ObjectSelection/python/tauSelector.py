@@ -82,7 +82,6 @@ tau_DMfinding = {'MVA2017v2' : lambda c : c._decayModeFinding,
           #'deeptauVSjets' : lambda c : c._decayModeFindingDeepTau,
 }
 
-default_id_algo = 'deeptauVSjets'
 #Reference order since the working points are in a dictionary without order
 order_of_workingpoints = { None: 0, 'vvvloose' : 1, 'vvloose' : 2, 'vloose':3, 'loose': 4, 'medium' : 5, 'tight':6, 'vtight': 7, 'vvtight':8, 'vvvtight': 9}
 
@@ -159,84 +158,106 @@ def isBaseTau(chain, index):
 #
 # HNL selection
 #
-def isLooseTauHNL(chain, index, algo_iso = default_id_algo):
-    if algo_iso is None:
-        algo_iso = default_id_algo
-
+def isLooseTauHNL(chain, index):
     if not isBaseTau(chain, index): return False
-    if not tau_DMfinding[algo_iso](chain)[index]:   return False
-    if not tau_id_WP[(algo_iso, 'vvvloose')](chain)[index]:   return False
-    if not passedElectronDiscr(chain, index, algo_iso, 'loose'): return False
-    if not passedMuonDiscr(chain, index, algo_iso, 'loose'): return False
+    if not tau_DMfinding['deeptauVSjets'](chain)[index]:   return False
+    if not tau_id_WP[('deeptauVSjets', 'vvvloose')](chain)[index]:   return False
+    if not passedElectronDiscr(chain, index, 'deeptauVSjets', 'loose'): return False
+    if not passedMuonDiscr(chain, index, 'deeptauVSjets', 'loose'): return False
     return True
 
-def isFOTauHNL(chain, index, algo = default_id_algo):
-    if algo is None:
-        algo = default_id_algo
-    if not isLooseTauHNL(chain, index, algo):              return False
-    # if not tau_id_WP[(algo, 'medium')](chain)[index]:   return False
+def isFOTauHNL(chain, index):
+    if not isLooseTauHNL(chain, index):              return False
+    # if not tau_id_WP[('deeptauVSjets, 'medium')](chain)[index]:   return False
     return True
 
-def isTightTauHNL(chain, index, algo = default_id_algo): 
-    if algo is None:
-        algo = default_id_algo
-    if algo == 'gen_truth': 
-        return chain._tauGenStatus[index] == 5
-    else:
-        if not isFOTauHNL(chain, index, algo):              return False
-        if not tau_id_WP[(algo, 'medium')](chain)[index]:   return False
-        return True
+def isTightTauHNL(chain, index): 
+    if not isFOTauHNL(chain, index):              return False
+    if not tau_id_WP[('deeptauVSjets', 'medium')](chain)[index]:   return False
+    return True
 
 #
 # Ewkino selection (mainly for synchronization)
 #
-def isLooseTauEwkino(chain, index, algo_iso = default_id_algo):
-    if algo_iso is None:
-        algo_iso = 'MVA2017v2'
-    
+def isLooseTauEwkino(chain, index):
     if not isBaseTau(chain, index): return False
-    if not tau_DMfinding[algo_iso](chain)[index]:   return False
-    if not tau_id_WP[(algo_iso, 'loose')](chain)[index]:   return False
-    if not passedElectronDiscr(chain, index, algo_iso, 'loose'): return False
-    if not passedMuonDiscr(chain, index, algo_iso, 'loose'): return False
+    if not tau_DMfinding['MVA2017v2'](chain)[index]:   return False
+    if not tau_id_WP[('MVA2017v2', 'loose')](chain)[index]:   return False
+    if not passedElectronDiscr(chain, index, 'MVA2017v2', 'loose'): return False
+    if not passedMuonDiscr(chain, index, 'MVA2017v2', 'loose'): return False
     return True
 
-def isFOTauEwkino(chain, index, algo = default_id_algo):
-    if algo is None:
-        algo = 'MVA2017v2'
-    if not isLooseTauEwkino(chain, index, algo):              return False
+def isFOTauEwkino(chain, index):
+    if not isLooseTauEwkino(chain, index):              return False
     return True
 
-def isTightTauEwkino(chain, index, algo = default_id_algo): 
-    if algo is None:
-        algo = 'MVA2017v2'
-    if algo == 'gen_truth': 
-        return chain._tauGenStatus[index] == 5
-    else:
-        if not isFOTauEwkino(chain, index, algo):              return False
-        if not tau_id_WP[(algo, 'tight')](chain)[index]:   return False
-        return True
+def isTightTauEwkino(chain, index): 
+    if not isFOTauEwkino(chain, index):              return False
+    if not tau_id_WP[('MVA2017v2', 'tight')](chain)[index]:   return False
+    return True
 
 #
 # General functions
 #
-def isLooseTau(chain, index, algo = None, analysis = 'HNL'):
-    if analysis == 'ewkino':
-        return isLooseTauEwkino(chain, index, algo)
+def isLooseTau(chain, index, algo):
+    if algo == 'HNL':
+        return isLooseTauHNL(chain, index)
+    elif algo == 'ewkino':
+        return isLooseTauEwkino(chain, index)
     else:
-        return isLooseTauHNL(chain, index, algo)
+        raise RuntimeError('Wrong input for "algo" in isLooseTau')
 
-def isFOTau(chain, index, algo = None, analysis = 'HNL'):
-    if analysis == 'ewkino':
-        return isFOTauEwkino(chain, index, algo)
+def isFOTau(chain, index, algo):
+    if algo == 'HNL':
+        return isFOTauHNL(chain, index)
+    elif algo == 'ewkino':
+        return isFOTauEwkino(chain, index)
     else:
-        return isFOTauHNL(chain, index, algo)
+        raise RuntimeError('Wrong input for "algo" in isFOTau')
 
-def isTightTau(chain, index, algo = None, analysis = 'HNL'):
-    if analysis == 'ewkino':
-        return isTightTauEwkino(chain, index, algo)
+def isTightTau(chain, index, algo):
+    if algo == 'HNL':
+        return isTightTauHNL(chain, index)
+    elif algo == 'ewkino':
+        return isTightTauEwkino(chain, index)
     else:
-        return isTightTauHNL(chain, index, algo)
+        raise RuntimeError('Wrong input for "algo" in isTightTau')
+
+from HNL.ObjectSelection.objectSelection import objectSelectionCollection
+def checkTauAlgorithm(chain, algo):
+    if algo is None:
+        try:
+            chain.obj_sel
+        except:
+            #Initiate default object selection
+            chain.obj_sel = objectSelectionCollection()
+        return chain.obj_sel['tau_algo']
+    else:
+        return algo
+
+def checkTauWP(chain, wp):
+    if wp is None:
+        try:
+            chain.obj_sel
+        except:
+            #Initiate default object selection
+            chain.obj_sel = objectSelectionCollection()
+        return chain.obj_sel['tau_wp']
+    else:
+        return wp
+
+def isGoodTau(chain, index, workingpoint = None, algo = None):
+    workingpoint = checkTauWP(chain, workingpoint)
+    algo = checkTauAlgorithm(chain, algo)
+
+    if workingpoint == 'loose':
+        return isLooseTau(chain, index, algo)
+    elif workingpoint == 'FO':
+        return isFOTau(chain, index, algo)
+    elif workingpoint == 'tight':
+        return isTightTau(chain, index, algo)
+    else:
+        raise RuntimeError("Undefined working point for tau")
 
 def isJetFakingTau(chain, index):
     if chain._tauGenStatus[index] == 6: return True

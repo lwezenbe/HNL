@@ -32,7 +32,7 @@ class ZZCRfilter(FilterObject):
 
     def passedFilter(self, cutter):
         if not self.initEvent(cutter):                                                 return False
-        if not cutter.cut(not bVeto(self.chain, self.selection, cleaned=False, selection = self.selection), 'b-veto'):                 return False
+        if not cutter.cut(not bVeto(self.chain, 'Deep', cleaned=False, selection = self.selection), 'b-veto'):                 return False
 
         #Relaxed
         if not cutter.cut(massDiff(self.chain.Mll_Z1, MZ) < 15, 'First Z ok'):                                                           return False
@@ -107,6 +107,9 @@ class TauFakeEnrichedDY(FilterObject):
         # if not cutter.cut(self.chain._tauGenStatus[self.chain.l_indices[2]] == 6, 'fake tau'):    return False
         return True
 
+    def getFakeIndex(self):
+        return 2
+
 class TauFakeEnrichedTT(FilterObject):
     
     def __init__(self, name, chain, new_chain, selection, is_reco_level=True, event_categorization = None):
@@ -133,7 +136,7 @@ class TauFakeEnrichedTT(FilterObject):
         # print 'os'
         # print self.selection
         # print nBjets(self.chain, 'CSV', 'tight', cleaned = True, selection = self.selection)
-        if nBjets(self.chain, 'CSV', 'tight', cleaned = True, selection = self.selection) < 1:      return False
+        if nBjets(self.chain, 'Deep', 'tight', cleaned = True, selection = self.selection) < 1:      return False
 
         # print 'bjets'
         l1Vec = getFourVec(self.new_chain.l_pt[0], self.new_chain.l_eta[0], self.new_chain.l_phi[0], self.new_chain.l_e[0])
@@ -148,10 +151,62 @@ class TauFakeEnrichedTT(FilterObject):
         # if not cutter.cut(self.chain._tauGenStatus[self.chain.l_indices[2]] == 6, 'fake tau'):    return False
         return True
 
+    def getFakeIndex(self):
+        return 2
+
+from HNL.ObjectSelection.leptonSelector import isGoodLepton, isFakeLepton
+from HNL.EventSelection.eventSelectionTools import selectJets
+class LightLeptonFakeMeasurementRegion(FilterObject):
+    def __init__(self, name, chain, new_chain, selection, is_reco_level=True, event_categorization = None):
+        super(LightLeptonFakeMeasurementRegion, self).__init__(name, chain, new_chain, selection, is_reco_level=True, event_categorization = None)
+
+    def initEvent(self, cutter):
+        self.chain.obj_sel['ele_wp'] = 'loose'
+        self.chain.obj_sel['mu_wp'] = 'loose'
+        self.chain.obj_sel['notau'] = True
+        return super(LightLeptonFakeMeasurementRegion, self).initEvent(1, cutter, sort_leptons = False)
+
+    def passedFilter(self, cutter, only_muons = False, only_electrons = False, require_jets = False):
+        if not cutter.cut(self.chain._passMETFilters, 'pass met filters'): return False
+        # print 'pass met filters'
+
+        #Select exactly one lepton and veto a second loose lepton
+        if not self.initEvent(cutter):                                return False
+        # print 'init event'
+        if not cutter.cut(isGoodLightLepton(self.chain, self.chain.l_indices[0], 'FO'), 'is FO lepton'): return False
+        # print 'is FO lepton'
+
+        #Select correct lepton flavor
+        if only_muons and only_electrons:
+            raise RuntimeError("passedFilter in LightLeptonFakeRateMeasurementRegion can not have both only muons and only electrons at the same time")
+        if only_muons and not cutter.cut(self.chain.l_flavor[0] == 1, 'is muon'): return False
+        # print 'passed muon', only_muons
+        if only_electrons and not cutter.cut(self.chain.l_flavor[0] == 0, 'is electron'): return False
+        # print 'passed electron', only_electrons
+
+        #Require the presence of at least one good jet if option is set to True
+        if require_jets:
+            jet_indices = selectJets(self.chain, cleaned=True, selection='lightlepfakes')
+            if len(jet_indices) < 1:      return False
+            
+            max_delta_r = 0
+            for jet in jet_indices:
+                delta_r = deltaR(self.chain._jetEta[jet], self.chain.l_eta[0], self.chain._jetPhi[jet], self.chain.l_phi[0])
+                if delta_r > max_delta_r:
+                    max_delta_r = delta_r
+            if not cutter.cut(max_delta_r > 0.7, 'contains jet'): return False
+        # print 'has jet'
+
+        applyConeCorrection(self.chain, self.new_chain)
+
+        return True
+
+    def getFakeIndex(self):
+        return 0
+
 #
 # General Closure Test Selection class
 #
-from HNL.ObjectSelection.leptonSelector import isTightLepton, isFakeLepton
 class ClosureTestSelection(FilterObject):
     def __init__(self, name, chain, new_chain, selection, flavor_of_interest, is_reco_level=True, event_categorization = None):
         super(ClosureTestSelection, self).__init__(name, chain, new_chain, selection, is_reco_level=True, event_categorization = None)
@@ -176,7 +231,7 @@ class ClosureTestSelection(FilterObject):
                     continue
 
             self.loose_leptons_of_interest.append(l)
-            if isTightLepton(self.chain, self.new_chain.l_indices[l], algo = self.chain.obj_sel['light_algo'], tau_algo = self.chain.obj_sel['tau_algo']): 
+            if isGoodLepton(self.chain, self.new_chain.l_indices[l], 'tight'): 
                 is_tight_lep.append(True)
             else:
                 is_tight_lep.append(False)
@@ -237,9 +292,11 @@ class TauClosureTest(ClosureTestSelection):
         if not cutter.cut(self.chain._met < 50, 'MET>50'): return False
 
         if not cutter.cut(self.hasCorrectNumberOfFakes(), 'correct number of fakes'): return False
+
         return True   
 
 from HNL.EventSelection.signalRegionSelector import SignalRegionSelector
+from HNL.EventSelection.eventSelectionTools import applyConeCorrection
 class ElectronClosureTest(ClosureTestSelection):
     def __init__(self, name, chain, new_chain, selection, is_reco_level=True, event_categorization = None):
         super(ElectronClosureTest, self).__init__(name, chain, new_chain, selection, 0, is_reco_level=True, event_categorization = None)
@@ -253,6 +310,7 @@ class ElectronClosureTest(ClosureTestSelection):
 
     def passedFilter(self, cutter):
         if not self.initEvent(cutter):                                return False
+        applyConeCorrection(self.chain, self.new_chain)
         if self.new_chain.l_flavor.count(0) == 0:                                                 return False
         if not cutter.cut(containsOSSF(self.chain), 'OSSF present'):                                     return False
         # if not self.signalRegionSelector.passBaseCuts(chain, new_chain, cutter):        return False
@@ -273,6 +331,7 @@ class MuonClosureTest(ClosureTestSelection):
 
     def passedFilter(self, cutter):
         if not self.initEvent(cutter):                                return False
+        applyConeCorrection(self.chain, self.new_chain) 
         if self.new_chain.l_flavor.count(1) == 0:                                                 return False
         # if not cutter.cut(containsOSSF(self.chain), 'OSSF present'):                                     return False
         # if not self.signalRegionSelector.passBaseCuts(chain, new_chain, cutter):        return False
@@ -306,5 +365,4 @@ class MuonClosureTest(ClosureTestSelection):
 
         # print is_fake_lep, [t for t in is_fake_lep if t]
         # if len([t for t in is_fake_lep if t]) < 1: return False
-
         return True

@@ -22,7 +22,7 @@ def isBaseElectron(chain, index):
 # We dont use electrons that fall within dr 0.05 of a loose muon
 #
 from HNL.ObjectSelection.muonSelector import isLooseMuon
-def isCleanFromMuons(chain, index, algo = None):
+def isCleanFromMuons(chain, index, algo):
     
     for mu in xrange(chain._nMu):
         if not isLooseMuon(chain, mu, algo):  continue
@@ -71,7 +71,7 @@ def cutBasedMVA(chain, index, wp, pt):
 def isLooseElectronCutBased(chain, index):
    
     if not isBaseElectron(chain, index):        return False 
-    if not isCleanFromMuons(chain, index):      return False
+    if not isCleanFromMuons(chain, index, 'cutbased'):      return False
     if abs(chain._dxy[index]) >= 0.05:          return False
     if abs(chain._dz[index]) >= 0.1:            return False
     if chain._relIso[index] >= 0.6:             return False
@@ -104,7 +104,7 @@ def isLooseElectronEwkino(chain, index):
     if chain._miniIso[index] >= 0.4:    return False
     if chain._lPt[index] <= 7 or abs(chain._lEta[index]) >= 2.5:       return False
     if chain._lElectronMissingHits[index] > 1: return False
-    if not isCleanFromMuons(chain, index):      return False
+    if not isCleanFromMuons(chain, index, 'ewkino'):      return False
     return True #isLooseMuon From heavyNeutrino already included in basic muon cuts
 
 def isFOElectronEwkino(chain, index):
@@ -203,7 +203,7 @@ def isLooseElectronttH(chain, index):
     
     if abs(chain._lEta[index]) >= 2.5:          return False
     if chain._lPt[index] < 7:                  return False
-    if not isCleanFromMuons(chain, index):      return False
+    if not isCleanFromMuons(chain, index, 'leptonMVAttH'):      return False
     if abs(chain._dxy[index]) >= 0.05:          return False
     if abs(chain._dz[index]) >= 0.1:            return False
     if chain._miniIso[index] >= 0.4:                    return False
@@ -240,7 +240,7 @@ def isLooseElectrontZq(chain, index):
     
     if abs(chain._lEta[index]) >= 2.5:          return False
     if chain._lPt[index] < 7:                  return False
-    if not isCleanFromMuons(chain, index):      return False
+    if not isCleanFromMuons(chain, index, 'leptonMVAtZq'):      return False
     if abs(chain._dxy[index]) >= 0.05:          return False
     if abs(chain._dz[index]) >= 0.1:            return False
     if chain._miniIso[index] >= 0.4:                    return False
@@ -275,7 +275,7 @@ def isTightElectrontZq(chain, index):
 #
 def topPreselection(chain, index):
     if not isBaseElectron(chain, index):        return False
-    if not isCleanFromMuons(chain, index):      return False
+    if not isCleanFromMuons(chain, index, 'leptonMVAtop'):      return False
     if abs(chain._dxy[index]) >= 0.05:          return False
     if abs(chain._dz[index]) >= 0.1:            return False
     if chain._miniIso[index] >= 0.4:            return False
@@ -321,7 +321,7 @@ def isTightElectronTop(chain, index):
 #
 def isLooseElectronTTT(chain, index):
     if chain._lFlavor[index] != 0:              return False
-    if not isCleanFromMuons(chain, index):      return False
+    if not isCleanFromMuons(chain, index, 'TTT'):      return False
     if chain._lPt[index] < 5: return False
     if abs(chain._lEta[index]) > 2.5: return False
     if abs(chain._dxy[index]) >= 0.05:          return False
@@ -370,21 +370,7 @@ def isTightElectronTTT(chain, index):
 #
 # General functions for selection
 #
-from HNL.ObjectSelection.objectSelection import objectSelectionCollection
-def checkAlgorithm(algo, chain):
-    if algo is None:
-        try:
-            chain.obj_sel
-        except:
-            #Initiate default object selection
-            chain.obj_sel = objectSelectionCollection()
-        return chain.obj_sel['light_algo']
-    else:
-        return algo
-
-def isLooseElectron(chain, index, algo = None):
-    algo = checkAlgorithm(algo, chain)
-
+def isLooseElectron(chain, index, algo):
     if algo == 'cutbased':              return isLooseElectronCutBased(chain, index)
     elif algo == 'leptonMVAttH':        return isLooseElectronttH(chain, index)
     elif algo == 'leptonMVAtZq':        return isLooseElectrontZq(chain, index)
@@ -395,9 +381,7 @@ def isLooseElectron(chain, index, algo = None):
         print 'Wrong input for "algo" in isLooseElectron'
         return False
 
-def isFOElectron(chain, index, algo = None):
-    algo = checkAlgorithm(algo, chain)
-
+def isFOElectron(chain, index, algo):
     if algo == 'cutbased':              return isFOElectronCutBased(chain, index)
     elif algo == 'leptonMVAttH':        return isFOElectronttH(chain, index)
     elif algo == 'leptonMVAtZq':        return isFOElectrontZq(chain, index)
@@ -408,9 +392,7 @@ def isFOElectron(chain, index, algo = None):
         print 'Wrong input for "algo" in isFOElectron'
         return False
 
-def isTightElectron(chain, index, algo = None):
-    algo = checkAlgorithm(algo, chain)
-
+def isTightElectron(chain, index, algo):
     if algo == 'cutbased':              return isTightElectronCutBased(chain, index)
     elif algo == 'leptonMVAttH':        return isTightElectronttH(chain, index)
     elif algo == 'leptonMVAtZq':        return isTightElectrontZq(chain, index)
@@ -420,6 +402,45 @@ def isTightElectron(chain, index, algo = None):
     else:
         print 'Wrong input for "algo" in isTightElectron'
         return False
+
+from HNL.ObjectSelection.objectSelection import objectSelectionCollection
+def checkElectronAlgorithm(chain, algo):
+    if algo is None:
+        try:
+            chain.obj_sel
+        except:
+            #Initiate default object selection
+            chain.obj_sel = objectSelectionCollection()
+        return chain.obj_sel['light_algo']
+    else:
+        return algo
+
+def checkElectronWP(chain, wp):
+    if wp is None:
+        try:
+            chain.obj_sel
+        except:
+            #Initiate default object selection
+            chain.obj_sel = objectSelectionCollection()
+        return chain.obj_sel['ele_wp']
+    else:
+        return wp
+
+#
+# algo is only used in the isGoodLeptonCustom function, in most cases this is not used 
+# except when you specifically use it. By doing this, we make sure algo is centrally defined
+# and reduce the introduction of a bug due to inconsistent use of algo
+#
+def isGoodElectron(chain, index, workingpoint = None, algo = None):
+    workingpoint = checkElectronWP(chain, workingpoint)
+    algo = checkElectronAlgorithm(chain, algo)
+
+    if workingpoint == 'loose':
+        return isLooseElectron(chain, index, algo)
+    elif workingpoint == 'FO':
+        return isFOElectron(chain, index, algo)
+    elif workingpoint == 'tight':
+        return isTightElectron(chain, index, algo)
 
 #
 # Check for fakes
@@ -431,7 +452,7 @@ def isFakeElectron(chain, index):
 # Cone correction
 #
 def electronConeCorrection(chain, index, algo = None):
-    algo = checkAlgorithm(algo, chain)
+    algo = checkElectronAlgorithm(chain, algo)
     if algo == 'cutbased':
         return 1+max(0., chain._relIso[l]-0.1)
     elif algo == 'TTT':

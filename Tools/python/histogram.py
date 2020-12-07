@@ -62,17 +62,22 @@ class Histogram:
         else: xval = var
         self.hist.Fill(xval, weight)
 
-    def fill2D(self, chain, weight):
+    def fill2D(self, chain, weight, index = None):
         if self.var is None:
             print "\033[93m !Warning! \033[0m This histogram was loaded from a root file, the variable to fill is not known at the moment. Histogram will not be filled."
             return
 
-        if self.overflow:
-            xval = min(max(self.hist.GetXaxis().GetBinCenter(1), self.var(chain)[0]), self.hist.GetXaxis().GetBinCenter(self.hist.GetXaxis().GetLast()))
-            yval = min(max(self.hist.GetYaxis().GetBinCenter(1), self.var(chain)[1]), self.hist.GetYaxis().GetBinCenter(self.hist.GetYaxis().GetLast()))
+        if index is not None:
+            var = self.var(chain, index)
         else:
-            xval = self.var(chain)[0]
-            yval = self.var(chain)[1]
+            var = self.var(chain)
+
+        if self.overflow:
+            xval = min(max(self.hist.GetXaxis().GetBinCenter(1), var[0]), self.hist.GetXaxis().GetBinCenter(self.hist.GetXaxis().GetLast()))
+            yval = min(max(self.hist.GetYaxis().GetBinCenter(1), var[1]), self.hist.GetYaxis().GetBinCenter(self.hist.GetYaxis().GetLast()))
+        else:
+            xval = var[0]
+            yval = var[1]
 
         self.hist.Fill(xval, yval, weight)
 
@@ -82,7 +87,7 @@ class Histogram:
             return
 
         if self.isTH2:
-            self.fill2D(chain, weight)
+            self.fill2D(chain, weight, index)
         else:
             self.fill1D(chain, weight, index)
 

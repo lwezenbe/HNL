@@ -10,8 +10,7 @@
 # Imports
 #
 import numpy as np
-from HNL.ObjectSelection.leptonSelector import isFOLepton
-from HNL.ObjectSelection.leptonSelector import isGoodLepton, isGoodLeptonTycho, isFakeLepton
+from HNL.ObjectSelection.leptonSelector import isGoodLepton, isFakeLepton
 from HNL.ObjectSelection.leptonSelector import isGoodGenLepton
 from HNL.ObjectSelection.jetSelector import isGoodJet, isBJet
 from HNL.Tools.helpers import getFourVec, deltaPhi
@@ -55,18 +54,18 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
     collection = chain._nL if not chain.obj_sel['notau'] else chain._nLight
     chain.leptons = []
     for l in xrange(collection):
+        # print l, chain._lFlavor[l]
         if chain._lFlavor[l] == 0: workingpoint = chain.obj_sel['ele_wp']
         elif chain._lFlavor[l] == 1: workingpoint = chain.obj_sel['mu_wp']
         elif chain._lFlavor[l] == 2: workingpoint = chain.obj_sel['tau_wp']
         else: raise RuntimeError('In selectLeptonsGeneral: flavor provided is neither an electron, muon or tau')
     
-        if isGoodLepton(chain, l, algo=chain.obj_sel['light_algo'], tau_algo=chain.obj_sel['tau_algo'], workingpoint=workingpoint, analysis = chain.obj_sel['analysis']):
+        if isGoodLepton(chain, l):
             chain.leptons.append((chain._lPt[l], l))
 
     if cutter is not None:
-        cutter.cut(len(chain.leptons) > 0, 'at_least_1_lep')
-        cutter.cut(len(chain.leptons) > 1, 'at_least_2_lep')
-        cutter.cut(len(chain.leptons) > 2, 'at_least_3_lep')
+        cutter.cut(len(chain.leptons) >= nL, 'at_least_'+str(nL)+'_lep')
+    # print chain.leptons
     if len(chain.leptons) != nL:  return False
 
     tes = TauEnergyScale(chain.year, chain.obj_sel['tau_algo'])
@@ -95,7 +94,7 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         new_chain.l_phi[i] = chain._lPhi[ptAndIndex[i][1]]
         new_chain.l_e[i] = chain._lE[ptAndIndex[i][1]]
         new_chain.l_charge[i] = chain._lCharge[ptAndIndex[i][1]]
-        new_chain.l_istight[i] = isGoodLepton(chain, ptAndIndex[i][1], algo=chain.obj_sel['light_algo'], tau_algo=chain.obj_sel['tau_algo'], workingpoint='tight', analysis = chain.obj_sel['analysis'])
+        new_chain.l_istight[i] = isGoodLepton(chain, ptAndIndex[i][1], 'tight')
         new_chain.l_isfake[i] = isFakeLepton(chain, ptAndIndex[i][1])
         
         #Apply tau energy scale
@@ -469,6 +468,12 @@ def calculateFourLepVariables(chain, new_chain):
 
 #################################################
 
+def selectJets(chain, cleaned = True, selection = None):
+    jet_indices = []
+    for jet in xrange(chain._nJets):
+        if isGoodJet(chain, jet, cleaned=cleaned, selection = selection): jet_indices.append(jet)
+    return jet_indices
+
 def nBjets(chain, algo, wp, cleaned = True, selection = None):
     nbjets = 0
     for jet in xrange(chain._nJets):
@@ -480,14 +485,14 @@ def bVeto(chain, algo, cleaned = True, selection = None):
         if isBJet(chain, jet, algo, 'loose', cleaned=cleaned, selection = selection): return True    
     return False
 
-def fourthFOVeto(chain, light_lep_selection = None, tau_selection = None, no_tau = False):
+def fourthFOVeto(chain, no_tau = False):
     if no_tau: collection = chain._nLight 
     else:
         collection = chain._nL
 
     for lepton in xrange(collection):
         if lepton in chain.l_indices: continue
-        if isFOLepton(chain, lepton, light_lep_selection, tau_selection): return True
+        if isGoodLepton(chain, lepton, 'FO'): return True
     return False
 
 from HNL.EventSelection.eventCategorization import CATEGORY_FROM_NAME
@@ -588,6 +593,16 @@ def calcLT(chain, new_chain, is_reco_level = True):
     if is_reco_level:   LT += chain._met
     else:               LT += chain._gen_met
     return LT
+
+#
+# Functions that change some values in the tree
+#
+from HNL.ObjectSelection.leptonSelector import coneCorrection
+def applyConeCorrection(chain, new_chain, light_algo = None, tau_algo = None, analysis = None):
+    for i, chain_index in enumerate(new_chain.l_indices):
+        if isGoodLepton(chain, chain_index, workingpoint = 'tight'):
+            new_chain.l_pt[i] *= coneCorrection(chain, chain_index, light_algo)
+            new_chain.l_e[i] *= coneCorrection(chain, chain_index, light_algo)
 
 
 #

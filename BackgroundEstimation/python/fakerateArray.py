@@ -15,9 +15,9 @@ class FakerateArray:
         self.bin_collection[bin_name] = condition
         self.fakerates[bin_name] = FakeRate(self.name, self.var, self.var_tex, self.path, self.bins, subdirs = [bin_name])
 
-    def fillFakeRates(self, chain, weight, passed):
+    def fillFakeRates(self, chain, weight, passed, index = None):
         for b in self.bin_collection:
-            if self.bin_collection[b](chain): self.fakerates[b].fill(chain, weight, passed)
+            if self.bin_collection[b](chain): self.fakerates[b].fill(chain, weight, passed, index)
 
     def writeFakeRates(self, append = False, name=None):
         for i, b in enumerate(self.fakerates):
@@ -37,28 +37,39 @@ def createFakeRatesWithJetBins(name, var, var_tex, path, bins = None):
     return fr_array
 
 import os
-def loadFakeRatesWithJetBins(name, var, var_tex, path_base):
+def loadFakeRatesWithJetBins(name, var, var_tex, path_base, flavor):
     fr_arrays = {}
-    print os.path.join(path_base, 'TauFakesDY', 'DY', 'events.root')
-    fr_arrays['TauFakesDY'] = createFakeRatesWithJetBins(name, var, var_tex, os.path.join(path_base, 'TauFakesDY', 'DY', 'events.root'), bins = None)
-    fr_arrays['TauFakesTT'] = createFakeRatesWithJetBins(name, var, var_tex, os.path.join(path_base, 'TauFakesTT', 'TT', 'events.root'), bins = None)
+    if flavor == 'tau':
+        fr_arrays['TauFakesDY'] = createFakeRatesWithJetBins(name, var, var_tex, os.path.join(path_base, 'TauFakesDY', 'DY', 'events.root'), bins = None)
+        fr_arrays['TauFakesTT'] = createFakeRatesWithJetBins(name, var, var_tex, os.path.join(path_base, 'TauFakesTT', 'TT', 'events.root'), bins = None)
+    elif flavor == 'e':
+        fr_arrays['LightLeptonFakes'] = createFakeRatesWithJetBins(name, var, var_tex, os.path.join(path_base, 'LightLeptonFakes', 'QCDem', 'events.root'), bins = None)
+    else:
+        fr_arrays['LightLeptonFakes'] = createFakeRatesWithJetBins(name, var, var_tex, os.path.join(path_base, 'LightLeptonFakes', 'QCDmu', 'events.root'), bins = None)
     return fr_arrays
 
 def readFakeRatesWithJetBins(fr_arrays, chain, flavor, region, split_in_njets):
-    if region == 'TauFakesDY' or region == 'TauFakesTT':
-        if split_in_njets:
-            if chain.njets == 0:    return fr_arrays[region].getFakeRate('0jets').returnFakeWeight(chain, flavor)
-            else:                   return fr_arrays[region].getFakeRate('njets').returnFakeWeight(chain, flavor)
+    if flavor == 2:
+        if region == 'TauFakesDY' or region == 'TauFakesTT':
+            if split_in_njets:
+                if chain.njets == 0:    return fr_arrays[region].getFakeRate('0jets').returnFakeWeight(chain, flavor)
+                else:                   return fr_arrays[region].getFakeRate('njets').returnFakeWeight(chain, flavor)
+            else:
+                return fr_arrays[region].getFakeRate('total').returnFakeWeight(chain, flavor)
+        elif region == 'Mix':
+            if split_in_njets:
+                if chain.njets == 0:    return fr_arrays['TauFakesDY'].getFakeRate('0jets').returnFakeWeight(chain, flavor)
+                else:                   return fr_arrays['TauFakesTT'].getFakeRate('njets').returnFakeWeight(chain, flavor)
+            else:
+                raise RuntimeError("Invalid input for 'split_in_njets'")    
         else:
-            return fr_arrays[region].getFakeRate('total').returnFakeWeight(chain, flavor)
-    elif region == 'Mix':
-        if split_in_njets:
-            if chain.njets == 0:    return fr_arrays['TauFakesDY'].getFakeRate('0jets').returnFakeWeight(chain, flavor)
-            else:                   return fr_arrays['TauFakesTT'].getFakeRate('njets').returnFakeWeight(chain, flavor)
-        else:
-            raise RuntimeError("Invalid input for 'split_in_njets'")    
+            raise RuntimeError("Invalid input for 'region'")
     else:
-        raise RuntimeError("Invalid input for 'region'")
+        if split_in_njets:
+            if chain.njets == 0:    return fr_arrays['LightLeptonFakes'].getFakeRate('0jets').returnFakeWeight(chain, flavor)
+            else:                   return fr_arrays['LightLeptonFakes'].getFakeRate('njets').returnFakeWeight(chain, flavor)
+        else:
+            return fr_arrays['LightLeptonFakes'].getFakeRate('total').returnFakeWeight(chain, flavor)
 
 
 

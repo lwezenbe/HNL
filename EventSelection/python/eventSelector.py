@@ -1,6 +1,6 @@
 #Combine signalRegionSelector and controlRegionSelector here
 from HNL.EventSelection.signalRegionSelector import SignalRegionSelector
-from HNL.EventSelection.controlRegionSelector import ZZCRfilter, WZCRfilter, ConversionCRfilter, TauFakeEnrichedDY, TauFakeEnrichedTT, TauClosureTest, ElectronClosureTest, MuonClosureTest
+from HNL.EventSelection.controlRegionSelector import ZZCRfilter, WZCRfilter, ConversionCRfilter, TauFakeEnrichedDY, TauFakeEnrichedTT, TauClosureTest, ElectronClosureTest, MuonClosureTest, LightLeptonFakeMeasurementRegion
 
 class EventSelector:
 
@@ -22,6 +22,8 @@ class EventSelector:
             self.selector = TauFakeEnrichedDY(name, chain, new_chain, selection, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'TauFakesTT':
             self.selector = TauFakeEnrichedTT(name, chain, new_chain, selection, is_reco_level=is_reco_level, event_categorization = event_categorization)
+        elif self.name == 'LightLeptonFakes':
+            self.selector = LightLeptonFakeMeasurementRegion(name, chain, new_chain, selection, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'TauCT':
             self.selector = TauClosureTest(name, chain, new_chain, selection, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'ElectronCT':

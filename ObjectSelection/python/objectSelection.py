@@ -1,4 +1,4 @@
-default_tau_algo = 'deeptauVSjets'
+default_tau_algo = 'HNL'
 default_light_algo = 'leptonMVAtop'
 default_tau_wp = 'tight'
 default_ele_wp = 'tight'
@@ -18,3 +18,18 @@ def objectSelectionCollection(tau_algo = default_tau_algo, light_algo = default_
     object_selection_collection["analysis"] = analysis
 
     return object_selection_collection
+
+def getObjectSelection(selection):
+    object_selection = None
+    if selection == 'MVA' or selection == 'cutbased':
+        object_selection = objectSelectionCollection(tau_algo='HNL', light_algo='leptonMVAtop', notau=False, analysis='HNL')          
+    elif selection == 'AN2017014':
+        object_selection = objectSelectionCollection(tau_algo='HNL', light_algo='cutbased', notau=True, analysis='HNL')          
+    elif selection == 'ewkino':
+        object_selection = objectSelectionCollection(tau_algo='ewkino', light_algo='ewkino', analysis='ewkino')      
+    elif selection == 'TTT':
+        object_selection = objectSelectionCollection(tau_algo='HNL', light_algo='TTT', analysis='HNL')
+    else:
+        print 'No valid selection parameter for object selection given, using defaults'
+
+    return object_selection

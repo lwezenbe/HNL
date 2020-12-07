@@ -8,7 +8,7 @@ default_jet_selection = 'MVA'
 #
 def isCleanFromLeptons(chain, index):
     for l in xrange(chain._nL):
-        if not isGoodLepton(chain, l, chain.obj_sel['light_algo'], chain.obj_sel['tau_algo'], 'loose', analysis = chain.obj_sel['analysis']): continue
+        if not isGoodLepton(chain, l, 'loose'): continue
         if deltaR(chain._lEta[l], chain._jetEta[index], chain._lPhi[l], chain._jetPhi[index]) < 0.4: return False
     return True
 
@@ -30,7 +30,8 @@ def isGoodJetCutBased(chain, index, cleaned = True):
     return True
 
 def isGoodJetLeptonFakes(chain, index, cleaned = True):
-    if chain._jetSmearedPt[index] < 30:        return False
+    # if chain._jetSmearedPt[index] < 30:        return False
+    if chain._jetPt[index] < 30:        return False
     if abs(chain._jetEta[index]) > 2.4: return False
     if not chain._jetIsTight[index]:    return False
     if cleaned and not isCleanFromLeptons(chain, index):       return False

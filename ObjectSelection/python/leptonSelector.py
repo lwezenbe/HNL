@@ -13,104 +13,30 @@ def isGoodGenLepton(chain, index):
         return False
 
 #
-# Loose WP for light leptons
+# Selector for light leptons
 #
-from HNL.ObjectSelection.electronSelector import isLooseElectron
-from HNL.ObjectSelection.muonSelector import isLooseMuon
+from HNL.ObjectSelection.electronSelector import isGoodElectron
+from HNL.ObjectSelection.muonSelector import isGoodMuon
+from HNL.ObjectSelection.tauSelector import isGoodTau
 
-def isLooseLightLepton(chain, index, algo = None):
-    
+def isGoodLightLepton(chain, index, workingpoint = None):
     if chain._lFlavor[index] == 0:
-        return isLooseElectron(chain, index, algo)
- 
-    if chain._lFlavor[index] == 1:
-        return isLooseMuon(chain, index, algo)
-
-    return False
-
-#
-# FO WP for light leptons
-#
-from HNL.ObjectSelection.electronSelector import isFOElectron
-from HNL.ObjectSelection.muonSelector import isFOMuon
-
-def isFOLightLepton(chain, index, algo = None):
-
-    if chain._lFlavor[index] == 0:
-        # print 'is electron'
-        return isFOElectron(chain, index, algo)
- 
-    if chain._lFlavor[index] == 1:
-        # print 'is muon', algo
-        return isFOMuon(chain, index, algo)
-
-    return False
-
-#
-# Tight WP for light leptons
-#
-from HNL.ObjectSelection.electronSelector import isTightElectron
-from HNL.ObjectSelection.muonSelector import isTightMuon
-
-def isTightLightLepton(chain, index, algo = None):
-    
-    if chain._lFlavor[index] == 0:
-        return isTightElectron(chain, index, algo)
- 
-    if chain._lFlavor[index] == 1:
-        return isTightMuon(chain, index, algo)
-
-    return False
-
-#
-# Loose WP for leptons
-#
-from HNL.ObjectSelection.tauSelector import isLooseTau, isFOTau, isTightTau
-
-def isLooseLepton(chain, index, algo = None, tau_algo = None, analysis = 'HNL'):
-   
-    if chain._lFlavor[index] != 2: 
-        return isLooseLightLepton(chain, index, algo) 
-    if chain._lFlavor[index] == 2: 
-        return isLooseTau(chain, index, algo = tau_algo, analysis = analysis)
-    return False
-
-#
-# FO WP for leptons
-#
-def isFOLepton(chain, index, algo = None, tau_algo = None, analysis = 'HNL'):
-    
-    if chain._lFlavor[index] != 2: return isFOLightLepton(chain, index, algo)
-    if chain._lFlavor[index] == 2: 
-        return isFOTau(chain, index, algo = tau_algo, analysis = analysis)
-    return False
-
-#
-# Tight WP for leptons
-#
-def isTightLepton(chain, index, algo = None, tau_algo = None, analysis = 'HNL'):
-    
-    if chain._lFlavor[index] != 2: return isTightLightLepton(chain, index, algo)
-    if chain._lFlavor[index] == 2: 
-        return isTightTau(chain, index, algo = tau_algo, analysis = analysis)
-    return False
-
-def isGoodLepton(chain, index, algo = None, tau_algo = None, workingpoint = 'tight', analysis = 'HNL'):
-
-    if workingpoint == 'loose':
-        return isLooseLepton(chain, index, algo = algo, tau_algo = tau_algo, analysis = analysis)
-    elif workingpoint == 'FO':
-        return isFOLepton(chain, index, algo = algo, tau_algo = tau_algo, analysis = analysis)
-    elif workingpoint == 'tight':
-        return isTightLepton(chain, index, algo = algo, tau_algo = tau_algo, analysis = analysis)
+        return isGoodElectron(chain, index, workingpoint=workingpoint)
+    elif chain._lFlavor[index] == 1:
+        return isGoodMuon(chain, index, workingpoint=workingpoint)
     else:
-        raise RuntimeError('Defined working point does not exist: ' +str(workingpoint))
+        return False
 
-def isGoodLeptonTycho(chain, index, algo = None, tau_algo = None):
-    if chain._lFlavor[index] != 2: return isTightLightLepton(chain, index, algo)
-    if chain._lFlavor[index] == 2: 
-        return isLooseTau(chain, index, algo = tau_algo)
-    return False
+#
+# Selector for all leptons
+#
+def isGoodLepton(chain, index, workingpoint = None):
+    if chain._lFlavor[index] == 0 or chain._lFlavor == 1:
+        return isGoodLightLepton(chain, index, workingpoint=workingpoint)
+    elif chain._lFlavor[index] == 2:
+        return isGoodTau(chain, index, workingpoint=workingpoint)
+    else:
+        return False
 
 from HNL.ObjectSelection.tauSelector import isJetFakingTau
 from HNL.ObjectSelection.electronSelector import isFakeElectron

@@ -179,15 +179,10 @@ def isLooseMuonTTT(chain, index):
    
 def isFOMuonTTT(chain, index):
     if not isLooseMuonTTT(chain, index):        return False
-    # print 'loose muon'
     if chain._lPt[index] < 10: return False
-    # print 'pt < 10'
     if chain._leptonMvaTOP[index] <= 0.4:
-        # print 'mva < .4'
         if chain._ptRatio[index] < 0.45:        return False
-        # print 'ptratio'
         if chain.year == 2016:
-            # print (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]), slidingCutTTT(chain, index, 20., 0.02, 40., 0.015)
             if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutMuon(chain, index, 20., 0.02, 40., 0.015): return False 
         else:
             if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutMuon(chain, index, 20., 0.025, 40., 0.015): return False 
@@ -202,21 +197,7 @@ def isTightMuonTTT(chain, index):
 #
 # General function for selecting muons
 #
-from HNL.ObjectSelection.objectSelection import objectSelectionCollection
-def checkAlgorithm(algo, chain):
-    if algo is None:
-        try:
-            chain.obj_sel
-        except:
-            #Initiate default object selection
-            chain.obj_sel = objectSelectionCollection()
-        return chain.obj_sel['light_algo']
-    else:
-        return algo
-
-def isLooseMuon(chain, index, algo = None):
-    algo = checkAlgorithm(algo, chain)
-
+def isLooseMuon(chain, index, algo):
     if algo == 'cutbased':       return isLooseMuonCutBased(chain, index)
     elif algo == 'leptonMVAttH':        return isLooseMuonttH(chain, index)
     elif algo == 'leptonMVAtZq':        return isLooseMuontZq(chain, index)
@@ -227,9 +208,7 @@ def isLooseMuon(chain, index, algo = None):
         print 'Wrong input for "algo" in isLooseMuon'
         return False
 
-def isFOMuon(chain, index, algo = None):
-    algo = checkAlgorithm(algo, chain)
-
+def isFOMuon(chain, index, algo):
     if algo == 'cutbased':              return isFOMuonCutBased(chain, index)
     elif algo == 'leptonMVAttH':        return isFOMuonttH(chain, index)
     elif algo == 'leptonMVAtZq':        return isFOMuontZq(chain, index)
@@ -240,9 +219,7 @@ def isFOMuon(chain, index, algo = None):
         print 'Wrong input for "algo" in isFOMuon'
         return False
 
-def isTightMuon(chain, index, algo = None):
-    algo = checkAlgorithm(algo, chain)
-
+def isTightMuon(chain, index, algo):
     if algo == 'cutbased':       return isTightMuonCutBased(chain, index)
     elif algo == 'leptonMVAttH':        return isTightMuonttH(chain, index)
     elif algo == 'leptonMVAtZq':        return isTightMuontZq(chain, index)
@@ -252,6 +229,40 @@ def isTightMuon(chain, index, algo = None):
     else:
         print 'Wrong input for "algo" in isTightMuon'
         return False
+
+from HNL.ObjectSelection.objectSelection import objectSelectionCollection
+def checkMuonAlgorithm(chain, algo):
+    if algo is None:
+        try:
+            chain.obj_sel
+        except:
+            #Initiate default object selection
+            chain.obj_sel = objectSelectionCollection()
+        return chain.obj_sel['light_algo']
+    else:
+        return algo
+
+def checkMuonWP(chain, wp):
+    if wp is None:
+        try:
+            chain.obj_sel
+        except:
+            #Initiate default object selection
+            chain.obj_sel = objectSelectionCollection()
+        return chain.obj_sel['mu_wp']
+    else:
+        return wp
+
+def isGoodMuon(chain, index, workingpoint = None, algo = None):
+    workingpoint = checkMuonWP(chain, workingpoint)
+    algo = checkMuonAlgorithm(chain, algo)
+
+    if workingpoint == 'loose':
+        return isLooseMuon(chain, index, algo)
+    elif workingpoint == 'FO':
+        return isFOMuon(chain, index, algo)
+    elif workingpoint == 'tight':
+        return isTightMuon(chain, index, algo)
 
 #
 # Check for fakes
@@ -263,7 +274,7 @@ def isFakeMuon(chain, index):
 # Cone correction
 #
 def muonConeCorrection(chain, index, algo = None):
-    algo = checkAlgorithm(algo, chain)
+    algo = checkMuonAlgorithm(chain, algo)
     if algo == 'cutbased':
         return 1+max(0., chain._relIso[l]-0.1)
     elif algo == 'TTT':
