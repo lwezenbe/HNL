@@ -147,12 +147,12 @@ output_tree = chain.CloneTree(0)
 #
 new_branches = []
 # new_branches.extend(['M3l/F', 'minMos/F', 'pt_cone[20]/F', 'mtOther/F'])
-new_branches.extend(['M3l/F', 'minMos/F', 'mtOther/F'])
-new_branches.extend(['l1/I', 'l2/I', 'l3/I', 'index_other/I'])
-new_branches.extend(['l_pt[3]/F', 'l_eta[3]/F', 'l_phi[3]/F', 'l_e[3]/F', 'l_charge[3]/F', 'l_flavor[3]/I', 'l_indices[3]/I', 'l_istight[3]/O'])
+# new_branches.extend(['M3l/F', 'minMos/F', 'mtOther/F'])
+# new_branches.extend(['l1/I', 'l2/I', 'l3/I', 'index_other/I'])
+# new_branches.extend(['l_pt[3]/F', 'l_eta[3]/F', 'l_phi[3]/F', 'l_e[3]/F', 'l_charge[3]/F', 'l_flavor[3]/I', 'l_indices[3]/I', 'l_istight[3]/O'])
 new_branches.extend(['lumiweight/F'])
-new_branches.extend(['event_category/I'])
-new_branches.extend(['njets/I', 'nbjets/I'])
+# new_branches.extend(['event_category/I'])
+# new_branches.extend(['njets/I', 'nbjets/I'])
 
 from HNL.Tools.makeBranches import makeBranches
 new_vars = makeBranches(output_tree, new_branches)
@@ -171,9 +171,10 @@ else:
 #prepare object  and event selection
 from HNL.ObjectSelection.objectSelection import objectSelectionCollection
 if args.oldAnalysisSkim:
-    object_selection = objectSelectionCollection('deeptauVSjets', 'cutbased', 'loose', 'loose', 'loose', True)
+    object_selection = objectSelectionCollection('HNL', 'cutbased', 'loose', 'loose', 'loose', True, analysis='HNL')
 else:
-    object_selection = objectSelectionCollection('deeptauVSjets', 'leptonMVAtop', 'loose', 'loose', 'loose', False)
+    object_selection = objectSelectionCollection('HNL', 'leptonMVAtop', 'loose', 'loose', 'loose', False, analysis='HNL')
+chain.obj_sel = object_selection
 
 from HNL.Tools.helpers import progress
 from HNL.EventSelection.eventSelectionTools import calculateThreeLepVariables, calculateGeneralVariables, selectLeptonsGeneral, selectGenLeptonsGeneral
@@ -189,17 +190,23 @@ for entry in event_range:
         if sample.name == 'ZG' and chain._hasInternalConversion: continue
 
     if args.genSkim:
-        if not selectGenLeptonsGeneral(chain, new_vars, 3):      continue
+        # if not selectGenLeptonsGeneral(chain, new_vars, 3):      continue
+        if not selectGenLeptonsGeneral(chain, chain, 3):      continue
     elif not args.oldAnalysisSkim:
-        selectLeptonsGeneral(chain, new_vars, 3, object_selection, cutter = cutter)
+        # selectLeptonsGeneral(chain, new_vars, 3, cutter = cutter)
+        selectLeptonsGeneral(chain, chain, 3, cutter = cutter)
         if len(chain.leptons) < 3:       continue
     else:
-        selectLeptonsGeneral(chain, new_vars, 3, object_selection, cutter = cutter)
+        # selectLeptonsGeneral(chain, new_vars, 3, cutter = cutter)
+        selectLeptonsGeneral(chain, chain, 3, cutter = cutter)
         if len(chain.leptons) < 3:       continue
+
     
-    ec = EventCategory(new_vars)
-    c = ec.returnCategory()
-    new_vars.event_category = c
+    # # ec = EventCategory(new_vars)
+    # ec = EventCategory(chain)
+    # c = ec.returnCategory()
+    # # new_vars.event_category = c
+    # chain.event_category = c
 
     # calculateGeneralVariables(chain, new_vars, is_reco_level=not args.genSkim)
     # calculateThreeLepVariables(chain, new_vars, is_reco_level=not args.genSkim)

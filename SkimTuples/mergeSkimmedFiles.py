@@ -5,7 +5,7 @@ import itertools
 
 #Merges subfiles if needed
 # merge_files = glob.glob('/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/Tycho/*/*/tmp*')
-merge_files = glob.glob('/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/2016/*/tmp*')
+merge_files = glob.glob('/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/2017/*/tmp*')
 # merge_files = glob.glob('/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/2016/Reco/tmp*/*')
 
 # keyfunc = lambda x:x[:3]
@@ -47,4 +47,4 @@ for mf in merge_files:
     path, name = mf.rsplit('/', 1)
     print path+'/'+name.split('_', 1)[1]+'.root'
     os.system('hadd -f -v '+path+'/'+name.split('_', 1)[1]+'.root '+mf+'/*root')
-#    os.system('rm -r '+ mf)
+    os.system('rm -r '+ mf)
