@@ -8,8 +8,16 @@ from HNL.Tools.helpers import makePathTimeStamped
 #
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
-argParser.add_argument('bkgr',     action='store',      default=None,   help='Select bkgr')
-argParser.add_argument('--onlyReco',     action='store_true',      default=False,   help='only have reco efficiency')
+submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
+submission_parser.add_argument('--flavor', type=int, default=0,  help='flavor of lepton under consideration. 0 = electron, 1 = muon', choices = [0, 1])
+submission_parser.add_argument('--includeReco',   action='store_true', default=True, 
+    help='look at the efficiency for a gen tau to be both reconstructed and identified. Currently just fills the efficiency for isolation')
+submission_parser.add_argument('--onlyReco',   action='store_true', default=False,  help='look at the efficiency for a gen tau to be reconstructed. Currently just fills the efficiency for isolation')
+
+
+argParser.add_argument('--bkgr', required=True,     action='store',      default=None,   help='Select bkgr')
 argParser.add_argument('--wp',     action='store',      default='tight',   help='only have reco efficiency')
 args = argParser.parse_args()
 
@@ -32,7 +40,7 @@ for mf in merge_files:
     if "Results" in mf: merge_files.pop(merge_files.index(mf))
     if not args.onlyReco and 'onlyReco' in mf: merge_files.pop(merge_files.index(mf))
 script = os.path.expandvars(os.path.join('$CMSSW', 'src', 'HNL', 'ObjectSelection', 'compareTauID.py')
-merge(merge_files, script, jobs, ('sample', 'subJob'))
+merge(merge_files, script, jobs, ('sample', 'subJob'), argParser)
 
 list_of_bkgr_eff = {}
 list_of_signal_eff = {}
