@@ -3,6 +3,7 @@ __init__.py
 **/*.swp
 **/data
 **/log
+**/jobs
 **/*.log
 **/Results
 **/Plots
