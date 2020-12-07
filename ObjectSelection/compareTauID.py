@@ -40,17 +40,18 @@ default_mu_algo = 'deeptauVSmu'
 #
 import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
-argParser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
-argParser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
-argParser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
-argParser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
-argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
-argParser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
-argParser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
-argParser.add_argument('--includeReco',   action='store', default=None,  
+submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
+submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
+submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
+submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
+submission_parser.add_argument('--runLocal', action='store_true', default=False,  help='use local resources instead of Cream02')
+submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
+submission_parser.add_argument('--includeReco',   action='store', default=None,  
     help='look at the efficiency for a gen tau to be both reconstructed and identified. Currently just fills the efficiency for isolation', choices = ['iso', 'noIso'])
-argParser.add_argument('--discriminators', nargs='*', default=['iso', 'ele','mu'],  help='Which discriminators do you want to test?', choices = ['iso', 'ele', 'mu'])
-argParser.add_argument('--makeCombinations', action='store_true', default=False,
+submission_parser.add_argument('--discriminators', nargs='*', default=['iso', 'ele','mu'],  help='Which discriminators do you want to test?', choices = ['iso', 'ele', 'mu'])
+submission_parser.add_argument('--makeCombinations', action='store_true', default=False,
     help='Makes combinations of iso with different electron and muon working points. Turned off by default because large hadd times for large samples.')
 args = argParser.parse_args()
 

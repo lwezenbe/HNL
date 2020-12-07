@@ -9,7 +9,21 @@ from HNL.Tools.helpers import makePathTimeStamped, makeDirIfNeeded
 #
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
-argParser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
+submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
+submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
+submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
+submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
+submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
+submission_parser.add_argument('--oldTriggers',   action='store_true', default=False,  help='Use triggers from AN 2017-014')
+submission_parser.add_argument('--useRef', action='store_true', default=False,  help='pass ref cuts')
+submission_parser.add_argument('--separateTriggers', action='store', default=None,  
+    help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', 
+    choices=['single', 'cumulative', 'full'])
+submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+
 argParser.add_argument('--ignoreCategories', action='store_true', default=False,  help='do not split the events in different categories')
 argParser.add_argument('--separateTriggers', action='store', default=None,  
     help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', 
@@ -39,7 +53,7 @@ for mf in merge_files:
 
 script = os.path.expandvars(os.path.join('$CMSSW', 'src', 'HNL', 'Triggers', 'calcTriggerEff.py')
 
-merge(merge_files, script, jobs, ('sample', 'subJob'))
+merge(merge_files, script, jobs, ('sample', 'subJob'), argParser)
 
 input_files = glob.glob(os.getcwd()+'/data/calcTriggerEff/*/'+args.separateTriggers+'/*.root')
 sample_names = {in_file_name.split('/')[-3] for in_file_name in input_files}

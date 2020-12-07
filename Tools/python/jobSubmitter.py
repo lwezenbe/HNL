@@ -1,6 +1,7 @@
 import os
 import time
 import subprocess
+import argparse
 
 from HNL.Tools.logger import getLogger
 log = getLogger()
@@ -45,47 +46,101 @@ def runLocal(command, logfile):
     system('python '+command + ' &> ' + logfile + ' &')
 
 from HNL.Tools.helpers import makePathTimeStamped
-def makeCondorFile(logfile, script):
-    submit_file_name = makePathTimeStamped(os.path.join('jobs', os.path.basename(script).split('.')[0]))
-    submit_file_name += '.sub'
+def getCondorBase(logfile):
+    jobfilebase = logfile.replace('/log/', '/jobs/')
+    jobfilebase = jobfilebase.replace('/Latest/', '/')
+    jobfilebase = jobfilebase.rsplit('/', 1)[0]
+    return jobfilebase
+
+def makeCondorFile(logfile, script, i, runscriptname, condor_base):
+    logfile = os.path.realpath(logfile)
+    submit_file_name = makePathTimeStamped(condor_base)
+    submit_file_name += '_'+str(i)+'.sub'
     submit_file = open(submit_file_name, 'w') 
     submit_file.write('Universe     = vanilla \n')
-    submit_file.write('Executable   = '+os.path.expandvars('$CMSSW_BASE/src/HNL/Tools/scripts/runOnCream02.sh')+' \n')
+    submit_file.write('Executable   = '+runscriptname+' \n')
     submit_file.write('Log          = '+logfile+ '\n')
     submit_file.write('Output       = '+logfile.split('.log')[0]+'.out \n')
     submit_file.write('Error        = '+logfile.split('.log')[0]+'.err \n')
+    submit_file.write('Queue \n')
     submit_file.close()
     return submit_file_name
 
-def launchOnCondor(submit_file_name, arguments):
-    submit_file = open(submit_file_name, 'a')
-    submit_file.write('Arguments        = '+ arguments +'\n')
-    submit_file.write('Queue \n')
+from HNL.Tools.helpers import makeDirIfNeeded
+def makeRunScript(script, arguments, i, condor_base):
+    original_script = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Tools', 'scripts', 'runOnCondor.sh'))
+    new_script_name = os.path.realpath(os.path.join(condor_base, 'runscripts', str(i)+'.sh'))
+    makeDirIfNeeded(new_script_name)
+    new_script = open(new_script_name, 'w')
+    for line in open(original_script, 'r'):
+        new_line = line.replace('$1', arguments[0])
+        new_line = new_line.replace('$2', arguments[1])
+        new_script.write(new_line)
+    new_script.close()
+    return new_script_name
+
+
+def launchOnCondor(logfile, script, arguments, i):
+    # submit_file = open(submit_file_name, 'a')
+    # submit_file.write('Arguments        = '+ arguments +'\n')
+    # submit_file.write('Queue \n')
+    # submit_file.close()
+
+    condor_base = getCondorBase(os.path.realpath(logfile))
+    runscript_name = makeRunScript(script, arguments, i, condor_base)
+    submit_file_name = makeCondorFile(logfile, script, i, runscript_name, condor_base)
 
     print 'condor_submit '+submit_file_name
-    try:    out = system('condor_submit '+submit_file_name)
+    try:    out = os.system('condor_submit '+submit_file_name)
     except: out = 'failed'
     print out
 
+def cleanJobFiles(argparser, script, sub_log = None):
+    args         = argparser.parse_args()
+    if args.batchSystem != "HTCondor":
+        pass
+    else:
+        submitArgs   = getSubmitArgs(argparser, args)
+        arg_string = '_'.join([str(a)+'-'+str(submitArgs[a]) for a in sorted(submitArgs.keys()) if a != 'isChild'])
+        logbase = os.path.realpath(os.path.join('jobs', os.path.basename(script).split('.')[0]+(('-'+sub_log) if sub_log else ''), arg_string))
+        os.system('rm -r '+logbase)
+
 from HNL.Tools.logger import clearLogs
 import json
-def submitJobs(script, subJobArgs, subJobList, argParser, dropArgs=None, subLog=None, wallTime='15', queue='localgrid', cores=1, jobLabel='', resubmission = False):
-    logbase = os.path.join('log', os.path.basename(script).split('.')[0]+(('-'+subLog) if subLog else ''))
+def getSubmitArgs(argparser, args, dropArgs=None):
+    #changedArgs looks at all the arguments you gave in the original command. The getattr() skips things like args.sample and so on that have a default of None here but will add those anyway
+    #when looping over the subjobs in the zip(subJobArgs, subJob) 
+    arg_groups={}
+    for group in argparser._action_groups:
+        group_dict={a.dest:getattr(args,a.dest,None) for a in group._group_actions}
+        arg_groups[group.title]=argparse.Namespace(**group_dict)
+
+    changedArgs  = [arg for arg in vars(arg_groups['submission']) if getattr(arg_groups['submission'], arg) and argparser.get_default(arg) != getattr(arg_groups['submission'], arg)]
+    submitArgs   = {arg: getattr(arg_groups['submission'], arg) for arg in changedArgs if (not dropArgs or arg not in dropArgs)}
+    return submitArgs
+
+def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, subLog=None, wallTime='15', queue='localgrid', cores=1, jobLabel='', resubmission = False):
+    args         = argparser.parse_args()
+    args.isChild = True
+
+    submitArgs   = getSubmitArgs(argparser, args, dropArgs)
+    arg_string = '_'.join([str(a)+'-'+str(submitArgs[a]) for a in sorted(submitArgs.keys()) if a != 'isChild'])
+    
+    #Do not include isChild in arg_string
+
+    logbase = os.path.join('log', os.path.basename(script).split('.')[0]+(('-'+subLog) if subLog else ''), arg_string)
     if not resubmission: clearLogs(logbase)
     logbase += '/Latest'
+    script = os.path.realpath(script)
 
-    # save arguments in case you need to resubmit
+    # save arguments for later checks
     if not resubmission:
-        args         = argParser.parse_args()
         with open(logbase+'/args.txt', 'w') as f:
             json.dump(args.__dict__, f, indent = 2)
 
-    args.isChild = True
-    
-    #changedArgs looks at all the arguments you gave in the original command. The getattr() skips things like args.sample and so on that have a default of None here but will add those anyway
-    #when looping over the subjobs in the zip(subJobArgs, subJob) 
-    changedArgs  = [arg for arg in vars(args) if getattr(args, arg) and argParser.get_default(arg) != getattr(args, arg)]
-    submitArgs   = {arg: getattr(args, arg) for arg in changedArgs if (not dropArgs or arg not in dropArgs)}
+    # # Clear current jobs folder
+    # if args.batchSystem == 'HTCondor':
+    #     os.system('rm jobs/*.sub')
 
     for i, subJob in enumerate(subJobList):
         for arg, value in zip(subJobArgs, subJob):
@@ -96,6 +151,7 @@ def submitJobs(script, subJobArgs, subJobList, argParser, dropArgs=None, subLog=
         
         command = script + ' ' + ' '.join(['--' + arg + '=' + str(value) for arg, value in submitArgs.iteritems() if value != False])
         command = command.replace('=True','')
+        # print command
         
         logdir  = os.path.join(logbase, *(str(s) for s in subJob[:-1]))
         logfile = os.path.join(logdir, str(subJob[-1]) + ".log")
@@ -104,22 +160,28 @@ def submitJobs(script, subJobArgs, subJobList, argParser, dropArgs=None, subLog=
         except: pass
 
         if args.dryRun:     log.info('Dry-run: ' + command)
-        elif args.batchSystem == 'local': runLocal(command, logfile)
+        # elif args.batchSystem == 'local': runLocal(command, logfile)
         elif args.batchSystem == 'HTCondor': 
-            arguments = "dir='" + os.getcwd() + "' command='" + command + "'"
-            submit_file_name = makeCondorFile(logfile, script)
-            launchOnCondor(submit_file_name, arguments)
+            arguments = (os.getcwd(), command)
+            launchOnCondor(logfile, script, arguments, i)
         
-        else:               launchCream02(command, logfile, checkQueue=(i%100==0), wallTimeInHours=wallTime, queue=queue, cores=cores, jobLabel=jobLabel)
+        # else:               launchCream02(command, logfile, checkQueue=(i%100==0), wallTimeInHours=wallTime, queue=queue, cores=cores, jobLabel=jobLabel)
 
     print len(subJobList), 'jobs submitted'
 
 from HNL.Tools.logger import successfullJob
-def checkCompletedJobs(script, subJobList, subLog = None):
+def checkCompletedJobs(script, subJobList, argparser, subLog = None):
     failed_jobs = []
+    args = argparser.parse_args()
+    submitArgs   = getSubmitArgs(argparser, args)
+    arg_string = '_'.join([str(a)+'-'+str(submitArgs[a]) for a in sorted(submitArgs.keys()) if a != 'isChild'])
+
     for i, subJob in enumerate(subJobList):
-        logdir  = os.path.join('log', os.path.basename(script).split('.')[0]+(('-'+subLog) if subLog else ''), 'Latest', *(str(s) for s in subJob[:-1]))
-        logfile = os.path.join(logdir, str(subJob[-1]) + ".log")
+        logdir  = os.path.join('log', os.path.basename(script).split('.')[0]+(('-'+subLog) if subLog else ''), arg_string, 'Latest', *(str(s) for s in subJob[:-1]))
+        if args.batchSystem != 'HTCondor':
+            logfile = os.path.join(logdir, str(subJob[-1]) + ".log")
+        else:
+            logfile = os.path.join(logdir, str(subJob[-1]) + ".err")
         if not successfullJob(logfile): failed_jobs.append(subJob)
     
     if len(failed_jobs) != 0:
@@ -132,6 +194,5 @@ def checkCompletedJobs(script, subJobList, subLog = None):
         print "All jobs completed successfully!"
         return None
 
-
 if __name__ == '__main__':
-    launchCondor('a', 'b', 'c')
+    launchCondor('a', 'b', 'c', 0)

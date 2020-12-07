@@ -14,21 +14,23 @@ from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped
 #
 import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
-argParser.add_argument('--flavorToTest',   action='store', default = None,  help='Select flavor to perform closure test on', choices=['e', 'mu', 'tau'])
-argParser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
-argParser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
-argParser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
-argParser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
-argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
-argParser.add_argument('--batchSystem',   action='store', default='HTCondor',  help='help')
-argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-argParser.add_argument('--noskim', action='store_true', default=False,  help='Use no skim sample list')
-argParser.add_argument('--isCheck', action='store_true', default=False,  help='Check the setup by using the exact same region as the ttl measurement')
-argParser.add_argument('--splitInJets', action='store_true', default=False,  help='Split FR in njets')
-argParser.add_argument('--region', action='store', default=None, type=str,  help='What region was the fake rate you want to use measured in?', 
+submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
+submission_parser.add_argument('--flavorToTest',   action='store', default = None,  help='Select flavor to perform closure test on', choices=['e', 'mu', 'tau'])
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
+submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
+submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
+submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
+submission_parser.add_argument('--batchSystem',   action='store', default='HTCondor',  help='help')
+submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
+submission_parser.add_argument('--noskim', action='store_true', default=False,  help='Use no skim sample list')
+submission_parser.add_argument('--isCheck', action='store_true', default=False,  help='Check the setup by using the exact same region as the ttl measurement')
+submission_parser.add_argument('--splitInJets', action='store_true', default=False,  help='Split FR in njets')
+submission_parser.add_argument('--region', action='store', default=None, type=str,  help='What region was the fake rate you want to use measured in?', 
     choices=['TauFakesDY', 'TauFakesTT', 'Mix'])
-argParser.add_argument('--selection',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cut-based', 'AN2017014', 'MVA', 'ewkino', 'TTT'])
-argParser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+submission_parser.add_argument('--selection',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cut-based', 'AN2017014', 'MVA', 'ewkino', 'TTT'])
+submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+
 argParser.add_argument('--makePlots', action='store_true', default=False,  help='make plots')
 
 args = argParser.parse_args()

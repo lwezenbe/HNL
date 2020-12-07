@@ -15,20 +15,26 @@ import ROOT
 #
 import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
-argParser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
-argParser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
-argParser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
-argParser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
-argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
-argParser.add_argument('--runInTerminal', action='store_true', default=False,  help='Quickly run in the terminal')
-argParser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
-argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-argParser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
-argParser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l', ''])
-argParser.add_argument('--coupling', type = float, action='store', default=0.01,  help='Coupling of the sample')
-argParser.add_argument('--signalOnly', action='store_true', default=False,  help='Only launch jobs with signal samples')
-argParser.add_argument('--backgroundOnly', action='store_true', default=False,  help='Only launch jobs with signal samples')
-argParser.add_argument('--noskim', action='store_true', default=False,  help='Use no skim sample list')
+submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
+submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
+submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
+submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
+submission_parser.add_argument('--runInTerminal', action='store_true', default=False,  help='Quickly run in the terminal')
+submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
+submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
+submission_parser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
+submission_parser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l', ''])
+submission_parser.add_argument('--coupling', type = float, action='store', default=0.01,  help='Coupling of the sample')
+submission_parser.add_argument('--signalOnly', action='store_true', default=False,  help='Only launch jobs with signal samples')
+submission_parser.add_argument('--backgroundOnly', action='store_true', default=False,  help='Only launch jobs with signal samples')
+submission_parser.add_argument('--noskim', action='store_true', default=False,  help='Use no skim sample list')
+submission_parser.add_argument('--selection',   action='store', default='cut-based',  help='Select the strategy to use to separate signal from background', choices=['cut-based', 'AN2017014', 'MVA'])
+submission_parser.add_argument('--region',   action='store', default='baseline',  help='apply the cuts of high or low mass regions, use "all" to run both simultaniously', 
+    choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZ', 'WZ', 'ConversionCR'])
+submission_parser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data samples')
+submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 
 argParser.add_argument('--makePlots', action='store_true', default=False,  help='make plots')
 argParser.add_argument('--noTextFiles',   action='store_true', default=False,  help='make text files containing the number of events per category and sample')
@@ -38,15 +44,10 @@ argParser.add_argument('--noCutFlow',   action='store_true', default=False,  hel
 argParser.add_argument('--noSearchRegions',   action='store_true', default=False,  help='plot Search Regions')
 argParser.add_argument('--groupSamples',   action='store_true', default=False,  help='plot Search Regions')
 
-argParser.add_argument('--selection',   action='store', default='cut-based',  help='Select the strategy to use to separate signal from background', choices=['cut-based', 'AN2017014', 'MVA'])
-argParser.add_argument('--region',   action='store', default='baseline',  help='apply the cuts of high or low mass regions, use "all" to run both simultaniously', 
-    choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZ', 'WZ', 'ConversionCR'])
-argParser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data samples')
 
 argParser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
 argParser.add_argument('--makeDataCards', type = str, default=None,  help='Make data cards of the data you have', choices=['shapes', 'cutAndCount'])
 argParser.add_argument('--rescaleSignal', type = float,  action='store', default=None,  help='Enter desired signal coupling squared')
-argParser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 
 
 

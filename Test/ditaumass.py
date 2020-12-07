@@ -11,17 +11,20 @@ import numpy as np
 #
 import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
-argParser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
-argParser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
-argParser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
-argParser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
-argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
-argParser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
-argParser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
+submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
+submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
+submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
+submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
+submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
+submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
+
 argParser.add_argument('--makePlots',   action='store_true', default=False,  help='Use existing root files to make the plots')
-argParser.add_argument('--showCuts',   action='store_true', default=False,  help='Show what the pt cuts were for the category in the plots')
-argParser.add_argument('--runOnCream',   action='store_true', default=False,  help='Submit jobs on the cluster')
+
 args = argParser.parse_args()
+
+
 
 if args.isTest:
     args.year = '2018'
@@ -39,6 +42,12 @@ from HNL.Tools.helpers import getObjFromFile
 list_of_hist = {}
 from HNL.EventSelection.eventCategorization import EventCategory
 #
+# Load in the sample list 
+#
+from HNL.Samples.sampleManager import SampleManager
+sample_manager = SampleManager(args.year, 'noskim', 'ditaumass_'+str(args.year))
+
+#
 # Loop over samples and events
 #
 jobs = []
@@ -49,15 +58,9 @@ for sample_name in sample_manager.sample_names:
 
 if not args.makePlots:
     #
-    # Load in the sample list 
-    #
-    from HNL.Samples.sampleManager import SampleManager
-    sample_manager = SampleManager(args.year, 'noskim', 'ditaumass_'+str(args.year))
-
-    #
     # Submit subjobs
     #
-    if args.runOnCream and not args.isChild:
+    if not args.isChild:
         from HNL.Tools.jobSubmitter import submitJobs
 
         submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'plotTau')
@@ -69,7 +72,7 @@ if not args.makePlots:
     for sample in sample_manager.sample_list:
         if sample.name not in sample_manager.sample_names: continue
        
-        if args.runOnCream and sample.name != args.sample: continue
+        if sample.name != args.sample: continue
         if args.sample and sample.name != args.sample: continue
 
         list_of_hist[sample.name] = {}
@@ -100,8 +103,6 @@ if not args.makePlots:
                 event_range = sample.getEventRange(0)
             else:
                 event_range = xrange(2000)
-        elif args.runOnCream:
-            event_range = sample.getEventRange(args.subJob)
         else:
             event_range = xrange(chain.GetEntries())
 
@@ -227,7 +228,7 @@ else:
 #
 #       Plot!
 #
-if args.runOnCream or args.isTest: 
+if args.isTest: 
     exit(0)
 
 #

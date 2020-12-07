@@ -8,15 +8,27 @@ from HNL.Tools.efficiency import Efficiency
 #
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
-argParser.add_argument('--FOcut',   action='store_true', default=False,  help='Perform baseline FO cut')
-argParser.add_argument('--divideByCategory',   action='store_true', default=False,  help='Look at the efficiency per event category')
-argParser.add_argument('--compareTriggerCuts', action='store', default=None, 
+submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
+submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
+submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
+submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
+submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
+submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
+submission_parser.add_argument('--selection', action='store', default='cut-based', type=str,  help='What type of analysis do you want to run?', choices=['cut-based', 'AN2017014', 'MVA'])
+submission_parser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', 
+    choices=['baseline', 'lowMassSR', 'highMassSR'])
+submission_parser.add_argument('--FOcut',   action='store_true', default=False,  help='Perform baseline FO cut')
+submission_parser.add_argument('--divideByCategory',   action='store_true', default=False,  help='Look at the efficiency per event category')
+submission_parser.add_argument('--genLevel',   action='store_true', default=False,  help='Check how many events pass cuts on gen level')
+submission_parser.add_argument('--compareTriggerCuts', action='store', default=None,  
     help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', 
     choices=['single', 'cumulative', 'full'])
-argParser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l', ''])
-argParser.add_argument('--massRegion',   action='store', default=None,  help='apply the cuts of high or low mass regions', choices=['high', 'low'])
-args = argParser.parse_args()
+submission_parser.add_argument('--flavor', action='store', default=None,  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
+submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 
+args = argParser.parse_args()
 
 #
 # Load in the sample list 
@@ -43,7 +55,7 @@ flavor_name = args.flavor if args.flavor else 'allFlavor'
 input_name  = os.path.join(os.getcwd(), 'data', 'calcSignalEfficiency', category_split_str, trigger_str, mass_str, flavor_name, '*')
 merge_files = glob.glob(input_name)
 script = os.path.expandvars(os.path.join('$CMSSW', 'src', 'HNL', 'EventSelection', 'calcSignalEfficiency.py')
-merge(merge_files, __file__, jobs, ('sample', 'subJob', 'flavor'))
+merge(merge_files, __file__, jobs, ('sample', 'subJob', 'flavor'), argParser)
 
 input_name  = os.path.join(os.getcwd(), 'data', 'calcSignalEfficiency', category_split_str, trigger_str, mass_str, flavor_name)
 

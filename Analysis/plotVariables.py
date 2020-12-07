@@ -13,31 +13,31 @@
 #
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
-argParser.add_argument('--isChild',  action='store_true',       default=False,  help='mark as subjob, will never submit subjobs by itself')
-argParser.add_argument('--year',     action='store',            default=None,   help='Select year', choices=['2016', '2017', '2018'], required=True)
-argParser.add_argument('--sample',   action='store',            default=None,   help='Select sample by entering the name as defined in the conf file')
-argParser.add_argument('--subJob',   action='store',            default=None,   help='The number of the subjob for this sample')
-argParser.add_argument('--isTest',   action='store_true',       default=False,  help='Run a small test')
-argParser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
-argParser.add_argument('--dryRun',   action='store_true',       default=False,  help='do not launch subjobs, only show them')
+submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
+submission_parser.add_argument('--isChild',  action='store_true',       default=False,  help='mark as subjob, will never submit subjobs by itself')
+submission_parser.add_argument('--year',     action='store',            default=None,   help='Select year', choices=['2016', '2017', '2018'], required=True)
+submission_parser.add_argument('--sample',   action='store',            default=None,   help='Select sample by entering the name as defined in the conf file')
+submission_parser.add_argument('--subJob',   action='store',            default=None,   help='The number of the subjob for this sample')
+submission_parser.add_argument('--isTest',   action='store_true',       default=False,  help='Run a small test')
+submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
+submission_parser.add_argument('--dryRun',   action='store_true',       default=False,  help='do not launch subjobs, only show them')
+submission_parser.add_argument('--genLevel',   action='store_true',     default=False,  help='Use gen level variables')
+submission_parser.add_argument('--signalOnly',   action='store_true',   default=False,  help='Run or plot a only the signal')
+submission_parser.add_argument('--bkgrOnly',   action='store_true',     default=False,  help='Run or plot a only the background')
+submission_parser.add_argument('--masses', type=float, nargs='*',  help='Only run or plot signal samples with mass given in this list')
+submission_parser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l', ''])
+submission_parser.add_argument('--coupling', action='store', default=0.01, type=float,  help='How large is the coupling?')
+submission_parser.add_argument('--selection', action='store', default='cut-based', type=str,  help='What type of analysis do you want to run?', choices=['cut-based', 'AN2017014', 'MVA'])
+submission_parser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', 
+    choices=['baseline', 'lowMassSR', 'highMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
+submission_parser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data')
+submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+
 argParser.add_argument('--makePlots',   action='store_true',    default=False,  help='Use existing root files to make the plots')
 argParser.add_argument('--showCuts',   action='store_true',     default=False,  help='Show what the pt cuts were for the category in the plots')
-argParser.add_argument('--genLevel',   action='store_true',     default=False,  help='Use gen level variables')
-argParser.add_argument('--signalOnly',   action='store_true',   default=False,  help='Run or plot a only the signal')
-argParser.add_argument('--bkgrOnly',   action='store_true',     default=False,  help='Run or plot a only the background')
-argParser.add_argument('--masses', type=float, nargs='*',  help='Only run or plot signal samples with mass given in this list')
-argParser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l', ''])
-argParser.add_argument('--coupling', action='store', default=0.01, type=float,  help='How large is the coupling?')
-argParser.add_argument('--selection', action='store', default='cut-based', type=str,  help='What type of analysis do you want to run?', choices=['cut-based', 'AN2017014', 'MVA'])
-argParser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', 
-    choices=['baseline', 'lowMassSR', 'highMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
 argParser.add_argument('--groupSamples',   action='store_true', default=False,  help='plot Search Regions')
-argParser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data')
 argParser.add_argument('--makeDataCards', action = 'store_true',  help='Make data cards of the data you have')
 argParser.add_argument('--rescaleSignal', type = float,  action='store', default=None,  help='Enter desired signal coupling squared')
-argParser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
-
-
 
 args = argParser.parse_args()
 

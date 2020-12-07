@@ -11,14 +11,18 @@ from ROOT import TFile
 #
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
-argParser.add_argument('bkgr',     action='store',      default=None,   help='Select bkgr')
-argParser.add_argument('--signal',     action='store',      default=None,   help='Select signal')
-argParser.add_argument('--makeCombinations',     action='store',      default=None,   help='Make combinations of iso and lepton discriminators')
-argParser.add_argument('--includeReco',   action='store', default=None, 
+submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
+submission_parser.add_argument('--includeReco',   action='store', default=None,  
     help='look at the efficiency for a gen tau to be both reconstructed and identified. Currently just fills the efficiency for isolation', choices = ['iso', 'noIso'])
+submission_parser.add_argument('--discriminators', nargs='*', default=['iso', 'ele','mu'],  help='Which discriminators do you want to test?', choices = ['iso', 'ele', 'mu'])
+submission_parser.add_argument('--makeCombinations', action='store_true', default=False,
+    help='Makes combinations of iso with different electron and muon working points. Turned off by default because large hadd times for large samples.')
+
+argParser.add_argument('--bkgr', required=True,    action='store',      default=None,   help='Select bkgr')
+argParser.add_argument('--signal',     action='store',      default=None,   help='Select signal')
 argParser.add_argument('--overlaySignalAndBackground',   action='store_true', default=False,  help='Only applies when includeReco argument is given. This will overlay signal and background')
-argParser.add_argument('--discriminators', nargs='*', default=['iso', 'ele','mu'],  help='Which discriminators do you want to test?', choices = ['iso', 'ele', 'mu'])
-argParser.add_argument('--year', action='store', required=True, default=None,  help='Select year')
 args = argParser.parse_args()
 
 reco_names = {None:'NoReco', 'iso': 'IncludeReco', 'noIso': 'OnlyReco'}
@@ -47,7 +51,7 @@ for d in args.discriminators:
 for mf in merge_files:
     if "Results" in mf: merge_files.pop(merge_files.index(mf))
 script = os.path.expandvars(os.path.join('$CMSSW', 'src', 'HNL', 'ObjectSelection', 'compareTauID.py')
-merge(merge_files, script, jobs, ('sample', 'subJob'))
+merge(merge_files, script, jobs, ('sample', 'subJob'), argParser)
 
 input_base = os.path.join(os.getcwd(), 'data', 'compareTauID', args.year, reco_names[args.includeReco])
 input_paths = {}
