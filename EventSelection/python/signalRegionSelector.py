@@ -17,10 +17,10 @@ class SignalRegionSelector:
         self.ec = event_categorization
 
     def initEvent(self, cutter):
-        if self.is_reco_level and not cutter.cut(est.select3Leptons(chain, new_chain, cutter=cutter), 'select leptons'): return False
-        if not self.is_reco_level and not cutter.cut(est.selectGenLeptonsGeneral(chain, new_chain, 3, cutter=cutter), 'select leptons'): return False
-        est.calculateEventVariables(chain, new_chain, 3, is_reco_level=self.is_reco_level, selection=self.selection)
-        if self.ec is not None: chain.category = self.ec.returnCategory()
+        if self.is_reco_level and not cutter.cut(est.select3Leptons(self.chain, self.new_chain, cutter=cutter), 'select leptons'): return False
+        if not self.is_reco_level and not cutter.cut(est.selectGenLeptonsGeneral(self.chain, self.new_chain, 3, cutter=cutter), 'select leptons'): return False
+        est.calculateEventVariables(self.chain, self.new_chain, 3, is_reco_level=self.is_reco_level, selection=self.selection)
+        if self.ec is not None: self.chain.category = self.ec.returnCategory()
         return True
 
     def initSkim(self, cutter):
@@ -34,21 +34,21 @@ class SignalRegionSelector:
         if not cutter.cut(est.passesPtCutsAN2017014(self.chain), 'pt_cuts'):         return False 
         if not cutter.cut(not est.bVeto(self.chain, 'AN2017014', cleaned=False, selection=self.selection), 'b-veto'):              return False
         if not cutter.cut(not est.threeSameSignVeto(self.chain), 'three_same_sign_veto'):                    return False
-        if not cutter.cut(not est.fourthFOVeto(self.chain, self.chain.obj_sel['light_algo'], no_tau=self.chain.obj_sel['notau']), '4th_l_veto'):   return False
+        if not cutter.cut(not est.fourthFOVeto(self.chain, no_tau=self.chain.obj_sel['notau']), '4th_l_veto'):   return False
 
         return True
     
     # Basic cuts every event has to pass
     def baseFilterCutBased(self, cutter):
-        if not cutter.cut(not est.fourthFOVeto(self.chain, self.chain.obj_sel['light_algo'], no_tau=self.chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
+        if not cutter.cut(not est.fourthFOVeto(self.chain, no_tau=self.chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
         if not cutter.cut(not est.threeSameSignVeto(self.chain), 'No three same sign'):        return False
         if not cutter.cut(not est.bVeto(self.chain, 'Deep', selection=self.selection), 'b-veto'):              return False
         return True
 
     # Basic cuts every event has to pass
     def baseFilterMVA(self, cutter):
-        if not cutter.cut(not est.fourthFOVeto(self.chain, self.chain.obj_sel['light_algo'], no_tau=self.chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
-        if not cutter.cut(not est.threeSameSignVeto(chain), 'No three same sign'):        return False
+        if not cutter.cut(not est.fourthFOVeto(self.chain, no_tau=self.chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
+        if not cutter.cut(not est.threeSameSignVeto(self.chain), 'No three same sign'):        return False
         if not cutter.cut(not est.bVeto(self.chain, 'Deep', selection=self.selection), 'b-veto'):              return False
         if not cutter.cut(abs(self.chain.MZossf-MZ) > 15, 'M2l_OSSF_Z_veto'):        return False
         return True
