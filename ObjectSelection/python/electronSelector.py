@@ -34,7 +34,7 @@ def slidingCutElectron(chain, index, lowpt, lowptwp, highpt, highptwp):
     
     if chain._lPt[index] < lowpt:
         return lowptwp
-    elif chain._lPt[index] > highptwp:
+    elif chain._lPt[index] > highpt:
         return highptwp
     else:
         slope = (highptwp - lowptwp)/(highpt-lowpt)
@@ -350,15 +350,21 @@ def isFOElectronTTT(chain, index):
     else:
         if chain._lElectronSigmaIetaIeta[index] >= 0.03:    return False
     # print 'sigma ieta ieta'
+    # print 'leptonMVA', chain._leptonMvaTOP[index]
     if chain._leptonMvaTOP[index] <= 0.4:
         if not passMVAloose(chain, index):  return False
+        # print 'MVAloose'
         if chain._ptRatio[index] < 0.5:     return False
+        # print 'ptratio'
         if chain.year == 2016:
+            # print 'pt', chain._lPt[index]
+            # print (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]), slidingCutElectron(chain, index, 25., 0.5, 50., 0.05)
             if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutElectron(chain, index, 25., 0.5, 50., 0.05): return False        
         elif chain.year == 2017:
             if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutElectron(chain, index, 25., 0.5, 50., 0.08): return False        
         elif chain.year == 2018:
             if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutElectron(chain, index, 25., 0.4, 50., 0.05): return False        
+        # print 'deepflavor'
     return True
 
 def isTightElectronTTT(chain, index):

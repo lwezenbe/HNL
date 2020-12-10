@@ -13,7 +13,7 @@ def slidingCutMuon(chain, index, lowpt, lowptwp, highpt, highptwp):
     slope = (highptwp - lowptwp)/(highpt-lowpt)
     if chain._lPt[index] < lowpt:
         return lowptwp
-    elif chain._lPt[index] > highptwp:
+    elif chain._lPt[index] > highpt:
         return highptwp
     else:
         return lowptwp + slope*(chain._lPt[index]-lowpt)
