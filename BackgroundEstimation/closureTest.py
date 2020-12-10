@@ -26,6 +26,7 @@ submission_parser.add_argument('--dryRun',   action='store_true', default=False,
 submission_parser.add_argument('--noskim', action='store_true', default=False,  help='Use no skim sample list')
 submission_parser.add_argument('--isCheck', action='store_true', default=False,  help='Check the setup by using the exact same region as the ttl measurement')
 submission_parser.add_argument('--splitInJets', action='store_true', default=False,  help='Split FR in njets')
+submission_parser.add_argument('--splitInBJets', action='store_true', default=False,  help='Use ttbar FR if b-jet around else use DY FR')
 submission_parser.add_argument('--region', action='store', default=None, type=str,  help='What region was the fake rate you want to use measured in?', 
     choices=['TauFakesDY', 'TauFakesTT', 'Mix'])
 submission_parser.add_argument('--selection',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cut-based', 'AN2017014', 'MVA', 'ewkino', 'TTT'])
@@ -43,15 +44,26 @@ if args.flavorToTest != 'tau':
         raise RuntimeError("Nothing to check, you are using an imported fakerate")
     if args.splitInJets:
         raise RuntimeError('Split in jets not supported for light leptons')
+    if args.splitInBJets:
+        raise RuntimeError('Split in bjets not supported for light leptons')
 
 if args.flavorToTest == 'tau':
     if args.region is None:
         raise RuntimeError("Region should be defined for tau fakes")
-    if args.region == 'Mix' and not args.splitInJets:
-        raise RuntimeError('Mix needs splitInJets to be True')
+    if args.region == 'Mix':
+        if not args.splitInJets and not args.splitInBJets:
+            raise RuntimeError('Mix needs either splitInJets or splitInBJets to be True')
+        if args.splitInJets and args.splitInBJets:
+            raise RuntimeError('Mix can not have splitInJets and splitInBJets being True at the same time')
+    else:
+        if args.splitInBJets:
+            raise RuntimeError('Split in bjets not supported for region other than Mix')
 
 if args.selection == 'AN2017014':
     raise RuntimeError("selection AN2017014 currently not supported")
+if args.splitInBJets and args.selection != 'cutbased' and args.selection != 'MVA':
+    raise RuntimeError("selection currently not supported in combination with splitInBJets")
+
 
 from HNL.Tools.logger import getLogger, closeLogger
 log = getLogger(args.logLevel)
@@ -75,10 +87,7 @@ if args.noskim:
 else:
     skim_str = 'Old' if args.selection == 'AN2017014' else 'Reco'
 
-if args.flavorToTest == 'tau':
-    sample_manager = SampleManager(args.year, skim_str, 'ClosureTests')
-else:
-    sample_manager = SampleManager(args.year, skim_str, 'ClosureTests2')
+sample_manager = SampleManager(args.year, skim_str, 'ClosureTests')
 
 this_file_name = __file__.split('.')[0].rsplit('/', 1)[-1]
 
@@ -124,6 +133,7 @@ def getOutputBase():
 
     if args.flavorToTest == 'tau':
         jetstring = 'splitInJets' if args.splitInJets else 'noSplitInJets'
+        if args.splitInBJets: jetstring = 'splitInBJets'
         output_name = os.path.join(output_name, args.region, jetstring)
 
     if args.isCheck:
@@ -145,7 +155,7 @@ def getOutputName():
 
 print getOutputName()
 
-from HNL.BackgroundEstimation.fakerateArray import loadFakeRatesWithJetBins, readFakeRatesWithJetBins
+from HNL.BackgroundEstimation.fakerateArray import loadFakeRatesWithJetBins, readFakeRatesWithJetBins, readFakeRatesWithBJetBins
 #
 #   Code to process events
 #
@@ -200,27 +210,19 @@ if not args.makePlots:
         else:
             es = EventSelector('TauCT', chain, chain, args.selection, True, ec) 
 
-        # if not args.isTest:    
-        #     fakerate = FakeRate('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'TauFakes', 'data', 'tightToLoose', args.year, 'DY', 'events.root')))
-        # else:
-        #     fakerate = FakeRate('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'TauFakes', 'data', 'testArea', 'tightToLoose', args.year, 'DY', 'events.root')))
         if not args.isTest:    
             fakerate = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, args.flavorToTest)), args.flavorToTest)
         else:
             fakerate = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, args.flavorToTest)), args.flavorToTest)
-            # fakerate = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'TauFakes', 'data', 'testArea', 'tightToLoose', args.year, args.flavorToTest)))
 
     elif args.flavorToTest == 'e':
-        chain.obj_sel = objectSelectionCollection('HNL', 'TTT', 'tight', 'FO', 'tight', True)
+        chain.obj_sel = objectSelectionCollection('HNL', 'TTT', 'tight', 'FO', 'tight', True, jet_algo='TTT')
         es = EventSelector('ElectronCT', chain, chain, args.selection, True, ec)    
         fakerate = FakeRateEmulator('h_tight_e', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'FR_QCD_20201027_'+args.year+'.root'))
-        # fakerate = FakeRateEmulator('fr_e', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'fakerate_lightlep.root'))
         # fakerate = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, args.flavorToTest)), args.flavorToTest)
     elif args.flavorToTest == 'mu':
-        # chain.obj_sel = objectSelectionCollection('MVA2017v2', 'TTT', 'tight', 'tight', 'FO', True)
-        chain.obj_sel = objectSelectionCollection('HNL', 'TTT', 'tight', 'tight', 'FO', True)
+        chain.obj_sel = objectSelectionCollection('HNL', 'TTT', 'tight', 'tight', 'FO', True, jet_algo='TTT')
         es = EventSelector('MuonCT', chain, chain, args.selection, True, ec)    
-        # fakerate = FakeRateEmulator('fr_mu', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'fakerate_lightlep.root'))
         fakerate = FakeRateEmulator('h_tight_mu', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'FR_QCD_20201027_'+args.year+'.root'))
         # fakerate = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, args.flavorToTest)), args.flavorToTest)
 
@@ -267,7 +269,10 @@ if not args.makePlots:
 
         cat = ec.returnAnalysisCategory()
         if args.flavorToTest == 'tau':
-            fake_factor = readFakeRatesWithJetBins(fakerate, chain, flavor_dict[args.flavorToTest], args.region, args.splitInJets)
+            if args.splitInBJets:
+                fake_factor = readFakeRatesWithBJetBins(fakerate, chain, flavor_dict[args.flavorToTest], args.region)
+            else:
+                fake_factor = readFakeRatesWithJetBins(fakerate, chain, flavor_dict[args.flavorToTest], args.region, args.splitInJets)
         else:
             fake_factor = fakerate.returnFakeWeight(chain, flavor_dict[args.flavorToTest])
             # fake_factor = readFakeRatesWithJetBins(fakerate, chain, flavor_dict[args.flavorToTest], args.region, args.splitInJets)

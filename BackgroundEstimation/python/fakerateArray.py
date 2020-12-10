@@ -71,6 +71,21 @@ def readFakeRatesWithJetBins(fr_arrays, chain, flavor, region, split_in_njets):
         else:
             return fr_arrays['LightLeptonFakes'].getFakeRate('total').returnFakeWeight(chain, flavor)
 
+from HNL.EventSelection.eventSelectionTools import nBjets
+def readFakeRatesWithBJetBins(fr_arrays, chain, flavor, region):
+    if flavor == 2:
+        if region == 'TauFakesDY' or region == 'TauFakesTT':
+            raise RuntimeError("This region is not supported yet in readFakeRatesWithBJetBins")
+        elif region == 'Mix':
+            nbjets = nBjets(chain, 'loose', 'HNLLowPt')
+            if nbjets == 0:    return fr_arrays['TauFakesDY'].getFakeRate('total').returnFakeWeight(chain, flavor)
+            else:              
+                return fr_arrays['TauFakesTT'].getFakeRate('total').returnFakeWeight(chain, flavor) 
+        else:
+            raise RuntimeError("Invalid input for 'region'")
+    else:
+        raise RuntimeError("This flavor is not supported yet in readFakeRatesWithBJetBins")
+
 
 
 
