@@ -32,7 +32,6 @@ def isGoodLightLepton(chain, index, workingpoint = None):
 #
 def isGoodLepton(chain, index, workingpoint = None):
     if chain._lFlavor[index] == 0 or chain._lFlavor[index] == 1:
-        print workingpoint
         return isGoodLightLepton(chain, index, workingpoint=workingpoint)
     elif chain._lFlavor[index] == 2:
         return isGoodTau(chain, index, workingpoint=workingpoint)
