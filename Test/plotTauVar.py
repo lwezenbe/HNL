@@ -31,6 +31,7 @@ args = argParser.parse_args()
 if args.isTest:
     args.year = '2016'
     args.sample = 'DY'
+    args.isChild = True
 
 #
 # Create histograms

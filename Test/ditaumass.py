@@ -29,6 +29,7 @@ args = argParser.parse_args()
 if args.isTest:
     args.year = '2018'
     args.sample = 'DYJetsToLL-M-50'
+    args.isChild = True
 
 #
 # Create histograms
@@ -113,9 +114,9 @@ if not args.makePlots:
         # Loop over all events
         #
         from HNL.Tools.helpers import progress, makeDirIfNeeded, deltaR, getLeptonFourVecFromChain
-        from HNL.ObjectSelection.muonSelector import isTightMuon
+        from HNL.ObjectSelection.muonSelector import isGoodMuon
         from HNL.ObjectSelection.tauSelector import isGeneralTau
-        from HNL.ObjectSelection.leptonSelector import isLooseLightLepton
+        from HNL.ObjectSelection.leptonSelector import isGoodLightLepton
         ec = EventCategory(chain)
         for entry in event_range:
             
@@ -131,7 +132,7 @@ if not args.makePlots:
             #
             muon_index = None
             for mu in xrange(chain._nMu):
-                if not isTightMuon(chain, mu): continue
+                if not isGoodMuon(chain, mu, 'tight'): continue
                 if not chain._lPt[mu] < 25: continue
                 if muon_index is not None:  
                     keep_event = False
@@ -147,7 +148,7 @@ if not args.makePlots:
             #
             for l in xrange(chain._nLight):
                 if l == muon_index: continue
-                if isLooseLightLepton(chain, l):
+                if isGoodLightLepton(chain, l, 'loose'):
                     keep_event = False
                     break
 

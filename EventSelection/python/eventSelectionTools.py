@@ -124,13 +124,13 @@ def selectGenLeptonsGeneral(chain, new_chain, nL, cutter=None):
         new_chain.l_pt = [0.0]*nL
         new_chain.l_eta = [0.0]*nL
         new_chain.l_phi = [0.0]*nL
-        new_chain.l_vispt = [0.0]*nL
-        new_chain.l_viseta = [0.0]*nL
-        new_chain.l_visphi = [0.0]*nL
+        # new_chain.l_vispt = [0.0]*nL
+        # new_chain.l_viseta = [0.0]*nL
+        # new_chain.l_visphi = [0.0]*nL
         new_chain.l_charge = [0.0]*nL
         new_chain.l_flavor = [0.0]*nL
         new_chain.l_e = [0.0]*nL
-        new_chain.l_vise = [0.0]*nL
+        # new_chain.l_vise = [0.0]*nL
  
     chain.leptons = []
     for l in xrange(chain._gen_nL):
@@ -147,10 +147,10 @@ def selectGenLeptonsGeneral(chain, new_chain, nL, cutter=None):
         new_chain.l_eta[i] = chain._gen_lEta[ptAndIndex[i][1]]
         new_chain.l_phi[i] = chain._gen_lPhi[ptAndIndex[i][1]]
         new_chain.l_e[i] = chain._gen_lE[ptAndIndex[i][1]]
-        new_chain.l_vispt[i] = chain._gen_lVisPt[ptAndIndex[i][1]] 
-        new_chain.l_viseta[i] = chain._gen_lVisEta[ptAndIndex[i][1]]
-        new_chain.l_visphi[i] = chain._gen_lVisPhi[ptAndIndex[i][1]]
-        new_chain.l_vise[i] = chain._gen_lVisE[ptAndIndex[i][1]]
+        # new_chain.l_vispt[i] = chain._gen_lVisPt[ptAndIndex[i][1]] 
+        # new_chain.l_viseta[i] = chain._gen_lVisEta[ptAndIndex[i][1]]
+        # new_chain.l_visphi[i] = chain._gen_lVisPhi[ptAndIndex[i][1]]
+        # new_chain.l_vise[i] = chain._gen_lVisE[ptAndIndex[i][1]]
         new_chain.l_charge[i] = chain._gen_lCharge[ptAndIndex[i][1]]
         new_chain.l_flavor[i] = chain._gen_lFlavor[ptAndIndex[i][1]]
     

@@ -24,7 +24,7 @@ submission_parser.add_argument('--subJob',   action='store',      default=None, 
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-submission_parser.add_argument('--selection', action='store', default='cut-based', type=str,  help='What type of analysis do you want to run?', choices=['cut-based', 'AN2017014', 'MVA'])
+submission_parser.add_argument('--selection', action='store', default='cutbased', type=str,  help='What type of analysis do you want to run?', choices=['cutbased', 'AN2017014', 'MVA'])
 submission_parser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', 
     choices=['baseline', 'lowMassSR', 'highMassSR'])
 submission_parser.add_argument('--FOcut',   action='store_true', default=False,  help='Perform baseline FO cut')
@@ -91,9 +91,9 @@ flavor_name = args.flavor if args.flavor else 'allFlavor'
 
 
 if not args.isTest: 
-    output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'),'src', 'EventSelection', 'data', __file__.split('.')[0].rsplit('/')[-1], category_split_str, trigger_str, args.region, flavor_name, sample.output)
+    output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'),'src', 'HNL', 'EventSelection', 'data', __file__.split('.')[0].rsplit('/')[-1], category_split_str, trigger_str, args.region, flavor_name, sample.output)
 else:
-    output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'),'src', 'EventSelection', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], category_split_str, trigger_str, args.region, flavor_name, sample.output)
+    output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'),'src', 'HNL', 'EventSelection', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], category_split_str, trigger_str, args.region, flavor_name, sample.output)
 
 
 if args.isChild:
@@ -134,13 +134,13 @@ else:
 
 if args.compareTriggerCuts is None:
     for k in efficiency.keys():
-        efficiency[k]['regularRun'] = Efficiency('efficiency_'+str(k), var['HNLmass'][0], var['HNLmass'][2], output_name, bins=var['HNLmass'][1])
+        efficiency[k]['regularRun'] = Efficiency('efficiency_'+str(k), var['HNLmass'][0], var['HNLmass'][2], output_name, bins=var['HNLmass'][1], subdirs=['efficiency_'+str(k), 'l1_'+str('r')+'_l2_'+str('e')+'_l3_'+str('g')])
 elif args.compareTriggerCuts == 'full':
     if not args.divideByCategory:
         print "Inconsistent input: This mode is to be used together with divideByCategory. Exiting"
         exit(0)
     for k in efficiency.keys():
-        efficiency[k]['full'] = Efficiency('efficiency_'+str(k), var['HNLmass'][0], var['HNLmass'][2], output_name, bins=var['HNLmass'][1])
+        efficiency[k]['full'] = Efficiency('efficiency_'+str(k), var['HNLmass'][0], var['HNLmass'][2], output_name, bins=var['HNLmass'][1], subdirs=['efficiency_'+str(k), 'l1_'+str('f')+'_l2_'+str('u')+'_l3_'+str('l')])
 else: #'single' or 'cumulative'
     if not args.divideByCategory:
         print "Inconsistent input: This mode is to be used together with divideByCategory. Exiting"
@@ -148,7 +148,7 @@ else: #'single' or 'cumulative'
     for c in ec.categories:
         for ptcuts in returnCategoryPtCuts(c):
             efficiency[c][ptcuts] = Efficiency('efficiency_'+str(c)+'_l1_'+str(ptcuts[0])+'_l2_'+str(ptcuts[1])+'_l3_'+str(ptcuts[2]), 
-                var['HNLmass'][0], var['HNLmass'][2], output_name, bins=var['HNLmass'][1])
+                var['HNLmass'][0], var['HNLmass'][2], output_name, bins=var['HNLmass'][1], subdirs=['efficiency_'+str(c), 'l1_'+str(ptcuts[0])+'_l2_'+str(ptcuts[1])+'_l3_'+str(ptcuts[2])])
 
 #
 # Set event range
@@ -179,7 +179,7 @@ cutter = Cutter(chain = chain)
 from HNL.Tools.helpers import progress
 from HNL.EventSelection.eventSelectionTools import select3Leptons, selectGenLeptonsGeneral, lowMassCuts, highMassCuts, passedCustomPtCuts, passBaseCuts
 from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
-from HNL.ObjectSelection.leptonSelector import isFOLepton
+from HNL.ObjectSelection.leptonSelector import isGoodLepton
 
 def passedPtCutsByCategory(in_chain, cat):
     cuts_collection = returnCategoryPtCuts(cat)
@@ -189,14 +189,11 @@ def passedPtCutsByCategory(in_chain, cat):
 #
 # Object Selection
 #
-from HNL.ObjectSelection.objectSelection import objectSelectionCollection
-if args.selection == 'AN2017014':
-    object_selection = objectSelectionCollection('deeptauVSjets', 'cutbased', 'tight', 'tight', 'tight', True)
-else:
-    object_selection = objectSelectionCollection('deeptauVSjets', 'leptonMVAtop', 'tight', 'tight', 'tight', False)
+from HNL.ObjectSelection.objectSelection import getObjectSelection
+chain.obj_sel = getObjectSelection(args.selection)
 
 from HNL.EventSelection.eventSelector import EventSelector
-es = EventSelector(args.region, args.selection, object_selection, True, ec)    
+es = EventSelector(args.region, chain, chain, args.selection, True, ec)    
 
 for entry in event_range:
     
@@ -212,11 +209,11 @@ for entry in event_range:
     true_cat = ec.returnCategory()
 
     if args.FOcut:
-        tmp = [l for l in xrange(chain._nL) if isFOLepton(chain, l)]
+        tmp = [l for l in xrange(chain._nL) if isGoodLepton(chain, l, 'FO')]
         if len(tmp) < 3: continue   
    
     if not args.genLevel:
-        passed = es.passedFilter(chain, chain, cutter)
+        passed = es.passedFilter(cutter)
     else:
         passed = True
 
@@ -245,8 +242,8 @@ for entry in event_range:
 #
 for i, c_key in enumerate(efficiency.keys()):
     for j, t_key in enumerate(efficiency[c_key].keys()):
-        if i == 0 and j == 0:       efficiency[c_key][t_key].write(subdirs=['efficiency_'+str(c_key), 'l1_'+str(t_key[0])+'_l2_'+str(t_key[1])+'_l3_'+str(t_key[2])])
-        else:                       efficiency[c_key][t_key].write(append=True, subdirs=['efficiency_'+str(c_key), 'l1_'+str(t_key[0])+'_l2_'+str(t_key[1])+'_l3_'+str(t_key[2])])
+        if i == 0 and j == 0:       efficiency[c_key][t_key].write()
+        else:                       efficiency[c_key][t_key].write(append=True)
         
 
 closeLogger(log)

@@ -32,8 +32,8 @@ args = argParser.parse_args()
 #
 if args.isTest:
     args.isChild = True
-    #args.sample = 'DY-ext1'
-    args.sample = 'HNL-tau-m60'
+    args.sample = 'DYJetsToLL-M-50-ext1'
+    # args.sample = 'HNL-tau-m60'
     args.subJob = '0'
     args.year = '2016'
 
@@ -64,7 +64,7 @@ for sample_name in sample_manager.sample_names:
 if not args.isChild:
 
     from HNL.Tools.jobSubmitter import submitJobs
-    submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'compareTauID')
+    submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'compareLightLepID')
     exit(0)
 
 #
@@ -79,7 +79,10 @@ isBkgr = not 'HNL' in sample.name
 #Set output dir
 #
 from HNL.Tools.helpers import makeDirIfNeeded
-output_name = os.path.join(os.getcwd(), 'data', os.path.basename(__file__).split('.')[0])
+if args.isTest:
+    output_name = os.path.join(os.getcwd(), 'data', 'testArea', os.path.basename(__file__).split('.')[0])
+else:
+    output_name = os.path.join(os.getcwd(), 'data', os.path.basename(__file__).split('.')[0])
 if args.includeReco: output_name = os.path.join(output_name, 'includeReco')
 if args.onlyReco: output_name = os.path.join(output_name, 'onlyReco')
 output_name = os.path.join(output_name, sample.output)
@@ -112,9 +115,9 @@ for algo in algos:
         list_of_var_hist['fakerate'][algo][v] = {}
         for wp in algo_wp:
             tot_name = output_name+'/'+ sample.name + '_efficiency-'+str(args.flavor)+'_' + args.subJob+'.root'
-            list_of_var_hist['efficiency'][algo][v][wp] = Efficiency('efficiency_'+v+algo, var_hist[v][0], var_hist[v][2], tot_name, var_hist[v][1])
+            list_of_var_hist['efficiency'][algo][v][wp] = Efficiency('efficiency_'+v+algo, var_hist[v][0], var_hist[v][2], tot_name, var_hist[v][1], subdirs = [algo + '-' + wp, 'efficiency_'+v])
             tot_name = output_name+'/'+ sample.name + '_fakerate-'+str(args.flavor)+'_' + args.subJob+'.root'
-            list_of_var_hist['fakerate'][algo][v][wp] = Efficiency('fakerate_'+v+algo, var_hist[v][0], var_hist[v][2], tot_name, var_hist[v][1])
+            list_of_var_hist['fakerate'][algo][v][wp] = Efficiency('fakerate_'+v+algo, var_hist[v][0], var_hist[v][2], tot_name, var_hist[v][1], subdirs = [algo + '-' + wp, 'fakerate_'+v])
 
 #Determine if testrun so it doesn't need to calculate the number of events in the getEventRange
 if args.isTest:
@@ -125,7 +128,7 @@ else:
 from HNL.Tools.helpers import progress
 from HNL.ObjectSelection.electronSelector import isBaseElectron
 from HNL.ObjectSelection.muonSelector import isBaseMuon
-from HNL.ObjectSelection.leptonSelector import isGoodLepton
+from HNL.ObjectSelection.leptonSelector import isGoodLepton, isGoodLightLeptonGeneral
 from HNL.EventSelection.eventSelectionTools import selectGenLeptonsGeneral
 from HNL.Tools.helpers import deltaR
 
@@ -161,7 +164,7 @@ for entry in event_range:
                 if args.onlyReco: 
                     passed = matched_l is not None
                 else:
-                    passed = matched_l is not None and isTightLightLepton(chain, matched_l, algo)
+                    passed = matched_l is not None and isGoodLightLeptonGeneral(chain, matched_l, algo=algo, workingpoint='tight')
                 passed_tot.append(passed)
                 for v in list_of_var_hist['efficiency'][algo].keys():
                     list_of_var_hist['efficiency'][algo][v][wp].fill(chain, 1., passed)
@@ -183,7 +186,7 @@ for entry in event_range:
                 if chain._lIsPrompt[lepton]:
                     passed_tot = []
                     for wp in algos[algo]:
-                        passed = isGoodLepton(chain, lepton, algo = algo, workingpoint = wp)
+                        passed = isGoodLightLeptonGeneral(chain, lepton, algo = algo, workingpoint = wp)
                         passed_tot.append(passed)
                         for v in list_of_var_hist['efficiency'][algo].keys():
                             list_of_var_hist['efficiency'][algo][v][wp].fill(chain, 1., passed)
@@ -193,7 +196,7 @@ for entry in event_range:
                 else:
                     passed_tot = []
                     for wp in algos[algo]:
-                        passed = isGoodLepton(chain, lepton, algo = algo, workingpoint = wp)
+                        passed = isGoodLightLeptonGeneral(chain, lepton, algo = algo, workingpoint = wp)
                         for v in list_of_var_hist['fakerate'][algo].keys():
                             list_of_var_hist['fakerate'][algo][v][wp].fill(chain, 1., passed)
                         passed_tot.append(passed)
@@ -202,7 +205,7 @@ for entry in event_range:
 #
 # Write
 #
-if args.isTest: exit(0)
+# if args.isTest: exit(0)
 for r in list_of_roc:
     r.write(True)
 
@@ -211,6 +214,6 @@ for eff in ['efficiency', 'fakerate']:
         for i, v in enumerate(list_of_var_hist['fakerate'][algo].keys()):
             for j, wp in enumerate(list_of_var_hist['fakerate'][algo][v].keys()):
                 if a == 0 and i == 0 and j == 0:
-                    list_of_var_hist[eff][algo][v][wp].write(append = False, name = eff+'_'+v, subdirs = [algo + '-' + wp, eff+'_'+v])
+                    list_of_var_hist[eff][algo][v][wp].write(append = False, name = eff+'_'+v)
                 else:
-                    list_of_var_hist[eff][algo][v][wp].write(append = True, name = eff+'_'+v, subdirs = [algo + '-' + wp, eff+'_'+v]) 
+                    list_of_var_hist[eff][algo][v][wp].write(append = True, name = eff+'_'+v) 
