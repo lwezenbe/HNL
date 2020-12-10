@@ -12,7 +12,7 @@
 import numpy as np
 from HNL.ObjectSelection.leptonSelector import isGoodLepton, isFakeLepton
 from HNL.ObjectSelection.leptonSelector import isGoodGenLepton
-from HNL.ObjectSelection.jetSelector import isGoodJet, isBJet
+from HNL.ObjectSelection.jetSelector import isGoodJet, isGoodBJet
 from HNL.Tools.helpers import getFourVec, deltaPhi
 from HNL.Weights.tauEnergyScale import TauEnergyScale
 
@@ -78,6 +78,7 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         new_chain.l_flavor = [0.0]*nL
         new_chain.l_e = [0.0]*nL
         new_chain.l_indices = [0.0]*nL
+        new_chain.l_isFO = [0.0]*nL
         new_chain.l_istight = [0.0]*nL
         new_chain.l_isfake = [0.0]*nL
 
@@ -94,6 +95,7 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         new_chain.l_phi[i] = chain._lPhi[ptAndIndex[i][1]]
         new_chain.l_e[i] = chain._lE[ptAndIndex[i][1]]
         new_chain.l_charge[i] = chain._lCharge[ptAndIndex[i][1]]
+        new_chain.l_isFO[i] = isGoodLepton(chain, ptAndIndex[i][1], 'FO')
         new_chain.l_istight[i] = isGoodLepton(chain, ptAndIndex[i][1], 'tight')
         new_chain.l_isfake[i] = isFakeLepton(chain, ptAndIndex[i][1])
         
@@ -200,7 +202,7 @@ def selectFirstTwoJets(chain, new_chain, selection = None):
         new_chain.j_e = [0.0]*2
         new_chain.j_indices = [0.0]*2
 
-    chain.jets = [(chain._jetPt[j], j) for j in xrange(chain._nJets) if isGoodJet(chain, j, selection = selection)]
+    chain.jets = [(chain._jetPt[j], j) for j in xrange(chain._nJets) if isGoodJet(chain, j)]
 
     ptAndIndex = sorted(chain.jets, reverse=True, key = getSortKey)
  
@@ -246,15 +248,8 @@ def calculateGeneralVariables(chain, new_chain, is_reco_level = True, selection 
             new_chain.pt_cone.append(chain._lPt[l]*(1+max(0., chain._miniIso[l]-0.4))) #TODO: is this the correct definition?
 
         #calculate #jets and #bjets
-        njets = 0
-        nbjets = 0
-        for jet in xrange(chain._nJets):
-            if isGoodJet(chain, jet):     
-                njets += 1        
-                if isBJet(chain, jet, 'Deep', 'loose'): nbjets += 1
-
-        new_chain.njets = njets
-        new_chain.nbjets = nbjets
+        new_chain.njets = selectJets(chain)
+        new_chain.nbjets = nBjets(chain, 'loose')
         new_chain.HT = calcHT(chain, new_chain, selection)
         selectFirstTwoJets(chain, new_chain, selection = selection)
 
@@ -468,21 +463,21 @@ def calculateFourLepVariables(chain, new_chain):
 
 #################################################
 
-def selectJets(chain, cleaned = True, selection = None):
+def selectJets(chain, cleaned = True):
     jet_indices = []
     for jet in xrange(chain._nJets):
-        if isGoodJet(chain, jet, cleaned=cleaned, selection = selection): jet_indices.append(jet)
+        if isGoodJet(chain, jet, cleaned=cleaned): jet_indices.append(jet)
     return jet_indices
 
-def nBjets(chain, algo, wp, cleaned = True, selection = None):
+def nBjets(chain, wp, selection = None):
     nbjets = 0
     for jet in xrange(chain._nJets):
-        if isBJet(chain, jet, algo, wp, cleaned=cleaned, selection = selection): nbjets += 1
+        if isGoodBJet(chain, jet, wp, selection = selection): nbjets += 1
     return nbjets
 
-def bVeto(chain, algo, cleaned = True, selection = None):
+def bVeto(chain):
     for jet in xrange(chain._nJets):
-        if isBJet(chain, jet, algo, 'loose', cleaned=cleaned, selection = selection): return True    
+        if isGoodBJet(chain, jet, 'loose'): return True    
     return False
 
 def fourthFOVeto(chain, no_tau = False):
@@ -617,7 +612,7 @@ def passBaseCuts(chain, new_chain, cutter):
     calculateKinematicVariables(chain, new_chain, is_reco_level = True)
     if not cutter.cut(not fourthFOVeto(chain), 'Fourth FO veto'):        return False 
     if not cutter.cut(not threeSameSignVeto(chain), 'No three same sign'):        return False
-    if not cutter.cut(not bVeto(chain, 'Deep'), 'b-veto'):              return False
+    if not cutter.cut(not bVeto(chain), 'b-veto'):              return False
     # if not cutter.cut(abs(new_chain.M3l-91) > 15, 'M3l_Z_veto'):        return False 
     # if not cutter.cut(passesZcuts(chain, new_chain, True), 'M2l_OS_Z_veto'):        return False
     return True
@@ -639,7 +634,7 @@ def passBaseCutsNoBVeto(chain, new_chain, cutter):
 def passBaseCutsAN2017014(chain, new_chain, cutter):
    
     if not cutter.cut(passesPtCutsAN2017014(chain), 'pt_cuts'):         return False 
-    if not cutter.cut(not bVeto(chain, 'AN2017014', cleaned=False), 'b-veto'):              return False
+    if not cutter.cut(not bVeto(chain), 'b-veto'):              return False
     if not cutter.cut(not threeSameSignVeto(chain), 'three_same_sign_veto'):                    return False
     if not cutter.cut(not fourthFOVeto(chain), '4th_l_veto'):   return False
     return True
@@ -765,18 +760,8 @@ def calculateKinematicVariables(chain, new_chain, is_reco_level = True):
         #     new_chain.pt_cone.append(chain._lPt[l]) #TODO: is this the correct definition?
    
     #calculate #jets and #bjets
-    njets = 0
-    nbjets = 0
-    # print 'start'
-    for jet in xrange(chain._nJets):
-        if isGoodJet(chain, jet): 
-            # print 'new good jet with index : ', jet
-            # print 'Is good b jet? ', isBJet(chain, jet, 'Deep', 'loose')    
-            njets += 1        
-            if isBJet(chain, jet, 'Deep', 'loose'): nbjets += 1
-
-    new_chain.njets = njets
-    new_chain.nbjets = nbjets
+    new_chain.njets = selectJets(chain)
+    new_chain.nbjets = nBjets(chain, 'loose')
         
     new_chain.hasOSSF = containsOSSF(new_chain)
 

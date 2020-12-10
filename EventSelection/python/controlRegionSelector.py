@@ -32,7 +32,7 @@ class ZZCRfilter(FilterObject):
 
     def passedFilter(self, cutter):
         if not self.initEvent(cutter):                                                 return False
-        if not cutter.cut(not bVeto(self.chain, 'Deep', cleaned=False, selection = self.selection), 'b-veto'):                 return False
+        if not cutter.cut(not bVeto(self.chain), 'b-veto'):                 return False
 
         #Relaxed
         if not cutter.cut(massDiff(self.chain.Mll_Z1, MZ) < 15, 'First Z ok'):                                                           return False
@@ -75,7 +75,7 @@ class ConversionCRfilter(FilterObject):
         if not cutter.cut(abs(self.new_chain.M3l-MZ) < 15, 'M3l_onZ'):       return False 
         if not cutter.cut(self.chain.MZossf < 75, 'Mll < 75'):               return False
         if self.selection == 'AN2017014' and not cutter.cut(passesPtCutsAN2017014(chain), 'pt_cuts'):     return False 
-        if not cutter.cut(not bVeto(self.chain, 'Deep', cleaned=False, selection = self.selection), 'b-veto'):                 return False
+        if not cutter.cut(not bVeto(self.chain), 'b-veto'):                 return False
         self.chain.category = max(cat.CATEGORIES)
         return True
 
@@ -135,8 +135,7 @@ class TauFakeEnrichedTT(FilterObject):
 
         # print 'os'
         # print self.selection
-        # print nBjets(self.chain, 'CSV', 'tight', cleaned = True, selection = self.selection)
-        if nBjets(self.chain, 'Deep', 'tight', cleaned = True, selection = self.selection) < 1:      return False
+        if nBjets(self.chain, 'tight') < 1:      return False
 
         # print 'bjets'
         l1Vec = getFourVec(self.new_chain.l_pt[0], self.new_chain.l_eta[0], self.new_chain.l_phi[0], self.new_chain.l_e[0])
@@ -290,6 +289,7 @@ class TauClosureTest(ClosureTestSelection):
 
         # if not cutter.cut(abs(91. - (l1Vec + l2Vec).M()) < 15, 'Z window'): return False
         if not cutter.cut(self.chain._met < 50, 'MET>50'): return False
+        if not cutter.cut(not bVeto(self.chain), 'b-veto'): return False
 
         if not cutter.cut(self.hasCorrectNumberOfFakes(), 'correct number of fakes'): return False
 
@@ -366,3 +366,5 @@ class MuonClosureTest(ClosureTestSelection):
         # print is_fake_lep, [t for t in is_fake_lep if t]
         # if len([t for t in is_fake_lep if t]) < 1: return False
         return True
+
+
