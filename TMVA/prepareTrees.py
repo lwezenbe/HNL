@@ -19,8 +19,8 @@ submission_parser.add_argument('--logLevel',  action='store',      default='INFO
 
 submission_parser.add_argument('--summaryFile', action='store_true', default=False,  help='Create text file that shows all selected arguments')
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
-submission_parser.add_argument('--selection',   action='store', default='cut-based',
-    help='Select the strategy to use to separate signal from background', choices=['cut-based', 'AN2017014', 'MVA'])
+submission_parser.add_argument('--selection',   action='store', default='cutbased',
+    help='Select the strategy to use to separate signal from background', choices=['cutbased', 'AN2017014', 'MVA'])
 submission_parser.add_argument('--region',   action='store', default='baseline', 
     help='apply the cuts of high or low mass regions, use "all" to run both simultaniously', choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZ', 'WZ', 'Conversion'])
 
@@ -140,14 +140,9 @@ if not args.merge:
     ec = EventCategory(chain)
 
     #prepare object  and event selection
-    from HNL.ObjectSelection.objectSelection import objectSelectionCollection
-    if args.selection == 'AN2017014':
-        object_selection = objectSelectionCollection('deeptauVSjets', 'cutbased', 'tight', 'tight', 'tight', True)
-    else:
-        object_selection = objectSelectionCollection('deeptauVSjets', 'leptonMVAtop', 'tight', 'tight', 'tight', False)
-
-    chain.obj_sel = object_selection
-    es = EventSelector(args.region, args.selection, object_selection, True, ec)
+    from HNL.ObjectSelection.objectSelection import getObjectSelection
+    chain.obj_sel = getObjectSelection(args.selection)
+    es = EventSelector(args.region, chain, chain, args.selection, True, ec)
 
     for entry in event_range:
         chain.GetEntry(entry)
@@ -155,7 +150,7 @@ if not args.merge:
     
         cutter.cut(True, 'Total')
 
-        if not es.passedFilter(chain, chain, cutter): continue
+        if not es.passedFilter(cutter): continue
         if len(chain.l_flavor) == chain.l_flavor.count(2): continue
 
         #Set Variables

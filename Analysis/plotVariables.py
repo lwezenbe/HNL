@@ -22,12 +22,8 @@ submission_parser.add_argument('--isTest',   action='store_true',       default=
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 submission_parser.add_argument('--dryRun',   action='store_true',       default=False,  help='do not launch subjobs, only show them')
 submission_parser.add_argument('--genLevel',   action='store_true',     default=False,  help='Use gen level variables')
-submission_parser.add_argument('--signalOnly',   action='store_true',   default=False,  help='Run or plot a only the signal')
-submission_parser.add_argument('--bkgrOnly',   action='store_true',     default=False,  help='Run or plot a only the background')
-submission_parser.add_argument('--masses', type=float, nargs='*',  help='Only run or plot signal samples with mass given in this list')
-submission_parser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l', ''])
 submission_parser.add_argument('--coupling', action='store', default=0.01, type=float,  help='How large is the coupling?')
-submission_parser.add_argument('--selection', action='store', default='cut-based', type=str,  help='What type of analysis do you want to run?', choices=['cut-based', 'AN2017014', 'MVA'])
+submission_parser.add_argument('--selection', action='store', default='cutbased', type=str,  help='What type of analysis do you want to run?', choices=['cutbased', 'AN2017014', 'MVA'])
 submission_parser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', 
     choices=['baseline', 'lowMassSR', 'highMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
 submission_parser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data')
@@ -38,6 +34,11 @@ argParser.add_argument('--showCuts',   action='store_true',     default=False,  
 argParser.add_argument('--groupSamples',   action='store_true', default=False,  help='plot Search Regions')
 argParser.add_argument('--makeDataCards', action = 'store_true',  help='Make data cards of the data you have')
 argParser.add_argument('--rescaleSignal', type = float,  action='store', default=None,  help='Enter desired signal coupling squared')
+argParser.add_argument('--masses', type=float, nargs='*',  help='Only run or plot signal samples with mass given in this list')
+argParser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l', ''])
+argParser.add_argument('--signalOnly',   action='store_true',   default=False,  help='Run or plot a only the signal')
+argParser.add_argument('--bkgrOnly',   action='store_true',     default=False,  help='Run or plot a only the background')
+
 
 args = argParser.parse_args()
 
@@ -79,7 +80,6 @@ if args.isTest:
     if args.sample is None: args.sample = 'DYJetsToLL-M-50'
     args.isChild = True
     args.subJob = '0'
-
 
 #
 # Create histograms
@@ -127,7 +127,8 @@ if args.genLevel:
 elif args.selection != 'AN2017014':
     skim_str = 'Reco'
 else:
-    skim_str = 'Old'
+    skim_str = 'noskim'
+    # skim_str = 'Reco'
 sample_manager = SampleManager(args.year, skim_str, 'fulllist_'+str(args.year))
 
 from HNL.Triggers.triggerSelection import applyCustomTriggers, listOfTriggersAN2017014
@@ -140,8 +141,6 @@ for sample_name in sample_manager.sample_names:
     if not args.includeData and sample_name == 'Data': continue
     sample = sample_manager.getSample(sample_name)
     if args.sample and args.sample != sample.name: continue
-    if args.signalOnly and not 'HNL' in sample.name: continue
-    if args.bkgrOnly and 'HNL' in sample.name: continue
     for njob in xrange(sample.split_jobs): 
         jobs += [(sample.name, str(njob))]
 
@@ -159,12 +158,7 @@ if not args.makePlots and not args.makeDataCards:
         exit(0)
 
     #prepare object  and event selection
-    from HNL.ObjectSelection.objectSelection import objectSelectionCollection
-    if args.selection == 'AN2017014':
-        object_selection = objectSelectionCollection('deeptauVSjets', 'cutbased', 'tight', 'tight', 'tight', True)
-    else:
-        object_selection = objectSelectionCollection('deeptauVSjets', 'leptonMVAtop', 'tight', 'tight', 'tight', False)
-
+    from HNL.ObjectSelection.objectSelection import getObjectSelection
     from HNL.EventSelection.eventSelector import EventSelector
 
     #Start a loop over samples
@@ -180,8 +174,8 @@ if not args.makePlots and not args.makeDataCards:
         # Load in sample and chain
         #
         chain = sample.initTree(needhcount=False)
+        chain.obj_sel = getObjectSelection(args.selection)
         sample_names.append(sample.name)
-        chain.obj_sel = object_selection
 
         #
         # Check if sample is a signal or background sample
@@ -191,9 +185,6 @@ if not args.makePlots and not args.makeDataCards:
             signal_str = 'data'
         else:
             signal_str = 'signal' if is_signal else 'bkgr'
-
-        if args.signalOnly and not is_signal:   continue
-        if args.bkgrOnly and is_signal:         continue
 
         #
         # Create histogram for all categories and variables
@@ -248,7 +239,7 @@ if not args.makePlots and not args.makeDataCards:
         # Loop over all events
         #
         ec = EventCategory(chain)
-        es = EventSelector(args.region, args.selection, object_selection, not args.genLevel, ec)
+        es = EventSelector(args.region, chain, chain, args.selection, not args.genLevel, ec)
         for entry in event_range:
             
             chain.GetEntry(entry)
@@ -265,7 +256,7 @@ if not args.makePlots and not args.makeDataCards:
             #
             # Event selection
             #
-            if not es.passedFilter(chain, chain, cutter): continue
+            if not es.passedFilter(cutter): continue
             if len(chain.l_flavor) == chain.l_flavor.count(2): continue #Not all taus
 
             nprompt = 0
@@ -394,12 +385,13 @@ else:
                 for b in background_collection:
                     list_of_hist[c][v]['bkgr'][b] = Histogram(b+v+str(c), var[v][0], var[v][2], var[v][1])
 
-    for c in categories: 
+    for ic, c in enumerate(categories): 
         print 'loading', c
-        for v in var.keys():   
+        for iv, v in enumerate(var.keys()):   
             if not args.signalOnly:
                 for b in bkgr_list:
                     bkgr = b.split('/')[-1]
+                    if 'QCD' in bkgr: continue
                     if args.sample is not None and args.sample != bkgr: continue
 
                     tmp_hist_total = Histogram(getObjFromFile(b+'/variables.root', v+'/'+str(c)+'-'+v+'-'+bkgr+'-total'))
@@ -408,11 +400,15 @@ else:
 
                     if args.groupSamples:
                         sg = [sk for sk in sample_manager.sample_groups.keys() if bkgr in sample_manager.sample_groups[sk]]
+                        if len(sg) == 0:
+                            if c == 1 and iv == 0: print bkgr, "not part of any sample group"
+                            continue
+                        # print bkgr, sg
                         if bkgr == 'DY':
                             list_of_hist[c][v]['bkgr']['XG'].add(tmp_hist_prompt)
                             list_of_hist[c][v]['bkgr']['non-prompt'].add(tmp_hist_nonprompt)
-                        elif sg == 'non-prompt':
-                            list_of_hist[c][v]['bkgr'][sg[0]].add(tmp_hist_nonprompt)
+                        elif sg[0] == 'non-prompt':
+                            list_of_hist[c][v]['bkgr'][sg[0]].add(tmp_hist_nonprompt) #TODO: Is this correct? Arent we just ignoring a bunch of events that were prompt?
                         else:
                             # print c, v, b, sg
                             list_of_hist[c][v]['bkgr'][sg[0]].add(tmp_hist_prompt)
@@ -569,11 +565,11 @@ if args.makePlots:
     # Create plots for each category
     #
     from HNL.EventSelection.eventCategorization import CATEGORY_NAMES
-    # for c in list_of_hist.keys():
-    for c in cat.SUPER_CATEGORIES.keys():
+    for c in list_of_hist.keys():
+    # for c in cat.SUPER_CATEGORIES.keys():
         print c
-        # c_name = CATEGORY_NAMES[c] if c not in cat.SUPER_CATEGORIES.keys() else c
-        c_name = c
+        c_name = CATEGORY_NAMES[c] if c not in cat.SUPER_CATEGORIES.keys() else c
+        # c_name = c
 
         # printSelections(mixed_list[0]+'/variables.root', os.path.join(output_dir, c_name, 'Selections.txt'))
 
@@ -591,8 +587,9 @@ if args.makePlots:
             if args.signalOnly or not list_of_hist[c][v]['bkgr'].values(): 
                 bkgr_hist = None
             else:
+                bkgr_hist = []
                 for bk in list_of_hist[c][v]['bkgr'].keys():
-                    bkgr_hist = list_of_hist[c][v]['bkgr'][bk]
+                    bkgr_hist.append(list_of_hist[c][v]['bkgr'][bk])
                     bkgr_legendnames.append(bk)
         
             # Make list of signal histograms for the plot object
@@ -623,7 +620,7 @@ if args.makePlots:
 
             draw_ratio = None if args.signalOnly or args.bkgrOnly else True
             if args.groupSamples:
-                p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = args.year, color_palette = 'HNL', color_palette_bkgr = 'AN2017')
+                p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = False, extra_text = extra_text, draw_ratio = draw_ratio, year = args.year, color_palette = 'HNL', color_palette_bkgr = 'AN2017')
             else:
                 p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, y_log = False, extra_text = extra_text, draw_ratio = draw_ratio, year = args.year)
 

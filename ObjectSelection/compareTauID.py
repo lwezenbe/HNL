@@ -165,6 +165,9 @@ sample = sample_manager.getSample(args.sample)
 chain = sample.initTree(False)
 isBkgr = not 'HNL' in sample.name
 
+from HNL.ObjectSelection.objectSelection import getObjectSelection
+chain.obj_sel = getObjectSelection('MVA')
+
 #
 # Function to show what gen status' should be allowed for different types of background
 # Iso discriminators should only look at the background from jets
@@ -240,7 +243,7 @@ for discr in args.discriminators:
                 if discr != 'iso' or args.includeReco == 'noIso' or not args.makeCombinations:
                     for wp in algos[discr][algo]:
                         out_path = output_name(discr, algo, wp)+'/'+ sample.name +'_'+eff_or_fake +subjobAppendix+ '.root'
-                        list_of_var_hist[eff_or_fake][discr][algo][v][wp] = Efficiency('-'.join([eff_or_fake, v, algo, str(wp)]), var_hist[v][0], var_hist[v][2], out_path, var_hist[v][1])
+                        list_of_var_hist[eff_or_fake][discr][algo][v][wp] = Efficiency('-'.join([eff_or_fake, v, algo, str(wp)]), var_hist[v][0], var_hist[v][2], out_path, var_hist[v][1], subdirs = [v, algo + '-' + str(wp)])
                 else:
                     for wp in algos[discr][algo]:
                         out_path = output_name(discr, algo, wp)+'/'+ sample.name +'_'+eff_or_fake +subjobAppendix+ '.root'
@@ -249,7 +252,7 @@ for discr in args.discriminators:
                             list_of_var_hist[eff_or_fake][discr][algo][v][wp][ele_wp] = {}
                             for mu_wp in algos['mu'][linkIsoToLep('mu', algo)]:
                                 list_of_var_hist[eff_or_fake][discr][algo][v][wp][ele_wp][mu_wp] = Efficiency('-'.join([eff_or_fake, v, algo, str(wp), str((ele_wp, mu_wp))]), 
-                                    var_hist[v][0], var_hist[v][2], out_path, var_hist[v][1])
+                                    var_hist[v][0], var_hist[v][2], out_path, var_hist[v][1], subdirs = [v, algo + '-' + str((ele_wp, mu_wp))])
             
 #
 # Determine if testrun so it doesn't need to calculate the number of events in the getEventRange
@@ -413,15 +416,15 @@ for discr in args.discriminators:
                     if args.includeReco == 'noIso' and wp is not None: continue
                     if discr != 'iso' or args.includeReco == 'noIso' or not args.makeCombinations:
                         if a == 0 and i == 0 and j == 0:
-                            list_of_var_hist[eff][discr][algo][v][wp].write(append = False, name = eff, subdirs = [v, algo + '-' + str(wp)])
+                            list_of_var_hist[eff][discr][algo][v][wp].write(append = False, name = eff)
                         else:
-                            list_of_var_hist[eff][discr][algo][v][wp].write(append = True, name = eff, subdirs = [v, algo + '-' + str(wp)])
+                            list_of_var_hist[eff][discr][algo][v][wp].write(append = True, name = eff)
                     else:
                         for k, ele_wp in enumerate(algos['ele'][linkIsoToLep('ele', algo)]):
                             for l, mu_wp in enumerate(algos['mu'][linkIsoToLep('mu', algo)]):
                                 if a == 0 and i == 0 and j == 0 and k == 0 and l == 0:
-                                    list_of_var_hist[eff][discr][algo][v][wp][ele_wp][mu_wp].write(append = False, name = eff, subdirs = [v, algo + '-' + str((ele_wp, mu_wp))])
+                                    list_of_var_hist[eff][discr][algo][v][wp][ele_wp][mu_wp].write(append = False, name = eff)
                                 else:
-                                    list_of_var_hist[eff][discr][algo][v][wp][ele_wp][mu_wp].write(append = True, name = eff, subdirs = [v, algo + '-' + str((ele_wp, mu_wp))])
+                                    list_of_var_hist[eff][discr][algo][v][wp][ele_wp][mu_wp].write(append = True, name = eff)
 
 print 'Finished'

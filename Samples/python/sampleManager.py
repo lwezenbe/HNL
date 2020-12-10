@@ -17,7 +17,7 @@ SAMPLE_GROUPS = {
     'WZ': ['WZ'],
     # 'diboson': ('ZZ', 'WW', 'WZ'),
     'ZZ-H': ['ZZ', 'QCD', 'Higgs'],
-    'XG': ['XG']
+    'XG': ['XG', 'WG']
 }
 
 

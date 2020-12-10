@@ -36,7 +36,7 @@ sample_manager = SampleManager(args.year, 'noskim', 'signalCompression')
 #
 if args.isTest: 
     args.isChild = True
-    args.sample = 'HNL-tau-filtered-m30'
+    args.sample = 'HNL-tau-m30'
     args.subJob = '0'
 
 if not args.isChild:
@@ -92,9 +92,9 @@ def getSortKey(item): return item[0]
 from HNL.EventSelection.eventSelector import EventSelector
 from HNL.EventSelection.eventCategorization import EventCategory, filterSuperCategory
 from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
-es = EventSelector('baseline', 'MVA', None, is_reco_level = False)
 slm = SignalLeptonMatcher(chain)
 ec = EventCategory(chain)
+es = EventSelector('baseline', chain, chain, 'MVA', is_reco_level = False, event_categorization=ec)
 
 #
 # Create cutter to provide cut flow
@@ -109,11 +109,11 @@ for entry in eventRange:
     progress(entry-eventRange[0], len(eventRange))
     chain.GetEntry(entry)
 
-    if not es.passedFilter(chain, chain, cutter): continue
+    if not es.passedFilter(cutter): continue
     slm.saveNewOrder()
     category = ec.returnCategory()
     if not filterSuperCategory('SingleTau', category): continue
-    print category, entry
+    # print category, entry
     # if chain._gen_nL < 3: continue
 
     # lep = [(chain._gen_lPt[i], i) for i in xrange(chain._gen_nL)]
@@ -124,7 +124,7 @@ for entry in eventRange:
     pt_hist[1].Fill(chain.l_pt[1])
     pt_hist[2].Fill(chain.l_pt[2])
 
-    print chain.l_flavor
+    # print chain.l_flavor
 
     # if args.plotSoftTau and 'tau' in sample.name:
     #     print len(taus)

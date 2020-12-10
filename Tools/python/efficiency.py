@@ -14,7 +14,6 @@ class Efficiency(object):
         self.efficiency_num = None
         self.efficiency_denom = None
         self.efficiency = None
-        self.subdirs = subdirs
 
         #If bins == None, load in histograms from the path
         bins_check = False

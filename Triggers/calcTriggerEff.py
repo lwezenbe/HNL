@@ -119,7 +119,7 @@ def getOutputName(var, istest=False):
 # Define histograms
 # Could these lists could have been done in a nicer way but since the wanted lepton is different for different var, I was too lazy for now. Redo later if needed
 #                (channel, dim) 
-from HNL.EventSelection.eventCategorization import EventCategory
+from HNL.EventSelection.eventCategorization import EventCategory, returnCategoryTriggerNames, returnCategoryTriggers
 ec = EventCategory(chain)
 categories = ec.categories
 category_triggers = lambda chain, category : returnCategoryTriggers(chain, category)
@@ -176,17 +176,17 @@ for c in categories:
             if args.separateTriggers is None or args.separateTriggers == 'full':
                 name = str(c)+ '_' +v + '_' + t
                 if v != 'HNLmass':
-                    eff[(c, v, t)] = Efficiency(name, var[v][0], var[v][2], getOutputName(v), var[v][1])
+                    eff[(c, v, t)] = Efficiency(name, var[v][0], var[v][2], getOutputName(v), var[v][1], subdirs=['efficiency_'+str(c), v, 'allTriggers'])
                 else:
-                    eff[(c, v, t)] = Efficiency(name, var[v][0], var[v][2], getOutputName(v), var[v][1])
+                    eff[(c, v, t)] = Efficiency(name, var[v][0], var[v][2], getOutputName(v), var[v][1], subdirs=['efficiency_'+str(c), v, 'allTriggers'])
                 makeDirIfNeeded(getOutputName(v))
             else:
                 for i, trigger in enumerate(category_triggers(chain, c)):
                     name = str(c)+ '_' +v + '_' + t +'_'+str(i)
                     if v != 'HNLmass':
-                        eff[(c, v, t, i)] = Efficiency(name, var[v][0], var[v][2], getOutputName(v), var[v][1])
+                        eff[(c, v, t, i)] = Efficiency(name, var[v][0], var[v][2], getOutputName(v), var[v][1], subdirs=['efficiency_'+str(c), v, str(returnCategoryTriggerNames(c)[i])])
                     else:
-                        eff[(c, v, t, i)] = Efficiency(name, var[v][0], var[v][2], getOutputName(v), var[v][1])
+                        eff[(c, v, t, i)] = Efficiency(name, var[v][0], var[v][2], getOutputName(v), var[v][1], subdirs=['efficiency_'+str(c), v, str(returnCategoryTriggerNames(c)[i])])
                     makeDirIfNeeded(getOutputName(v))
                 
 #
@@ -200,11 +200,8 @@ else:
     event_range = sample.getEventRange(args.subJob)    
 
 #prepare object  and event selection
-from HNL.ObjectSelection.objectSelection import objectSelectionCollection
-if args.oldTriggers:
-    object_selection = objectSelectionCollection('deeptauVSjets', 'cutbased', 'tight', 'tight', 'tight', True)
-else:
-    object_selection = objectSelectionCollection('deeptauVSjets', 'leptonMVAtop', 'tight', 'tight', 'tight', False)
+from HNL.ObjectSelection.objectSelection import getObjectSelection
+chain.obj_sel = getObjectSelection('MVA') if not args.oldTriggers else getObjectSelection('AN2017014')
 
 #
 # Loop over all events
@@ -216,14 +213,15 @@ for entry in event_range:
     chain.GetEntry(entry)
     progress(entry - event_range[0], len(event_range))
 
-    if not select3Leptons(chain, chain, object_selection): continue
+    if not select3Leptons(chain, chain): continue
     if args.useRef and not chain._passTrigger_ref:     continue
 
     weightfactor = 1.
     if not sample.is_data: weightfactor *= chain._weight
 
     if args.separateTriggers is None:    
-        passed = passTriggers(chain, chain.year, oldAN=args.oldTriggers) 
+        analysis_str = 'HNL_old' if args.oldTriggers else 'HNL'
+        passed = passTriggers(chain, analysis_str) 
     
     true_cat = ec.returnCategory()
 
@@ -261,15 +259,15 @@ for i, c in enumerate(categories):
     for l, v in enumerate({k for k in var.keys()}): 
         for t in category_map[c]:
             if args.separateTriggers is None:
-                if i == 0 and l == 0:      eff[(c, v, t)].write(subdirs=['efficiency', v, 'allTriggers'])
-                else:           eff[(c, v, t)].write(append=True, subdirs=['efficiency', v, 'allTriggers'])
+                if i == 0 and l == 0:      eff[(c, v, t)].write()
+                else:           eff[(c, v, t)].write(append=True)
             elif args.separateTriggers == 'full':
-                if i == 0 and l == 0:      eff[(c, v, t)].write(subdirs=['efficiency_'+str(c), v, 'allTriggers'])
-                else:           eff[(c, v, t)].write(append=True, subdirs=['efficiency_'+str(c), v, 'allTriggers'])               
+                if i == 0 and l == 0:      eff[(c, v, t)].write()
+                else:           eff[(c, v, t)].write(append=True)               
             else:
                 for j, trigger in enumerate(category_triggers(chain, c)):
-                    if i == 0 and l == 0 and j == 0:       eff[(c, v, t, j)].write(subdirs=['efficiency_'+str(c), v, str(returnCategoryTriggerNames(c)[j])])
-                    else:                       eff[(c, v, t, j)].write(append=True, subdirs=['efficiency_'+str(c), v, str(returnCategoryTriggerNames(c)[j])])
+                    if i == 0 and l == 0 and j == 0:       eff[(c, v, t, j)].write()
+                    else:                       eff[(c, v, t, j)].write(append=True)
 
 
 closeLogger(log)

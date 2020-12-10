@@ -38,6 +38,19 @@ def isGoodLepton(chain, index, workingpoint = None):
     else:
         return False
 
+
+#
+# general functions for lepton ID comparison
+#
+def isGoodLightLeptonGeneral(chain, index, workingpoint = None, algo = None):
+    if chain._lFlavor[index] == 0:
+        return isGoodElectron(chain, index, workingpoint=workingpoint, algo=algo)
+    elif chain._lFlavor[index] == 1:
+        return isGoodMuon(chain, index, workingpoint=workingpoint, algo=algo)
+    else:
+        return False
+
+
 from HNL.ObjectSelection.tauSelector import isJetFakingTau
 from HNL.ObjectSelection.electronSelector import isFakeElectron
 from HNL.ObjectSelection.muonSelector import isFakeMuon

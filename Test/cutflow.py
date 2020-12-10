@@ -58,8 +58,8 @@ chain.year = int(args.year)
 from HNL.Tools.helpers import progress
 from HNL.EventSelection.eventSelectionTools import select3Leptons
 from HNL.EventSelection.eventCategorization import EventCategory
-from HNL.ObjectSelection.tauSelector import isTightTau
-from HNL.ObjectSelection.leptonSelector import isTightLepton
+from HNL.ObjectSelection.tauSelector import isGoodTau
+from HNL.ObjectSelection.leptonSelector import isGoodLepton
 
 ec = EventCategory(chain)
 for entry in event_range:
@@ -75,14 +75,14 @@ for entry in event_range:
     #Add here any additional cuts
     list_of_numbers['total'] += 1
     
-    chain.leptons = [l for l in xrange(chain._nLight) if isTightLepton(chain, l, algo = 'leptonMVAtZq')]
+    chain.leptons = [l for l in xrange(chain._nLight) if isGoodLepton(chain, l, 'tight')]
     if len(chain.leptons) == 0:  continue
     list_of_numbers['single_lep'] += 1
 
     if chain._nTau == 0: continue 
     list_of_numbers['reco_tau'] += 1
    
-    chain.leptons = [l for l in xrange(chain._nLight, chain._nL) if isTightTau(chain, l)] 
+    chain.leptons = [l for l in xrange(chain._nLight, chain._nL) if isGoodTau(chain, l, 'tight')] 
     if len(chain.leptons) == 0:  continue
     list_of_numbers['reco_tau_good'] += 1
     

@@ -132,7 +132,7 @@ if args.processExistingFiles is None:
     else:
         event_range = sample.getEventRange(int(args.subJob))
 
-    from HNL.ObjectSelection.leptonSelector import isTightLightLepton
+    from HNL.ObjectSelection.leptonSelector import isGoodLightLepton
     from HNL.ObjectSelection.tauSelector import tau_DMfinding, isCleanFromLightLeptons, tau_id_WP, passedElectronDiscr, passedMuonDiscr
     from HNL.Tools.helpers import progress, makeDirIfNeeded
 
@@ -142,7 +142,7 @@ if args.processExistingFiles is None:
 
         lepton_indices = []
         for l in xrange(chain._nLight):
-            if isTightLightLepton(chain, l): lepton_indices.append(l)
+            if isGoodLightLepton(chain, l, 'tight'): lepton_indices.append(l)
         if len(lepton_indices) > 2: continue 
         if len(lepton_indices) == 0: continue
         if len(lepton_indices) == 2 and chain._lFlavor[lepton_indices[0]] == chain._lFlavor[lepton_indices[1]] and chain._lCharge[lepton_indices[0]] != chain._lCharge[lepton_indices[1]]:
@@ -187,15 +187,19 @@ if args.processExistingFiles is None:
     #
     # Write
     #
-    if args.isTest: exit(0)
+    # if args.isTest: exit(0)
         
     subjobAppendix = '_subJob' + args.subJob if args.subJob else ''
     signalOrBkgr = 'Signal' if 'HNL' in sample.name else 'Background'
-    output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.year, signalOrBkgr, sample.output)
+    if args.isTest:
+        output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0], args.year, signalOrBkgr, sample.output)
+    else:
+        output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.year, signalOrBkgr, sample.output)
     if args.isChild:
         output_name += '/tmp_'+sample.output
     output_name += '/'+ sample.name +'_events' +subjobAppendix+ '.root'
     makeDirIfNeeded(output_name)
+    print output_name
 
 
     out_file = ROOT.TFile(output_name, 'recreate')

@@ -1,6 +1,6 @@
 import numpy as np
-from HNL.ObjectSelection.electronSelector import isLooseElectron
-from HNL.ObjectSelection.muonSelector import isLooseMuon
+from HNL.ObjectSelection.electronSelector import isGoodElectron
+from HNL.ObjectSelection.muonSelector import isGoodMuon
 from HNL.Tools.helpers import deltaR
 
 #
@@ -137,13 +137,14 @@ def isGoodGenTau(chain, index):
     if not chain._gen_lIsPrompt[index]:         return False
     if not chain._gen_lDecayedHadr[index]:      return False
     if abs(chain._gen_lEta[index]) > 2.3:            return False
-    if abs(chain._gen_lVisPt[index]) < 20:            return False
+    # if abs(chain._gen_lVisPt[index]) < 20:            return False
+    if abs(chain._gen_lPt[index]) < 20:            return False
     return True             
 
 def isCleanFromLightLeptons(chain, index):
     for l in xrange(chain._nLight):
-        if chain._lFlavor[l] == 1 and not isLooseMuon(chain, l, algo = chain.obj_sel["light_algo"]):    continue
-        if chain._lFlavor[l] == 0 and not isLooseElectron(chain, l, algo = chain.obj_sel["light_algo"]):    continue
+        if chain._lFlavor[l] == 1 and not isGoodMuon(chain, l, workingpoint='loose'):    continue
+        if chain._lFlavor[l] == 0 and not isGoodElectron(chain, l, workingpoint='loose'):    continue
         if deltaR(chain._lEta[l], chain._lEta[index], chain._lPhi[l], chain._lPhi[index]) < 0.4: return False
     return True
 

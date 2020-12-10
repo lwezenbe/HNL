@@ -24,13 +24,9 @@ submission_parser.add_argument('--isTest',   action='store_true', default=False,
 submission_parser.add_argument('--runInTerminal', action='store_true', default=False,  help='Quickly run in the terminal')
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-submission_parser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
-submission_parser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l', ''])
 submission_parser.add_argument('--coupling', type = float, action='store', default=0.01,  help='Coupling of the sample')
-submission_parser.add_argument('--signalOnly', action='store_true', default=False,  help='Only launch jobs with signal samples')
-submission_parser.add_argument('--backgroundOnly', action='store_true', default=False,  help='Only launch jobs with signal samples')
 submission_parser.add_argument('--noskim', action='store_true', default=False,  help='Use no skim sample list')
-submission_parser.add_argument('--selection',   action='store', default='cut-based',  help='Select the strategy to use to separate signal from background', choices=['cut-based', 'AN2017014', 'MVA'])
+submission_parser.add_argument('--selection',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'AN2017014', 'MVA'])
 submission_parser.add_argument('--region',   action='store', default='baseline',  help='apply the cuts of high or low mass regions, use "all" to run both simultaniously', 
     choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZ', 'WZ', 'ConversionCR'])
 submission_parser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data samples')
@@ -43,6 +39,10 @@ argParser.add_argument('--noPieCharts',   action='store_true', default=False,  h
 argParser.add_argument('--noCutFlow',   action='store_true', default=False,  help='print the cutflow')
 argParser.add_argument('--noSearchRegions',   action='store_true', default=False,  help='plot Search Regions')
 argParser.add_argument('--groupSamples',   action='store_true', default=False,  help='plot Search Regions')
+argParser.add_argument('--signalOnly', action='store_true', default=False,  help='Only launch jobs with signal samples')
+argParser.add_argument('--backgroundOnly', action='store_true', default=False,  help='Only launch jobs with signal samples')
+argParser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l', ''])
+argParser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
 
 
 argParser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
@@ -73,7 +73,7 @@ nl = 3 if args.region != 'ZZCR' else 4
 if args.isTest:
     args.isChild = True
 
-    if args.sample is None: args.sample = 'DYJetsToLL-M-50' if not args.signalOnly else 'HNL-tau-m40'
+    if args.sample is None: args.sample = 'DYJetsToLL-M-50'
     args.subJob = '0'
     if args.year is None: args.year = '2016'
 
@@ -120,13 +120,9 @@ else:
 #
 jobs = []
 for sample_name in sample_manager.sample_names:
-    if args.sample and args.sample not in sample_name: continue
-    if args.signalOnly and not 'HNL' in sample_name: continue
-    if args.backgroundOnly and 'HNL' in sample_name: continue
-    if 'HNL' in sample_name and not 'HNL-'+args.flavor in sample_name: continue
+    if args.sample and args.sample not in sample_name: continue 
     if not args.includeData and sample_name == 'Data': continue
     sample = sample_manager.getSample(sample_name)
-    if args.masses is not None and 'HNL' in sample.name and not any([str(m) in sample.name for m in args.masses]): continue
     for njob in xrange(sample.split_jobs):
         jobs += [(sample.name, str(njob))]
 
@@ -164,7 +160,7 @@ if not args.makePlots and args.makeDataCards is None:
 
 
         if args.isTest:
-            max_events = 1000
+            max_events = 10000
             if len(sample.getEventRange(0)) < max_events:
                 event_range = sample.getEventRange(0)
             else:
@@ -189,14 +185,10 @@ if not args.makePlots and args.makeDataCards is None:
         #
         # Object ID param
         #
-        from HNL.ObjectSelection.objectSelection import objectSelectionCollection
-        if args.selection == 'AN2017014':
-            object_selection = objectSelectionCollection('deeptauVSjets', 'cutbased', 'FO', 'tight', 'tight', True)
-        else:
-            object_selection = objectSelectionCollection('deeptauVSjets', 'leptonMVAtop', 'FO', 'tight', 'tight', False)
-        chain.obj_sel = object_selection
+        from HNL.ObjectSelection.objectSelection import getObjectSelection
+        chain.obj_sel = getObjectSelection(args.selection)
 
-        es = EventSelector(args.region, args.selection, object_selection, True, ec)
+        es = EventSelector(args.region, chain, chain, args.selection, True, ec)
 
         list_of_numbers = {}
         for c in listOfCategories(args.region):
@@ -241,7 +233,7 @@ if not args.makePlots and args.makeDataCards is None:
                 if not cutter.cut(applyCustomTriggers(listOfTriggersAN2017014(chain)), 'pass_triggers'): continue
 
             #Event selection            
-            if not es.passedFilter(chain, chain, cutter): continue
+            if not es.passedFilter(cutter): continue
             nprompt = 0
             for index in chain.l_indices:
                 if chain._lIsPrompt[index]: nprompt += 1
@@ -371,6 +363,7 @@ else:
                 list_of_errors['bkgr'][b][c][sr] = 0.
 
     for bkgr in bkgr_names:
+        if 'QCD' in bkgr: continue
         print 'Loading', bkgr
 
         path_name_total = os.path.join(base_path, bkgr, 'total/events.root')
@@ -383,7 +376,6 @@ else:
             tmp_hist_total = getObjFromFile(path_name_total, '_'.join([str(c), 'total'])+'/'+'_'.join([str(c), 'total']))
             for sr in xrange(1, srm[args.region].getNumberOfSearchRegions()+1):
                 if args.groupSamples:
-
                     sg = [sk for sk in sample_manager.sample_groups.keys() if bkgr in sample_manager.sample_groups[sk]][0]
                     if bkgr == 'DY':
                         list_of_values['bkgr']['XG'][c][sr] += tmp_hist_prompt.GetBinContent(sr) 
@@ -399,7 +391,6 @@ else:
                         list_of_values['bkgr']['non-prompt'][c][sr] += tmp_hist_nonprompt.GetBinContent(sr) 
                         list_of_errors['bkgr']['non-prompt'][c][sr] = np.sqrt(list_of_errors['bkgr']['non-prompt'][c][sr] ** 2 + tmp_hist_nonprompt.GetBinError(sr) ** 2)
                 else:
-                    tmp_hist_total = getObjFromFile(path_name_total, '_'.join([str(c), str(sr)])+'/'+'_'.join([str(c), str(sr)]))
                     list_of_values['bkgr'][bkgr][c][sr] = tmp_hist_total.GetBinContent(sr)
                     list_of_errors['bkgr'][bkgr][c][sr] = tmp_hist_total.GetBinError(sr)
 
