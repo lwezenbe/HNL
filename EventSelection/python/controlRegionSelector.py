@@ -289,7 +289,7 @@ class TauClosureTest(ClosureTestSelection):
 
         # if not cutter.cut(abs(91. - (l1Vec + l2Vec).M()) < 15, 'Z window'): return False
         if not cutter.cut(self.chain._met < 50, 'MET>50'): return False
-        if not cutter.cut(not bVeto(self.chain), 'b-veto'): return False
+        # if not cutter.cut(not bVeto(self.chain), 'b-veto'): return False
 
         if not cutter.cut(self.hasCorrectNumberOfFakes(), 'correct number of fakes'): return False
 
@@ -367,4 +367,38 @@ class MuonClosureTest(ClosureTestSelection):
         # if len([t for t in is_fake_lep if t]) < 1: return False
         return True
 
+class LukaClosureTest(FilterObject):
+    def __init__(self, name, chain, new_chain, selection, is_reco_level=True, event_categorization = None):
+        super(LukaClosureTest, self).__init__(name, chain, new_chain, selection, is_reco_level=True, event_categorization = None)
+
+    def initEvent(self, cutter):
+        self.chain.obj_sel['ele_wp'] = 'FO'
+        self.chain.obj_sel['mu_wp'] = 'FO'
+        self.chain.obj_sel['notau'] = True
+        return super(LukaClosureTest, self).initEvent(3, cutter, sort_leptons = True)
+    
+    def passedFilter(self, cutter, only_muons = False, only_electrons = False):
+        # print 'start'
+        if not self.initEvent(cutter):                                return False
+        # print 'init event'
+        applyConeCorrection(self.chain, self.new_chain)
+        # print 'applied cone correction'
+
+        nprompt = 0
+        nnonprompt = 0
+        for i, l in enumerate(self.new_chain.l_indices):
+            if self.chain.l_isfake[i]:  
+                if only_muons and self.new_chain.l_flavor[i] != 1: return False
+                if only_electrons and self.new_chain.l_flavor[i] != 0: return False
+                nnonprompt += 1
+            else:                       nprompt += 1
+        
+        if nnonprompt < 1: return False
+        if nprompt + nnonprompt != 3: return False
+        # print 'nprompt ok'
+
+        self.loose_leptons_of_interest = []
+        for l in xrange(len(self.new_chain.l_indices)):
+            if self.new_chain.l_isFO[l] and not self.new_chain.l_istight[l]: self.loose_leptons_of_interest.append(l)
+        return True
 

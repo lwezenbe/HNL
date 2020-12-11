@@ -181,7 +181,7 @@ if not args.makePlots:
     cutter = Cutter(chain = chain)
 
     if args.isTest:
-        max_events = 10000
+        max_events = 1100000
         event_range = xrange(max_events) if max_events < len(sample.getEventRange(args.subJob)) else sample.getEventRange(args.subJob)
     else:
         event_range = sample.getEventRange(args.subJob)    
@@ -221,9 +221,11 @@ if not args.makePlots:
         fakerate = FakeRateEmulator('h_tight_e', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'FR_QCD_20201027_'+args.year+'.root'))
         # fakerate = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, args.flavorToTest)), args.flavorToTest)
     elif args.flavorToTest == 'mu':
-        chain.obj_sel = objectSelectionCollection('HNL', 'TTT', 'tight', 'tight', 'FO', True, jet_algo='TTT')
-        es = EventSelector('MuonCT', chain, chain, args.selection, True, ec)    
+        chain.obj_sel = objectSelectionCollection('HNL', 'TTT', 'tight', 'tight', 'FO', True, jet_algo='Luka')
+        # es = EventSelector('MuonCT', chain, chain, args.selection, True, ec)    
+        es = EventSelector('LukaCT', chain, chain, args.selection, True, ec)    
         fakerate = FakeRateEmulator('h_tight_mu', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'FR_QCD_20201027_'+args.year+'.root'))
+        # fakerate = FakeRateEmulator('fakeRate_muon_2016', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'Luka', 'fakeRateMap_MC_muon_2016.root'))
         # fakerate = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, args.flavorToTest)), args.flavorToTest)
 
         ###################      
@@ -250,22 +252,31 @@ if not args.makePlots:
 
     print 'tot_range', len(event_range)
     for entry in event_range:
-        
+        if entry != 99414: continue
         chain.GetEntry(entry)
-        progress(entry - event_range[0], len(event_range))
+        # progress(entry - event_range[0], len(event_range))
 
         cutter.cut(True, 'total')
 
         #
         #Triggers
         #
-        if args.selection == 'AN2017014':
-            if not cutter.cut(applyCustomTriggers(listOfTriggersAN2017014(chain)), 'pass_triggers'): continue
-        else:
-            if not chain._passMETFilters: continue
+        # if args.selection == 'AN2017014':
+        #     if not cutter.cut(applyCustomTriggers(listOfTriggersAN2017014(chain)), 'pass_triggers'): continue
+        # else:
+        #     if not chain._passMETFilters: continue
 
-        #Event selection            
-        if not es.passedFilter(cutter): continue
+        #Event selection  
+        if args.flavorToTest != 'mu':          
+            if not es.passedFilter(cutter): continue
+        else:
+            # print "pass filter?"
+            if not es.selector.passedFilter(cutter, only_muons=True): continue
+
+        print "entry", entry
+
+        for l in xrange(len(chain.l_indices)):
+            print chain.l_flavor[l], chain.l_isFO[l], chain.l_istight[l], chain.l_isfake[l]
 
         cat = ec.returnAnalysisCategory()
         if args.flavorToTest == 'tau':
@@ -276,9 +287,10 @@ if not args.makePlots:
         else:
             fake_factor = fakerate.returnFakeWeight(chain, flavor_dict[args.flavorToTest])
             # fake_factor = readFakeRatesWithJetBins(fakerate, chain, flavor_dict[args.flavorToTest], args.region, args.splitInJets)
-        print fake_factor
+        # print fake_factor
 
-        
+        if fake_factor == -999.: print "OBSERVED"
+        else: print "PREDICTED", fake_factor
         ##################################
         # fake_factor = -1.
 

@@ -53,14 +53,16 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
 
     collection = chain._nL if not chain.obj_sel['notau'] else chain._nLight
     chain.leptons = []
+
     for l in xrange(collection):
-        # print l, chain._lFlavor[l]
         if chain._lFlavor[l] == 0: workingpoint = chain.obj_sel['ele_wp']
         elif chain._lFlavor[l] == 1: workingpoint = chain.obj_sel['mu_wp']
         elif chain._lFlavor[l] == 2: workingpoint = chain.obj_sel['tau_wp']
         else: raise RuntimeError('In selectLeptonsGeneral: flavor provided is neither an electron, muon or tau')
     
+        # print l, chain._lFlavor[l]
         if isGoodLepton(chain, l):
+            # print 'is good lepton'
             chain.leptons.append((chain._lPt[l], l))
 
     if cutter is not None:
@@ -250,8 +252,8 @@ def calculateGeneralVariables(chain, new_chain, is_reco_level = True, selection 
         #calculate #jets and #bjets
         new_chain.njets = selectJets(chain)
         new_chain.nbjets = nBjets(chain, 'loose')
-        new_chain.HT = calcHT(chain, new_chain, selection)
-        selectFirstTwoJets(chain, new_chain, selection = selection)
+        new_chain.HT = calcHT(chain, new_chain)
+        selectFirstTwoJets(chain, new_chain)
 
     new_chain.hasOSSF = containsOSSF(new_chain)
 
@@ -463,7 +465,7 @@ def calculateFourLepVariables(chain, new_chain):
 
 #################################################
 
-def selectJets(chain, cleaned = True):
+def selectJets(chain, cleaned = 'loose'):
     jet_indices = []
     for jet in xrange(chain._nJets):
         if isGoodJet(chain, jet, cleaned=cleaned): jet_indices.append(jet)
@@ -574,10 +576,10 @@ def passesOSSFforZZ(chain):
 def massDiff(m1, m2):
     return abs(m1-m2)
 
-def calcHT(chain, new_chain, selection = None):
+def calcHT(chain, new_chain):
     HT = 0.
     for jet in xrange(chain._nJets):
-        if not isGoodJet(chain, jet, selection):    continue 
+        if not isGoodJet(chain, jet):    continue 
         HT += chain._jetPt[jet]
     return HT
 
