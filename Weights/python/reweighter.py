@@ -10,11 +10,11 @@ class Reweighter:
         #lumi weights
         self.lumiweighter = LumiWeight(sample, sample_manager)
 
-        #pu weights
-        if not sample.is_data:
-            self.puReweighting     = getReweightingFunction(sample.chain.year, 'central')
-            self.puReweightingUp   = getReweightingFunction(sample.chain.year, 'up')
-            self.puReweightingDown = getReweightingFunction(sample.chain.year, 'down')
+        # #pu weights
+        # if not sample.is_data:
+        #     self.puReweighting     = getReweightingFunction(sample.chain.year, 'central')
+        #     self.puReweightingUp   = getReweightingFunction(sample.chain.year, 'up')
+        #     self.puReweightingDown = getReweightingFunction(sample.chain.year, 'down')
 
     def getLumiWeight(self):
         return self.lumiweighter.getLumiWeight()
@@ -32,7 +32,7 @@ class Reweighter:
         except:
             pass
         tot_weight *= self.getLumiWeight()
-        tot_weight *= self.getPUWeight()
+        # tot_weight *= self.getPUWeight()
 
         return tot_weight
 

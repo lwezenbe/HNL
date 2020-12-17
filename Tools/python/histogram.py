@@ -1,5 +1,6 @@
 import ROOT
 from HNL.Tools.helpers import makeDirIfNeeded, isValidRootFile
+import os
 
 #
 # Custom histogram class to set names and so on automatically and custom Fill functions
@@ -100,19 +101,37 @@ class Histogram:
     def getHist(self):
         return self.hist
 
-    def write(self, path, write_name = None, append = False):
+    def write(self, path, subdirs=None, write_name = None, append = False, is_test=False):
         append_string = 'recreate'
         if append and isValidRootFile(path): append_string = 'update'
 
-        makeDirIfNeeded(path)
-        output_file = ROOT.TFile(path, append_string)
-        if write_name is None:
+        if not is_test:
+            path_to_use = path
+        else:
+            split_path = path.split('/')
+            index_to_use = split_path.index('testArea')+1
+            path_to_use = os.path.expandvars("$HOME/Testing/Latest/"+'/'.join(split_path[index_to_use:]))
+
+        makeDirIfNeeded(path_to_use)
+        output_file = ROOT.TFile(path_to_use, append_string)
+        if subdirs is None:
             output_file.mkdir(self.name)
             output_file.cd(self.name)
-            self.hist.Write()
         else:
-            self.hist.Write(write_name)
+            nomo = ''
+            for d in subdirs:
+                nomo += d + '/'
+                output_file.mkdir(nomo)
+                output_file.cd(nomo)
+
+        if write_name is None:
+            self.hist.Write(self.name)
+        else:
+            self.hist.Write()
         output_file.Close()
+
+        if is_test:
+            self.write(path, write_name=write_name, subdirs=subdirs, append=append, is_test=False)
 
     def clone(self, out_name):
         hist_clone = self.hist.Clone(out_name)
@@ -182,12 +201,17 @@ class HistogramCollection(object):
         h = self.histograms[sub_name].getHist().Clone()
         return h
 
-    def write(self, append = False, name=None, subdirs = None):
+    def write(self, append = False, name=None, subdirs = None, is_test=False):
         append_string = 'recreate'
         if append and isValidRootFile(self.path): append_string = 'update'
 
-        makeDirIfNeeded(self.path)
-        output_file = ROOT.TFile(self.path, append_string)
+        if not is_test:
+            path_to_use = self.path
+        else:
+            path_to_use = "~/Testing/Latest/"+os.path.join(self.path.split('/')[self.path.index('testArea'):])
+
+        makeDirIfNeeded(path_to_use)
+        output_file = ROOT.TFile(path_to_use, append_string)
         if subdirs is None:
             output_file.mkdir(self.collection_name)
             output_file.cd(self.collection_name)
@@ -204,3 +228,8 @@ class HistogramCollection(object):
             for n in self.sub_names:
                 self.histograms[n].getHist().Write()
         output_file.Close()
+
+        if is_test:
+            self.write(append=append, name=name, subdirs=subdirs, is_test=False)
+
+

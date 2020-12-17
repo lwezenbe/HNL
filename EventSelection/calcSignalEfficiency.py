@@ -154,7 +154,8 @@ else: #'single' or 'cumulative'
 # Set event range
 #
 if args.isTest:
-    event_range = xrange(2000)
+    max_events = 20000
+    event_range = xrange(max_events) if max_events < len(sample.getEventRange(args.subJob)) else sample.getEventRange(args.subJob)
 else:
     event_range = sample.getEventRange(args.subJob)    
 
@@ -242,8 +243,8 @@ for entry in event_range:
 #
 for i, c_key in enumerate(efficiency.keys()):
     for j, t_key in enumerate(efficiency[c_key].keys()):
-        if i == 0 and j == 0:       efficiency[c_key][t_key].write()
-        else:                       efficiency[c_key][t_key].write(append=True)
+        if i == 0 and j == 0:       efficiency[c_key][t_key].write(is_test=args.isTest)
+        else:                       efficiency[c_key][t_key].write(append=True, is_test=args.isTest)
         
 
 closeLogger(log)

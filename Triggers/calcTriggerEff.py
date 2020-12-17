@@ -193,8 +193,8 @@ for c in categories:
 # Set event range
 #
 if args.isTest:
-    event_range = xrange(2000)
-    # event_range = sample.getEventRange(args.subJob)    
+    max_events = 20000
+    event_range = xrange(max_events) if max_events < len(sample.getEventRange(args.subJob)) else sample.getEventRange(args.subJob)    
 
 else:
     event_range = sample.getEventRange(args.subJob)    
@@ -259,15 +259,15 @@ for i, c in enumerate(categories):
     for l, v in enumerate({k for k in var.keys()}): 
         for t in category_map[c]:
             if args.separateTriggers is None:
-                if i == 0 and l == 0:      eff[(c, v, t)].write()
-                else:           eff[(c, v, t)].write(append=True)
+                if i == 0 and l == 0:      eff[(c, v, t)].write(is_test=args.isTest)
+                else:           eff[(c, v, t)].write(append=True, is_test=args.isTest)
             elif args.separateTriggers == 'full':
-                if i == 0 and l == 0:      eff[(c, v, t)].write()
-                else:           eff[(c, v, t)].write(append=True)               
+                if i == 0 and l == 0:      eff[(c, v, t)].write(is_test=args.isTest)
+                else:           eff[(c, v, t)].write(append=True, is_test=args.isTest)               
             else:
                 for j, trigger in enumerate(category_triggers(chain, c)):
-                    if i == 0 and l == 0 and j == 0:       eff[(c, v, t, j)].write()
-                    else:                       eff[(c, v, t, j)].write(append=True)
+                    if i == 0 and l == 0 and j == 0:       eff[(c, v, t, j)].write(is_test=args.isTest)
+                    else:                       eff[(c, v, t, j)].write(append=True, is_test=args.isTest)
 
 
 closeLogger(log)

@@ -19,12 +19,12 @@ class FakerateArray:
         for b in self.bin_collection:
             if self.bin_collection[b](chain): self.fakerates[b].fill(chain, weight, passed, index)
 
-    def writeFakeRates(self, append = False, name=None):
+    def writeFakeRates(self, append = False, name=None, is_test=False):
         for i, b in enumerate(self.fakerates):
             if i == 0 and not append:
-                self.fakerates[b].write()
+                self.fakerates[b].write(is_test=is_test)
             else:
-                self.fakerates[b].write(append = True)
+                self.fakerates[b].write(append = True, is_test=is_test)
 
     def getFakeRate(self, bin_name):
         return self.fakerates[bin_name]
