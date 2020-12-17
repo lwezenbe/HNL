@@ -198,7 +198,7 @@ if not args.makePlots and not args.makeDataCards:
         # Set event range
         #
         if args.isTest:
-            up_limit = 1000
+            up_limit = 10000
             if len(sample.getEventRange(0)) < up_limit:
                 event_range = sample.getEventRange(0)
             else:

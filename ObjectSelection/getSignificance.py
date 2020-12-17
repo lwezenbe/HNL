@@ -115,7 +115,7 @@ if args.processExistingFiles is None:
     def passCuts(chain, indices):
         if len(indices) != 3:   return False
         if chain._lCharge[indices[0]] == chain._lCharge[indices[1]] and chain._lCharge[indices[2]] == chain._lCharge[indices[1]]: return False
-        if bVeto(chain, 'Deep'): return False
+        if bVeto(chain): return False
         vectors = []
         for lepton_index in indices:
             vectors.append(getFourVec(chain._lPt[lepton_index], chain._lEta[lepton_index], chain._lPhi[lepton_index], chain._lE[lepton_index]))

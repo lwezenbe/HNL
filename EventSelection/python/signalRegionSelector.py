@@ -32,7 +32,7 @@ class SignalRegionSelector:
     #
     def baseFilterAN2017(self, cutter):
         if not cutter.cut(est.passesPtCutsAN2017014(self.chain), 'pt_cuts'):         return False 
-        if not cutter.cut(not est.bVeto(self.chain, 'AN2017014', cleaned=False, selection=self.selection), 'b-veto'):              return False
+        if not cutter.cut(not est.bVeto(self.chain), 'b-veto'):              return False
         if not cutter.cut(not est.threeSameSignVeto(self.chain), 'three_same_sign_veto'):                    return False
         if not cutter.cut(not est.fourthFOVeto(self.chain, no_tau=self.chain.obj_sel['notau']), '4th_l_veto'):   return False
 
@@ -42,14 +42,14 @@ class SignalRegionSelector:
     def baseFilterCutBased(self, cutter):
         if not cutter.cut(not est.fourthFOVeto(self.chain, no_tau=self.chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
         if not cutter.cut(not est.threeSameSignVeto(self.chain), 'No three same sign'):        return False
-        if not cutter.cut(not est.bVeto(self.chain, 'Deep', selection=self.selection), 'b-veto'):              return False
+        if not cutter.cut(not est.bVeto(self.chain), 'b-veto'):              return False
         return True
 
     # Basic cuts every event has to pass
     def baseFilterMVA(self, cutter):
         if not cutter.cut(not est.fourthFOVeto(self.chain, no_tau=self.chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
         if not cutter.cut(not est.threeSameSignVeto(self.chain), 'No three same sign'):        return False
-        if not cutter.cut(not est.bVeto(self.chain, 'Deep', selection=self.selection), 'b-veto'):              return False
+        if not cutter.cut(not est.bVeto(self.chain), 'b-veto'):              return False
         if not cutter.cut(abs(self.chain.MZossf-MZ) > 15, 'M2l_OSSF_Z_veto'):        return False
         return True
 
