@@ -1,7 +1,6 @@
 #
 #       Code to run tests of all the specified code in the repo
 #       Meant as a check if I broke something before pushing all the broken stuff to github
-#       TODO: Add test output like in heavyNeutrino
 #
 
 #
@@ -77,7 +76,6 @@ if args.allCombinations:
     print "This mode will form all possible combinations of all arguments for each program specified in data/input/codeToTest.conf"
     print "It is not smart, it will make every combination it can. These are potentially a lot of combinations."
     print "It is recommended to run this mode in a screen on a mlong machine."
-    print "WIP"
     print '\n'
     time.sleep(2)
 

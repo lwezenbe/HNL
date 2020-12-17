@@ -1,4 +1,5 @@
 import ROOT
+import os
 from HNL.Tools.helpers import makeDirIfNeeded, getObjFromFile, isValidRootFile
 from HNL.Tools.histogram import Histogram
 
@@ -115,12 +116,20 @@ class Efficiency(object):
         return
     
 
-    def write(self, append = False, name=None):
+    def write(self, append = False, name=None, is_test=False):
         append_string = 'recreate'
         if append and isValidRootFile(self.path): append_string = 'update'
 
-        makeDirIfNeeded(self.path)
-        output_file = ROOT.TFile(self.path, append_string)
+
+        if not is_test:
+            path_to_use = self.path
+        else:
+            split_path = self.path.split('/')
+            index_to_use = split_path.index('testArea')+1
+            path_to_use = os.path.expandvars("$HOME/Testing/Latest/"+'/'.join(split_path[index_to_use:]))
+
+        makeDirIfNeeded(path_to_use)
+        output_file = ROOT.TFile(path_to_use, append_string)
         if self.subdirs is None:
             output_file.mkdir(self.name)
             output_file.cd(self.name)
@@ -140,3 +149,5 @@ class Efficiency(object):
             # self.getEfficiency().Write()
         output_file.Close()
 
+        if is_test:
+            self.write(append=append, name=name, is_test=False)
