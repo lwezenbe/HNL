@@ -6,7 +6,6 @@
 
 import numpy as np
 from HNL.Tools.histogram import Histogram
-from HNL.EventSelection.eventSelector import EventSelector
 from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped
 
 #
@@ -15,7 +14,7 @@ from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped
 import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
-submission_parser.add_argument('--flavorToTest',   action='store', default = None,  help='Select flavor to perform closure test on', choices=['e', 'mu', 'tau'])
+submission_parser.add_argument('--flavorToTest',   action='store', nargs='*', default = None,  help='Select flavor to perform closure test on', choices=['ele', 'mu', 'tau'])
 submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
@@ -29,7 +28,7 @@ submission_parser.add_argument('--splitInJets', action='store_true', default=Fal
 submission_parser.add_argument('--splitInBJets', action='store_true', default=False,  help='Use ttbar FR if b-jet around else use DY FR')
 submission_parser.add_argument('--region', action='store', default=None, type=str,  help='What region was the fake rate you want to use measured in?', 
     choices=['TauFakesDY', 'TauFakesTT', 'Mix'])
-submission_parser.add_argument('--selection',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cut-based', 'AN2017014', 'MVA', 'ewkino', 'TTT'])
+submission_parser.add_argument('--selection',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cut-based', 'AN2017014', 'MVA', 'ewkino', 'TTT', 'Luka'])
 submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 
 argParser.add_argument('--makePlots', action='store_true', default=False,  help='make plots')
@@ -39,7 +38,7 @@ args = argParser.parse_args()
 #
 # Throws exceptions if arguments do not add up
 #
-if args.flavorToTest != 'tau':
+if args.flavorToTest != ['tau']:
     if args.isCheck:
         raise RuntimeError("Nothing to check, you are using an imported fakerate")
     if args.splitInJets:
@@ -47,7 +46,7 @@ if args.flavorToTest != 'tau':
     if args.splitInBJets:
         raise RuntimeError('Split in bjets not supported for light leptons')
 
-if args.flavorToTest == 'tau':
+if args.flavorToTest == ['tau']:
     if args.region is None:
         raise RuntimeError("Region should be defined for tau fakes")
     if args.region == 'Mix':
@@ -68,7 +67,7 @@ if args.splitInBJets and args.selection != 'cutbased' and args.selection != 'MVA
 from HNL.Tools.logger import getLogger, closeLogger
 log = getLogger(args.logLevel)
 
-flavor_dict = {'tau' : 2, 'e' : 0, 'mu' : 1}
+flavor_dict = {'tau' : 2, 'ele' : 0, 'mu' : 1}
 #
 # Change some settings if this is a test
 #
@@ -85,7 +84,7 @@ from HNL.Samples.sampleManager import SampleManager
 if args.noskim:
     skim_str = 'noskim'
 else:
-    skim_str = 'Old' if args.selection == 'AN2017014' else 'Reco'
+    skim_str = 'noskim' if args.selection == 'AN2017014' else 'Reco'
 
 sample_manager = SampleManager(args.year, skim_str, 'ClosureTests')
 
@@ -126,12 +125,13 @@ else:
 
 subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
 def getOutputBase():
+    flavors_to_test_str = '-'.join(sorted(args.flavorToTest))
     if not args.isTest:
-        output_name = os.path.realpath(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', this_file_name, args.year, args.flavorToTest))
+        output_name = os.path.realpath(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', this_file_name, args.year, flavors_to_test_str))
     else:
-        output_name = os.path.realpath(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'testArea', this_file_name, args.year, args.flavorToTest))
+        output_name = os.path.realpath(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'testArea', this_file_name, args.year, flavors_to_test_str))
 
-    if args.flavorToTest == 'tau':
+    if args.flavorToTest == ['tau']:
         jetstring = 'splitInJets' if args.splitInJets else 'noSplitInJets'
         if args.splitInBJets: jetstring = 'splitInBJets'
         output_name = os.path.join(output_name, args.region, jetstring)
@@ -151,9 +151,6 @@ def getOutputName():
     output_name += '/'+ sample.name +'_events_' +subjobAppendix+ '.root'
     makeDirIfNeeded(output_name)
     return output_name
-
-
-print getOutputName()
 
 from HNL.BackgroundEstimation.fakerateArray import loadFakeRatesWithJetBins, readFakeRatesWithJetBins, readFakeRatesWithBJetBins
 #
@@ -181,7 +178,7 @@ if not args.makePlots:
     cutter = Cutter(chain = chain)
 
     if args.isTest:
-        max_events = 1100000
+        max_events = 20000
         event_range = xrange(max_events) if max_events < len(sample.getEventRange(args.subJob)) else sample.getEventRange(args.subJob)
     else:
         event_range = sample.getEventRange(args.subJob)    
@@ -195,54 +192,38 @@ if not args.makePlots:
     from HNL.Weights.reweighter import Reweighter
     reweighter = Reweighter(sample, sample_manager)
 
-    from HNL.EventSelection.eventCategorization import EventCategory
-    ec = EventCategory(chain)
-
     #
     # Object ID param
     #
-    from HNL.ObjectSelection.objectSelection import objectSelectionCollection
+    from HNL.ObjectSelection.objectSelection import getObjectSelection
+    chain.obj_sel = getObjectSelection(args.selection) #Working points are set in controlRegionManager.py
 
-    if args.flavorToTest == 'tau':
-        chain.obj_sel = objectSelectionCollection('HNL', 'leptonMVAtop', 'FO', 'tight', 'tight', False)
-        if args.isCheck:
+    from HNL.EventSelection.eventCategorization import EventCategory
+    ec = EventCategory(chain)
+
+    from HNL.EventSelection.eventSelector import EventSelector
+    if args.isCheck:
+        if args.flavorToTest == ['tau']:
             es = EventSelector('TauFakes', chain, chain, args.selection, True, ec)    
         else:
-            es = EventSelector('TauCT', chain, chain, args.selection, True, ec) 
-
-        if not args.isTest:    
-            fakerate = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, args.flavorToTest)), args.flavorToTest)
-        else:
-            fakerate = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, args.flavorToTest)), args.flavorToTest)
-
-    elif args.flavorToTest == 'e':
-        chain.obj_sel = objectSelectionCollection('HNL', 'TTT', 'tight', 'FO', 'tight', True, jet_algo='TTT')
-        es = EventSelector('ElectronCT', chain, chain, args.selection, True, ec)    
-        fakerate = FakeRateEmulator('h_tight_e', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'FR_QCD_20201027_'+args.year+'.root'))
-        # fakerate = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, args.flavorToTest)), args.flavorToTest)
-    elif args.flavorToTest == 'mu':
-        chain.obj_sel = objectSelectionCollection('HNL', 'TTT', 'tight', 'tight', 'FO', True, jet_algo='Luka')
-        # es = EventSelector('MuonCT', chain, chain, args.selection, True, ec)    
-        es = EventSelector('LukaCT', chain, chain, args.selection, True, ec)    
-        fakerate = FakeRateEmulator('h_tight_mu', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'FR_QCD_20201027_'+args.year+'.root'))
-        # fakerate = FakeRateEmulator('fakeRate_muon_2016', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'Luka', 'fakeRateMap_MC_muon_2016.root'))
-        # fakerate = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, args.flavorToTest)), args.flavorToTest)
-
-        ###################      
-        # chain.obj_sel = objectSelectionCollection('HNL', 'TTT', 'tight', 'FO', 'FO', True)
-        # es = EventSelector('MuonCT', chain, chain, args.selection, True, ec)    
-        # fakerate_mu = FakeRateEmulator('fr_mu', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'fakerate_lightlep.root'))
-        # fakerate_e = FakeRateEmulator('fr_e', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'fakerate_lightlep.root'))
-        ###################
+            raise RuntimeError("Wrong input for flavorToTest with isCheck arg on: "+str(args.flavorToTest))
     else:
-        raise RuntimeError('defined flavor input inconsistent')
+        es = EventSelector('MCCT', chain, chain, args.selection, True, ec, additional_options=args.flavorToTest) 
 
+
+    fakerate = {}
+    if not args.isTest:    
+        fakerate['tau'] = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, 'tau')), 'tau')
+    else:
+        fakerate['tau'] = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, 'tau')), 'tau')
+    fakerate['ele'] = FakeRateEmulator('h_tight_e', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'FR_QCD_20201027_'+args.year+'.root'))
+    fakerate['mu'] = FakeRateEmulator('h_tight_mu', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'FR_QCD_20201027_'+args.year+'.root'))
 
     co = {}
     for c in ANALYSIS_CATEGORIES.keys() + ['total']:
         co[c] = {}
         for v in var:
-            co[c][v] = ClosureObject(args.flavorToTest+'closure-'+v+'-'+c, var[v][0], var[v][2], getOutputName(), bins = var[v][1])
+            co[c][v] = ClosureObject('closure-'+v+'-'+c, var[v][0], var[v][2], getOutputName(), bins = var[v][1])
 
     #
     # Loop over all events
@@ -252,9 +233,8 @@ if not args.makePlots:
 
     print 'tot_range', len(event_range)
     for entry in event_range:
-        if entry != 99414: continue
         chain.GetEntry(entry)
-        # progress(entry - event_range[0], len(event_range))
+        progress(entry - event_range[0], len(event_range))
 
         cutter.cut(True, 'total')
 
@@ -267,63 +247,26 @@ if not args.makePlots:
         #     if not chain._passMETFilters: continue
 
         #Event selection  
-        if args.flavorToTest != 'mu':          
-            if not es.passedFilter(cutter): continue
-        else:
-            # print "pass filter?"
-            if not es.selector.passedFilter(cutter, only_muons=True): continue
-
-        print "entry", entry
-
-        for l in xrange(len(chain.l_indices)):
-            print chain.l_flavor[l], chain.l_isFO[l], chain.l_istight[l], chain.l_isfake[l]
+        if not es.passedFilter(cutter): continue
 
         cat = ec.returnAnalysisCategory()
-        if args.flavorToTest == 'tau':
+
+        is_observed = True
+        fake_factor = 1.
+        if 'tau' in args.flavorToTest:
             if args.splitInBJets:
-                fake_factor = readFakeRatesWithBJetBins(fakerate, chain, flavor_dict[args.flavorToTest], args.region)
+                fake_factor *= readFakeRatesWithBJetBins(fakerate['tau'], chain, flavor_dict['tau'], args.region)
             else:
-                fake_factor = readFakeRatesWithJetBins(fakerate, chain, flavor_dict[args.flavorToTest], args.region, args.splitInJets)
-        else:
-            fake_factor = fakerate.returnFakeWeight(chain, flavor_dict[args.flavorToTest])
-            # fake_factor = readFakeRatesWithJetBins(fakerate, chain, flavor_dict[args.flavorToTest], args.region, args.splitInJets)
-        # print fake_factor
-
-        if fake_factor == -999.: print "OBSERVED"
-        else: print "PREDICTED", fake_factor
-        ##################################
-        # fake_factor = -1.
-
-        # from HNL.ObjectSelection.muonSelector import slidingCutTTT
-        # for l in xrange(len(chain.l_pt)):
-        #     # if chain.l_flavor[l] == 1:
-        #         # print 'Muon FO', chain.l_istight[l], chain.l_isfake[l], chain._lIsPrompt[chain.l_indices[l]]
-        #         # print chain._lPt[chain.l_indices[l]], chain._lEta[chain.l_indices[l]], chain._leptonMvaTOP[chain.l_indices[l]]
-        #         # print chain._ptRatio[chain.l_indices[l]]
-        #         # print chain._closestJetDeepFlavor[chain.l_indices[l]], slidingCutTTT(chain, chain.l_indices[l], 0.025, 0.015)
-        #         # print chain._lMomPdgId[chain.l_indices[l]]
-        #         # print chain._lMatchPdgId[chain.l_indices[l]], chain._lProvenanceCompressed[chain.l_indices[l]]
-        #     # elif chain.l_flavor[l] == 0:
-        #         # print 'Electron FO', chain.l_istight[l], chain.l_isfake[l], chain._lIsPrompt[chain.l_indices[l]]
-        #         # print chain._lPt[chain.l_indices[l]], chain._lEta[chain.l_indices[l]], chain._leptonMvaTOP[chain.l_indices[l]]
-        #         # print chain._ptRatio[chain.l_indices[l]]
-        #         # print chain._closestJetDeepFlavor[chain.l_indices[l]], slidingCutTTT(chain, chain.l_indices[l], 0.5, 0.05)
-        #         # print chain._lMomPdgId[chain.l_indices[l]]
-        #         # print chain._lMatchPdgId[chain.l_indices[l]], chain._lProvenanceCompressed[chain.l_indices[l]]
-
-        #     if not chain.l_istight[l]:
-        #         # print chain.l_flavor[l]
-        #         if chain.l_flavor[l] == 0:
-        #             # print fakerate_e.returnFakeFactor(chain, l_index = l, manual_var_entry = None), fakerate_e.evaluateEfficiency(chain, index = l)
-        #             # print chain.l_pt[l], chain.l_eta[l]
-        #             fake_factor *= -1*fakerate_e.returnFakeFactor(chain, l_index = l, manual_var_entry = None)
-        #         else:
-        #             # print fakerate_mu.returnFakeFactor(chain, l_index = l, manual_var_entry = None), fakerate_mu.evaluateEfficiency(chain, index = l)
-        #             # print chain.l_pt[l], chain.l_eta[l]
-        #             fake_factor *= -1*fakerate_mu.returnFakeFactor(chain, l_index = l, manual_var_entry = None)
-
-        # if chain.l_istight[0] and chain.l_istight[1]: fake_factor = -999.
-        ##################################
+                fake_factor *= readFakeRatesWithJetBins(fakerate['tau'], chain, flavor_dict['tau'], args.region, args.splitInJets)
+            if fake_factor != -999.: is_observed=False
+        elif 'ele' in args.flavorToTest:
+            fake_factor *= fakerate['ele'].returnFakeWeight(chain, flavor_dict['ele'])
+            if fake_factor != -999.: is_observed=False
+        elif 'mu' in args.flavorToTest:
+            fake_factor *= fakerate['mu'].returnFakeWeight(chain, flavor_dict['mu'])
+            if fake_factor != -999.: is_observed=False
+        
+        if is_observed: fake_factor = -999.
 
         for v in var:
             if v == 'pt' or v == 'eta':
@@ -347,6 +290,10 @@ if not args.makePlots:
             else:
                 co[c][v].write(append=True)
 
+    print "Observed:", co['total']['m3l'].getObserved().GetSumOfWeights()
+    print "Predicted:", co['total']['m3l'].getSideband().GetSumOfWeights()
+
+
     cutter.saveCutFlow(getOutputName())
 
     closeLogger(log)
@@ -362,8 +309,12 @@ else:
     in_files = glob.glob(os.path.join(base_path, '*'))
     merge(in_files, __file__, jobs, ('sample', 'subJob'), argParser)
 
-    base_path_split  = base_path.rsplit('/', 1)
-    output_dir = makePathTimeStamped(base_path_split[0] +'/Results/'+base_path_split[1])
+    base_path_split  = base_path.rsplit('/', 2)
+    if args.flavorToTest == ['tau']:
+        output_dir = makePathTimeStamped(base_path_split[0] +'/Results/'+base_path_split[1]+'/'+base_path_split[2])
+    else:
+        output_dir = makePathTimeStamped(base_path_split[0] +'/'+base_path_split[1]+'/Results/'+base_path_split[2])
+
 
     closureObjects = {}
     for in_file in in_files:
@@ -374,7 +325,7 @@ else:
         for c in ANALYSIS_CATEGORIES.keys() + ['total']:
             closureObjects[sample_name][c] = {}
             for v in var:
-                closureObjects[sample_name][c][v] = ClosureObject(args.flavorToTest+'closure-'+v+'-'+c, None, None, in_file+'/events.root')
+                closureObjects[sample_name][c][v] = ClosureObject('closure-'+v+'-'+c, None, None, in_file+'/events.root')
 
     for sample_name in closureObjects.keys():
         for c in ANALYSIS_CATEGORIES.keys() + ['total']:

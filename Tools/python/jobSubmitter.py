@@ -101,7 +101,7 @@ def cleanJobFiles(argparser, script, sub_log = None):
         pass
     else:
         submitArgs   = getSubmitArgs(argparser, args)
-        arg_string = '_'.join([str(a)+'-'+str(submitArgs[a]) for a in sorted(submitArgs.keys()) if a != 'isChild'])
+        arg_string = getArgsStr(submitArgs, to_ignore=['isChild'])
         logbase = os.path.realpath(os.path.join('jobs', os.path.basename(script).split('.')[0]+(('-'+sub_log) if sub_log else ''), arg_string))
         os.system('rm -r '+logbase)
 
@@ -119,12 +119,23 @@ def getSubmitArgs(argparser, args, dropArgs=None):
     submitArgs   = {arg: getattr(arg_groups['submission'], arg) for arg in changedArgs if (not dropArgs or arg not in dropArgs)}
     return submitArgs
 
+def getArgsStr(arg_list, to_ignore):
+    args_str=''
+    for arg, value in submitArgs.iteritems():
+        if arg in to_ignore:
+            continue
+        elif isinstance(value, list):
+            args_str += '_' + arg + '-' + '-'.join([str(x) for x in sorted(value)])
+        else:
+            args_str += '_' + arg + '-' + str(value)
+    return args_str 
+
 def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, subLog=None, wallTime='15', queue='localgrid', cores=1, jobLabel='', resubmission = False):
     args         = argparser.parse_args()
     args.isChild = True
 
     submitArgs   = getSubmitArgs(argparser, args, dropArgs)
-    arg_string = '_'.join([str(a)+'-'+str(submitArgs[a]) for a in sorted(submitArgs.keys()) if a != 'isChild'])
+    arg_string = getArgsStr(submitArgs, to_ignore=['isChild'])
     
     #Do not include isChild in arg_string
 
@@ -149,9 +160,17 @@ def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, subLog=
                 try:    submitArgs.pop(arg)
                 except: pass
         
-        command = script + ' ' + ' '.join(['--' + arg + '=' + str(value) for arg, value in submitArgs.iteritems() if value != False])
+        args_str_for_command=' '
+        for arg, value in submitArgs.iteritems():
+            if value == False:
+                continue
+            elif isinstance(value, list):
+                args_str_for_command += ' ' + '--' + arg + '=' + ' '.join([str(x) for x in sorted(value)])
+            else:
+                args_str_for_command += ' ' + '--' + arg + '=' + str(value)
+
+        command = script + ' ' + args_str_for_command
         command = command.replace('=True','')
-        # print command
         
         logdir  = os.path.join(logbase, *(str(s) for s in subJob[:-1]))
         logfile = os.path.join(logdir, str(subJob[-1]) + ".log")
@@ -165,7 +184,7 @@ def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, subLog=
             arguments = (os.getcwd(), command)
             launchOnCondor(logfile, script, arguments, i)
         
-        # else:               launchCream02(command, logfile, checkQueue=(i%100==0), wallTimeInHours=wallTime, queue=queue, cores=cores, jobLabel=jobLabel)
+        else:               launchCream02(command, logfile, checkQueue=(i%100==0), wallTimeInHours=wallTime, queue=queue, cores=cores, jobLabel=jobLabel)
 
     print len(subJobList), 'jobs submitted'
 
@@ -174,7 +193,7 @@ def checkCompletedJobs(script, subJobList, argparser, subLog = None):
     failed_jobs = []
     args = argparser.parse_args()
     submitArgs   = getSubmitArgs(argparser, args)
-    arg_string = '_'.join([str(a)+'-'+str(submitArgs[a]) for a in sorted(submitArgs.keys()) if a != 'isChild'])
+    arg_string = getArgsStr(submitArgs, to_ignore=['isChild'])
 
     for i, subJob in enumerate(subJobList):
         logdir  = os.path.join('log', os.path.basename(script).split('.')[0]+(('-'+subLog) if subLog else ''), arg_string, 'Latest', *(str(s) for s in subJob[:-1]))

@@ -42,6 +42,13 @@ def isGoodJetTTT(chain, index, cleaned = 'loose'):
     if cleaned is not None and not isCleanFromLeptons(chain, index, cleaned):       return False
     return True
 
+def isGoodJetLuka(chain, index, cleaned = 'loose'):
+    if chain._jetPt[index] < 25:        return False
+    if abs(chain._jetEta[index]) > 5: return False
+    if not chain._jetIsTight[index]:    return False
+    if cleaned is not None and not isCleanFromLeptons(chain, index, cleaned):       return False
+    return True
+
 from HNL.ObjectSelection.objectSelection import objectSelectionCollection
 def checkJetAlgorithm(chain, algo):
     if algo is None:
@@ -74,42 +81,52 @@ def isGoodJet(chain, index, cleaned = None, selection = None):
 #
 from HNL.ObjectSelection.bTagWP import getBTagWP, readBTagValue
 def isLooseBJetHNL(chain, index):
-    if not isGoodJet(chain, index, cleaned=True, selection='HNL'): return False
+    if not isGoodJet(chain, index, cleaned='loose', selection='HNL'): return False
     if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'loose', 'Deep'): return False
     return True
 
 def isTightBJetHNL(chain, index):
-    if not isGoodJet(chain, index, cleaned=True, selection='HNL'): return False
+    if not isGoodJet(chain, index, cleaned='loose', selection='HNL'): return False
     if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'tight', 'Deep'): return False
     return True
 
 def isLooseBJetHNLLowPt(chain, index):
-    if not isGoodJet(chain, index, cleaned=True, selection='HNLLowPt'): return False
+    if not isGoodJet(chain, index, cleaned='loose', selection='HNLLowPt'): return False
     if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'loose', 'Deep'): return False
     return True
 
 def isTightBJetHNLLowPt(chain, index):
-    if not isGoodJet(chain, index, cleaned=True, selection='HNLowPt'): return False
+    if not isGoodJet(chain, index, cleaned='loose', selection='HNLowPt'): return False
     if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'tight', 'Deep'): return False
     return True
 
 def isLooseBJetAN2017014(chain, index):
-    if not isGoodJet(chain, index, cleaned=False, selection='AN2017014'): return False
+    if not isGoodJet(chain, index, cleaned=None, selection='AN2017014'): return False
     if readBTagValue(chain, index, 'AN2017014') < getBTagWP(chain.year, 'loose', 'AN2017014'): return False
     return True
 
 def isTightBJetAN2017014(chain, index):
-    if not isGoodJet(chain, index, cleaned=False, selection='AN2017014'): return False
+    if not isGoodJet(chain, index, cleaned=None, selection='AN2017014'): return False
     if readBTagValue(chain, index, 'AN2017014') < getBTagWP(chain.year, 'tight', 'AN2017014'): return False
     return True
 
 def isLooseBJetTTT(chain, index):
-    if not isGoodJet(chain, index, cleaned=True, selection='TTT'): return False
+    if not isGoodJet(chain, index, cleaned='loose', selection='TTT'): return False
     if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'loose', 'Deep'): return False
     return True
 
 def isTightBJetTTT(chain, index):
-    if not isGoodJet(chain, index, cleaned=True, selection='TTT'): return False
+    if not isGoodJet(chain, index, cleaned='loose', selection='TTT'): return False
+    if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'tight', 'Deep'): return False
+    return True
+
+def isLooseBJetLuka(chain, index):
+    if not isGoodJet(chain, index, cleaned='loose', selection='Luka'): return False
+    if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'loose', 'Deep'): return False
+    return True
+
+def isTightBJetLuka(chain, index):
+    if not isGoodJet(chain, index, cleaned='loose', selection='Luka'): return False
     if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'tight', 'Deep'): return False
     return True
 
@@ -122,8 +139,10 @@ def isLooseBJet(chain, index, selection):
         return isLooseBJetAN2017014(chain, index)
     elif selection == 'TTT':
         return isLooseBJetTTT(chain, index)
+    elif selection == 'Luka':
+        return isLooseBJetLuka(chain, index)
     else:
-        return True
+        raise RuntimeError("Unknown selection for jets")
 
 def isTightBJet(chain, index, selection):
     if selection == 'HNL':
@@ -134,8 +153,10 @@ def isTightBJet(chain, index, selection):
         return isTightBJetAN2017014(chain, index)
     elif selection == 'TTT':
         return isTightBJetTTT(chain, index)
+    elif selection == 'Luka':
+        return isTightBJetLuka(chain, index)
     else:
-        return True
+        raise RuntimeError("Unknown selection for jets")
 
 def isGoodBJet(chain, index, wp, selection = None):
     selection = checkJetAlgorithm(chain, selection)
@@ -143,3 +164,5 @@ def isGoodBJet(chain, index, wp, selection = None):
         return isLooseBJet(chain, index, selection)
     elif wp == 'tight':
         return isTightBJet(chain, index, selection)
+    else:
+        raise RuntimeError("Unknown working point for jets")

@@ -60,14 +60,12 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         elif chain._lFlavor[l] == 2: workingpoint = chain.obj_sel['tau_wp']
         else: raise RuntimeError('In selectLeptonsGeneral: flavor provided is neither an electron, muon or tau')
     
-        # print l, chain._lFlavor[l]
         if isGoodLepton(chain, l):
-            # print 'is good lepton'
             chain.leptons.append((chain._lPt[l], l))
 
     if cutter is not None:
         cutter.cut(len(chain.leptons) >= nL, 'at_least_'+str(nL)+'_lep')
-    # print chain.leptons
+
     if len(chain.leptons) != nL:  return False
 
     tes = TauEnergyScale(chain.year, chain.obj_sel['tau_algo'])
@@ -82,7 +80,8 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         new_chain.l_indices = [0.0]*nL
         new_chain.l_isFO = [0.0]*nL
         new_chain.l_istight = [0.0]*nL
-        new_chain.l_isfake = [0.0]*nL
+        if not chain.is_data:
+            new_chain.l_isfake = [0.0]*nL
 
     if sort_leptons: 
         ptAndIndex = sorted(chain.leptons, reverse=True, key = getSortKey)
@@ -99,13 +98,14 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         new_chain.l_charge[i] = chain._lCharge[ptAndIndex[i][1]]
         new_chain.l_isFO[i] = isGoodLepton(chain, ptAndIndex[i][1], 'FO')
         new_chain.l_istight[i] = isGoodLepton(chain, ptAndIndex[i][1], 'tight')
-        new_chain.l_isfake[i] = isFakeLepton(chain, ptAndIndex[i][1])
+        if not chain.is_data:
+            new_chain.l_isfake[i] = isFakeLepton(chain, ptAndIndex[i][1])
         
         #Apply tau energy scale
-        if chain.is_data and new_chain.l_flavor[i] == 2:
-            tlv = getFourVec(new_chain.l_pt[i], new_chain.l_eta[i], new_chain.l_phi[i], new_chain.l_e[i])
-            new_chain.l_pt *= tes.readES(tlv, chain._tauDecayMode[new_chain.l_indices[i]], chain._tauGenStatus[new_chain.l_indices[i]])
-            new_chain.l_e *= tes.readES(tlv, chain._tauDecayMode[new_chain.l_indices[i]], chain._tauGenStatus[new_chain.l_indices[i]])
+        # if not chain.is_data and new_chain.l_flavor[i] == 2:
+        #     tlv = getFourVec(new_chain.l_pt[i], new_chain.l_eta[i], new_chain.l_phi[i], new_chain.l_e[i])
+        #     new_chain.l_pt *= tes.readES(tlv, chain._tauDecayMode[new_chain.l_indices[i]], chain._tauGenStatus[new_chain.l_indices[i]])
+        #     new_chain.l_e *= tes.readES(tlv, chain._tauDecayMode[new_chain.l_indices[i]], chain._tauGenStatus[new_chain.l_indices[i]])
 
     return True
 
@@ -159,39 +159,6 @@ def selectGenLeptonsGeneral(chain, new_chain, nL, cutter=None):
         new_chain.l_flavor[i] = chain._gen_lFlavor[ptAndIndex[i][1]]
     
     return True
-
-# def selectLeptonsGeneral(chain, new_chain, nL, no_tau=False, light_algo = None, tau_algo = None, cutter = None, workingpoint = 'tight'):
-
-#     collection = chain._nL if not no_tau else chain._nLight
-#     chain.leptons = [(chain._lPt[l], l) for l in xrange(collection) if isGoodLepton(chain, l, algo = light_algo, tau_algo=tau_algo, workingpoint=workingpoint)]
-#     if cutter is not None:
-#         cutter.cut(len(chain.leptons) > 0, 'at_least_1_lep')
-#         cutter.cut(len(chain.leptons) > 1, 'at_least_2_lep')
-#         cutter.cut(len(chain.leptons) > 2, 'at_least_3_lep')
-#     if len(chain.leptons) != nL:  return False
-
-#     if chain is new_chain:
-#         new_chain.l_pt = [0.0]*nL
-#         new_chain.l_eta = [0.0]*nL
-#         new_chain.l_phi = [0.0]*nL
-#         new_chain.l_charge = [0.0]*nL
-#         new_chain.l_flavor = [0.0]*nL
-#         new_chain.l_e = [0.0]*nL
-#         new_chain.l_indices = [0.0]*nL
-
-
-#     ptAndIndex = sorted(chain.leptons, reverse=True, key = getSortKey)
-
-#     for i in xrange(nL):
-#         chain.l_indices[i] = ptAndIndex[i][1]
-#         new_chain.l_pt[i] = ptAndIndex[i][0] 
-#         new_chain.l_eta[i] = chain._lEta[ptAndIndex[i][1]]
-#         new_chain.l_phi[i] = chain._lPhi[ptAndIndex[i][1]]
-#         new_chain.l_e[i] = chain._lE[ptAndIndex[i][1]]
-#         new_chain.l_charge[i] = chain._lCharge[ptAndIndex[i][1]]
-#         new_chain.l_flavor[i] = chain._lFlavor[ptAndIndex[i][1]]
-
-#     return True
 
 #
 # Meant for training NN, select up to two jets, if less than two jets, 
