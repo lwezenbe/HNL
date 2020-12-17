@@ -154,11 +154,10 @@ if not args.makePlots:
     # Set range of events to process
     #
     if args.isTest:
-        max_events = 5000
+        max_events = 20000
         event_range = xrange(max_events) if max_events < len(sample.getEventRange(args.subJob)) else sample.getEventRange(args.subJob)
     else:
-        # event_range = sample.getEventRange(args.subJob)    
-        event_range = xrange(100)  
+        event_range = sample.getEventRange(args.subJob)    
 
     #
     # Get luminosity weight
@@ -245,7 +244,7 @@ if not args.makePlots:
     print fakerates.getFakeRate('0jets').getNumerator().GetEntries(), fakerates.getFakeRate('0jets').getDenominator().GetEntries()
     print fakerates.getFakeRate('njets').getNumerator().GetSumOfWeights(), fakerates.getFakeRate('njets').getDenominator().GetSumOfWeights()
     print fakerates.getFakeRate('njets').getNumerator().GetEntries(), fakerates.getFakeRate('njets').getDenominator().GetEntries()
-    fakerates.writeFakeRates()
+    fakerates.writeFakeRates(is_test=args.isTest)
     cutter.saveCutFlow(getOutputName(region_to_select))
     closeLogger(log)
 

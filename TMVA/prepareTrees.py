@@ -127,9 +127,8 @@ if not args.merge:
     # Start event loop
     #
     if args.isTest:
-        max_events = 1000
+        max_events = 20000
         event_range = xrange(max_events) if max_events < len(sample.getEventRange(args.subJob)) else sample.getEventRange(args.subJob)
-        # event_range = sample.getEventRange(args.subJob)    
 
     else:
         event_range = sample.getEventRange(args.subJob)    

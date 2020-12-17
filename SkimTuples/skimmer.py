@@ -163,9 +163,8 @@ new_vars = makeBranches(output_tree, new_branches)
 #
 
 if args.isTest:
-    event_range = range(2000)
-    # event_range = sample.getEventRange(args.subJob)    
-
+    max_events = 20000
+    event_range = xrange(max_events) if max_events < len(sample.getEventRange(args.subJob)) else sample.getEventRange(args.subJob)  
 else:
     event_range = sample.getEventRange(args.subJob)   
      

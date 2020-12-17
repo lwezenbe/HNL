@@ -100,10 +100,8 @@ if not args.makePlots:
         # Set event range
         #
         if args.isTest:
-            if len(sample.getEventRange(0)) < 2000:
-                event_range = sample.getEventRange(0)
-            else:
-                event_range = xrange(2000)
+            max_events = 20000
+            event_range = xrange(max_events) if max_events < len(sample.getEventRange(args.subJob)) else sample.getEventRange(args.subJob)
         else:
             event_range = xrange(chain.GetEntries())
 
@@ -191,16 +189,10 @@ if not args.makePlots:
             output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0], args.year, sample.output)
 
         output_name += '/tmp_'+sample.output+ '/'+sample.name+'_'
-        
-        makeDirIfNeeded(output_name +'variables'+subjobAppendix+ '.root')
-        output_file = TFile(output_name + 'variables' +subjobAppendix+ '.root', 'RECREATE')
-        
-        for v in var.keys():
-            output_file.mkdir(v)
-            output_file.cd(v)
-            list_of_hist[sample.name][v].getHist().Write()
-        
-        output_file.Close()
+                
+        for iv, v in enumerate(var.keys()):
+            if iv == 0: list_of_hist[sample.name][v].write(output_name + 'variables' +subjobAppendix+ '.root', subdirs=[v], is_test=args.isTest)
+            else: list_of_hist[sample.name][v].write(output_name + 'variables' +subjobAppendix+ '.root', subdirs=[v], append=True, is_test=args.isTest)
 
         cutter.saveCutFlow(output_name +'variables'+subjobAppendix+ '.root')
 

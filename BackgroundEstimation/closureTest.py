@@ -286,9 +286,9 @@ if not args.makePlots:
     for i, c in enumerate(ANALYSIS_CATEGORIES.keys() + ['total']):
         for j, v in enumerate(var):
             if i == 0 and j == 0:
-                co[c][v].write()
+                co[c][v].write(is_test=args.isTest)
             else:
-                co[c][v].write(append=True)
+                co[c][v].write(append=True, is_test=args.isTest)
 
     print "Observed:", co['total']['m3l'].getObserved().GetSumOfWeights()
     print "Predicted:", co['total']['m3l'].getSideband().GetSumOfWeights()

@@ -43,10 +43,8 @@ is_signal = 'HNL' in sample.name
 # Set event range
 #
 if args.isTest:
-    if len(sample.getEventRange(0)) < 50:
-        event_range = sample.getEventRange(0)
-    else:
-        event_range = xrange(50)
+    max_events = 20000
+    event_range = xrange(max_events) if max_events < len(sample.getEventRange(args.subJob)) else sample.getEventRange(args.subJob)
 else:
     event_range = xrange(chain.GetEntries())
 

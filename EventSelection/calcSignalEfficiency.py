@@ -154,7 +154,8 @@ else: #'single' or 'cumulative'
 # Set event range
 #
 if args.isTest:
-    event_range = xrange(2000)
+    max_events = 20000
+    event_range = xrange(max_events) if max_events < len(sample.getEventRange(args.subJob)) else sample.getEventRange(args.subJob)
 else:
     event_range = sample.getEventRange(args.subJob)    
 

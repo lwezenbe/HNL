@@ -158,9 +158,8 @@ if not args.makePlots and args.makeDataCards is None:
         from HNL.EventSelection.cutter import Cutter
         cutter = Cutter(chain = chain)
 
-
         if args.isTest:
-            max_events = 10000
+            max_events = 20000
             if len(sample.getEventRange(0)) < max_events:
                 event_range = sample.getEventRange(0)
             else:

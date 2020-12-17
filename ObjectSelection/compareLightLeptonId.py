@@ -121,7 +121,8 @@ for algo in algos:
 
 #Determine if testrun so it doesn't need to calculate the number of events in the getEventRange
 if args.isTest:
-    event_range = xrange(1000)
+    max_events = 20000
+    event_range = xrange(max_events) if max_events < len(sample.getEventRange(args.subJob)) else sample.getEventRange(args.subJob)
 else:
     event_range = sample.getEventRange(int(args.subJob))
 
@@ -205,7 +206,6 @@ for entry in event_range:
 #
 # Write
 #
-# if args.isTest: exit(0)
 for r in list_of_roc:
     r.write(True)
 
@@ -214,6 +214,6 @@ for eff in ['efficiency', 'fakerate']:
         for i, v in enumerate(list_of_var_hist['fakerate'][algo].keys()):
             for j, wp in enumerate(list_of_var_hist['fakerate'][algo][v].keys()):
                 if a == 0 and i == 0 and j == 0:
-                    list_of_var_hist[eff][algo][v][wp].write(append = False, name = eff+'_'+v)
+                    list_of_var_hist[eff][algo][v][wp].write(append = False, name = eff+'_'+v, is_test=args.isTest)
                 else:
-                    list_of_var_hist[eff][algo][v][wp].write(append = True, name = eff+'_'+v) 
+                    list_of_var_hist[eff][algo][v][wp].write(append = True, name = eff+'_'+v, is_test=args.isTest) 

@@ -128,7 +128,8 @@ if args.processExistingFiles is None:
     # Loop Over Events
     #
     if args.isTest:
-        event_range = xrange(10000)
+        max_events = 20000
+        event_range = xrange(max_events) if max_events < len(sample.getEventRange(args.subJob)) else sample.getEventRange(args.subJob)
     else:
         event_range = sample.getEventRange(int(args.subJob))
 

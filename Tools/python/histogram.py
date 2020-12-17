@@ -101,7 +101,7 @@ class Histogram:
     def getHist(self):
         return self.hist
 
-    def write(self, path, write_name = None, append = False, is_test=False):
+    def write(self, path, subdirs=None, write_name = None, append = False, is_test=False):
         append_string = 'recreate'
         if append and isValidRootFile(path): append_string = 'update'
 
@@ -114,16 +114,24 @@ class Histogram:
 
         makeDirIfNeeded(path_to_use)
         output_file = ROOT.TFile(path_to_use, append_string)
-        if write_name is None:
+        if subdirs is None:
             output_file.mkdir(self.name)
             output_file.cd(self.name)
-            self.hist.Write()
         else:
-            self.hist.Write(write_name)
+            nomo = ''
+            for d in subdirs:
+                nomo += d + '/'
+                output_file.mkdir(nomo)
+                output_file.cd(nomo)
+
+        if write_name is None:
+            self.hist.Write(self.name)
+        else:
+            self.hist.Write()
         output_file.Close()
 
         if is_test:
-            self.write(path, write_name=write_name, is_test=False)
+            self.write(path, write_name=write_name, subdirs=subdirs, append=append, is_test=False)
 
     def clone(self, out_name):
         hist_clone = self.hist.Clone(out_name)

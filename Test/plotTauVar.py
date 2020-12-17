@@ -99,10 +99,8 @@ if not args.makePlots:
         # Set event range
         #
         if args.isTest:
-            if len(sample.getEventRange(0)) < 1000:
-                event_range = sample.getEventRange(0)
-            else:
-                event_range = xrange(1000)
+            max_events = 20000
+            event_range = xrange(max_events) if max_events < len(sample.getEventRange(args.subJob)) else sample.getEventRange(args.subJob)
         else:
             event_range = sample.getEventRange(args.subJob)
 
@@ -152,16 +150,10 @@ if not args.makePlots:
         else:
             output_name += '/'
         
-        makeDirIfNeeded(output_name +'variables'+subjobAppendix+ '.root')
-        output_file = TFile(output_name + 'variables' +subjobAppendix+ '.root', 'RECREATE')
+        for iv, v in enumerate(var.keys()):
+            if iv == 0: list_of_hist[sample.output][v].write(output_name + 'variables' +subjobAppendix+ '.root', subdirs=[v], is_test=args.isTest)
+            else: list_of_hist[sample.output][v].write(output_name + 'variables' +subjobAppendix+ '.root', subdirs=[v], is_test=args.isTest, append=True)
         
-        for v in var.keys():
-            output_file.mkdir(v)
-            output_file.cd(v)
-            list_of_hist[sample.output][v].getHist().Write()
-        
-        output_file.Close()
-
 #If the option to not run over the events again is made, load in the already created histograms here
 else:
     import glob

@@ -198,7 +198,7 @@ if not args.makePlots and not args.makeDataCards:
         # Set event range
         #
         if args.isTest:
-            up_limit = 10000
+            up_limit = 20000
             if len(sample.getEventRange(0)) < up_limit:
                 event_range = sample.getEventRange(0)
             else:
@@ -277,7 +277,6 @@ if not args.makePlots and not args.makeDataCards:
             #
             # Fill the histograms
             #
-
             for v in var.keys():
                 list_of_hist[prompt_str][chain.category][v][signal_str][sample.name].fill(chain, reweighter.getTotalWeight())  
                 list_of_hist['total'][chain.category][v][signal_str][sample.name].fill(chain, reweighter.getTotalWeight())  
@@ -294,18 +293,14 @@ if not args.makePlots and not args.makeDataCards:
             output_name_full += '/tmp_'+sample.output+ '/'+sample.name+'_'
         else:
             output_name_full += '/'
-        
-        makeDirIfNeeded(output_name_full +'variables'+subjobAppendix+ '.root')
-        output_file = TFile(output_name_full + 'variables' +subjobAppendix+ '.root', 'RECREATE')
-        
-        for v in var.keys():
-            output_file.mkdir(v)
-            output_file.cd(v)
-            for c in categories:
+                
+        for iv, v in enumerate(var.keys()):
+            for ic, c in enumerate(categories):
                 for prompt_str in ['prompt', 'nonprompt', 'total']:
-                    list_of_hist[prompt_str][c][v][signal_str][sample.name].getHist().Write()
-        
-        output_file.Close()
+                    if iv == 0 and ic == 0 and prompt_str == 'prompt':
+                        list_of_hist[prompt_str][c][v][signal_str][sample.name].write(output_name_full +'variables'+subjobAppendix+ '.root', subdirs=[v], is_test=args.isTest)
+                    else:
+                        list_of_hist[prompt_str][c][v][signal_str][sample.name].write(output_name_full +'variables'+subjobAppendix+ '.root', subdirs=[v], append=True, is_test=args.isTest)
 
         cutter.saveCutFlow(output_name_full +'variables'+subjobAppendix+ '.root')
 
