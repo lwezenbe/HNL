@@ -208,7 +208,9 @@ class HistogramCollection(object):
         if not is_test:
             path_to_use = self.path
         else:
-            path_to_use = "~/Testing/Latest/"+os.path.join(self.path.split('/')[self.path.index('testArea'):])
+            split_path = self.path.split('/')
+            index_to_use = split_path.index('testArea')+1
+            path_to_use = os.path.expandvars("$HOME/Testing/Latest/"+'/'.join(split_path[index_to_use:]))
 
         makeDirIfNeeded(path_to_use)
         output_file = ROOT.TFile(path_to_use, append_string)
