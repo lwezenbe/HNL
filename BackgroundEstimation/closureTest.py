@@ -216,7 +216,8 @@ if not args.makePlots:
         fakerate['tau'] = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, 'tau')), 'tau')
     else:
         fakerate['tau'] = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, 'tau')), 'tau')
-    fakerate['ele'] = FakeRateEmulator('h_tight_e', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'FR_QCD_20201027_'+args.year+'.root'))
+    # fakerate['ele'] = FakeRateEmulator('h_tight_e', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'FR_QCD_20201027_'+args.year+'.root'))
+    fakerate['ele'] = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, 'e')), 'e')
     fakerate['mu'] = FakeRateEmulator('h_tight_mu', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'FR_QCD_20201027_'+args.year+'.root'))
 
     co = {}
@@ -260,7 +261,8 @@ if not args.makePlots:
                 fake_factor *= readFakeRatesWithJetBins(fakerate['tau'], chain, flavor_dict['tau'], args.region, args.splitInJets)
             if fake_factor != -999.: is_observed=False
         elif 'ele' in args.flavorToTest:
-            fake_factor *= fakerate['ele'].returnFakeWeight(chain, flavor_dict['ele'])
+            # fake_factor *= fakerate['ele'].returnFakeWeight(chain, flavor_dict['ele'])
+            fake_factor *= readFakeRatesWithJetBins(fakerate['ele'], chain, flavor_dict['ele'], None, False)
             if fake_factor != -999.: is_observed=False
         elif 'mu' in args.flavorToTest:
             fake_factor *= fakerate['mu'].returnFakeWeight(chain, flavor_dict['mu'])

@@ -121,13 +121,13 @@ def getSubmitArgs(argparser, args, dropArgs=None):
 
 def getArgsStr(arg_list, to_ignore):
     args_str=''
-    for arg, value in submitArgs.iteritems():
-        if arg in to_ignore:
+    for arg in sorted(arg_list.keys()):
+        if str(arg) in to_ignore:
             continue
-        elif isinstance(value, list):
-            args_str += '_' + arg + '-' + '-'.join([str(x) for x in sorted(value)])
+        elif isinstance(arg_list[arg], list):
+            args_str += '_' + str(arg) + '-' + '-'.join([str(x) for x in sorted(arg_list[arg])])
         else:
-            args_str += '_' + arg + '-' + str(value)
+            args_str += '_' + str(arg) + '-' + str(arg_list[arg])
     return args_str 
 
 def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, subLog=None, wallTime='15', queue='localgrid', cores=1, jobLabel='', resubmission = False):

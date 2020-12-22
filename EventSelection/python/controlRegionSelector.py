@@ -171,7 +171,7 @@ class LightLeptonFakeMeasurementRegion(FilterObject):
 
         #Require the presence of at least one good jet if option is set to True
         if require_jets:
-            jet_indices = selectJets(self.chain, cleaned=True, selection='lightlepfakes')
+            jet_indices = selectJets(self.chain, cleaned=True)
             if len(jet_indices) < 1:      return False
             
             max_delta_r = 0
@@ -359,6 +359,8 @@ class ClosureTestMC(FilterObject):
         self.chain.obj_sel['tau_wp'] = 'FO' if 'tau' in self.flavors_of_interest else 'tight'
         self.chain.obj_sel['ele_wp'] = 'FO' if 'ele' in self.flavors_of_interest else 'tight'
         self.chain.obj_sel['mu_wp'] = 'FO' if 'mu' in self.flavors_of_interest else 'tight'
+        # if self.flavors_of_interest == ['ele']:
+        #     self.chain.obj_sel['notau'] = True
 
         self.loose_leptons_of_interest = []
 
@@ -374,7 +376,6 @@ class ClosureTestMC(FilterObject):
 
         #Make input more readable
         for l in xrange(len(self.new_chain.l_pt)):
-            # print self.new_chain.l_flavor[l],
             #Rule out all other flavors so we are only continuing with general functions on leptons of the correct flavor
             if not self.new_chain.l_flavor[l] in translated_flavors_of_interest: 
                 if isFakeLepton(self.chain, self.new_chain.l_indices[l]):

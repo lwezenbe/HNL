@@ -19,8 +19,8 @@ submission_parser.add_argument('--isTest',   action='store_true', default=False,
 submission_parser.add_argument('--inData',   action='store_true', default=False,  help='Run in data')
 submission_parser.add_argument('--batchSystem',   action='store', default='HTCondor',  help='help')
 submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-submission_parser.add_argument('--noskim', action='store_true', default=False,  help='Use no skim sample list')
-submission_parser.add_argument('--selection',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cut-based', 'AN2017014', 'MVA', 'ewkino', 'TTT'])
+submission_parser.add_argument('--noskim', action='store_true', default=False,  help='measure in data')
+submission_parser.add_argument('--selection',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cut-based', 'AN2017014', 'MVA', 'ewkino', 'TTT', 'Luka'])
 submission_parser.add_argument('--tauRegion', action='store', type=str, default = None, help='What region do you want to select for?', 
     choices=['TauFakesDY', 'TauFakesTT'])
 submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
@@ -41,6 +41,8 @@ if args.tauRegion == 'AN2017014' and args.flavor == 'tau':
     raise RuntimeError("AN-2017-014 does not consider any taus")
 if args.tauRegion == 'ewkino' and args.flavor in ['e', 'mu']:
     raise RuntimeError("Light lepton fakes for ewkino not implemented")
+
+if not args.inData and 'Data' in args.sample: exit(0)
 
 #
 # Open logger
@@ -64,7 +66,7 @@ from HNL.Weights.reweighter import Reweighter
 if args.isTest:
     args.isChild = True
 
-    if args.sample is None: args.sample = 'DYJetsToLL-M-50'
+    if args.sample is None: args.sample = 'DYJetsToLL-M-50' if not args.inData else 'Data-2016'
     args.subJob = '0'
 
 #
@@ -77,7 +79,9 @@ else:
     skim_str = 'Old' if args.selection == 'AN2017014' else 'Reco'
 
 sublist = None
-if args.flavor == 'tau':
+if args.inData:
+    sublist = 'fulllist_'+args.year+'_nosignal'
+elif args.flavor == 'tau':
     sublist = 'TauFakes'
 elif args.flavor == 'mu':
     sublist = 'MuonFakes'
@@ -103,10 +107,11 @@ region_to_select = args.tauRegion if args.flavor == 'tau' else 'LightLeptonFakes
 #
 subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
 def getOutputBase(region):
+    data_str = 'DATA' if args.inData else 'MC'
     if not args.isTest:
-        output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0].rsplit('/', 1)[-1], args.year, args.flavor, region)
+        output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0].rsplit('/', 1)[-1], data_str, args.year, args.flavor, region)
     else:
-        output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0].rsplit('/', 1)[-1], args.year, args.flavor, region)
+        output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0].rsplit('/', 1)[-1], data_str, args.year, args.flavor, region)
     return output_name
 
 def getOutputName(region):
@@ -213,7 +218,9 @@ if not args.makePlots:
         #
         if args.selection == 'AN2017014':
             if not cutter.cut(passTriggers(chain, 'HNL_old'), 'pass_triggers'): continue
-        
+        else:
+            if not cutter.cut(passTriggers(chain, 'HNL'), 'pass_triggers'): continue
+
         # if not cutter.cut(passTriggers(chain, 'ewkino'), 'pass_triggers'): continue
 
         #Event selection
@@ -226,18 +233,15 @@ if not args.makePlots:
         fake_index = es.selector.getFakeIndex()
         if args.inData and not chain.is_data:
             if not chain._lIsPrompt[chain.l_indices[fake_index]]: continue
-            passed = True
+            passed = True #Always fill both denom and enum for this case (subtraction of prompt contribution)
             weight = -1.*reweighter.getLumiWeight()
         else:
             if not chain.is_data and not cutter.cut(chain.l_isfake[fake_index], 'fake lepton'): continue
             passed = isGoodLepton(chain, chain.l_indices[fake_index], 'tight')
             weight = reweighter.getLumiWeight()
         
-        # print entry
-
         fakerates.fillFakeRates(chain, weight, passed, index = fake_index)
 
-        # print chain.njets
     print fakerates.getFakeRate('total').getNumerator().GetSumOfWeights(), fakerates.getFakeRate('total').getDenominator().GetSumOfWeights()
     print fakerates.getFakeRate('total').getNumerator().GetEntries(), fakerates.getFakeRate('total').getDenominator().GetEntries()
     print fakerates.getFakeRate('0jets').getNumerator().GetSumOfWeights(), fakerates.getFakeRate('0jets').getDenominator().GetSumOfWeights()
@@ -259,11 +263,19 @@ else:
 
     base_path = getOutputBase(region_to_select)
     in_files = glob.glob(os.path.join(base_path, '*'))
-    merge(in_files, __file__, jobs, ('sample', 'subJob'), argParser)
+    merge(in_files, __file__, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
 
-    for sample_output in sample_manager.getOutputs():
-        output_dir = makePathTimeStamped(base_path +'/'+sample_output +'/Results')
-        in_file = base_path +'/'+sample_output+'/events.root'
+    if args.inData:
+        os.system("hadd -f "+base_path+"/events.root "+base_path+'/*/events.root')
+
+    samples_to_plot = ['Data'] if args.inData else sample_manager.getOutputs()
+
+    for sample_output in samples_to_plot:
+        if args.inData:
+            output_dir = makePathTimeStamped(base_path +'/Results')
+            in_file = base_path+'/events.root'
+            print in_file
+
         fakerates = createFakeRatesWithJetBins('tauttl', None, None, in_file)
         for fr in fakerates.bin_collection:
             ttl = fakerates.getFakeRate(fr).getEfficiency()
