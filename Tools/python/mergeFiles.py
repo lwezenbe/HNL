@@ -40,22 +40,23 @@ def merge_single_path(path):
 
 from HNL.Tools.jobSubmitter import checkCompletedJobs, submitJobs, cleanJobFiles
 #For now also have argparser in there just to be able to automatically resubmit
-def merge(paths, script, subjob_list, subjobargs, argparser = None):
+def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False):
     
-    if argparser is None:
-        pass
-    else:
-        failed_jobs = checkCompletedJobs(script, subjob_list, argparser)
-        if failed_jobs is not None and len(failed_jobs) != 0:   
-            should_resubmit = raw_input("Would you like to resubmit the failed jobs? (y/n) \n")
-            if should_resubmit == 'y' or should_resubmit == 'Y':
-                print 'resubmitting:'
-                submitJobs(script, subjobargs, failed_jobs, argparser, resubmission=True)
-            else:
-                pass    
-            exit(0)
+    if not istest:
+        if argparser is None:
+            pass
+        else:
+            failed_jobs = checkCompletedJobs(script, subjob_list, argparser)
+            if failed_jobs is not None and len(failed_jobs) != 0:   
+                should_resubmit = raw_input("Would you like to resubmit the failed jobs? (y/n) \n")
+                if should_resubmit == 'y' or should_resubmit == 'Y':
+                    print 'resubmitting:'
+                    submitJobs(script, subjobargs, failed_jobs, argparser, resubmission=True)
+                else:
+                    pass    
+                exit(0)
 
-    cleanJobFiles(argparser, script)
+        cleanJobFiles(argparser, script)
 
     for f in paths:
         if '.txt' in f or '.root' in f: continue
