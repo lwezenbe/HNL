@@ -19,8 +19,8 @@ submission_parser.add_argument('--isTest',   action='store_true', default=False,
 submission_parser.add_argument('--inData',   action='store_true', default=False,  help='Run in data')
 submission_parser.add_argument('--batchSystem',   action='store', default='HTCondor',  help='help')
 submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-submission_parser.add_argument('--noskim', action='store_true', default=False,  help='Use no skim sample list')
-submission_parser.add_argument('--selection',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cut-based', 'AN2017014', 'MVA', 'ewkino', 'TTT'])
+submission_parser.add_argument('--noskim', action='store_true', default=False,  help='measure in data')
+submission_parser.add_argument('--selection',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cut-based', 'AN2017014', 'MVA', 'ewkino', 'TTT', 'Luka'])
 submission_parser.add_argument('--tauRegion', action='store', type=str, default = None, help='What region do you want to select for?', 
     choices=['TauFakesDY', 'TauFakesTT'])
 submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
