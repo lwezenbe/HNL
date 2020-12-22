@@ -309,7 +309,7 @@ else:
     base_path = getOutputBase()
 
     in_files = glob.glob(os.path.join(base_path, '*'))
-    merge(in_files, __file__, jobs, ('sample', 'subJob'), argParser)
+    merge(in_files, __file__, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
 
     base_path_split  = base_path.rsplit('/', 2)
     if args.flavorToTest == ['tau']:

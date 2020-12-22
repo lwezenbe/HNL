@@ -47,23 +47,32 @@ for sample_name in sample_manager.sample_names:
         jobs += [(sample.name, str(njob))]
 
 #Merges subfiles if needed
-merge_files = glob.glob(os.getcwd()+'/data/calcTriggerEff/*/'+args.separateTriggers)
+if args.isTest:
+    merge_files = glob.glob(os.getcwd()+'/data/calcTriggerEff/*/'+args.separateTriggers)
+else:
+    merge_files = glob.glob(os.getcwd()+'/data/testArea/calcTriggerEff/*/'+args.separateTriggers)
 for mf in merge_files:
     if "Results" in mf: merge_files.pop(merge_files.index(mf))
 
 script = os.path.expandvars(os.path.join('$CMSSW', 'src', 'HNL', 'Triggers', 'calcTriggerEff.py')
 
-merge(merge_files, script, jobs, ('sample', 'subJob'), argParser)
+merge(merge_files, script, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
 
-input_files = glob.glob(os.getcwd()+'/data/calcTriggerEff/*/'+args.separateTriggers+'/*.root')
+if args.isTest:
+    input_files = glob.glob(os.getcwd()+'/data/testArea/calcTriggerEff/*/'+args.separateTriggers+'/*.root')
+else:
+    input_files = glob.glob(os.getcwd()+'/data/calcTriggerEff/*/'+args.separateTriggers+'/*.root')
 sample_names = {in_file_name.split('/')[-3] for in_file_name in input_files}
-print sample_names
+
 f_names = {f.split('/')[-1].split('.')[0] for f in input_files}
 
 #Prepare output dir
 timestamp = time.strftime("%Y%m%d_%H%M%S")
 for f_name in f_names:
-    out_dir = os.getcwd()+'/data/Results/'+args.separateTriggers+'/'+f_name+'/'+timestamp
+    if args.isTest:
+        out_dir = os.getcwd()+'/data/testArea/Results/'+args.separateTriggers+'/'+f_name+'/'+timestamp
+    else:
+        out_dir = os.getcwd()+'/data/Results/'+args.separateTriggers+'/'+f_name+'/'+timestamp
     makeDirIfNeeded(out_dir+'/x')
 
 
@@ -190,7 +199,11 @@ exit(0)
 
 for f_name in f_names:
 
-    output_dir = makePathTimeStamped(os.getcwd()+'/data/Results/'+args.separateTriggers+'/'+f_name)
+    if args.isTest:
+        output_dir = makePathTimeStamped(os.getcwd()+'/data/testArea/Results/'+args.separateTriggers+'/'+f_name)
+    else:
+        output_dir = makePathTimeStamped(os.getcwd()+'/data/Results/'+args.separateTriggers+'/'+f_name)
+
     hists = {}
     keyNames = []
     sub_files = glob.glob(os.getcwd()+'/data/calcTriggerEff/*/'+args.separateTriggers +'/' +f_name+'.root')

@@ -338,7 +338,7 @@ else:
     print 'check merge'
     # Merge files if necessary
     mixed_list = signal_list + bkgr_list + data_list
-    merge(mixed_list, __file__, jobs, ('sample', 'subJob'), argParser)
+    merge(mixed_list, __file__, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
 
 
     if args.groupSamples:

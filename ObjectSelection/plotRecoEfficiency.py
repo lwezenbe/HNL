@@ -15,7 +15,7 @@ submission_parser.add_argument('--flavor', type=int, default=0,  help='flavor of
 submission_parser.add_argument('--includeReco',   action='store_true', default=True, 
     help='look at the efficiency for a gen tau to be both reconstructed and identified. Currently just fills the efficiency for isolation')
 submission_parser.add_argument('--onlyReco',   action='store_true', default=False,  help='look at the efficiency for a gen tau to be reconstructed. Currently just fills the efficiency for isolation')
-
+submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
 
 argParser.add_argument('--bkgr', required=True,     action='store',      default=None,   help='Select bkgr')
 argParser.add_argument('--wp',     action='store',      default='tight',   help='only have reco efficiency')
@@ -31,7 +31,10 @@ for sample_name in sample_manager.sample_names:
         jobs += [(sample.name, str(njob))]
 
 #Merges subfiles if needed
-input_file_path = os.getcwd()+'/data/compareTauID/includeReco/'
+if args.isTest:
+    input_file_path = os.getcwd()+'/data/testArea/compareTauID/includeReco/'
+else:
+    input_file_path = os.getcwd()+'/data/compareTauID/includeReco/'
 if args.onlyReco:
     input_file_path += 'onlyReco/'
 
@@ -40,7 +43,7 @@ for mf in merge_files:
     if "Results" in mf: merge_files.pop(merge_files.index(mf))
     if not args.onlyReco and 'onlyReco' in mf: merge_files.pop(merge_files.index(mf))
 script = os.path.expandvars(os.path.join('$CMSSW', 'src', 'HNL', 'ObjectSelection', 'compareTauID.py')
-merge(merge_files, script, jobs, ('sample', 'subJob'), argParser)
+merge(merge_files, script, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
 
 list_of_bkgr_eff = {}
 list_of_signal_eff = {}
@@ -64,7 +67,10 @@ for sample in samples:
 
 from HNL.Plotting.plot import Plot
 
-output_dir = os.getcwd()+'/data/Results/compareTauID/includeReco/'
+if args.isTest:
+    output_dir = os.getcwd()+'/data/testArea/Results/compareTauID/includeReco/'
+else:
+    output_dir = os.getcwd()+'/data/Results/compareTauID/includeReco/'
 if args.onlyReco:     output_dir += 'onlyReco/'
 output_dir = makePathTimeStamped(output_dir)
 

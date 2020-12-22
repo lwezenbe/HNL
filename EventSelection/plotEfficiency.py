@@ -55,7 +55,7 @@ flavor_name = args.flavor if args.flavor else 'allFlavor'
 input_name  = os.path.join(os.getcwd(), 'data', 'calcSignalEfficiency', category_split_str, trigger_str, mass_str, flavor_name, '*')
 merge_files = glob.glob(input_name)
 script = os.path.expandvars(os.path.join('$CMSSW', 'src', 'HNL', 'EventSelection', 'calcSignalEfficiency.py')
-merge(merge_files, __file__, jobs, ('sample', 'subJob', 'flavor'), argParser)
+merge(merge_files, __file__, jobs, ('sample', 'subJob', 'flavor'), argParser, istest=args.isTest)
 
 input_name  = os.path.join(os.getcwd(), 'data', 'calcSignalEfficiency', category_split_str, trigger_str, mass_str, flavor_name)
 

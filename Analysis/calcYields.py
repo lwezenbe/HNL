@@ -281,7 +281,7 @@ else:
         base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year, args.selection, args.region)
 
     in_files = glob.glob(os.path.join(base_path, '*', '*'))
-    merge(in_files, __file__, jobs, ('sample', 'subJob'), argParser)
+    merge(in_files, __file__, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
 
     def mergeValues(val_to_merge, err_to_merge):
         if len(val_to_merge) != len(err_to_merge):

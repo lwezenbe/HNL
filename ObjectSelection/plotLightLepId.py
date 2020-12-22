@@ -18,7 +18,7 @@ submission_parser.add_argument('--dryRun',   action='store_true', default=False,
 submission_parser.add_argument('--includeReco', action='store_true', default=False, 
     help='look at the efficiency for a gen tau to be both reconstructed and identified. Currently just fills the efficiency for isolation')
 submission_parser.add_argument('--onlyReco',   action='store_true', default=False,  help='look at the efficiency for a gen tau to be reconstructed. Currently just fills the efficiency for isolation')
-
+submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
 
 argParser.add_argument('--signal',  required=True,   action='store',      default=None,   help='Select bkgr')
 argParser.add_argument('--bkgr',  required=True,   action='store',      default=None,   help='Select bkgr')
@@ -35,18 +35,28 @@ for sample_name in sample_manager.sample_names:
         jobs += [(sample.name, str(njob))]
 
 #Merges subfiles if needed
-merge_files = glob.glob(os.getcwd()+'/data/compareLightLeptonId/*')
+if args.isTest:
+    merge_files = glob.glob(os.getcwd()+'/data/testArea/compareLightLeptonId/*')
+else:
+    merge_files = glob.glob(os.getcwd()+'/data/compareLightLeptonId/*')
 for mf in merge_files:
     if "Results" in mf: merge_files.pop(merge_files.index(mf))
 script = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'ObjectSelection', 'compareLightLeptonId.py'))
-merge(merge_files, script, jobs, ('sample', 'subJob'), argParser)
+merge(merge_files, script, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
 
-input_signal = glob.glob(os.getcwd()+'/data/compareLightLeptonId/'+args.signal+'/*ROC-'+args.flavor+'.root')
-bkgr_prefix = os.getcwd()+'/data/compareLightLeptonId/'+args.bkgr
+if not args.isTest:
+    input_signal = glob.glob(os.getcwd()+'/data/compareLightLeptonId/'+args.signal+'/*ROC-'+args.flavor+'.root')
+    bkgr_prefix = os.getcwd()+'/data/compareLightLeptonId/'+args.bkgr
+else:
+    input_signal = glob.glob(os.getcwd()+'/data/testArea/compareLightLeptonId/'+args.signal+'/*ROC-'+args.flavor+'.root')
+    bkgr_prefix = os.getcwd()+'/data/testArea/compareLightLeptonId/'+args.bkgr
 
 from HNL.Plotting.plot import Plot
 
-output_dir = makePathTimeStamped(os.getcwd()+'/data/Results/compareLightLeptonId/ROC/'+args.signal+'-'+args.bkgr)
+if args.isTest: 
+    output_dir = makePathTimeStamped(os.getcwd()+'/data/Results/compareLightLeptonId/ROC/'+args.signal+'-'+args.bkgr)
+else:
+    output_dir = makePathTimeStamped(os.getcwd()+'/data/testArea/Results/compareLightLeptonId/ROC/'+args.signal+'-'+args.bkgr)
 curves = []
 ordered_f_names = []
 extra_text = [extraTextFormat('efficiency: '+args.signal, xpos = 0.2, ypos = 0.82, textsize = 1.2, align = 12)]  #Text to display event type in plot

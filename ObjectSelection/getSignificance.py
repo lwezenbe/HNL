@@ -221,7 +221,7 @@ else:
     from HNL.ObjectSelection.tauSelector import getCorrespondingLightLepDiscr
     import glob
     list_to_merge =   [f for f in glob.glob(os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.year, '*', '*'))  if not 'TextResults' in f]
-    merge(list_to_merge, __file__, jobs, ('sample', 'subJob'), argParser)
+    merge(list_to_merge, __file__, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
 
     def sortkey(c):
         mass_dir = c.split('/')[-2]
