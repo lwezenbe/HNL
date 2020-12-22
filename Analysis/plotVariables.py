@@ -129,7 +129,7 @@ elif args.selection != 'AN2017014':
 else:
     skim_str = 'noskim'
     # skim_str = 'Reco'
-sample_manager = SampleManager(args.year, skim_str, 'fulllist_'+str(args.year))
+sample_manager = SampleManager(args.year, skim_str, 'fulllist_'+str(args.year)+'_mconly')
 
 from HNL.Triggers.triggerSelection import applyCustomTriggers, listOfTriggersAN2017014
 

@@ -53,7 +53,7 @@ if args.isTest:
 #Load in samples
 #
 from HNL.Samples.sampleManager import SampleManager
-file_list = 'fulllist_'+str(args.year) if args.customList is None else args.customList
+file_list = 'fulllist_'+str(args.year)+'_mconly' if args.customList is None else args.customList
 sample_manager = SampleManager(args.year, 'Reco', file_list)
 jobs = []
 for sample_name in sample_manager.sample_names:

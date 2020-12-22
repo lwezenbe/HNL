@@ -80,7 +80,7 @@ else:
 
 sublist = None
 if args.inData:
-    sublist = 'fulllist_'+args.year
+    sublist = 'fulllist_'+args.year+'_nosignal'
 elif args.flavor == 'tau':
     sublist = 'TauFakes'
 elif args.flavor == 'mu':
