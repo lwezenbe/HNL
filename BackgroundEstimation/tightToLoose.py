@@ -88,6 +88,8 @@ elif args.flavor == 'mu':
 elif args.flavor == 'e':
     sublist = 'ElectronFakes'
 
+print sublist
+
 sample_manager = SampleManager(args.year, skim_str, sublist)
 
 #
@@ -109,9 +111,9 @@ subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
 def getOutputBase(region):
     data_str = 'DATA' if args.inData else 'MC'
     if not args.isTest:
-        output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0].rsplit('/', 1)[-1], data_str, args.year, args.flavor, region)
+        output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0].rsplit('/', 1)[-1], args.year, data_str, args.flavor, region)
     else:
-        output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0].rsplit('/', 1)[-1], data_str, args.year, args.flavor, region)
+        output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0].rsplit('/', 1)[-1], args.year, data_str, args.flavor, region)
     return output_name
 
 def getOutputName(region):
