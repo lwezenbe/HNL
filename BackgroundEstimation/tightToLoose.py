@@ -42,8 +42,6 @@ if args.tauRegion == 'AN2017014' and args.flavor == 'tau':
 if args.tauRegion == 'ewkino' and args.flavor in ['e', 'mu']:
     raise RuntimeError("Light lepton fakes for ewkino not implemented")
 
-if not args.inData and 'Data' in args.sample: exit(0)
-
 #
 # Open logger
 #
@@ -66,7 +64,7 @@ from HNL.Weights.reweighter import Reweighter
 if args.isTest:
     args.isChild = True
 
-    if args.sample is None: args.sample = 'DYJetsToLL-M-50' if not args.inData else 'Data-2016'
+    if args.sample is None: args.sample = 'DYJetsToLL-M-50' if not args.inData else 'Data-'+args.year
     args.subJob = '0'
 
 #
@@ -142,6 +140,7 @@ if not args.makePlots:
     # Load in sample and chain
     #
     sample = sample_manager.getSample(args.sample)
+    if not args.inData and 'Data' in sample.name: exit(0)
     chain = sample.initTree(needhcount = False)
     chain.HNLmass = sample.getMass()
     chain.year = int(args.year)

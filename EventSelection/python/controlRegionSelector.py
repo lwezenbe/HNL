@@ -253,7 +253,6 @@ class ClosureTestSelection(FilterObject):
         else:
             return False
 
-
 class TauClosureTest(ClosureTestSelection):
     def __init__(self, name, chain, new_chain, selection, is_reco_level=True, event_categorization = None):
         super(TauClosureTest, self).__init__(name, chain, new_chain, selection, 2, is_reco_level=True, event_categorization = None)
@@ -435,3 +434,46 @@ class ClosureTestMC(FilterObject):
             if not cutter.cut(containsOSSF(self.chain), 'OSSF present'):                                     return False
             # if not cutter.cut(not bVeto(self.chain), 'b-veto'): return False
         return True
+
+class ClosureTestDATA(FilterObject):
+    flavor_dict = {'tau' : 2, 'ele' : 0, 'mu' : 1}
+
+    def __init__(self, name, chain, new_chain, selection, is_reco_level=True, event_categorization = None, additional_options=None):
+        super(ClosureTestDATA, self).__init__(name, chain, new_chain, selection, is_reco_level=True, event_categorization = None)
+        self.flavors_of_interest = additional_options
+        if self.flavors_of_interest is None: 
+            raise RuntimeError('Input for ClosureTestDATA for flavors_of_interest is None')
+    
+        # Set Object Selection
+        self.chain.obj_sel['tau_wp'] = 'FO' if 'tau' in self.flavors_of_interest else 'tight'
+        self.chain.obj_sel['ele_wp'] = 'FO' if 'ele' in self.flavors_of_interest else 'tight'
+        self.chain.obj_sel['mu_wp'] = 'FO' if 'mu' in self.flavors_of_interest else 'tight'
+
+        self.loose_leptons_of_interest = []
+
+    def initEvent(self, cutter):
+        return super(ClosureTestDATA, self).initEvent(3, cutter, sort_leptons = False)
+
+    def passedFilter(self, cutter, region):
+        if self.flavors_of_interest == ['tau'] and region == 'TauFakesDY':
+            if not self.initEvent(cutter):                                return False
+        
+            if not cutter.cut(self.new_chain.l_flavor.count(2) == 1, '1 tau'):                   return False
+
+            if not cutter.cut(self.new_chain.l_flavor[0] == self.new_chain.l_flavor[1], 'SF'):        return False
+            if not cutter.cut(self.new_chain.l_charge[0] != self.new_chain.l_charge[1], 'OS'):        return False
+
+            l1Vec = getFourVec(self.new_chain.l_pt[0], self.new_chain.l_eta[0], self.new_chain.l_phi[0], self.new_chain.l_e[0])
+            l2Vec = getFourVec(self.new_chain.l_pt[1], self.new_chain.l_eta[1], self.new_chain.l_phi[1], self.new_chain.l_e[1])
+
+            if not cutter.cut(abs(91.19 - (l1Vec + l2Vec).M()) < 15, 'Z window'):             return False
+            if not cutter.cut(self.chain._met < 50, 'MET > 50'):                                 return False
+
+            self.loose_leptons_of_interest = [2]
+            return True
+        
+        else:
+            return False
+
+    def getFakeIndex(self):
+        return 2

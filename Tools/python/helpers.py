@@ -258,3 +258,21 @@ def mergeTwoDictionaries(dict1, dict2):
     out_dict = dict1.copy()
     out_dict.update(dict2)
     return out_dict
+
+def mergeHistograms(histogram_collection, group_dict):
+    out_hist = {}
+    for b in group_dict.keys():
+        out_hist[b] = None
+
+    for h in histogram_collection.keys():
+        group_name = [sk for sk in group_dict.keys() if h in group_dict[sk]]
+        if len(group_name) != 1:
+            raise RuntimeError("No group for process with name: " +h)
+        group_name = group_name[0]
+
+        if out_hist[group_name] is None:
+            out_hist[group_name] = histogram_collection[h].Clone()
+        else:
+            out_hist[group_name].Add(histogram_collection[h])
+
+    return out_hist
