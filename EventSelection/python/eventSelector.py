@@ -1,16 +1,18 @@
 #Combine signalRegionSelector and controlRegionSelector here
 from HNL.EventSelection.signalRegionSelector import SignalRegionSelector
-from HNL.EventSelection.controlRegionSelector import ZZCRfilter, WZCRfilter, ConversionCRfilter, TauFakeEnrichedDY, TauFakeEnrichedTT, TauClosureTest, ElectronClosureTest, MuonClosureTest, LightLeptonFakeMeasurementRegion, LukaClosureTest, ClosureTestMC
+from HNL.EventSelection.controlRegionSelector import ZZCRfilter, WZCRfilter, ConversionCRfilter, TauFakeEnrichedDY, TauFakeEnrichedTT, TauClosureTest, ElectronClosureTest, MuonClosureTest, LightLeptonFakeMeasurementRegion, LukaClosureTest, ClosureTestMC, ClosureTestDATA
 
 class EventSelector:
 
-    def __init__(self, name, chain, new_chain, selection, is_reco_level=True, event_categorization=None, additional_options=None):
+    def __init__(self, name, chain, new_chain, selection, is_reco_level=True, event_categorization=None, in_data=False, additional_options=None):
         self.name = name
         self.selection = selection
         self.chain = chain
         self.new_chain = new_chain
         self.is_reco_level = is_reco_level
         if self.name in ['baseline', 'lowMassSR', 'highMassSR']:
+            if in_data:
+                raise RuntimeError("Running this would mean unblinding. Dont do this.")
             self.selector = SignalRegionSelector(name, chain, new_chain, selection, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'ZZCR':
             self.selector = ZZCRfilter(name, chain, new_chain, selection, is_reco_level=is_reco_level)
@@ -34,6 +36,8 @@ class EventSelector:
             self.selector = LukaClosureTest(name, chain, new_chain, selection, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'MCCT':
             self.selector = ClosureTestMC(name, chain, new_chain, selection, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options=additional_options)
+        elif self.name == 'DataCT':
+            self.selector = ClosureTestDATA(name, chain, new_chain, selection, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options=additional_options)
 
     def passedFilter(self, cutter):
         return self.selector.passedFilter(cutter)

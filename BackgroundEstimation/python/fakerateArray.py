@@ -37,11 +37,15 @@ def createFakeRatesWithJetBins(name, var, var_tex, path, bins = None):
     return fr_array
 
 import os
-def loadFakeRatesWithJetBins(name, var, var_tex, path_base, flavor):
+def loadFakeRatesWithJetBins(name, var, var_tex, path_base, flavor, indata=False):
     fr_arrays = {}
     if flavor == 'tau':
-        fr_arrays['TauFakesDY'] = createFakeRatesWithJetBins(name, var, var_tex, os.path.join(path_base, 'TauFakesDY', 'DY', 'events.root'), bins = None)
-        fr_arrays['TauFakesTT'] = createFakeRatesWithJetBins(name, var, var_tex, os.path.join(path_base, 'TauFakesTT', 'TT', 'events.root'), bins = None)
+        if indata:
+            fr_arrays['TauFakesDY'] = createFakeRatesWithJetBins(name, var, var_tex, os.path.join(path_base, 'TauFakesDY', 'events.root'), bins = None)
+            # fr_arrays['TauFakesTT'] = createFakeRatesWithJetBins(name, var, var_tex, os.path.join(path_base, 'TauFakesTT', 'events.root'), bins = None)
+        else:
+            fr_arrays['TauFakesDY'] = createFakeRatesWithJetBins(name, var, var_tex, os.path.join(path_base, 'TauFakesDY', 'DY', 'events.root'), bins = None)
+            fr_arrays['TauFakesTT'] = createFakeRatesWithJetBins(name, var, var_tex, os.path.join(path_base, 'TauFakesTT', 'TT', 'events.root'), bins = None)
     elif flavor == 'e':
         fr_arrays['LightLeptonFakes'] = createFakeRatesWithJetBins(name, var, var_tex, os.path.join(path_base, 'LightLeptonFakes', 'QCDem', 'events.root'), bins = None)
     else:
