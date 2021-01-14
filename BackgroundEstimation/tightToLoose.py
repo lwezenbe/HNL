@@ -187,7 +187,7 @@ if not args.makePlots:
     #
     # Define event selection
     #
-    es = EventSelector(region_to_select, chain, chain, args.selection, True, ec)            
+    es = EventSelector(region_to_select, chain, chain, args.selection, True, ec, in_data = args.inData)            
 
     #
     # Create fake rate objects

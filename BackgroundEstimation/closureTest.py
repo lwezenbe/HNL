@@ -215,14 +215,14 @@ if not args.makePlots:
     from HNL.EventSelection.eventSelector import EventSelector
     if args.isCheck:
         if args.flavorToTest == ['tau']:
-            es = EventSelector('TauFakes', chain, chain, args.selection, True, ec)    
+            es = EventSelector('TauFakes', chain, chain, args.selection, True, ec, in_data = args.inData)    
         else:
             raise RuntimeError("Wrong input for flavorToTest with isCheck arg on: "+str(args.flavorToTest))
     else:
         if not args.inData:
-            es = EventSelector('MCCT', chain, chain, args.selection, True, ec, additional_options=args.flavorToTest) 
+            es = EventSelector('MCCT', chain, chain, args.selection, True, ec, in_data = args.inData, additional_options=args.flavorToTest) 
         else:
-            es = EventSelector('DataCT', chain, chain, args.selection, True, ec, additional_options=args.flavorToTest) 
+            es = EventSelector('DataCT', chain, chain, args.selection, True, ec, in_data = args.inData, additional_options=args.flavorToTest) 
 
 
     fakerate = {}
