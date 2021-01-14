@@ -58,6 +58,38 @@ def listOfTriggers2016(chain):
     list_of_triggers.append(chain._HLT_IsoTkMu24)
     return list_of_triggers
 
+def listOfTriggers2017(chain):
+    list_of_triggers = []
+    # list_of_triggers.append(chain._HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg)
+    # list_of_triggers.append(chain._passTrigger_mt)
+    # list_of_triggers.append(chain._passTrigger_et)
+    list_of_triggers.append(chain._passTrigger_eee)
+    list_of_triggers.append(chain._passTrigger_eem)
+    list_of_triggers.append(chain._passTrigger_emm)
+    list_of_triggers.append(chain._passTrigger_mmm)
+    list_of_triggers.append(chain._passTrigger_ee)
+    list_of_triggers.append(chain._passTrigger_em)
+    list_of_triggers.append(chain._passTrigger_mm)
+    list_of_triggers.append(chain._HLT_Ele32_WPTight_Gsf)
+    list_of_triggers.append(chain._passTrigger_m)
+    return list_of_triggers
+
+def listOfTriggers2018(chain):
+    list_of_triggers = []
+    # list_of_triggers.append(chain._HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg)
+    # list_of_triggers.append(chain._passTrigger_mt)
+    # list_of_triggers.append(chain._passTrigger_et)
+    list_of_triggers.append(chain._passTrigger_eee)
+    list_of_triggers.append(chain._passTrigger_eem)
+    list_of_triggers.append(chain._passTrigger_emm)
+    list_of_triggers.append(chain._passTrigger_mmm)
+    list_of_triggers.append(chain._passTrigger_ee)
+    list_of_triggers.append(chain._passTrigger_em)
+    list_of_triggers.append(chain._passTrigger_mm)
+    list_of_triggers.append(chain._HLT_Ele32_WPTight_Gsf)
+    list_of_triggers.append(chain._passTrigger_m)
+    return list_of_triggers
+
 def listOfTriggersEwkino(chain):
     list_of_triggers = []
     list_of_triggers.append(chain._passTrigger_em)
