@@ -276,11 +276,14 @@ else:
             output_dir = makePathTimeStamped(base_path +'/Results')
             in_file = base_path+'/events.root'
             print in_file
+        else:
+            output_dir = makePathTimeStamped(base_path +'/Results')
+            in_file = base_path+'/'+sample_output+'/events.root'
+            print in_file
 
         fakerates = createFakeRatesWithJetBins('tauttl', None, None, in_file)
         for fr in fakerates.bin_collection:
             ttl = fakerates.getFakeRate(fr).getEfficiency()
-
 
             p = Plot(signal_hist = ttl, name = 'ttl_'+fr, year = int(args.year))
             p.draw2D(output_dir = output_dir, names = ['ttl_'+fr])

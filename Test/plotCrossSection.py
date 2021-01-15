@@ -9,6 +9,8 @@ argParser.add_argument('--flavor', action='store', default='',  help='Which coup
 args = argParser.parse_args()
 
 if args.isTest:
+    from HNL.Tools.logger import getLogger, closeLogger
+    log = getLogger('INFO')
     args.year = '2016'
 
 #
@@ -51,3 +53,7 @@ for sample in sample_manager.sample_list:
 from HNL.Plotting.plot import Plot
 p = Plot([hist], sample.output, y_log=True)
 p.drawHist(output_dir = os.path.expandvars('$CMSSW_BASE/src/HNL/Test/data/plotCrossSection'), draw_option="Hist")
+
+if args.isTest:
+    closeLogger(log)
+

@@ -25,7 +25,12 @@ submission_parser.add_argument('--dryRun',   action='store_true', default=False,
 submission_parser.add_argument('--includeReco',   action='store_true', default=False, 
     help='look at the efficiency for a gen tau to be both reconstructed and identified. Currently just fills the efficiency for isolation')
 submission_parser.add_argument('--onlyReco',   action='store_true', default=False,  help='look at the efficiency for a gen tau to be reconstructed. Currently just fills the efficiency for isolation')
+submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 args = argParser.parse_args()
+
+from HNL.Tools.logger import getLogger, closeLogger
+log = getLogger(args.logLevel)
+
 
 #
 # Change some settings if this is a test
@@ -217,3 +222,5 @@ for eff in ['efficiency', 'fakerate']:
                     list_of_var_hist[eff][algo][v][wp].write(append = False, name = eff+'_'+v, is_test=args.isTest)
                 else:
                     list_of_var_hist[eff][algo][v][wp].write(append = True, name = eff+'_'+v, is_test=args.isTest) 
+
+closeLogger(log)

@@ -32,7 +32,7 @@ if args.isTest:
     args.isChild = True
     args.sample = 'HNL-tau-m60'
     args.subJob = '0'
-    args.year = '2016'
+    if args.year is None: args.year = '2016'
 
 #
 # All ID's and WP we want to test

@@ -217,7 +217,7 @@ def calculateGeneralVariables(chain, new_chain, is_reco_level = True, selection 
             new_chain.pt_cone.append(chain._lPt[l]*(1+max(0., chain._miniIso[l]-0.4))) #TODO: is this the correct definition?
 
         #calculate #jets and #bjets
-        new_chain.njets = selectJets(chain)
+        new_chain.njets = len(selectJets(chain))
         new_chain.nbjets = nBjets(chain, 'loose')
         new_chain.HT = calcHT(chain, new_chain)
         selectFirstTwoJets(chain, new_chain)

@@ -54,6 +54,11 @@ submission_parser.add_argument('--discriminators', nargs='*', default=['iso', 'e
 submission_parser.add_argument('--makeCombinations', action='store_true', default=False,
     help='Makes combinations of iso with different electron and muon working points. Turned off by default because large hadd times for large samples.')
 args = argParser.parse_args()
+submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+
+
+from HNL.Tools.logger import getLogger, closeLogger
+log = getLogger(args.logLevel)
 
 #
 # Changing some settings if this is a test
@@ -429,3 +434,5 @@ for discr in args.discriminators:
                                     list_of_var_hist[eff][discr][algo][v][wp][ele_wp][mu_wp].write(append = True, name = eff, is_test=args.isTest)
 
 print 'Finished'
+
+closeLogger(log)

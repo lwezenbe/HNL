@@ -9,7 +9,7 @@ from HNL.Tools.histogram import Histogram
 def compareHist(path, name):
     hist_prev = Histogram(getObjFromFile(path, name))
     hist_latest = Histogram(getObjFromFile(path.replace("Previous", "Latest"), name))
-    
+
     if hist_prev.isTH2 and not hist_latest.isTH2:
         return "Histograms are different type"
 
@@ -74,7 +74,6 @@ def checkSubdirOutput(subdir):
         if len(files) > 0: 
             for f in files:
                 list_of_files_to_test.append(root+'/'+f)
-
     faulty_files = []
     for ft in list_of_files_to_test:
         if not compareFiles(ft, subdir): faulty_files.append(ft)

@@ -97,13 +97,15 @@ if args.allCombinations:
         for i, comb in enumerate(combinations):
             out_name = str(i)+'.txt'
             log_name = os.path.join(out_name_base, out_name)
-            if args.checkLogs and not successfullJob(log_name): failed_jobs.append(log_name)
+            if args.checkLogs and not successfullJob(log_name): failed_jobs.append([log_name, comb])
             if not args.checkLogs: launchCream02(os.path.join(base_path, comb), log_name, jobLabel='test')
     if args.checkLogs:
         if len(failed_jobs) != 0:
             print "FOLLOWING JOBS FAILED"
             for l in failed_jobs:
-                print l
+                print '\033[93m', "FAILED JOB:", '\033[0m'
+                print "LOG:", l[0]
+                print "JOB:", l[1]
         else:
             print "All jobs completed successfully!"
 

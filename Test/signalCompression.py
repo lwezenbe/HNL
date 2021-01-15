@@ -25,18 +25,14 @@ print 'Loading in samples'
 
 #Load in samples and get the specific sample for this job
 from HNL.Samples.sampleManager import SampleManager
-# sample_manager = SampleManager(args.year, 'noskim', 'allsignal_'+str(args.year))
-sample_manager = SampleManager(args.year, 'noskim', 'signalCompression')
-
-# from HNL.Samples.sample import createSampleList, getSampleFromList
-# sample_list = createSampleList(os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/signalCompression.conf'))
+sample_manager = SampleManager(args.year, 'noskim', 'allsignal_'+str(args.year))
 
 #
 # Change some settings if this is a test
 #
 if args.isTest: 
     args.isChild = True
-    args.sample = 'HNL-tau-m30'
+    args.sample = 'HNL-tau-m20'
     args.subJob = '0'
 
 if not args.isChild:
@@ -80,8 +76,7 @@ if args.plotSoftTau and 'tau' in sample.name: pt_hist.append(ROOT.TH1D('subleadi
 
 #Determine if testrun so it doesn't need to calculate the number of events in the getEventRange
 if args.isTest:
-    # eventRange = xrange(1000)
-    eventRange = sample.getEventRange(0)
+    eventRange = xrange(20000)
 else:
     eventRange = sample.getEventRange(int(args.subJob))
 

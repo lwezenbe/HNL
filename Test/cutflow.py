@@ -12,6 +12,10 @@ args = argParser.parse_args()
 if args.isTest:
     args.year = '2016'
     args.sample = 'DYJetsToLL-M-10to50' 
+    args.subJob = 0
+
+    from HNL.Tools.logger import getLogger, closeLogger
+    log = getLogger('INFO')
 
 list_of_numbers = {'total' : 0,
                     'single_lep' : 0,
@@ -106,3 +110,5 @@ print 'two_reco_tau', list_of_numbers['two_reco_tau']
 print 'two_good_reco_tau', list_of_numbers['two_good_reco_tau']
 print 'final', list_of_numbers['final']
 print 'cat_n', list_of_numbers['cat_n']
+
+if args.isTest: closeLogger(log)

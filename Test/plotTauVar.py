@@ -28,6 +28,9 @@ submission_parser.add_argument('--genLevel',   action='store_true', default=Fals
 argParser.add_argument('--makePlots',   action='store_true', default=False,  help='Use existing root files to make the plots')
 args = argParser.parse_args()
 
+from HNL.Tools.logger import getLogger, closeLogger
+log = getLogger('INFO')
+
 if args.isTest:
     args.year = '2016'
     args.sample = 'DY'
@@ -171,6 +174,8 @@ else:
         list_of_hist[sample_name] = {}
         for v in var.keys():
             list_of_hist[sample_name][v] = Histogram(getObjFromFile(h+'/variables.root', v+'/'+sample_name+'-'+v)) 
+
+closeLogger(log)
 
 #
 #       Plot!
