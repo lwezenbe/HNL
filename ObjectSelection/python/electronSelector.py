@@ -372,6 +372,45 @@ def isTightElectronTTT(chain, index):
     if chain._leptonMvaTOP[index] <= 0.4: return False        
     return True
 
+#
+# Luka's selection
+#
+def isLooseElectronLuka(chain, index):
+    if chain._lFlavor[index] != 0:              return False
+    if not isCleanFromMuons(chain, index, 'Luka'):      return False
+    if chain._lPt[index] < 5: return False
+    if abs(chain._lEta[index]) > 2.5: return False
+    if abs(chain._dxy[index]) >= 0.05:          return False
+    if abs(chain._dz[index]) >= 0.1:            return False
+    if chain._miniIso[index] >= 0.4:            return False
+    if chain._3dIPSig[index] >= 8:              return False
+    if chain._lElectronMissingHits[index] >= 2:  return False
+    return True
+
+def isFOElectronLuka(chain, index):
+    if not isLooseElectronLuka(chain, index):      return False
+    if chain._lPt[index] <= 10: return False
+    if chain._lElectronHOverE[index] >= 0.10:    return False
+    if chain._lElectronEInvMinusPInv[index] <= -0.04:    return False
+    if not chain._lElectronPassConvVeto[index]: return False
+    #Barrel
+    if abs(chain._lEta[index]) <= 1.479:
+        if chain._lElectronSigmaIetaIeta[index] >= 0.011:    return False
+    #endcap
+    else:
+        if chain._lElectronSigmaIetaIeta[index] >= 0.03:    return False
+    if chain._leptonMvaTOP[index] <= 0.4:
+        if not passMVAloose(chain, index):  return False
+        if chain._ptRatio[index] < 0.5:     return False
+        if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) > 0.5: return False        
+     
+    return True
+
+def isTightElectronLuka(chain, index):
+    if not isFOElectronLuka(chain, index):      return False
+    if chain._leptonMvaTOP[index] <= 0.4: return False        
+    return True
+
 
 #
 # General functions for selection
@@ -382,6 +421,7 @@ def isLooseElectron(chain, index, algo):
     elif algo == 'leptonMVAtZq':        return isLooseElectrontZq(chain, index)
     elif algo == 'leptonMVAtop':        return isLooseElectronTop(chain, index)
     elif algo == 'TTT':                 return isLooseElectronTTT(chain, index)
+    elif algo == 'Luka':                 return isLooseElectronLuka(chain, index)
     elif algo == 'ewkino':              return isLooseElectronEwkino(chain, index)
     else:
         print 'Wrong input for "algo" in isLooseElectron'
@@ -393,6 +433,7 @@ def isFOElectron(chain, index, algo):
     elif algo == 'leptonMVAtZq':        return isFOElectrontZq(chain, index)
     elif algo == 'leptonMVAtop':        return isFOElectronTop(chain, index)
     elif algo == 'TTT':                 return isFOElectronTTT(chain, index)
+    elif algo == 'Luka':                 return isFOElectronLuka(chain, index)
     elif algo == 'ewkino':              return isFOElectronEwkino(chain, index)
     else:
         print 'Wrong input for "algo" in isFOElectron'
@@ -404,6 +445,7 @@ def isTightElectron(chain, index, algo):
     elif algo == 'leptonMVAtZq':        return isTightElectrontZq(chain, index)
     elif algo == 'leptonMVAtop':        return isTightElectronTop(chain, index)
     elif algo == 'TTT':                 return isTightElectronTTT(chain, index)
+    elif algo == 'Luka':                 return isTightElectronLuka(chain, index)
     elif algo == 'ewkino':              return isTightElectronEwkino(chain, index)
     else:
         print 'Wrong input for "algo" in isTightElectron'
