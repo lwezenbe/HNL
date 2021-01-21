@@ -276,3 +276,9 @@ def mergeHistograms(histogram_collection, group_dict):
             out_hist[group_name].Add(histogram_collection[h])
 
     return out_hist
+
+def fileSize(path):           
+    file_info = os.stat(path)
+    file_size = file_info.st_size
+    file_size_MB = 0.000001*file_size
+    return file_size_MB
