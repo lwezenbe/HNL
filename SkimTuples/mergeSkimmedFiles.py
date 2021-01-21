@@ -2,49 +2,100 @@ import os
 import glob
 import itertools
 
+#
+# Argument parser and logging
+#
+import argparse
+argParser = argparse.ArgumentParser(description = "Argument parser")
+submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'], required = True)
+submission_parser.add_argument('--overwrite', action='store_true', default=False,                help='overwrite if valid output file already exists')
+submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
+submission_parser.add_argument('--skimSelection',  action='store',      default=None,               help='Name of the selection.')
+submission_parser.add_argument('--skimName',  action='store',      default='Reco',               help='Name of the skim.')
+submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
+
+args = argParser.parse_args()
+
+abort_script = raw_input("Did you check if all log files are ok? (y/n) \n")
+if abort_script == 'n' or abort_script == 'N':
+    exit(0)
+
+from HNL.Tools.helpers import fileSize, makeDirIfNeeded, isValidRootFile
+
+def mergeSmallFile(merge_file):
+    path, name = merge_file.rsplit('/', 1)
+    os.system('hadd -f -v '+path+'/'+name.split('_', 1)[1]+'.root '+merge_file+'/*root')
+    os.system('rm -r '+ merge_file)
+
+def mergeLargeFile(merge_file):
+    path, name = merge_file.rsplit('/', 1)
+    sub_files = sorted(glob.glob(merge_file+'/*'))
+    split_list = []
+    tmp_list = []
+
+    makeDirIfNeeded(os.path.join(path, name, 'tmp_batches', 'x'))
+
+    for i, file_list in enumerate(sub_files):
+        if i != 0 and (i % 20 == 0 or i == len(merge_files)-1):
+            tmp_list.append(file_list)
+            split_list.append([x for x in tmp_list])
+            tmp_list = []
+        else:
+            tmp_list.append(file_list)
+
+    for j, file_list in enumerate(split_list):
+        os.system('hadd -f -v '+path+'/'+name+ '/tmp_batches/batch_'+str(j)+ '.root '+' '.join(file_list))
+        for f in file_list:
+            os.system('rm '+f)
+
+    os.system('hadd -f -v '+path+'/'+name.split('_', 1)[1]+'.root '+path+'/'+name+ '/tmp_batches/*root')
+    os.system('rm -rf '+path+'/'+name)
+
+pnfs_base = os.path.join('/pnfs/iihe/cms/store/user', os.path.expandvars('$USER'), 'skimmedTuples/HNL', args.skimSelection, args.year, args.skimName)
+pnfs_backup_base = os.path.join('/pnfs/iihe/cms/store/user', os.path.expandvars('$USER'), 'skimmedTuples/HNL/Backup', args.skimSelection, args.year, args.skimName)
+if not args.batchSystem == 'HTCondor':
+    pnfs_base = 'srm://maite.iihe.ac.be:8443'+pnfs_base
+    pnfs_backup_base = 'srm://maite.iihe.ac.be:8443'+pnfs_backup_base
 
 #Merges subfiles if needed
-# merge_files = glob.glob('/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/Tycho/*/*/tmp*')
-merge_files = glob.glob('/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/2017/*/tmp*')
-# merge_files = glob.glob('/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/2016/Reco/tmp*/*')
+if args.batchSystem != 'HTCondor':
+    merge_files = glob.glob('/storage_mnt/storage/user/'+os.path.expandvars('$USER')+'/public/ntuples/HNL/'+args.skimSelection+'/'+args.year+'/'+args.skimName+'/tmp*')
+else:
+    merge_files = glob.glob(pnfs_base+'/tmp*')
+merge_files = sorted(merge_files)
 
-# keyfunc = lambda x:x[:3]
-# merge_files = sorted(merge_files, key=keyfunc)
-
-# split_list = []
-# tmp_list = []
-
-# for i, file_list in enumerate(merge_files):
-#     if i != 0 and (i % 20 == 0 or i == len(merge_files)-1):
-#         # print i, [x for x in tmp_list]
-
-#         split_list.append([x for x in tmp_list])
-#         tmp_list = []
-#     else:
-#         # print file_list, tmp_list
-#         tmp_list.append(file_list)
-#         # print 
-            
-# # print split_list
-
-
-# for i, file_list in enumerate(split_list):
-#     # print i, file_list
-#     batches_index = -1
-#     for j, f in enumerate(file_list):
-#         if 'batches' in f:
-#             batches_index = j
-
-#     if batches_index != -1:
-#         file_list.pop(batches_index)
-
-#     path, name = file_list[0].rsplit('/', 1)
-#     file_names = ' '.join(file_list)
-#     # print 'hadd -f -v /storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/2017/Reco/tmp_DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8/batches/'+name.split('_', 1)[1].split('.root')[0]+'_'+str(i)+'.root '+file_names
-#     # os.system('hadd -f -v /storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/2018/Reco/tmp_DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8/batches/'+name.split('_', 1)[1].split('.root')[0]+'_'+str(i)+'.root '+file_names)
+if args.batchSystem != 'HTCondor':
+    os.system('gfal-mkdir '+pnfs_base)
+    os.system('gfal-mkdir '+pnfs_backup_base)
+else:
+    makeDirIfNeeded(pnfs_base)
+    makeDirIfNeeded(pnfs_backup_base)
 
 for mf in merge_files:
+    if 'Data' in mf: continue
     path, name = mf.rsplit('/', 1)
-    print path+'/'+name.split('_', 1)[1]+'.root'
-    os.system('hadd -f -v '+path+'/'+name.split('_', 1)[1]+'.root '+mf+'/*root')
-    os.system('rm -r '+ mf)
+    new_name = name.split('_', 1)[1]+'.root'
+
+    if args.batchSystem != 'HTCondor':
+        os.system('gfal-rm '+pnfs_backup_base+'/'+new_name)
+        os.system('gfal-copy '+pnfs_base+'/'+new_name+' '+pnfs_backup_base+'/'+new_name)
+        os.system('gfal-rm '+pnfs_base+'/'+new_name)
+    else:
+        if isValidRootFile(pnfs_base+'/'+new_name):
+            os.system('scp '+pnfs_base+'/'+new_name + ' '+ pnfs_backup_base+'/'+new_name)
+
+    sub_files = glob.glob(mf+'/*')
+    tot_size = 0
+    for sf in sub_files:
+        tot_size += fileSize(sf)
+    
+    if tot_size > 1000:
+        mergeLargeFile(mf)
+    else:
+        mergeSmallFile(mf)
+
+    if args.batchSystem != 'HTCondor':
+        #Move to pnfs once it is merged locally
+        os.system('gfal-copy file://'+path+'/'+new_name+' '+pnfs_base+'/'+new_name)
+        os.system('rm -f'+path+'/'+new_name)
