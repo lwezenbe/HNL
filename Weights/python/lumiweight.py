@@ -31,7 +31,6 @@ class LumiWeight:
                 return self.sample.chain.lumiweight
             except:
                 self.lumi_weight = self.sample.chain._weight*(self.sample.xsec*LUMINOSITY_MAP[self.sample.chain.year])/self.total_hcount
-                self.sample.chain.lumiweight = self.lumi_weight
                 return self.lumi_weight 
 
 if __name__ == '__main__':
