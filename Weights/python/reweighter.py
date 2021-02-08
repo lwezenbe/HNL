@@ -27,10 +27,10 @@ class Reweighter:
 
     def getTotalWeight(self):
         tot_weight = 1.
-        try:
-            tot_weight *= self.sample.chain._weight
-        except:
-            pass
+        # try:
+        #     tot_weight *= self.sample.chain._weight
+        # except:
+        #     pass
         tot_weight *= self.getLumiWeight()
         tot_weight *= self.getPUWeight()
 
