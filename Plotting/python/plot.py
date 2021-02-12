@@ -59,7 +59,8 @@ class Plot:
             self.total_s = None
 
         self.name = name if name else self.s[0].GetTitle()
-        self.year = int(year)
+        # self.year = int(year)
+        self.year = year
 
         self.b = makeList(getHistList(bkgr_hist)) if bkgr_hist is not None else []
         self.total_b = None
@@ -350,15 +351,16 @@ class Plot:
         # self.tot_err.SetMaximum(1.7)
         self.tot_err.SetMinimum(0.)
         self.tot_err.SetMaximum(2.)
-        self.tot_err.GetXaxis().SetTitleSize(.12)
-        self.tot_err.GetYaxis().SetTitleSize(.12)
-        self.tot_err.GetXaxis().SetLabelSize(.12)
-        self.tot_err.GetYaxis().SetLabelSize(.12)
-        self.tot_err.GetYaxis().SetTitleOffset(.6)
+        self.tot_err.GetXaxis().SetTitleSize(.18)
+        self.tot_err.GetYaxis().SetTitleSize(.18)
+        self.tot_err.GetXaxis().SetLabelSize(.18)
+        self.tot_err.GetYaxis().SetLabelSize(.18)
+        self.tot_err.GetYaxis().SetTitleOffset(.4)
+        self.tot_err.GetYaxis().SetNdivisions(505)
         if self.draw_significance:
             self.tot_err.GetXaxis().SetLabelOffset(999999)
         else:
-            self.tot_err.GetXaxis().SetTitleOffset(1.0)
+            self.tot_err.GetXaxis().SetTitleOffset(0.8)
         if self.draw_significance:
             self.tot_err.SetTitle('; ; '+ytitle)
         else:
@@ -692,11 +694,14 @@ class Plot:
             if self.draw_ratio is not None or self.draw_significance: 
                 self.hs.GetHistogram().GetXaxis().SetLabelOffset(9999999)
         else:
-            for h in self.s:
+            for ih, h in enumerate(self.s):
                 if h.GetSumOfWeights() == 0: continue
                 if normalize_signal:
-                    if self.b is None:
-                        raise RuntimeError("Trying to normalize a signal to a nonexisting background in drawHist")
+                    if len(self.b) == 0:
+                        # raise RuntimeError("Trying to normalize a signal to a nonexisting background in drawHist")
+                        #Normalize everything to the first histogram
+                        if ih > 0:
+                            h.Scale(self.s[0].GetSumOfWeights()/h.GetSumOfWeights())
                     else:
                         h.Scale(self.total_b.GetSumOfWeights()/h.GetSumOfWeights())
 
@@ -787,6 +792,7 @@ class Plot:
         #Create Legend
         legend = ROOT.TLegend(0.5, .7, .9, .9)
         legend.SetNColumns(2)
+        legend.SetTextSize(.02)
        
         loop_obj = [item for item in self.s]
         if len(self.b) > 0: loop_obj.extend(self.b)

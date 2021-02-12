@@ -79,6 +79,7 @@ def getStackColorTauPOGbyName(name):
     elif 'DY' in name:          return TColor.GetColor("#ffcc66")
     elif 'ttX' in name:         return TColor.GetColor("#6B717E") 
     elif 'XG' in name:          return TColor.GetColor("#360568")
+    elif 'Data' in name:          return TColor.GetColor("#77BFA3")
     
     elif '600' in name:   return TColor.GetColor("#F7C59F")
     elif '400' in name:   return TColor.GetColor("#A8C256")
