@@ -317,4 +317,5 @@ def muonConeCorrection(chain, index, algo = None):
     elif algo == 'TTT':
         return 0.67/chain._ptRatio[index]
     else:
-        return 0.8/chain._ptRatio[index]
+        # return 0.8/chain._ptRatio[index]
+        return 0.67/chain._ptRatio[index]
