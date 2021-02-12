@@ -12,7 +12,8 @@ def system(command):
 def checkQueueOnCream02():
     try:
         queue = int(system('qstat -u $USER | wc -l'))
-        if queue > 2000:
+        # if queue > 2000:
+        if queue > 1500:
             log.info('Too much jobs in queue (' + str(queue) + '), sleeping')
             time.sleep(500)
             checkQueueOnCream02()
@@ -134,8 +135,14 @@ def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, subLog=
     args         = argparser.parse_args()
     args.isChild = True
 
+
+    if resubmission and 'skimmer' in script:
+        args.overwrite=True
     submitArgs   = getSubmitArgs(argparser, args, dropArgs)
-    arg_string = getArgsStr(submitArgs, to_ignore=['isChild'])
+    if resubmission and 'skimmer' in script:
+        arg_string = getArgsStr(submitArgs, to_ignore=['isChild', 'overwrite'])
+    else:
+        arg_string = getArgsStr(submitArgs, to_ignore=['isChild'])
     
     #Do not include isChild in arg_string
 
