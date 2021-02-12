@@ -14,6 +14,12 @@ var_gen_3l = {'minMos':        (lambda c : c.minMos,   np.arange(0., 120., 12.),
         'l1pt':      (lambda c : c.l_pt[l1],       np.arange(0., 300., 5.),       ('p_{T} (l1) [GeV]', 'Events')),
         'l2pt':      (lambda c : c.l_pt[l2],       np.arange(0., 300., 5.),       ('p_{T} (l2) [GeV]', 'Events')),
         'l3pt':      (lambda c : c.l_pt[l3],       np.arange(0., 300., 5.),       ('p_{T} (l3) [GeV]', 'Events')),
+        'l1eta':      (lambda c : c.l_eta[l1],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l1)', 'Events')),
+        'l2eta':      (lambda c : c.l_eta[l2],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l2)', 'Events')),
+        'l3eta':      (lambda c : c.l_eta[l3],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l3)', 'Events')),
+        'l1phi':      (lambda c : c.l_eta[l1],       np.arange(0, 3.0, 0.5),       ('#phi (l1)', 'Events')),
+        'l2phi':      (lambda c : c.l_eta[l2],       np.arange(0, 3.0, 0.5),       ('#phi (l2)', 'Events')),
+        'l3phi':      (lambda c : c.l_eta[l3],       np.arange(0, 3.0, 0.5),       ('#phi (l3)', 'Events')),
         'l1vispt':      (lambda c : c.l_vispt[l1],       np.arange(0., 100., 2.),       ('p_{T}^{vis} (l1) [GeV]', 'Events')),
         'l2vispt':      (lambda c : c.l_vispt[l2],       np.arange(0., 100., 2.),       ('p_{T}^{vis} (l2) [GeV]', 'Events')),
         'l3vispt':      (lambda c : c.l_vispt[l3],       np.arange(0., 100., 2.),       ('p_{T}^{vis} (l3) [GeV]' 'Events'))
@@ -98,12 +104,24 @@ var_reco_4l = {
     }
 
 var_mva = {
-        'mva_high_e':        (lambda c : c.mva_high_e,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
-        'mva_high_mu':        (lambda c : c.mva_high_mu,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
-        'mva_high_tau':        (lambda c : c.mva_high_tau,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
-        'mva_low_e':        (lambda c : c.mva_low_e,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
-        'mva_low_mu':        (lambda c : c.mva_low_mu,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
-        'mva_low_tau':        (lambda c : c.mva_low_tau,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events'))  
+        'mva_high_e_baseline':        (lambda c : c.mva_high_e_baseline,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_high_mu_baseline':        (lambda c : c.mva_high_mu_baseline,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_high_tau_baseline':        (lambda c : c.mva_high_tau_baseline,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_low_e_baseline':        (lambda c : c.mva_low_e_baseline,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_low_mu_baseline':        (lambda c : c.mva_low_mu_baseline,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_low_tau_baseline':        (lambda c : c.mva_low_tau_baseline,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_high_e_lowMassSR':        (lambda c : c.mva_high_e_lowMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_high_mu_lowMassSR':        (lambda c : c.mva_high_mu_lowMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_high_tau_lowMassSR':        (lambda c : c.mva_high_tau_lowMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_low_e_lowMassSR':        (lambda c : c.mva_low_e_lowMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_low_mu_lowMassSR':        (lambda c : c.mva_low_mu_lowMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_low_tau_lowMassSR':        (lambda c : c.mva_low_tau_lowMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_high_e_highMassSR':        (lambda c : c.mva_high_e_highMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_high_mu_highMassSR':        (lambda c : c.mva_high_mu_highMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_high_tau_highMassSR':        (lambda c : c.mva_high_tau_highMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_low_e_highMassSR':        (lambda c : c.mva_low_e_highMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_low_mu_highMassSR':        (lambda c : c.mva_low_mu_highMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
+        'mva_low_tau_highMassSR':        (lambda c : c.mva_low_tau_highMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events'))  
 }
 
 from HNL.Tools.helpers import mergeTwoDictionaries
@@ -122,7 +140,7 @@ def returnVariables(nl, is_reco, include_mva = False):
 
 
 signal_couplingsquared = {
-        'tau' : {5 : 0.1, 10 : 0.1, 20:0.1, 30:0.1, 30.2:0.1, 40:0.1, 60:0.1,  80:0.1,  100:0.1,  120:0.1, 130:0.1, 150:0.1,  200:0.1,  400:0.1,  600:0.1,  800:0.1 },
+        'tau' : {5 : 0.1, 10 : 0.1, 20:0.1, 30:0.1,  40:0.1, 60:0.1,  80:0.1,  100:0.1,  120:0.1, 130:0.1, 150:0.1,  200:0.1,  400:0.1,  600:0.1,  800:0.1 },
         'e' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 40:1e-4,  60:1e-4,  80:1e-4,  100:0.1,  120:0.1,  150:0.1,  200:0.1,  400:0.1,  600:0.1,  800:0.1 },
         'mu' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 40:1e-4,  60:1e-4, 70:1e-4,  80:1e-4, 90:1e-4,  100:0.1,  120:0.1,  150:0.1,  200:0.1,  300:0.1,  400:0.1,  500:0.1,  600:0.1,  800:0.1 },
 }
