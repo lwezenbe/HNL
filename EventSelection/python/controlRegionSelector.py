@@ -146,6 +146,7 @@ class TauFakeEnrichedTT(FilterObject):
 
 from HNL.ObjectSelection.leptonSelector import isGoodLepton, isFakeLepton
 from HNL.EventSelection.eventSelectionTools import selectJets
+#Orthogonal due to selection of exactly 1 lepton
 class LightLeptonFakeMeasurementRegion(FilterObject):
     def __init__(self, name, chain, new_chain, selection, is_reco_level=True, event_categorization = None):
         super(LightLeptonFakeMeasurementRegion, self).__init__(name, chain, new_chain, selection, is_reco_level=True, event_categorization = None)
@@ -171,7 +172,7 @@ class LightLeptonFakeMeasurementRegion(FilterObject):
 
         #Require the presence of at least one good jet if option is set to True
         if require_jets:
-            jet_indices = selectJets(self.chain, cleaned=True)
+            jet_indices = selectJets(self.chain, cleaned='loose')
             if len(jet_indices) < 1:      return False
             
             max_delta_r = 0
@@ -429,10 +430,11 @@ class ClosureTestMC(FilterObject):
         if not self.initEvent(cutter):                                return False
         applyConeCorrection(self.chain, self.new_chain)
         if not cutter.cut(self.hasCorrectNumberOfFakes(), 'correct number of fakes'): return False
+        # if not cutter.cut(self.chain._passMETFilters, 'pass met filters'): return False
         if 'tau' in self.flavors_of_interest:
             if not cutter.cut(self.chain._met < 50, 'MET>50'): return False
             if not cutter.cut(containsOSSF(self.chain), 'OSSF present'):                                     return False
-            # if not cutter.cut(not bVeto(self.chain), 'b-veto'): return False
+            if not cutter.cut(not bVeto(self.chain), 'b-veto'): return False
         return True
 
 class ClosureTestDATA(FilterObject):
@@ -468,6 +470,7 @@ class ClosureTestDATA(FilterObject):
 
             if not cutter.cut(abs(91.19 - (l1Vec + l2Vec).M()) < 15, 'Z window'):             return False
             if not cutter.cut(self.chain._met < 50, 'MET > 50'):                                 return False
+            if not cutter.cut(not bVeto(self.chain), 'b-veto'):                             return False
 
             self.loose_leptons_of_interest = [2]
             return True
