@@ -18,8 +18,9 @@ submission_parser.add_argument('--dryRun',   action='store_true', default=False,
 submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 
 submission_parser.add_argument('--summaryFile', action='store_true', default=False,  help='Create text file that shows all selected arguments')
+submission_parser.add_argument('--noskim', action='store_true', default=False,  help='Use unskimmed files')
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
-submission_parser.add_argument('--selection',   action='store', default='cutbased',
+submission_parser.add_argument('--selection',   action='store', default='MVA',
     help='Select the strategy to use to separate signal from background', choices=['cutbased', 'AN2017014', 'MVA'])
 submission_parser.add_argument('--region',   action='store', default='baseline', 
     help='apply the cuts of high or low mass regions, use "all" to run both simultaniously', choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZ', 'WZ', 'Conversion'])
@@ -54,12 +55,13 @@ if args.isTest:
 #
 from HNL.Samples.sampleManager import SampleManager
 file_list = 'fulllist_'+str(args.year)+'_mconly' if args.customList is None else args.customList
-sample_manager = SampleManager(args.year, 'Reco', file_list)
+skim_str = 'noskim' if args.noskim else 'Reco'
+sample_manager = SampleManager(args.year, skim_str, file_list)
 jobs = []
 for sample_name in sample_manager.sample_names:
     if sample_name == 'Data': continue
     sample = sample_manager.getSample(sample_name)
-    for njob in xrange(sample.split_jobs): 
+    for njob in xrange(sample.returnSplitJobs()): 
         jobs += [(sample.name, str(njob))]
 
 if not args.merge:
@@ -97,7 +99,7 @@ if not args.merge:
     # output_base = os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL'))
 
     signal_str = 'Signal' if chain.is_signal else 'Background'
-    output_name = os.path.join(output_base, str(args.year), 'TMVA', signal_str, 'tmp_'+sample.output, sample.output+'_'+sample.name + '_' + str(args.subJob) + '.root')
+    output_name = os.path.join(output_base, 'TMVA', str(args.year), args.region, signal_str, 'tmp_'+sample.output, sample.output+'_'+sample.name + '_' + str(args.subJob) + '.root')
     makeDirIfNeeded(output_name)
 
     # if not args.isTest and isValidRootFile(output_name):
@@ -118,7 +120,7 @@ if not args.merge:
     from HNL.TMVA.mvaVariables import getAllVariableList
     new_branches = []
     new_branches.extend(getAllVariableList())
-    new_branches.extend(['is_signal/O', 'event_weight/F', 'HNL_mass/F'])
+    new_branches.extend(['is_signal/O', 'event_weight/F', 'HNL_mass/F', 'HNL_lowmass/F', 'HNL_highmass/F'])
 
     from HNL.Tools.makeBranches import makeBranches
     new_vars = makeBranches(output_tree, new_branches)
@@ -188,7 +190,9 @@ if not args.merge:
         new_vars.met = chain._met
         new_vars.dr_minOS = chain.dr_minOS
         new_vars.HNL_mass = sample.getMass() if chain.is_signal else randrange(10, 800)
-        new_vars.event_weight = reweighter.getTotalWeight() if not chain.is_signal else 1.
+        new_vars.HNL_lowmass = sample.getMass() if chain.is_signal else randrange(10, 80)
+        new_vars.HNL_highmass = sample.getMass() if chain.is_signal else randrange(80, 800)
+        new_vars.event_weight = reweighter.getLumiWeight() if not chain.is_signal else 1.
 
         output_tree.Fill()
 
@@ -213,24 +217,26 @@ else:
     from HNL.Tools.mergeFiles import merge
     from HNL.Tools.helpers import isValidRootFile
 
-    signal_mergefiles = '/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/'+str(args.year)+'/TMVA/Signal'
-    background_mergefiles = '/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/'+str(args.year)+'/TMVA/Background'
+    merge_base = '/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/' if not args.isTest else '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/TMVA/data/testArea/'
+
+    signal_mergefiles = merge_base+'TMVA/'+str(args.year)+'/'+args.region+'/Signal'
+    background_mergefiles = merge_base+'TMVA/'+str(args.year)+'/'+args.region+'/Background'
     merge([signal_mergefiles, background_mergefiles], __file__, jobs, ('sample', 'subJob'), argParser)
 
-    combined_dir = lambda sd : '/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/'+str(args.year)+'/TMVA/Combined/'+sd
+    combined_dir = lambda sd : merge_base+'TMVA/'+str(args.year)+'/'+args.region+'/Combined/'+sd
     makeDirIfNeeded(combined_dir('SingleTree')+'/test')
     makeDirIfNeeded(combined_dir('TwoTrees')+'/test')
 
     import glob
-    all_signal_files = glob.glob('/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/'+str(args.year)+'/TMVA/Signal/*root')
+    all_signal_files = glob.glob(merge_base+'TMVA/'+str(args.year)+'/'+args.region+'/Signal/*root')
     low_mass = [10, 20, 40, 50, 60, 70, 80]
     high_mass = [90, 100, 120, 130, 150, 200, 300, 400, 500, 600, 800]
-    tau = lambda mass : '/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/'+str(args.year)+'/TMVA/Signal/HNL-tau-m'+str(mass)+'.root'
-    ele = lambda mass : '/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/'+str(args.year)+'/TMVA/Signal/HNL-e-m'+str(mass)+'.root'
-    mu = lambda mass : '/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/'+str(args.year)+'/TMVA/Signal/HNL-mu-m'+str(mass)+'.root'
+    tau = lambda mass : merge_base+'TMVA/'+str(args.year)+'/'+args.region+'/Signal/HNL-tau-m'+str(mass)+'.root'
+    ele = lambda mass : merge_base+'TMVA/'+str(args.year)+'/'+args.region+'/Signal/HNL-e-m'+str(mass)+'.root'
+    mu = lambda mass : merge_base+'TMVA/'+str(args.year)+'/'+args.region+'/Signal/HNL-mu-m'+str(mass)+'.root'
 
 
-    all_bkgr_files = '/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/'+str(args.year)+'/TMVA/Background/*root'
+    all_bkgr_files = merge_base+'TMVA/'+str(args.year)+'/'+args.region+'/Background/*root'
 
     #Low mass
     low_mass_tau = []
@@ -283,7 +289,7 @@ else:
             signal_infile = ROOT.TFile(signal_mergefiles+'/Combined/'+mass_region +'_'+flav+'.root', 'read')
             signal_intree = signal_infile.Get('trainingtree')
 
-            two_trees_outfile = ROOT.TFile(combined_dir('TwoTrees')+'/'+flav+'_'+mass_region+'.root', 'recreate')
+            two_trees_outfile = ROOT.TFile(combined_dir('TwoTrees')+'/'+mass_region + '_' + flav+'.root', 'recreate')
             signal_intree.CloneTree().Write('signaltree')
             bkgr_intree.CloneTree().Write('backgroundtree')
             two_trees_outfile.Close()

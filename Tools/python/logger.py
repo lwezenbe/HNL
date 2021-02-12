@@ -55,7 +55,10 @@ def logLevel(logger, level):
     return logger.getEffectiveLevel() <= logging.getLevelName(level)
 
 def successfullJob(fname):
-    lines = [line.split('%')[0].strip() for line in open(fname)] 
+    try:
+        lines = [line.split('%')[0].strip() for line in open(fname)] 
+    except:
+        return False
     passed_lines = [SUCCESS_MESSAGE in line for line in lines]
     return any(passed_lines)
 

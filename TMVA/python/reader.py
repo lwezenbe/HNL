@@ -10,10 +10,11 @@ ctypes = {
 
 class Reader:
 
-    def __init__(self, chain, method_name, name_to_book):
+    def __init__(self, chain, method_name, name_to_book, selection):
         self.reader = ROOT.TMVA.Reader("Silent")
         self.chain = chain
         self.method_name = method_name
+        self.selection = selection
         self.name_to_book = name_to_book
         self.variables = getVariables()
         self.variable_array = self.initializeArrays()
@@ -33,7 +34,8 @@ class Reader:
             self.reader.AddVariable(v, self.variable_array[v])
 
     def bookMethod(self, training_name, year):
-        path_to_weights = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'training', year, training_name, self.method_name, 'weights', 'factory_'+self.method_name+'.weights.xml')
+        # path_to_weights = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'training', year, training_name, self.method_name, 'weights', 'factory_'+self.method_name+'.weights.xml')
+        path_to_weights = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'training', 'all', self.selection, training_name, self.method_name, 'weights', 'factory_'+self.method_name+'.weights.xml')
         self.reader.BookMVA(training_name, path_to_weights)
 
     def predict(self):

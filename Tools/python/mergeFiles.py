@@ -54,12 +54,10 @@ def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False
                     submitJobs(script, subjobargs, failed_jobs, argparser, resubmission=True)
                 else:
                     pass    
-                exit(0)
+                if should_resubmit != 'skip': exit(0)
 
         cleanJobFiles(argparser, script)
 
     for f in paths:
         if '.txt' in f or '.root' in f: continue
         merge_single_path(f)
-
-

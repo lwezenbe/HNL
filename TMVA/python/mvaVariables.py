@@ -37,6 +37,7 @@ var_lists = {
     'high_e': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 'maxMossf', 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi'],
     'low_mu': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 'maxMossf', 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi'],
     # 'low_mu': ['M3l', 'minMos', 'mtOther', 'met', 'njets', 'maxMossf', 'HT', 'LT'],
+    # 'low_mu': ['M3l', 'minMos', 'mtOther']
     'high_mu': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 'maxMossf', 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi'],
     'low_tau': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 'maxMossf', 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi'],
     # 'low_tau': ['M3l', 'minMos', 'mtOther', 'met', 'njets', 'maxMossf', 'HT', 'LT'],
@@ -57,7 +58,6 @@ def getVariableNames(region_name):
 def getVariableList(region_name):
     out_list = []
     for input_var in var_lists[region_name]:
-        print input_var
         out_list.append('/'.join([input_var, input_variables[input_var]['type']]))
     return out_list
 
@@ -69,4 +69,4 @@ def getAllVariableList():
 
 if __name__ == '__main__':
     var_list = getVariableList('low-e')
-    print var_list
+    # print var_list
