@@ -114,9 +114,11 @@ class Histogram:
 
         makeDirIfNeeded(path_to_use)
         output_file = ROOT.TFile(path_to_use, append_string)
+        name_to_use = write_name if write_name is not None else self.name
         if subdirs is None:
-            output_file.mkdir(self.name)
-            output_file.cd(self.name)
+            pass
+            # output_file.mkdir(name_to_use)
+            # output_file.cd(name_to_use)
         else:
             nomo = ''
             for d in subdirs:
@@ -124,10 +126,7 @@ class Histogram:
                 output_file.mkdir(nomo)
                 output_file.cd(nomo)
 
-        if write_name is None:
-            self.hist.Write(self.name)
-        else:
-            self.hist.Write()
+        self.hist.Write(name_to_use)
         output_file.Close()
 
         if is_test:
@@ -233,5 +232,3 @@ class HistogramCollection(object):
 
         if is_test:
             self.write(append=append, name=name, subdirs=subdirs, is_test=False)
-
-
