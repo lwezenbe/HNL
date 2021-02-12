@@ -26,10 +26,11 @@ submission_parser.add_argument('--batchSystem', action='store',         default=
 submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 submission_parser.add_argument('--coupling', type = float, action='store', default=0.01,  help='Coupling of the sample')
 submission_parser.add_argument('--noskim', action='store_true', default=False,  help='Use no skim sample list')
-submission_parser.add_argument('--selection',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'AN2017014', 'MVA'])
+submission_parser.add_argument('--selection',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'AN2017014', 'MVA', 'Luka'])
 submission_parser.add_argument('--region',   action='store', default='baseline',  help='apply the cuts of high or low mass regions, use "all" to run both simultaniously', 
     choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZ', 'WZ', 'ConversionCR'])
 submission_parser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data samples')
+submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
 submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 
 argParser.add_argument('--makePlots', action='store_true', default=False,  help='make plots')
@@ -86,7 +87,8 @@ if args.noskim:
 else:
     skim_str = 'Old' if args.selection == 'AN2017014' else 'Reco'
 
-sample_manager = SampleManager(args.year, skim_str, 'yields_'+str(args.year))
+file_list = 'yields_'+str(args.year) if args.customList is None else args.customList
+sample_manager = SampleManager(args.year, skim_str, file_list)
 
 #
 # function to have consistent categories in running and plotting
@@ -123,7 +125,7 @@ for sample_name in sample_manager.sample_names:
     if args.sample and args.sample not in sample_name: continue 
     if not args.includeData and sample_name == 'Data': continue
     sample = sample_manager.getSample(sample_name)
-    for njob in xrange(sample.split_jobs):
+    for njob in xrange(sample.returnSplitJobs()):
         jobs += [(sample.name, str(njob))]
 
 #
@@ -334,7 +336,7 @@ else:
         for c in listOfCategories(args.region):
             list_of_values['signal'][signal][c] = {}
             list_of_errors['signal'][signal][c] = {}
-            tmp_hist = getObjFromFile(path_name, '_'.join([str(c), 'total'])+'/'+'_'.join([str(c), 'total']))
+            tmp_hist = getObjFromFile(path_name, '_'.join([str(c), 'total']))
             
             #Rescale if requested
             new_coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][signal_mass]
@@ -370,9 +372,9 @@ else:
         path_name_nonprompt = os.path.join(base_path, bkgr, 'nonprompt/events.root')
 
         for c in listOfCategories(args.region):
-            tmp_hist_prompt = getObjFromFile(path_name_prompt, '_'.join([str(c), 'prompt'])+'/'+'_'.join([str(c), 'prompt']))
-            tmp_hist_nonprompt = getObjFromFile(path_name_nonprompt, '_'.join([str(c), 'nonprompt'])+'/'+'_'.join([str(c), 'nonprompt']))
-            tmp_hist_total = getObjFromFile(path_name_total, '_'.join([str(c), 'total'])+'/'+'_'.join([str(c), 'total']))
+            tmp_hist_prompt = getObjFromFile(path_name_prompt, '_'.join([str(c), 'prompt']))
+            tmp_hist_nonprompt = getObjFromFile(path_name_nonprompt, '_'.join([str(c), 'nonprompt']))
+            tmp_hist_total = getObjFromFile(path_name_total, '_'.join([str(c), 'total']))
             for sr in xrange(1, srm[args.region].getNumberOfSearchRegions()+1):
                 if args.groupSamples:
                     sg = [sk for sk in sample_manager.sample_groups.keys() if bkgr in sample_manager.sample_groups[sk]][0]
