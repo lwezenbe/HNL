@@ -564,7 +564,7 @@ def calcLT(chain, new_chain, is_reco_level = True):
 from HNL.ObjectSelection.leptonSelector import coneCorrection
 def applyConeCorrection(chain, new_chain, light_algo = None, tau_algo = None, analysis = None):
     for i, chain_index in enumerate(new_chain.l_indices):
-        if isGoodLepton(chain, chain_index, workingpoint = 'tight'):
+        if isGoodLepton(chain, chain_index, workingpoint = 'FO') and not isGoodLepton(chain, chain_index, workingpoint = 'tight'):
             new_chain.l_pt[i] *= coneCorrection(chain, chain_index, light_algo)
             new_chain.l_e[i] *= coneCorrection(chain, chain_index, light_algo)
 
