@@ -13,13 +13,14 @@ class Sample:
     #   Added last variable due to t2b pnfs problems that took too long to get solved
     #
 
-    def __init__(self, name, path, output, split_jobs, xsec, max_filesize = 1000, is_test=False):           
+    def __init__(self, name, path, output, split_jobs, xsec, max_filesize = 1000):  
         self.name               = name
         self.path               = path
         self.is_data            = (xsec == 'data')
         self.xsec               = eval(xsec) if not self.is_data else None
         self.max_filesize       = max_filesize
-        self.split_jobs         = self.calcSplitJobs(split_jobs) if not is_test else 1
+        # self.split_jobs         = self.calcSplitJobs(split_jobs) if not is_test else 1
+        self.split_jobs         = split_jobs
         self.hcount             = None
         self.chain              = None
         self.output             = output
@@ -67,6 +68,11 @@ class Sample:
             print 'splitJobs', split_jobs
         return split_jobs
 
+    def returnSplitJobs(self):
+        if 'Calc' in self.split_jobs:
+            self.split_jobs = self.calcSplitJobs(self.split_jobs)
+        return self.split_jobs
+
     #
     #   Extract a histogram with given name stored alongside the tree
     #   from the input file
@@ -91,8 +97,9 @@ class Sample:
     #
     #   Initialize the chain for use
     #
-    def initTree(self, needhcount=True):
-        
+    def initTree(self, needhcount=False):
+
+        self.split_jobs         = self.returnSplitJobs()
         self.chain              = ROOT.TChain('blackJackAndHookers/blackJackAndHookersTree')
         
         if self.path.endswith('.root'):
@@ -105,7 +112,7 @@ class Sample:
         for f in list_of_files:
             if 'pnfs' in f:
                 f = 'root://maite.iihe.ac.be'+f
-            self.chain.Add(f)                                                   
+            self.chain.Add(f)
         
         if not self.is_data and needhcount:   
             hcounter = self.getHist('hCounter')
@@ -130,7 +137,7 @@ class Sample:
 #
 #       create list of samples from input file
 #
-def createSampleList(file_name, is_test=False):
+def createSampleList(file_name):
     sample_infos = [line.split('%')[0].strip() for line in open(file_name)]                     # Strip % comments and \n charachters
     sample_infos = [line.split() for line in sample_infos if line]                              # Get lines into tuples
     for name, path, output, split_jobs, xsec in sample_infos:
@@ -138,7 +145,7 @@ def createSampleList(file_name, is_test=False):
             split_jobs
         except:
             continue
-        yield Sample(name, path, output, split_jobs, xsec, is_test=is_test)
+        yield Sample(name, path, output, split_jobs, xsec)
 
 #
 #       Load in a specific sample from the list
