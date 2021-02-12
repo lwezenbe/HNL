@@ -108,7 +108,7 @@ jobs = []
 for sample_name in sample_manager.sample_names:
     if args.sample and args.sample not in sample_name: continue
     sample = sample_manager.getSample(sample_name)
-    for njob in xrange(sample.split_jobs):
+    for njob in xrange(sample.returnSplitJobs()):
         jobs += [(sample.name, str(njob))]
 
 from HNL.BackgroundEstimation.fakerate import FakeRate
@@ -116,20 +116,32 @@ from HNL.BackgroundEstimation.fakerateEmulator import FakeRateEmulator
 from HNL.BackgroundEstimation.closureObject import ClosureObject
 
 if args.isCheck:
-    var =  {'pt':           (lambda c, i : c.l_pt[i],         np.array([20., 25., 35., 50., 70., 100.]),       ('p_{T} [GeV]', 'Events')),
-            'eta':          (lambda c, i : abs(c.l_eta[i]),        np.arange(0., 3.0, 0.5),       ('#eta', 'Events')),
+    var =  {'ptFakes':           (lambda c, i : c.l_pt[i],         np.array([20., 25., 35., 50., 70., 100.]),       ('p_{T} [GeV]', 'Events')),
+            'etaFakes':          (lambda c, i : abs(c.l_eta[i]),        np.arange(0., 3.0, 0.5),       ('#eta', 'Events')),
     }
 else:
     var = {
-            'minMos':       (lambda c : c.minMos,       np.arange(0., 160., 10.),         ('min(M_{OS}) [GeV]', 'Events')),
-            'm3l':          (lambda c : c.M3l,          np.arange(0., 240., 15.),         ('M_{3l} [GeV]', 'Events')),
-            'met':          (lambda c : c._met,         np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
-            'mtOther':      (lambda c : c.mtOther,      np.arange(0., 300., 15.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
-            'pt':           (lambda c, i : c.l_pt[i],         np.arange(0., 300., 15.),       ('p_{T} [GeV]', 'Events')),
-            'eta':          (lambda c, i : c.l_eta[i],        np.arange(-2.5, 3.0, 0.5),       ('#eta', 'Events')),
-            'mt3':          (lambda c : c.mt3,          np.arange(0., 315., 15.),         ('M_{T}(3l) [GeV]', 'Events')),
-            'LT':           (lambda c : c.LT,           np.arange(0., 915., 15.),         ('L_{T} [GeV]', 'Events')),
-            'HT':           (lambda c : c.HT,           np.arange(0., 915., 15.),         ('H_{T} [GeV]', 'Events'))
+            'minMos':               (lambda c : c.minMos,       np.arange(0., 160., 10.),         ('min(M_{OS}) [GeV]', 'Events')),
+            'm3l':                  (lambda c : c.M3l,          np.arange(0., 240., 15.),         ('M_{3l} [GeV]', 'Events')),
+            'met':                  (lambda c : c._met,         np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
+            'mtOther':              (lambda c : c.mtOther,      np.arange(0., 300., 15.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
+            'ptFakes':              (lambda c, i : c.l_pt[i],         np.arange(0., 300., 15.),       ('p_{T} [GeV]', 'Events')),
+            'etaFakes':             (lambda c, i : c.l_eta[i],        np.arange(-2.5, 3.0, 0.5),       ('#eta', 'Events')),
+            'ptLeading':            (lambda c : c.l_pt[0],         np.arange(0., 300., 15.),       ('p_{T} [GeV]', 'Events')),
+            'ptLeadingLukabins':    (lambda c : c.l_pt[0],         np.linspace(10., 200., num = 10),       ('p_{T} [GeV]', 'Events')),
+            'etaLeading':           (lambda c : abs(c.l_eta[0]),        np.arange(0., 3.0, 0.5),       ('|#eta|', 'Events')),
+            'etaLeadingFine':       (lambda c : abs(c.l_eta[0]),        np.arange(0, 2.75, 0.25),       ('|#eta|', 'Events')),
+            'ptSubleading':         (lambda c : c.l_pt[1],         np.arange(0., 300., 15.),       ('p_{T} [GeV]', 'Events')),
+            'ptSubleadingLukabins': (lambda c : c.l_pt[1],         np.linspace(10., 200., num = 10),       ('p_{T} [GeV]', 'Events')),
+            'etaSubleading':        (lambda c : abs(c.l_eta[1]),        np.arange(0., 3.0, 0.5),       ('|#eta|', 'Events')),
+            'etaSubleadingFine':    (lambda c : abs(c.l_eta[1]),        np.arange(0, 2.75, 0.25),       ('|#eta|', 'Events')),
+            'ptTrailing':           (lambda c : c.l_pt[2],         np.arange(0., 300., 15.),       ('p_{T} [GeV]', 'Events')),
+            'ptTrailingLukabins':   (lambda c : c.l_pt[2],         np.linspace(10., 200., num = 10),       ('p_{T} [GeV]', 'Events')),
+            'etaTrailing':          (lambda c : abs(c.l_eta[2]),        np.arange(0., 3.0, 0.5),       ('|#eta|', 'Events')),
+            'etaTrailingFine':      (lambda c : abs(c.l_eta[2]),        np.arange(0, 2.75, 0.25),       ('|#eta|', 'Events')),
+            'mt3':                  (lambda c : c.mt3,          np.arange(0., 315., 15.),         ('M_{T}(3l) [GeV]', 'Events')),
+            'LT':                   (lambda c : c.LT,           np.arange(0., 915., 15.),         ('L_{T} [GeV]', 'Events')),
+            'HT':                   (lambda c : c.HT,           np.arange(0., 915., 15.),         ('H_{T} [GeV]', 'Events'))
     }   
 
 subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
@@ -173,7 +185,7 @@ if not args.makePlots:
     #
     if not args.isChild:
         from HNL.Tools.jobSubmitter import submitJobs
-        submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'calcYields')
+        submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'closureTest')
         exit(0)
 
     #
@@ -224,15 +236,27 @@ if not args.makePlots:
         else:
             es = EventSelector('DataCT', chain, chain, args.selection, True, ec, in_data = args.inData, additional_options=args.flavorToTest) 
 
-
     fakerate = {}
-    if not args.isTest:    
-        fakerate['tau'] = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, data_str, 'tau')), 'tau', args.inData)
-    else:
-        fakerate['tau'] = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, data_str, 'tau')), 'tau', args.inData)
+    if 'tau' in args.flavorToTest:
+        if not args.isTest:    
+            fakerate['tau'] = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, data_str, 'tau')), 'tau', args.inData)
+        else:
+            fakerate['tau'] = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, data_str, 'tau')), 'tau', args.inData)
     # fakerate['ele'] = FakeRateEmulator('h_tight_e', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'FR_QCD_20201027_'+args.year+'.root'))
-    if 'ele' in args.flavorToTest: fakerate['ele'] = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, data_str, 'e')), 'e')
-    if 'mu' in args.flavorToTest: fakerate['mu'] = FakeRateEmulator('h_tight_mu', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'FR_QCD_20201027_'+args.year+'.root'))
+    # fakerate['ele'] = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, data_str, 'e')), 'e')
+
+    if 'ele' in args.flavorToTest: 
+        if args.inData:
+            fakerate['ele'] = FakeRateEmulator('fakeRate_electron_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'Lukav2', 'fakeRateMap_data_electron_'+args.year+'_mT.root'))
+        else:
+            # fakerate['ele'] = FakeRateEmulator('fakeRate_electron_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'Lukav2', 'fakeRateMap_MC_electron_'+args.year+'.root'))
+            fakerate['ele'] = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, data_str, 'e')), 'e', args.inData)
+
+    if 'mu' in args.flavorToTest: 
+        if args.inData:
+            fakerate['mu'] = FakeRateEmulator('fakeRate_muon_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'Lukav2', 'fakeRateMap_data_muon_'+args.year+'_mT.root'))
+        else:
+            fakerate['mu'] = FakeRateEmulator('fakeRate_muon_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'Lukav2', 'fakeRateMap_MC_muon_'+args.year+'.root'))
 
     co = {}
     for c in ANALYSIS_CATEGORIES.keys() + ['total']:
@@ -290,9 +314,8 @@ if not args.makePlots:
         
         if is_observed: fake_factor = -999.
 
-
         for v in var:
-            if v == 'pt' or v == 'eta':
+            if v == 'ptFakes' or v == 'etaFakes':
                 #Special case, only for taus, in which case there is only one tau which is in the last position
                 if args.isCheck:
                     co[cat][v].fillClosure(chain, 1., fake_factor, index=2)
@@ -315,6 +338,11 @@ if not args.makePlots:
 
     print "Observed:", co['total']['m3l'].getObserved().GetSumOfWeights()
     print "Predicted:", co['total']['m3l'].getSideband().GetSumOfWeights()
+
+    for b in xrange(1, co['total']['etaFakes'].getObserved().GetNbinsX()+1):
+        print "bin", b, "at eta =", co['total']['etaFakes'].getObserved().GetBinCenter(b), ":" 
+        print "OBSERVED:",  co['total']['etaFakes'].getObserved().GetBinContent(b)
+        print "PREDICTED:",  co['total']['etaFakes'].getSideband().GetBinContent(b)
 
     cutter.saveCutFlow(getOutputName())
 
@@ -370,6 +398,6 @@ else:
                     backgrounds.append(grouped_backgrounds[b])
                     background_names.append(b)
 
-                p = Plot(name = v, signal_hist = closureObjects['Data'][c][v].getObserved(), bkgr_hist = backgrounds, color_palette='Black', color_palette_bkgr='StackTauPOGbyName', tex_names = ["Observed"]+background_names, draw_ratio = True)
+                p = Plot(name = v, signal_hist = closureObjects['Data'][c][v].getObserved(), bkgr_hist = backgrounds, color_palette='Black', color_palette_bkgr='StackTauPOGbyName', tex_names = ["Observed"]+background_names, draw_ratio = True, year = args.year)
                 p.drawHist(output_dir = output_dir+'/'+'/'+c, draw_option='EP')
         

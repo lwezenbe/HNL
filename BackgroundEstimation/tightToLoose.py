@@ -86,8 +86,6 @@ elif args.flavor == 'mu':
 elif args.flavor == 'e':
     sublist = 'ElectronFakes'
 
-print sublist
-
 sample_manager = SampleManager(args.year, skim_str, sublist)
 
 #
@@ -97,7 +95,7 @@ jobs = []
 for sample_name in sample_manager.sample_names:
     if args.sample and args.sample not in sample_name: continue
     sample = sample_manager.getSample(sample_name)
-    for njob in xrange(sample.split_jobs):
+    for njob in xrange(sample.returnSplitJobs()):
         jobs += [(sample.name, str(njob))]
 
 from HNL.BackgroundEstimation.fakerateArray import createFakeRatesWithJetBins
@@ -232,6 +230,7 @@ if not args.makePlots:
         else:
             if not es.passedFilter(cutter): continue
         fake_index = es.selector.getFakeIndex()
+        
         if args.inData and not chain.is_data:
             if not chain._lIsPrompt[chain.l_indices[fake_index]]: continue
             passed = True #Always fill both denom and enum for this case (subtraction of prompt contribution)
@@ -275,11 +274,9 @@ else:
         if args.inData:
             output_dir = makePathTimeStamped(base_path +'/Results')
             in_file = base_path+'/events.root'
-            print in_file
         else:
-            output_dir = makePathTimeStamped(base_path +'/Results')
+            output_dir = makePathTimeStamped(base_path +'/'+sample_output+'/Results')
             in_file = base_path+'/'+sample_output+'/events.root'
-            print in_file
 
         fakerates = createFakeRatesWithJetBins('tauttl', None, None, in_file)
         for fr in fakerates.bin_collection:

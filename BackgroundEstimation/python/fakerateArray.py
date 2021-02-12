@@ -89,7 +89,3 @@ def readFakeRatesWithBJetBins(fr_arrays, chain, flavor, region):
             raise RuntimeError("Invalid input for 'region'")
     else:
         raise RuntimeError("This flavor is not supported yet in readFakeRatesWithBJetBins")
-
-
-
-
