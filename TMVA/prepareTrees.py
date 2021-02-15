@@ -20,8 +20,8 @@ submission_parser.add_argument('--logLevel',  action='store',      default='INFO
 submission_parser.add_argument('--summaryFile', action='store_true', default=False,  help='Create text file that shows all selected arguments')
 submission_parser.add_argument('--noskim', action='store_true', default=False,  help='Use unskimmed files')
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
-submission_parser.add_argument('--selection',   action='store', default='MVA',
-    help='Select the strategy to use to separate signal from background', choices=['cutbased', 'AN2017014', 'MVA'])
+submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
+submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
 submission_parser.add_argument('--region',   action='store', default='baseline', 
     help='apply the cuts of high or low mass regions, use "all" to run both simultaniously', choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZ', 'WZ', 'Conversion'])
 
@@ -84,6 +84,8 @@ if not args.merge:
     chain = sample.initTree(needhcount=False)
     chain.year = int(args.year)
     chain.is_signal = 'HNL' in sample.name
+    chain.selection = args.selection
+    chain.strategy = args.strategy
 
     reweighter = Reweighter(sample, sample_manager)
 
@@ -143,7 +145,7 @@ if not args.merge:
     #prepare object  and event selection
     from HNL.ObjectSelection.objectSelection import getObjectSelection
     chain.obj_sel = getObjectSelection(args.selection)
-    es = EventSelector(args.region, chain, chain, args.selection, True, ec)
+    es = EventSelector(args.region, chain, chain, True, ec)
 
     for entry in event_range:
         chain.GetEntry(entry)

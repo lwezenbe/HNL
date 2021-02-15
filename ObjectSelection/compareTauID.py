@@ -53,8 +53,8 @@ submission_parser.add_argument('--includeReco',   action='store', default=None,
 submission_parser.add_argument('--discriminators', nargs='*', default=['iso', 'ele','mu'],  help='Which discriminators do you want to test?', choices = ['iso', 'ele', 'mu'])
 submission_parser.add_argument('--makeCombinations', action='store_true', default=False,
     help='Makes combinations of iso with different electron and muon working points. Turned off by default because large hadd times for large samples.')
-args = argParser.parse_args()
 submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+args = argParser.parse_args()
 
 
 from HNL.Tools.logger import getLogger, closeLogger
@@ -153,7 +153,7 @@ sample_manager = SampleManager(args.year, 'noskim', 'compareTauIdList_'+str(args
 jobs = []
 for sample_name in sample_manager.sample_names:
     sample = sample_manager.getSample(sample_name)
-    for njob in xrange(sample.split_jobs):
+    for njob in xrange(sample.returnSplitJobs()):
         jobs += [(sample.name, str(njob))]
         
 if not args.isChild:
@@ -171,7 +171,7 @@ chain = sample.initTree(False)
 isBkgr = not 'HNL' in sample.name
 
 from HNL.ObjectSelection.objectSelection import getObjectSelection
-chain.obj_sel = getObjectSelection('MVA')
+chain.obj_sel = getObjectSelection('default')
 
 #
 # Function to show what gen status' should be allowed for different types of background

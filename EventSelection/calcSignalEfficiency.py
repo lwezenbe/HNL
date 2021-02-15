@@ -24,7 +24,8 @@ submission_parser.add_argument('--subJob',   action='store',      default=None, 
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-submission_parser.add_argument('--selection', action='store', default='cutbased', type=str,  help='What type of analysis do you want to run?', choices=['cutbased', 'AN2017014', 'MVA'])
+submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
+submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
 submission_parser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', 
     choices=['baseline', 'lowMassSR', 'highMassSR'])
 submission_parser.add_argument('--FOcut',   action='store_true', default=False,  help='Perform baseline FO cut')
@@ -65,7 +66,7 @@ for sample_name in sample_manager.sample_names:
     for flavor in flavors:
         if not '-'+flavor+'-' in sample_name: continue
         sample = sample_manager.getSample(sample_name)
-        for njob in xrange(sample.split_jobs): 
+        for njob in xrange(sample.returnSplitJobs()): 
             jobs += [(sample.name, str(njob), flavor)]
 
 
@@ -110,7 +111,6 @@ else:
 # It assumes the samples are ordered by mass in the input list
 #
 from HNL.Tools.helpers import getMassRange
-print [sample_name for sample_name in sample_manager.sample_names if '-'+args.flavor+'-' in sample_name]
 mass_range = getMassRange([sample_name for sample_name in sample_manager.sample_names if '-'+args.flavor+'-' in sample_name])
 
 #
@@ -161,6 +161,8 @@ else:
 
 chain.HNLmass = sample.getMass()
 chain.year = int(args.year)
+chain.selection = args.selection
+chain.strategy = args.strategy
 
 #
 # Get luminosity weight
@@ -194,7 +196,7 @@ from HNL.ObjectSelection.objectSelection import getObjectSelection
 chain.obj_sel = getObjectSelection(args.selection)
 
 from HNL.EventSelection.eventSelector import EventSelector
-es = EventSelector(args.region, chain, chain, args.selection, True, ec)    
+es = EventSelector(args.region, chain, chain, True, ec)    
 
 for entry in event_range:
     

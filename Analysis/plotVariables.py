@@ -23,7 +23,8 @@ submission_parser.add_argument('--batchSystem', action='store',         default=
 submission_parser.add_argument('--dryRun',   action='store_true',       default=False,  help='do not launch subjobs, only show them')
 submission_parser.add_argument('--genLevel',   action='store_true',     default=False,  help='Use gen level variables')
 submission_parser.add_argument('--coupling', action='store', default=0.01, type=float,  help='How large is the coupling?')
-submission_parser.add_argument('--selection', action='store', default='cutbased', type=str,  help='What type of analysis do you want to run?', choices=['cutbased', 'AN2017014', 'MVA'])
+submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT', ])
+submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
 submission_parser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', 
     choices=['baseline', 'lowMassSR', 'highMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
 submission_parser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data')
@@ -51,8 +52,11 @@ log = getLogger(args.logLevel)
 if args.includeData and args.region in ['baseline', 'highMassSR', 'lowMassSR']:
     raise RuntimeError('These options combined would mean unblinding. This is not allowed.')
 
-if args.makeDataCards and args.selection != 'MVA': 
+if args.makeDataCards and args.strategy != 'MVA': 
     raise RuntimeError("makeDataCards here is not supported for anything that is not MVA. Please use calcYields for this. The eventual plan is to merge calcYields and plotVariables into 1 but for now they are separated")
+
+if args.strategy == 'MVA' and args.selection != 'HNL':
+    raise RuntimeError("No MVA available for this selection")
 
 #
 # General imports
@@ -72,11 +76,9 @@ def getSampleManager(y):
     if args.genLevel:
         # skim_str = 'Gen'
         skim_str = 'noskim'
-    elif args.selection != 'AN2017014':
-        # skim_str = 'noskim'
-        skim_str = 'Reco'
+    elif args.selection != 'HNL':
+        skim_str = 'noskim'
     else:
-        # skim_str = 'noskim'
         skim_str = 'Reco'
     file_list = 'fulllist_'+str(y)+'_mconly' if args.customList is None else args.customList
     sample_manager = SampleManager(y, skim_str, file_list)
@@ -132,7 +134,7 @@ import HNL.Analysis.analysisTypes as at
 if args.makeDataCards and not args.makePlots:
     var = at.var_mva
 else:
-    var = at.returnVariables(nl, not args.genLevel, args.selection == 'MVA')
+    var = at.returnVariables(nl, not args.genLevel, args.strategy == 'MVA')
     # var = at.var_mva
 
 import HNL.EventSelection.eventCategorization as cat
@@ -147,9 +149,9 @@ reco_or_gen_str = 'reco' if not args.genLevel else 'gen'
 
 def getOutputName(st, year):
     if not args.isTest:
-        return os.path.join(os.getcwd(), 'data', 'plotVariables', year, args.selection, reco_or_gen_str, args.region, st)
+        return os.path.join(os.getcwd(), 'data', 'plotVariables', year, args.strategy, args.selection, reco_or_gen_str, args.region, st)
     else:
-        return os.path.join(os.getcwd(), 'data', 'testArea', 'plotVariables', year, args.selection, reco_or_gen_str, args.region, st)
+        return os.path.join(os.getcwd(), 'data', 'testArea', 'plotVariables', year, args.strategy, args.selection, reco_or_gen_str, args.region, st)
 
 list_of_hist = {}
 for prompt_str in ['prompt', 'nonprompt', 'total']:
@@ -164,7 +166,7 @@ for prompt_str in ['prompt', 'nonprompt', 'total']:
 # Load in the sample list 
 #
 if args.genLevel and args.selection == 'AN2017014':
-    raise RuntimeError('gen level is currently not implemented on AN2017014 analysis type, will use reco skimmed samples')
+    raise RuntimeError('gen level is currently not implemented on AN2017014 analysis selection')
 
 from HNL.Triggers.triggerSelection import applyCustomTriggers, listOfTriggersAN2017014
 
@@ -229,6 +231,8 @@ if not args.makePlots and not args.makeDataCards:
         #
         chain.HNLmass = sample.getMass()
         chain.year = int(args.year)
+        chain.selection = args.selection
+        chain.strategy = args.strategy
 
         #
         # Skip HNL masses that were not defined
@@ -248,7 +252,7 @@ if not args.makePlots and not args.makeDataCards:
         #
         # Load in MVA reader if needed
         #
-        if args.selection == 'MVA':
+        if args.strategy == 'MVA':
             tmva = {}
             for sel in ['baseline', 'lowMassSR', 'highMassSR']:
                 tmva[sel] = {}
@@ -259,7 +263,7 @@ if not args.makePlots and not args.makeDataCards:
         # Loop over all events
         #
         ec = EventCategory(chain)
-        es = EventSelector(args.region, chain, chain, args.selection, not args.genLevel, ec)
+        es = EventSelector(args.region, chain, chain, not args.genLevel, ec)
         for entry in event_range:
             
             chain.GetEntry(entry)
@@ -287,7 +291,7 @@ if not args.makePlots and not args.makeDataCards:
                 
             prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
 
-            if args.selection == 'MVA':
+            if args.strategy == 'MVA':
                 chain.mva_high_mu_baseline = tmva['baseline']['high_mu'].predict()
                 chain.mva_low_mu_baseline = tmva['baseline']['low_mu'].predict()
                 chain.mva_high_tau_baseline = tmva['baseline']['high_tau'].predict()
@@ -578,16 +582,16 @@ else:
                     data_hist_tmp = list_of_hist[ac][mva_to_use]['signal'][sample_name].clone('Ditau')
                     data_hist_tmp.write(out_path, write_name='data_obs', append=True)
                     
-                    makeDataCard(str(ac), args.flavor, year, 0, sample_name, bkgr_names, args.selection, shapes=True, coupling_sq = coupling_squared)
+                    makeDataCard(str(ac), args.flavor, year, args.strategy, 0, sample_name, bkgr_names, args.selection, shapes=True, coupling_sq = coupling_squared)
 
         if args.makePlots:
             #
             # Set output directory, taking into account the different options
             #
             if not args.isTest:
-                output_dir = os.path.join(os.getcwd(), 'data', 'Results', 'plotVariables', year, args.selection, reco_or_gen_str, args.region)
+                output_dir = os.path.join(os.getcwd(), 'data', 'Results', 'plotVariables', year, args.strategy, args.selection, reco_or_gen_str, args.region)
             else:
-                output_dir = os.path.join(os.getcwd(), 'data', 'testArea', 'Results', 'plotVariables', year, args.selection, reco_or_gen_str, args.region)
+                output_dir = os.path.join(os.getcwd(), 'data', 'testArea', 'Results', 'plotVariables', year, args.strategy, args.selection, reco_or_gen_str, args.region)
 
 
 
