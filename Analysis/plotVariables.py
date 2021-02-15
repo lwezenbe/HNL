@@ -349,7 +349,6 @@ else:
     import glob
     from HNL.Analysis.analysisTypes import signal_couplingsquared
 
-
     for year in ['2016', '2017', '2018']:
         if args.year != 'all' and year != args.year: continue
 
@@ -707,4 +706,3 @@ else:
                 #                    normalize_signal=False, draw_option='EHist', draw_cuts=draw_cuts)
                 #             p.drawHist(output_dir = os.path.join(output_dir, str(c), 'pt', 'l1_'+str(cuts[0])+'_l2_'+str(cuts[1])+'_l3_'+str(cuts[2])), 
                                     # normalize_signal=False, draw_option='EHist', draw_cuts=draw_cuts)
-
