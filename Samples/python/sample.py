@@ -7,7 +7,7 @@ import glob
 import os
 from HNL.Tools.helpers import getObjFromFile, isValidRootFile
 
-class Sample:
+class Sample(object):
     
     #
     #   Added last variable due to t2b pnfs problems that took too long to get solved
@@ -25,6 +25,11 @@ class Sample:
         self.chain              = None
         self.output             = output
         self.mass               = self.getMass()
+        if self.path.endswith('.root'):
+            self.list_of_files         = [self.path]
+        else:
+            self.list_of_files         = sorted(glob.glob(self.path + '/*/*/*.root'))
+
   
     #
     #   Return the file size of the file at the path location in MB
@@ -101,15 +106,10 @@ class Sample:
 
         self.split_jobs         = self.returnSplitJobs()
         self.chain              = ROOT.TChain('blackJackAndHookers/blackJackAndHookersTree')
-        
-        if self.path.endswith('.root'):
-            list_of_files         = [self.path]
-        else:
-            list_of_files         = sorted(glob.glob(self.path + '/*/*/*.root'))
     
-        assert len(list_of_files) > 0 and isValidRootFile(list_of_files[0])
+        assert len(self.list_of_files) > 0 and isValidRootFile(self.list_of_files[0])
 
-        for f in list_of_files:
+        for f in self.list_of_files:
             if 'pnfs' in f:
                 f = 'root://maite.iihe.ac.be'+f
             self.chain.Add(f)
@@ -134,10 +134,71 @@ class Sample:
         else:
             return None
 
+
+
+class SkimSample(Sample):
+
+    def __init__(self, name, path, output, split_jobs, xsec, max_filesize = 1200):  
+        super(SkimSample, self).__init__(name, path, output, split_jobs, xsec, max_filesize)
+        self.list_of_subjobclusters = self.createSubjobClusters()
+        self.split_jobs = len(self.list_of_subjobclusters)
+
+    def createSubjobClusters(self):
+        list_of_subjobclusters = []
+        tot_size = 0.
+        tmp_arr = []
+        for f in self.list_of_files:
+            file_size = self.fileSize(f)
+            # if file_size > self.max_filesize:
+            #     raise RuntimeError("There are singular files larger than 1GB, you run the risk of creating corrupt output.")
+            if tot_size + file_size < self.max_filesize:
+                tmp_arr.append(f)
+                tot_size += file_size
+            else:
+                if len(tmp_arr) > 0: list_of_subjobclusters.append([x for x in tmp_arr])
+                tmp_arr = [f]
+                tot_size = file_size
+        if len(tmp_arr) > 0:
+            list_of_subjobclusters.append([x for x in tmp_arr])
+        return list_of_subjobclusters
+
+    def getSubHist(self, subjob, name):
+
+        hcounter = None
+
+        for f in self.list_of_subjobclusters[int(subjob)]:
+            if hcounter is None:     
+                hcounter = self.getHist(name, f)
+            else:                   
+                hcounter.Add(self.getHist(name, f))
+        return hcounter
+            
+
+    def initTree(self, subjob):
+
+        self.chain              = ROOT.TChain('blackJackAndHookers/blackJackAndHookersTree')
+    
+        assert len(self.list_of_files) > 0 and isValidRootFile(self.list_of_files[0])
+
+        for f in self.list_of_subjobclusters[int(subjob)]:
+            if 'pnfs' in f:
+                f = 'root://maite.iihe.ac.be'+f
+            self.chain.Add(f)
+        
+        # if not self.is_data and needhcount:   
+        #     hcounter = self.getSubHist('hCounter')
+        #     self.hcount = hcounter.GetSumOfWeights()
+ 
+        self.chain.is_data = self.is_data
+        return self.chain
+
+    def getEventRange(self, subjob):
+        return xrange(self.chain.GetEntries())
+
 #
 #       create list of samples from input file
 #
-def createSampleList(file_name):
+def createSampleList(file_name, need_skim_sample = False):
     sample_infos = [line.split('%')[0].strip() for line in open(file_name)]                     # Strip % comments and \n charachters
     sample_infos = [line.split() for line in sample_infos if line]                              # Get lines into tuples
     for name, path, output, split_jobs, xsec in sample_infos:
@@ -145,7 +206,10 @@ def createSampleList(file_name):
             split_jobs
         except:
             continue
-        yield Sample(name, path, output, split_jobs, xsec)
+        if not need_skim_sample: 
+            yield Sample(name, path, output, split_jobs, xsec)
+        else:
+            yield SkimSample(name, path, output, split_jobs, xsec)
 
 #
 #       Load in a specific sample from the list
@@ -192,7 +256,6 @@ def getListOfSampleNames(file_name):
     name_list = []
     for line in sample_infos:
         name_list.append(line[0])
-
     return name_list
 
 #
