@@ -24,7 +24,7 @@ SAMPLE_GROUPS = {
 class SampleManager:
 
 
-    def __init__(self, year, skim, sample_names_file):
+    def __init__(self, year, skim, sample_names_file, need_skim_samples):
         if not skim in ALLOWED_SKIMS:
             raise RuntimeError("skim "+skim+" not allowed in the sample manager")
 
@@ -34,8 +34,10 @@ class SampleManager:
 
         self.sample_names_file_full = os.path.join(BASE_PATH, 'Sublists', sample_names_file+'.conf')
         self.sample_names = self.getSampleNames(self.sample_names_file_full)
-        self.sample_list = createSampleList(self.path)
+        self.sample_list = createSampleList(self.path, need_skim_samples)
         self.sample_groups = SAMPLE_GROUPS
+
+        self.need_skim_samples = need_skim_samples
 
         self.lumi_clusters = {}
 
@@ -52,7 +54,7 @@ class SampleManager:
 
     def getSample(self, name):
         sample = getSampleFromList(self.sample_list, name)
-        self.sample_list = createSampleList(self.path)
+        self.sample_list = createSampleList(self.path, self.need_skim_samples)
         return sample
 
     def makeLumiClusters(self):
