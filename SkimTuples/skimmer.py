@@ -36,7 +36,7 @@ args = argParser.parse_args()
 if args.isTest:
     if args.sample is None: args.sample = 'DYJetsToLL-M-50'
     if args.year is None: args.year = '2016'
-    args.subJob = 0
+    args.subJob = '0'
     args.isChild = True
 
 #
@@ -44,19 +44,21 @@ if args.isTest:
 #
 from HNL.Samples.sampleManager import SampleManager
 file_list = 'fulllist_'+str(args.year)+'_mconly' if args.customList is None else args.customList
-sample_manager = SampleManager(args.year, 'noskim', file_list, is_test = args.isTest)
+sample_manager = SampleManager(args.year, 'noskim', file_list, need_skim_samples=True)
 
 #
 # Subjobs
 #
-jobs = []
-for sample_name in sample_manager.sample_names:
-    sample = sample_manager.getSample(sample_name)
-    if sample is None:
-        print sample_name, "not found. Will skip this sample"
-        continue
-    for njob in xrange(sample.split_jobs):
-        jobs += [(sample.name, str(njob))]
+if not args.isTest:
+    jobs = []
+    for sample_name in sample_manager.sample_names:
+        print "LOADING THIS SAMPLE NOW:", sample_name
+        sample = sample_manager.getSample(sample_name)
+        if sample is None:
+            print sample_name, "not found. Will skip this sample"
+            continue
+        for njob in xrange(sample.split_jobs):
+            jobs += [(sample.name, str(njob))]
 
 if not args.checkLogs:
     from HNL.Tools.logger import getLogger, closeLogger
@@ -85,8 +87,20 @@ if not args.checkLogs:
     #
     #Get specific sample for this subjob
     #
+    print 'get sample'
     sample = sample_manager.getSample(args.sample)
-    chain = sample.initTree()
+    print 'init tree'
+    chain = sample.initTree(int(args.subJob))
+    # print sample.list_of_subjobclusters
+
+    tot_files = 0
+    for x in sample.list_of_subjobclusters:
+        for xl in x:
+            tot_files += 1
+    print tot_files
+
+
+    print 'year'
     chain.year = int(args.year)
     chain.is_signal = 'HNL' in sample.name
 
@@ -145,6 +159,7 @@ if not args.checkLogs:
     for i in delete_branches:        chain.SetBranchStatus("*"+i+"*", 0)
     #chain.SetBranchStatus('_met', 1)  #Reactivate met
     #chain.SetBranchStatus('_metPhi', 1)  #Reactivate met
+    print chain
     output_tree = chain.CloneTree(0)
 
     #
@@ -204,15 +219,6 @@ if not args.checkLogs:
             selectLeptonsGeneral(chain, chain, 3, cutter = cutter)
             if len(chain.leptons) < 3:       continue
 
-        
-        # # ec = EventCategory(new_vars)
-        # ec = EventCategory(chain)
-        # c = ec.returnCategory()
-        # # new_vars.event_category = c
-        # chain.event_category = c
-
-        # calculateGeneralVariables(chain, new_vars, is_reco_level=not args.genSkim)
-        # calculateThreeLepVariables(chain, new_vars, is_reco_level=not args.genSkim)
         new_vars.lumiweight = lw.getLumiWeight()
         output_tree.Fill()
 
@@ -221,8 +227,11 @@ if not args.checkLogs:
 
 
     output_tree.AutoSave()
-    # if hcounter is not None:
-    #    hcounter.Write()
+
+    if not sample.is_data:
+        hcounter = sample.getSubHist(args.subJob, 'hCounter')
+        output_file.cd('blackJackAndHookers')
+        hcounter.Write()
         
     output_file.Close()
 

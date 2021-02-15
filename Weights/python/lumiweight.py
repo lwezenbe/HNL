@@ -20,6 +20,8 @@ class LumiWeight:
             for cl_name in self.lumi_cluster:
                 tmp_path = sample_manager.getPath(cl_name)
                 self.total_hcount += self.sample.getHist('hCounter', tmp_path).GetSumOfWeights()
+        elif self.skimmed:
+            self.total_hcount = self.sample.getHist('hCounter')
 
     def getLumiWeight(self):
         if self.skimmed:
@@ -27,11 +29,9 @@ class LumiWeight:
         elif self.sample.is_data:
             return 1.
         else:
-            try:
-                return self.sample.chain.lumiweight
-            except:
-                self.lumi_weight = self.sample.chain._weight*(self.sample.xsec*LUMINOSITY_MAP[self.sample.chain.year])/self.total_hcount
-                return self.lumi_weight 
+            #the _weight is needed because otherwise the hcounter might be wrong for the denominator
+            self.lumi_weight = self.sample.chain._weight*(self.sample.xsec*LUMINOSITY_MAP[self.sample.chain.year])/self.total_hcount
+            return self.lumi_weight 
 
 if __name__ == '__main__':
     from HNL.Samples.sample import createSampleList, getSampleFromList

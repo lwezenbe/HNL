@@ -1,6 +1,7 @@
 import os
 import glob
 import itertools
+from HNL.Tools.jobSubmitter import submitJobs
 
 #
 # Argument parser and logging
@@ -14,11 +15,21 @@ submission_parser.add_argument('--customList',  action='store',      default=Non
 submission_parser.add_argument('--skimSelection',  action='store',      default=None,               help='Name of the selection.')
 submission_parser.add_argument('--skimName',  action='store',      default='Reco',               help='Name of the skim.')
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
+submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
+submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
+submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
+
 
 args = argParser.parse_args()
 
-abort_script = raw_input("Did you check if all log files are ok? (y/n) \n")
-if abort_script == 'n' or abort_script == 'N':
+if not args.isChild:
+    abort_script = raw_input("Did you check if all log files are ok? (y/n) \n")
+    if abort_script == 'n' or abort_script == 'N':
+        exit(0)
+
+if args.batchSystem == 'HTCondor' and not args.isChild:
+    jobs = [[0]]
+    submitJobs(__file__, ('subJob'), jobs, argParser, jobLabel = 'mergeSkim')
     exit(0)
 
 from HNL.Tools.helpers import fileSize, makeDirIfNeeded, isValidRootFile
@@ -98,4 +109,4 @@ for mf in merge_files:
     if args.batchSystem != 'HTCondor':
         #Move to pnfs once it is merged locally
         os.system('gfal-copy file://'+path+'/'+new_name+' '+pnfs_base+'/'+new_name)
-        os.system('rm -f'+path+'/'+new_name)
+        os.system('rm '+path+'/'+new_name)
