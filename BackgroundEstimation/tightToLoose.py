@@ -20,7 +20,7 @@ submission_parser.add_argument('--inData',   action='store_true', default=False,
 submission_parser.add_argument('--batchSystem',   action='store', default='HTCondor',  help='help')
 submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 submission_parser.add_argument('--noskim', action='store_true', default=False,  help='measure in data')
-submission_parser.add_argument('--selection',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cut-based', 'AN2017014', 'MVA', 'ewkino', 'TTT', 'Luka'])
+submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--tauRegion', action='store', type=str, default = None, help='What region do you want to select for?', 
     choices=['TauFakesDY', 'TauFakesTT'])
 submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
@@ -185,7 +185,7 @@ if not args.makePlots:
     #
     # Define event selection
     #
-    es = EventSelector(region_to_select, chain, chain, args.selection, True, ec, in_data = args.inData)            
+    es = EventSelector(region_to_select, chain, chain, True, ec, in_data = args.inData)            
 
     #
     # Create fake rate objects

@@ -41,7 +41,7 @@ if not args.isChild:
     for sample_name in sample_manager.sample_names:
         print sample_name
         sample = sample_manager.getSample(sample_name)        
-        for njob in xrange(sample.split_jobs): 
+        for njob in xrange(sample.returnSplitJobs()): 
             jobs += [(sample.name, str(njob))]
 
     submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'compression')
@@ -89,7 +89,7 @@ from HNL.EventSelection.eventCategorization import EventCategory, filterSuperCat
 from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
 slm = SignalLeptonMatcher(chain)
 ec = EventCategory(chain)
-es = EventSelector('baseline', chain, chain, 'MVA', is_reco_level = False, event_categorization=ec)
+es = EventSelector('baseline', chain, chain, is_reco_level = False, event_categorization=ec)
 
 #
 # Create cutter to provide cut flow

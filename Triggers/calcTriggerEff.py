@@ -52,7 +52,7 @@ sample_manager = SampleManager(args.year, 'noskim', 'triggerlist_'+str(args.year
 jobs = []
 for sample_name in sample_manager.sample_names:
     sample = sample_manager.getSample(sample_name)
-    for njob in xrange(sample.split_jobs): 
+    for njob in xrange(sample.returnSplitJobs()): 
         jobs += [(sample.name, str(njob))]
 
 #
@@ -201,7 +201,7 @@ else:
 
 #prepare object  and event selection
 from HNL.ObjectSelection.objectSelection import getObjectSelection
-chain.obj_sel = getObjectSelection('MVA') if not args.oldTriggers else getObjectSelection('AN2017014')
+chain.obj_sel = getObjectSelection('default') if not args.oldTriggers else getObjectSelection('AN2017014')
 
 #
 # Loop over all events

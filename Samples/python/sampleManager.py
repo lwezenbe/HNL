@@ -24,7 +24,7 @@ SAMPLE_GROUPS = {
 class SampleManager:
 
 
-    def __init__(self, year, skim, sample_names_file, need_skim_samples):
+    def __init__(self, year, skim, sample_names_file, need_skim_samples=False):
         if not skim in ALLOWED_SKIMS:
             raise RuntimeError("skim "+skim+" not allowed in the sample manager")
 

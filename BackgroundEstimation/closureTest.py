@@ -29,7 +29,7 @@ submission_parser.add_argument('--splitInBJets', action='store_true', default=Fa
 submission_parser.add_argument('--inData',   action='store_true', default=False,  help='Run in data')
 submission_parser.add_argument('--region', action='store', default=None, type=str,  help='What region was the fake rate you want to use measured in?', 
     choices=['TauFakesDY', 'TauFakesTT', 'Mix'])
-submission_parser.add_argument('--selection',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cut-based', 'AN2017014', 'MVA', 'ewkino', 'TTT', 'Luka'])
+submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 
 argParser.add_argument('--makePlots', action='store_true', default=False,  help='make plots')
@@ -61,7 +61,7 @@ if args.flavorToTest == ['tau']:
 
 if args.selection == 'AN2017014':
     raise RuntimeError("selection AN2017014 currently not supported")
-if args.splitInBJets and args.selection != 'cutbased' and args.selection != 'MVA':
+if args.splitInBJets and args.selection != 'default':
     raise RuntimeError("selection currently not supported in combination with splitInBJets")
 
 if args.inData and args.flavorToTest == 'ele' or args.flavorToTest == 'mu':
@@ -227,14 +227,14 @@ if not args.makePlots:
     from HNL.EventSelection.eventSelector import EventSelector
     if args.isCheck:
         if args.flavorToTest == ['tau']:
-            es = EventSelector('TauFakes', chain, chain, args.selection, True, ec, in_data = args.inData)    
+            es = EventSelector('TauFakes', chain, chain, True, ec, in_data = args.inData)    
         else:
             raise RuntimeError("Wrong input for flavorToTest with isCheck arg on: "+str(args.flavorToTest))
     else:
         if not args.inData:
-            es = EventSelector('MCCT', chain, chain, args.selection, True, ec, in_data = args.inData, additional_options=args.flavorToTest) 
+            es = EventSelector('MCCT', chain, chain, True, ec, in_data = args.inData, additional_options=args.flavorToTest) 
         else:
-            es = EventSelector('DataCT', chain, chain, args.selection, True, ec, in_data = args.inData, additional_options=args.flavorToTest) 
+            es = EventSelector('DataCT', chain, chain, True, ec, in_data = args.inData, additional_options=args.flavorToTest) 
 
     fakerate = {}
     if 'tau' in args.flavorToTest:

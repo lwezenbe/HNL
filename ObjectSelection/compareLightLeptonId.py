@@ -63,7 +63,7 @@ sample_manager = SampleManager(args.year, 'noskim', 'compareTauIdList_'+str(args
 jobs = []
 for sample_name in sample_manager.sample_names:
     sample = sample_manager.getSample(sample_name)
-    for njob in xrange(sample.split_jobs):
+    for njob in xrange(sample.returnSplitJobs()):
         jobs += [(sample.name, str(njob))]
 
 if not args.isChild:

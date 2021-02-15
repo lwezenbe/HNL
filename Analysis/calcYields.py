@@ -26,8 +26,9 @@ submission_parser.add_argument('--batchSystem', action='store',         default=
 submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 submission_parser.add_argument('--coupling', type = float, action='store', default=0.01,  help='Coupling of the sample')
 submission_parser.add_argument('--noskim', action='store_true', default=False,  help='Use no skim sample list')
-submission_parser.add_argument('--selection',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'AN2017014', 'MVA', 'Luka'])
-submission_parser.add_argument('--region',   action='store', default='baseline',  help='apply the cuts of high or low mass regions, use "all" to run both simultaniously', 
+submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
+submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
+submission_parser.add_argument('--region',   action='store', default='baseline',  help='Choose the selection region', 
     choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZ', 'WZ', 'ConversionCR'])
 submission_parser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data samples')
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
@@ -173,6 +174,8 @@ if not args.makePlots and args.makeDataCards is None:
 
         chain.HNLmass = sample.getMass()
         chain.year = int(args.year)
+        chain.selection = args.selection
+        chain.strategy = args.strategy
 
         #
         # Get luminosity weight
@@ -189,7 +192,7 @@ if not args.makePlots and args.makeDataCards is None:
         from HNL.ObjectSelection.objectSelection import getObjectSelection
         chain.obj_sel = getObjectSelection(args.selection)
 
-        es = EventSelector(args.region, chain, chain, args.selection, True, ec)
+        es = EventSelector(args.region, chain, chain, True, ec)
 
         list_of_numbers = {}
         for c in listOfCategories(args.region):
@@ -202,9 +205,9 @@ if not args.makePlots and args.makeDataCards is None:
 
         def getOutputName(prompt_string):
             if not args.isTest:
-                output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', __file__.split('.')[0].rsplit('/')[-1], args.year, args.selection, args.region, sample.output, prompt_string)
+                output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', __file__.split('.')[0].rsplit('/')[-1], args.year, args.strategy, args.selection, args.region, sample.output, prompt_string)
             else:
-                output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year, args.selection, args.region, sample.output, prompt_string)
+                output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year, args.strategy, args.selection, args.region, sample.output, prompt_string)
 
             if args.isChild:
                 output_string += '/tmp_'+sample.output
@@ -278,9 +281,9 @@ else:
     # Check status of the jobs and merge
     #
     if not args.isTest:
-        base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', __file__.split('.')[0].rsplit('/')[-1], args.year, args.selection, args.region)
+        base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', __file__.split('.')[0].rsplit('/')[-1], args.year, args.strategy, args.selection, args.region)
     else:
-        base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year, args.selection, args.region)
+        base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year, args.strategy, args.selection, args.region)
 
     in_files = glob.glob(os.path.join(base_path, '*', '*'))
     merge(in_files, __file__, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)

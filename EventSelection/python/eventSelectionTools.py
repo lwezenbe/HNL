@@ -163,7 +163,7 @@ def selectGenLeptonsGeneral(chain, new_chain, nL, cutter=None):
 #
 # Meant for training NN, select up to two jets, if less than two jets, 
 #
-def selectFirstTwoJets(chain, new_chain, selection = None):
+def selectFirstTwoJets(chain, new_chain):
     if chain is new_chain:
         new_chain.j_pt = [0.0]*2
         new_chain.j_eta = [0.0]*2
@@ -202,14 +202,14 @@ def selectFirstTwoJets(chain, new_chain, selection = None):
 # Function to calculate all kinematic variables to be used later on in the selection steps
 # All variables are stored in the chain so they can be called anywhere
 #
-def calculateEventVariables(chain, new_chain, nL = None, is_reco_level = True, selection = None):
-    calculateGeneralVariables(chain, new_chain, is_reco_level=is_reco_level, selection=selection)
+def calculateEventVariables(chain, new_chain, nL = None, is_reco_level = True):
+    calculateGeneralVariables(chain, new_chain, is_reco_level=is_reco_level)
     if nL == 3:
         calculateThreeLepVariables(chain, new_chain, is_reco_level = is_reco_level)
     if nL == 4:
         calculateFourLepVariables(chain, new_chain)
 
-def calculateGeneralVariables(chain, new_chain, is_reco_level = True, selection = None):
+def calculateGeneralVariables(chain, new_chain, is_reco_level = True):
     if is_reco_level:
         #ptCone
         new_chain.pt_cone = []
@@ -438,10 +438,10 @@ def selectJets(chain, cleaned = 'loose'):
         if isGoodJet(chain, jet, cleaned=cleaned): jet_indices.append(jet)
     return jet_indices
 
-def nBjets(chain, wp, selection = None):
+def nBjets(chain, wp):
     nbjets = 0
     for jet in xrange(chain._nJets):
-        if isGoodBJet(chain, jet, wp, selection = selection): nbjets += 1
+        if isGoodBJet(chain, jet, wp): nbjets += 1
     return nbjets
 
 def bVeto(chain):

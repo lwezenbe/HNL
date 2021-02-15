@@ -8,9 +8,8 @@ l3 = 2
 
 class SignalRegionSelector:
 
-    def __init__(self, region, chain, new_chain, selection, is_reco_level=True, event_categorization = None):
+    def __init__(self, region, chain, new_chain, is_reco_level=True, event_categorization = None):
         self.region = region
-        self.selection = selection
         self.chain = chain
         self.new_chain = new_chain
         self.is_reco_level = is_reco_level
@@ -19,7 +18,7 @@ class SignalRegionSelector:
     def initEvent(self, cutter):
         if self.is_reco_level and not cutter.cut(est.select3Leptons(self.chain, self.new_chain, cutter=cutter), 'select leptons'): return False
         if not self.is_reco_level and not cutter.cut(est.selectGenLeptonsGeneral(self.chain, self.new_chain, 3, cutter=cutter), 'select leptons'): return False
-        est.calculateEventVariables(self.chain, self.new_chain, 3, is_reco_level=self.is_reco_level, selection=self.selection)
+        est.calculateEventVariables(self.chain, self.new_chain, 3, is_reco_level=self.is_reco_level)
         if self.ec is not None: self.chain.category = self.ec.returnCategory()
         return True
 
@@ -54,9 +53,9 @@ class SignalRegionSelector:
         return True
 
     def passBaseCuts(self, cutter):
-        if self.selection == 'AN2017014':
+        if self.chain.selection == 'AN2017014':
             return self.baseFilterAN2017(cutter)
-        elif self.selection == 'MVA':
+        elif self.chain.strategy == 'MVA':
             return self.baseFilterMVA(cutter)
         else:
             return self.baseFilterCutBased(cutter)
@@ -93,17 +92,23 @@ class SignalRegionSelector:
 
         if not self.passBaseCuts(cutter): return False
 
-        if self.selection != "MVA":
-            if self.region == 'lowMassSR':
-                return self.passLowMassSelection(cutter)
-            elif self.region == 'highMassSR':
-                return self.passHighMassSelection(cutter)
-            elif self.region == 'baseline':
-                return True
-        elif self.selection == "MVA":
+        # if self.chain.strategy != "MVA":
+        #     if self.region == 'lowMassSR':
+        #         return self.passLowMassSelection(cutter)
+        #     elif self.region == 'highMassSR':
+        #         return self.passHighMassSelection(cutter)
+        #     elif self.region == 'baseline':
+        #         return True
+        # elif self.chain.strategy == "MVA":
+        #     return True
+
+        if self.region == 'lowMassSR':
+            return self.passLowMassSelection(cutter)
+        elif self.region == 'highMassSR':
+            return self.passHighMassSelection(cutter)
+        elif self.region == 'baseline':
             return True
         else:
-            raise RuntimeError('Given signal region: "'+ self.region +'" not known')
-
+            raise RuntimeError("Unknown signal region: "+self.region)
 
     
