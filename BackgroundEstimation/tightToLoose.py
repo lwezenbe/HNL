@@ -80,11 +80,11 @@ sublist = None
 if args.inData:
     sublist = 'fulllist_'+args.year+'_nosignal'
 elif args.flavor == 'tau':
-    sublist = 'TauFakes'
+    sublist = 'BackgroundEstimation/TauFakes'
 elif args.flavor == 'mu':
-    sublist = 'MuonFakes'
+    sublist = 'BackgroundEstimation/MuonFakes'
 elif args.flavor == 'e':
-    sublist = 'ElectronFakes'
+    sublist = 'BackgroundEstimation/ElectronFakes'
 
 sample_manager = SampleManager(args.year, skim_str, sublist)
 

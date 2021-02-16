@@ -54,7 +54,7 @@ algos = {'cutbased': ['loose', 'FO', 'tight'],
 # Load in the sample list 
 #
 from HNL.Samples.sampleManager import SampleManager
-sample_manager = SampleManager(args.year, 'noskim', 'compareTauIdList_'+str(args.year))
+sample_manager = SampleManager(args.year, 'noskim', 'ObjectSelection/compareTauIdList_'+str(args.year))
 
 #
 # Submit Jobs

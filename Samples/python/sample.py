@@ -198,7 +198,7 @@ class SkimSample(Sample):
 #
 #       create list of samples from input file
 #
-def createSampleList(file_name, need_skim_sample = False):
+def createSampleList(file_name, sample_manager = None, need_skim_sample = False):
     sample_infos = [line.split('%')[0].strip() for line in open(file_name)]                     # Strip % comments and \n charachters
     sample_infos = [line.split() for line in sample_infos if line]                              # Get lines into tuples
     for name, path, output, split_jobs, xsec in sample_infos:
@@ -206,6 +206,8 @@ def createSampleList(file_name, need_skim_sample = False):
             split_jobs
         except:
             continue
+        if sample_manager != None:
+            split_jobs += '*' + str(sample_manager.sample_dict[name])
         if not need_skim_sample: 
             yield Sample(name, path, output, split_jobs, xsec)
         else:

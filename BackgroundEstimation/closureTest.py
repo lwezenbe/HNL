@@ -92,7 +92,7 @@ else:
     skim_str = 'noskim' if args.selection == 'AN2017014' else 'Reco'
 
 if not args.inData:
-    sublist = 'ClosureTests'
+    sublist = 'BackgroundEstimation/ClosureTests'
 else:
     sublist = 'fulllist_'+args.year+'_nosignal'
 sample_manager = SampleManager(args.year, skim_str, sublist)
