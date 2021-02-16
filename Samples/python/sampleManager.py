@@ -33,28 +33,34 @@ class SampleManager:
         self.path = os.path.join(BASE_PATH, '_'.join(['sampleList', str(self.year), skim+'.conf']))
 
         self.sample_names_file_full = os.path.join(BASE_PATH, 'Sublists', sample_names_file+'.conf')
-        self.sample_names = self.getSampleNames(self.sample_names_file_full)
-        self.sample_list = createSampleList(self.path, need_skim_samples)
+        self.sample_dict = self.getSampleDict(self.sample_names_file_full)
+        self.sample_names = self.sample_dict.keys()
+        self.sample_list = self.createSampleList()
         self.sample_groups = SAMPLE_GROUPS
 
         self.need_skim_samples = need_skim_samples
 
         self.lumi_clusters = {}
 
-    def getSampleNames(self, in_file_name):
+    def getSampleDict(self, in_file_name):
         sample_infos = [line.split('%')[0].strip() for line in open(in_file_name)]                     # Strip % comments and \n charachters
-        sample_infos = [line for line in sample_infos if line] 
-        sample_infos = [info for info in sample_infos if info in getListOfSampleNames(self.path)]
+        sample_infos = [line.split() for line in sample_infos if line] 
+        sample_info_dict = {}
+        for info in sample_infos:
+            if info[0] in getListOfSampleNames(self.path):
+                sample_info_dict[info[0]] = info[1]
         # Add extension files if this is noskim
         # For the Gen and Reco skims, the skimmer already included those to be added in the final sample
         if self.skim == 'noskim':
-            for info in sample_infos:
-                sample_infos.extend([x for x in getListOfSampleNames(self.path) if info+'-ext' in x])
-        return sample_infos
+            for info in sample_info_dict.keys():
+                ext_files = [x for x in getListOfSampleNames(self.path) if info+'-ext' in x]
+                for ext_file in ext_files:
+                    sample_info_dict[ext_file] = sample_info_dict[info]
+        return sample_info_dict
 
     def getSample(self, name):
         sample = getSampleFromList(self.sample_list, name)
-        self.sample_list = createSampleList(self.path, self.need_skim_samples)
+        self.sample_list = self.createSampleList()
         return sample
 
     def makeLumiClusters(self):
@@ -85,6 +91,24 @@ class SampleManager:
         output_set = {info for info in sample_infos}
         return output_set
 
+    #
+    #       create list of samples from input file
+    #
+    def createSampleList(self):
+        sample_infos = [line.split('%')[0].strip() for line in open(self.path)]                     # Strip % comments and \n charachters
+        sample_infos = [line.split() for line in sample_infos if line]                              # Get lines into tuples
+        for name, path, output, split_jobs, xsec in sample_infos:
+            try:
+                split_jobs
+            except:
+                continue
+            if name in self.sample_names:
+                split_jobs += '*' + str(self.sample_dict[name])
+            if not self.need_skim_samples: 
+                yield Sample(name, path, output, split_jobs, xsec)
+            else:
+                yield SkimSample(name, path, output, split_jobs, xsec)
+
 if __name__ == '__main__':
     sample_manager = SampleManager(2016, 'noskim', 'test')
 
@@ -94,5 +118,5 @@ if __name__ == '__main__':
     print s.name, s.xsec
     s = sample_manager.getSample('ZZTo4L')
     print s.name, s.xsec
-    print sample_manager.getSampleNames(BASE_PATH+'/Sublists/test.conf')
+    print sample_manager.getSampleDict(BASE_PATH+'/Sublists/test.conf')
     print sample_manager.makeLumiClusters()

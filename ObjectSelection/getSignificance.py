@@ -60,7 +60,7 @@ def getMuWPs(iso_algo):
 # Load in the sample list 
 #
 from HNL.Samples.sampleManager import SampleManager
-sample_manager = SampleManager(args.year, 'noskim', 'compareTauIdList_'+str(args.year))
+sample_manager = SampleManager(args.year, 'noskim', 'ObjectSelection/compareTauIdList_'+str(args.year))
 
 from HNL.Tools.helpers import getFourVec
 

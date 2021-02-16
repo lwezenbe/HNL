@@ -145,7 +145,7 @@ def linkLepToIso(algorithm):
 # Load in the sample list 
 #
 from HNL.Samples.sampleManager import SampleManager
-sample_manager = SampleManager(args.year, 'noskim', 'compareTauIdList_'+str(args.year))
+sample_manager = SampleManager(args.year, 'noskim', 'ObjectSelection/compareTauIdList_'+str(args.year))
 
 #
 # Submit Jobs (Jobs are per sample, not split into algorithms or working points)
