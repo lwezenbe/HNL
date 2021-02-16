@@ -82,11 +82,6 @@ def makeRunScript(script, arguments, i, condor_base):
 
 
 def launchOnCondor(logfile, script, arguments, i):
-    # submit_file = open(submit_file_name, 'a')
-    # submit_file.write('Arguments        = '+ arguments +'\n')
-    # submit_file.write('Queue \n')
-    # submit_file.close()
-
     condor_base = getCondorBase(os.path.realpath(logfile))
     runscript_name = makeRunScript(script, arguments, i, condor_base)
     submit_file_name = makeCondorFile(logfile, script, i, runscript_name, condor_base)
@@ -135,11 +130,12 @@ def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, subLog=
     args         = argparser.parse_args()
     args.isChild = True
 
-
-    if resubmission and 'skimmer' in script:
+    ignore_overwrite = False
+    if resubmission and 'skimmer' in script and not args.overwrite:
+        ignore_overwrite = True
         args.overwrite=True
     submitArgs   = getSubmitArgs(argparser, args, dropArgs)
-    if resubmission and 'skimmer' in script:
+    if resubmission and 'skimmer' in script and ignore_overwrite:
         arg_string = getArgsStr(submitArgs, to_ignore=['isChild', 'overwrite'])
     else:
         arg_string = getArgsStr(submitArgs, to_ignore=['isChild'])
@@ -181,6 +177,8 @@ def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, subLog=
         
         logdir  = os.path.join(logbase, *(str(s) for s in subJob[:-1]))
         logfile = os.path.join(logdir, str(subJob[-1]) + ".log")
+        if resubmission:
+            os.system('rm '+logfile)
 
         try:    os.makedirs(logdir)
         except: pass
