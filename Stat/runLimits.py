@@ -10,8 +10,8 @@ submission_parser.add_argument('--flavor', action='store', default='',  help='Wh
 submission_parser.add_argument('--asymptotic',   action='store_true', default=False,  help='Use the -M AsymptoticLimits option in Combine')
 submission_parser.add_argument('--blind',   action='store_true', default=False,  help='activate --blind option of combine')
 submission_parser.add_argument('--useExistingLimits',   action='store_true', default=False,  help='Dont run combine, just plot')
-submission_parser.add_argument('--compareToCards',   type=str, nargs='*',  help='Compare to a specific card if it exists. If you want different selection use "selection/card" otherwise just "card"')
-submission_parser.add_argument('--selection', action='store', default='cut-based', type=str,  help='What type of analysis do you want to run?', choices=['cut-based', 'AN2017014', 'MVA'])
+submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
+submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
 submission_parser.add_argument('--datacard', action='store', default='', type=str,  help='What type of analysis do you want to run?', choices=['Combined', 'Ditau', 'NoTau', 'SingleTau', 'TauCombined'])
 submission_parser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
 args = argParser.parse_args()
@@ -104,6 +104,11 @@ if not args.useExistingLimits:
                 print 'To be implemented'
                 exit(0)
 
+compare_dict = {
+    'cut-based': 'Search regions (tight WP)',
+    'Luka': 'Search regions',
+    'MVA': 'BDT'
+}
 
 for card in cards_to_read:
 
@@ -135,9 +140,8 @@ for card in cards_to_read:
 
             file_list = []
             for m in passed_masses:
-                file_name  = glob.glob(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', str(args.year), sname, args.flavor, 
+                file_name  = glob.glob(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', str(year_to_read), sname, args.flavor, 
                                         'HNL-'+args.flavor+'-m'+str(m), 'shapes', asymptotic_str+'/'+cname+'/*'))
-
                 if len(file_name) == 0:
                     file_list.append(None)
                 else:
@@ -171,13 +175,14 @@ for card in cards_to_read:
 
     if args.compareToCards is not None:
         for compare_key in compare_graphs.keys():
+            compare_sel, compare_reg = compare_key.split(' ')
             if bkgr_hist is None:
                 bkgr_hist = [compare_graphs[compare_key][0]]
-                tex_names = [compare_key]
+                tex_names = [compare_dict[compare_sel] + ' ' +compare_reg]
             else:
                 bkgr_hist.append(compare_graphs[compare_key][0])
-                tex_names.append(compare_key)
+                tex_names.append(compare_dict[compare_sel] + ' ' +compare_reg)
 
-    year = args.year if len(args.year) == 1 else 'all'
-    p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=False, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', year = )
+    year = args.year[0] if len(args.year) == 1 else 'all'
+    p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', year = year)
     p.drawBrazilian(output_dir = destination)
