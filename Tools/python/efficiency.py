@@ -27,12 +27,10 @@ class Efficiency(object):
             self.efficiency_num = Histogram(name+'_num', self.var, var_tex, bins)
             self.efficiency_denom = Histogram(name+'_denom', self.var, var_tex, bins)
         else:
+            obj_name = ''
             if subdirs is not None:
-                obj_name = ''
                 for d in subdirs:
                     obj_name += d+'/'
-            else:
-                obj_name = self.name + '/'
             self.efficiency_num = Histogram(getObjFromFile(self.path, obj_name+self.name+'_num'))
             self.efficiency_denom = Histogram(getObjFromFile(self.path, obj_name+self.name+'_denom'))
      
@@ -131,8 +129,9 @@ class Efficiency(object):
         makeDirIfNeeded(path_to_use)
         output_file = ROOT.TFile(path_to_use, append_string)
         if self.subdirs is None:
-            output_file.mkdir(self.name)
-            output_file.cd(self.name)
+            pass
+            # output_file.mkdir(self.name)
+            # output_file.cd(self.name)
         else:
             nomo = ''
             for d in self.subdirs:

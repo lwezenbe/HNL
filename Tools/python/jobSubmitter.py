@@ -80,14 +80,15 @@ def makeRunScript(script, arguments, i, condor_base):
     new_script.close()
     return new_script_name
 
-
-def launchOnCondor(logfile, script, arguments, i):
+def launchOnCondor(logfile, script, arguments, i, job_label = None):
     condor_base = getCondorBase(os.path.realpath(logfile))
     runscript_name = makeRunScript(script, arguments, i, condor_base)
+    os.system('chmod +x '+runscript_name)
     submit_file_name = makeCondorFile(logfile, script, i, runscript_name, condor_base)
 
-    print 'condor_submit '+submit_file_name
-    try:    out = os.system('condor_submit '+submit_file_name)
+    command = 'condor_submit '+submit_file_name
+    if job_label is not None: command += ' -batch-name ' +job_label
+    try:    out = os.system(command)
     except: out = 'failed'
     print out
 
@@ -103,7 +104,7 @@ def cleanJobFiles(argparser, script, sub_log = None):
 
 from HNL.Tools.logger import clearLogs
 import json
-def getSubmitArgs(argparser, args, dropArgs=None):
+def getSubmitArgs(argparser, args, dropArgs=None, additionalArgs = None):
     #changedArgs looks at all the arguments you gave in the original command. The getattr() skips things like args.sample and so on that have a default of None here but will add those anyway
     #when looping over the subjobs in the zip(subJobArgs, subJob) 
     arg_groups={}
@@ -113,6 +114,10 @@ def getSubmitArgs(argparser, args, dropArgs=None):
 
     changedArgs  = [arg for arg in vars(arg_groups['submission']) if getattr(arg_groups['submission'], arg) and argparser.get_default(arg) != getattr(arg_groups['submission'], arg)]
     submitArgs   = {arg: getattr(arg_groups['submission'], arg) for arg in changedArgs if (not dropArgs or arg not in dropArgs)}
+    if additionalArgs is not None:
+        for additional_arg in additionalArgs:
+            if additional_arg[0] in submitArgs.keys(): continue
+            submitArgs[additional_arg[0]] = additional_arg[1]
     return submitArgs
 
 def getArgsStr(arg_list, to_ignore):
@@ -126,7 +131,7 @@ def getArgsStr(arg_list, to_ignore):
             args_str += '_' + str(arg) + '-' + str(arg_list[arg])
     return args_str 
 
-def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, subLog=None, wallTime='15', queue='localgrid', cores=1, jobLabel='', resubmission = False):
+def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, additionalArgs=None, subLog=None, wallTime='15', queue='localgrid', cores=1, jobLabel='', resubmission = False):
     args         = argparser.parse_args()
     args.isChild = True
 
@@ -134,7 +139,7 @@ def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, subLog=
     if resubmission and 'skimmer' in script and not args.overwrite:
         ignore_overwrite = True
         args.overwrite=True
-    submitArgs   = getSubmitArgs(argparser, args, dropArgs)
+    submitArgs   = getSubmitArgs(argparser, args, dropArgs, additionalArgs)
     if resubmission and 'skimmer' in script and ignore_overwrite:
         arg_string = getArgsStr(submitArgs, to_ignore=['isChild', 'overwrite'])
     else:
@@ -187,17 +192,17 @@ def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, subLog=
         # elif args.batchSystem == 'local': runLocal(command, logfile)
         elif args.batchSystem == 'HTCondor': 
             arguments = (os.getcwd(), command)
-            launchOnCondor(logfile, script, arguments, i)
+            launchOnCondor(logfile, script, arguments, i, job_label=jobLabel)
         
         else:               launchCream02(command, logfile, checkQueue=(i%100==0), wallTimeInHours=wallTime, queue=queue, cores=cores, jobLabel=jobLabel)
 
     print len(subJobList), 'jobs submitted'
 
 from HNL.Tools.logger import successfullJob
-def checkCompletedJobs(script, subJobList, argparser, subLog = None):
+def checkCompletedJobs(script, subJobList, argparser, subLog = None, additionalArgs=None):
     failed_jobs = []
     args = argparser.parse_args()
-    submitArgs   = getSubmitArgs(argparser, args)
+    submitArgs   = getSubmitArgs(argparser, args, additionalArgs=additionalArgs)
     arg_string = getArgsStr(submitArgs, to_ignore=['isChild'])
 
     for i, subJob in enumerate(subJobList):
