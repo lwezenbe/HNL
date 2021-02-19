@@ -180,12 +180,13 @@ def plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, region_name, 
                 group_bkgr_hist[ish].SetBinContent(ib+1, sh.GetBinContent(b))
                 group_bkgr_hist[ish].SetBinError(ib+1, sh.GetBinError(b))
         
+        draw_ratio = 'errorsOnly' if len(group_signal_hist) > 0 and len(group_bkgr_hist) > 0 else None
         if sample_groups:
             p = Plot(group_signal_hist, tex_names, bkgr_hist = group_bkgr_hist, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, 
-                extra_text = extra_text, color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = 'errorsOnly')
+                extra_text = extra_text, color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = draw_ratio)
         else:
             p = Plot(group_signal_hist, tex_names, bkgr_hist = group_bkgr_hist, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, 
-                extra_text = extra_text, syst_hist = 0.1, draw_ratio = 'errorsOnly')
+                extra_text = extra_text, syst_hist = 0.1, draw_ratio = draw_ratio)
         p.drawHist(output_dir = out_path, min_cutoff = 1.)
 
         del p, group_signal_hist, group_bkgr_hist
@@ -213,12 +214,13 @@ def plotLowMassRegions(signal_hist, bkgr_hist, tex_names, out_path, extra_text =
     # Custom labels
     custom_labels = ['0-10', '10-20', '20-30', '> 30']*2
 
+    draw_ratio = 'errorsOnly' if len(signal_hist) > 0 and len(bkgr_hist) > 0 else None
     if sample_groups:
         p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'M_{2lOS}^{min} [GeV]', y_name = 'Events', extra_text = extra_text, y_log=True, 
-            color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = 'errorsOnly')
+            color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = draw_ratio)
     else:
         p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'M_{2lOS}^{min} [GeV]', y_name = 'Events', extra_text = extra_text, y_log=True, 
-            syst_hist = 0.1, draw_ratio = 'errorsOnly')
+            syst_hist = 0.1, draw_ratio = draw_ratio)
  
     p.drawHist(output_dir = out_path, draw_lines = line_collection, min_cutoff = 0.1, custom_labels = custom_labels)
 
@@ -227,19 +229,16 @@ def plotHighMassRegions(signal_hist, bkgr_hist, tex_names, out_path, extra_text 
     #Plot per grouping
 
     plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, 'oldAN_highMass', extra_text = extra_text, sample_groups = sample_groups)
-
+    
+    draw_ratio = 'errorsOnly' if len(signal_hist) > 0 and len(bkgr_hist) > 0 else None
     if sample_groups:
         p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text, 
-            color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = 'errorsOnly')
+            color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = draw_ratio)
     else:
         p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, 
-            extra_text = extra_text, syst_hist = 0.1, draw_ratio = 'errorsOnly')
+            extra_text = extra_text, syst_hist = 0.1, draw_ratio = draw_ratio)
     p.drawHist(output_dir = out_path, min_cutoff = 1.)
                     
-
-
-
-
 class RegionCollection:
 
     def __init__(self, list_of_names):
