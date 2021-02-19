@@ -25,6 +25,7 @@ class Sample(object):
         self.chain              = None
         self.output             = output
         self.mass               = self.getMass()
+        self.is_signal          = 'HNL' in name
         if self.path.endswith('.root'):
             self.list_of_files         = [self.path]
         else:

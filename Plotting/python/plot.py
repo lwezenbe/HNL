@@ -29,7 +29,7 @@ def makeList(item):
 import HNL.Tools.histogram
 from  HNL.Tools.histogram import returnSqrt
 def getHistList(item):
-    if item is None or (isList(item) and not isinstance(item[0], HNL.Tools.histogram.Histogram)) or (not isList(item) and not isinstance(item, HNL.Tools.histogram.Histogram)):
+    if item is None or item == [] or (isList(item) and not isinstance(item[0], HNL.Tools.histogram.Histogram)) or (not isList(item) and not isinstance(item, HNL.Tools.histogram.Histogram)):
         return item
     else:
         try:
@@ -289,6 +289,7 @@ class Plot:
         if self.draw_ratio is not None:
             self.plotpad.SetBottomMargin(0.)
             self.ratio_pad.SetTopMargin(0.05)
+            if self.x_log: self.ratio_pad.SetLogx()  
             self.ratio_pad.Draw()
 
         if self.draw_significance:
