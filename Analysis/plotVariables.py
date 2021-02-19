@@ -24,9 +24,9 @@ submission_parser.add_argument('--dryRun',   action='store_true',       default=
 submission_parser.add_argument('--genLevel',   action='store_true',     default=False,  help='Use gen level variables')
 submission_parser.add_argument('--coupling', action='store', default=0.01, type=float,  help='How large is the coupling?')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT', ])
-submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
+submission_parser.add_argument('--strategy',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
 submission_parser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', 
-    choices=['baseline', 'lowMassSR', 'highMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
+    choices=['baseline', 'lowMassSR', 'highMassSR', 'ZZCR', 'WZCR', 'ConversionCR', 'NoSelection'])
 submission_parser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data')
 submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
@@ -133,6 +133,8 @@ nl = 3 if args.region != 'ZZCR' else 4
 import HNL.Analysis.analysisTypes as at
 if args.makeDataCards and not args.makePlots:
     var = at.var_mva
+elif args.region == 'NoSelection':
+    var = at.var_noselection
 else:
     var = at.returnVariables(nl, not args.genLevel, args.strategy == 'MVA')
     # var = at.var_mva
@@ -281,15 +283,19 @@ if not args.makePlots and not args.makeDataCards:
             # Event selection
             #
             if not es.passedFilter(cutter): continue
-            if len(chain.l_flavor) == chain.l_flavor.count(2): continue #Not all taus
+            if args.region != 'NoSelection':
+                if len(chain.l_flavor) == chain.l_flavor.count(2): continue #Not all taus
 
-            nprompt = 0
-            if sample.name != 'Data':
-                for index in chain.l_indices:
-                    if not args.genLevel and chain._lIsPrompt[index]: nprompt += 1
-                    elif args.genLevel and chain._gen_lIsPrompt[index]: nprompt += 1
-                
-            prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
+                nprompt = 0
+                if sample.name != 'Data':
+                    for index in chain.l_indices:
+                        if not args.genLevel and chain._lIsPrompt[index]: nprompt += 1
+                        elif args.genLevel and chain._gen_lIsPrompt[index]: nprompt += 1
+                    
+                prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
+            else:
+                prompt_str = 'prompt'
+                chain.category = 17
 
             if args.strategy == 'MVA':
                 chain.mva_high_mu_baseline = tmva['baseline']['high_mu'].predict()
@@ -614,8 +620,8 @@ else:
             # Create plots for each category
             #
             from HNL.EventSelection.eventCategorization import CATEGORY_NAMES
-            # for c in list_of_hist.keys():
-            for c in cat.SUPER_CATEGORIES.keys():
+            for c in list_of_hist.keys():
+            # for c in cat.SUPER_CATEGORIES.keys():
                 c_name = CATEGORY_NAMES[c] if c not in cat.SUPER_CATEGORIES.keys() else c
 
                 # extra_text = [extraTextFormat(cat.returnTexName(c), xpos = 0.2, ypos = 0.82, textsize = None, align = 12)]  #Text to display event type in plot

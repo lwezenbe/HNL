@@ -37,6 +37,13 @@ class EventSelector:
             self.selector = ClosureTestMC(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options=additional_options)
         elif self.name == 'DataCT':
             self.selector = ClosureTestDATA(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options=additional_options)
+        elif self.name == 'NoSelection':
+            if in_data:
+                raise RuntimeError("Running this would mean unblinding. Dont do this.")
+            self.selector = SignalRegionSelector('baseline', chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
 
     def passedFilter(self, cutter):
-        return self.selector.passedFilter(cutter)
+        if self.name != 'NoSelection':
+            return self.selector.passedFilter(cutter)
+        else:
+            return True

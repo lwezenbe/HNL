@@ -81,7 +81,9 @@ var_reco_3l = {
         # 'ptConeTrailing':   (lambda c : c.pt_cone[2],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(trailing) [GeV]', 'Events')),
         'mt3':   (lambda c : c.mt3,      np.arange(0., 315., 15.),         ('M_{T}(3l) [GeV]', 'Events')),
         'LT':   (lambda c : c.LT,      np.arange(0., 915., 15.),         ('L_{T} [GeV]', 'Events')),
-        'HT':   (lambda c : c.HT,      np.arange(0., 915., 15.),         ('H_{T} [GeV]', 'Events'))
+        'HT':   (lambda c : c.HT,      np.arange(0., 915., 15.),         ('H_{T} [GeV]', 'Events')),
+        'rawNlight': (lambda c : c._nLight,      np.arange(0., 10., 1.),         ('N_{light, tuple}', 'Events')),
+        'rawNl': (lambda c : c._nL,      np.arange(0., 10., 1.),         ('N_{l, tuple}', 'Events')),
     }
 
 var_reco_4l = {
@@ -122,6 +124,11 @@ var_mva = {
         'mva_low_e_highMassSR':        (lambda c : c.mva_low_e_highMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
         'mva_low_mu_highMassSR':        (lambda c : c.mva_low_mu_highMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
         'mva_low_tau_highMassSR':        (lambda c : c.mva_low_tau_highMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events'))  
+}
+
+var_noselection = {
+        'rawNlight': (lambda c : c._nLight,      np.arange(0., 10., 1.),         ('N_{light, tuple}', 'Events')),
+        'rawNl': (lambda c : c._nL,      np.arange(0., 10., 1.),         ('N_{l, tuple}', 'Events')),
 }
 
 from HNL.Tools.helpers import mergeTwoDictionaries
