@@ -96,7 +96,7 @@ def printSelections(in_file_path, out_file_path):
 
 from HNL.Plotting.plot import Plot
 import ROOT
-def plotCutFlow(in_file_paths, out_file_path, in_file_path_names, ignore_weights=False):
+def plotCutFlow(in_file_paths, out_file_path, in_file_path_names, ignore_weights=False, output_name = None):
     in_file_paths = makeList(in_file_paths)
     in_file_path_names = makeList(in_file_path_names)
     if len(in_file_paths) != len(in_file_path_names):
@@ -118,7 +118,7 @@ def plotCutFlow(in_file_paths, out_file_path, in_file_path_names, ignore_weights
             else:
                 list_of_cut_hist[0].SetBinContent(i+1, getObjFromFile(in_file_paths[0], k).GetSumOfWeights())
         tex_names = in_file_path_names
-        x_name = key_names
+        x_name = [k.split('/')[-1] for k in key_names]
     #Plot samples on x
     else:
         in_file = TFile(in_file_paths[0])
@@ -135,7 +135,7 @@ def plotCutFlow(in_file_paths, out_file_path, in_file_path_names, ignore_weights
         tex_names = [k.split('/')[-1] for k in key_names]
         x_name = in_file_path_names
 
-    p = Plot(list_of_cut_hist, tex_names, name = 'cutflow', x_name = x_name, y_log = True)
+    p = Plot(list_of_cut_hist, tex_names, name = 'cutflow' if output_name is None else output_name, x_name = x_name, y_log = True)
     p.drawBarChart(out_file_path, index_colors=True, parallel_bins=True)
         
 

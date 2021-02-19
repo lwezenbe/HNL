@@ -277,7 +277,6 @@ def returnCategoryTriggers(chain, cat):
     else:  
         return [chain._HLT_Ele27_WPTight_Gsf, chain._HLT_IsoMu24, chain._HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ, chain._passTrigger_mm, chain._passTrigger_em, chain._passTrigger_eee, chain._passTrigger_eem, chain._passTrigger_emm, chain._passTrigger_mmm]
 
-
 def returnCategoryTriggerNames(cat):
     if cat == 1 or cat == 2:
         return ['HLT_Ele27_WPTight_Gsf', 'HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20', 'HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg']

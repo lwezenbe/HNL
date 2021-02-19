@@ -87,7 +87,7 @@ def getSampleManager(year):
     else:
         skim_str = 'Old' if args.selection == 'AN2017014' else 'Reco'
 
-    file_list = 'yields_'+str(year) if args.customList is None else args.customList
+    file_list = 'fulllist_'+str(year)+'_mconly' if args.customList is None else args.customList
     sample_manager = SampleManager(year, skim_str, file_list)  
     return sample_manager
 
@@ -117,6 +117,21 @@ elif args.region == 'highMassSR':
 else:
     regions.append(args.region)
     srm[args.region] = SearchRegionManager(args.region)
+
+
+def getOutputName(sample, prompt_string):
+    if not args.isTest:
+        output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', __file__.split('.')[0].rsplit('/')[-1], args.year, args.strategy, args.selection, args.region, sample.output, prompt_string)
+    else:
+        output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year, args.strategy, args.selection, args.region, sample.output, prompt_string)
+
+    if args.isChild:
+        output_string += '/tmp_'+sample.output
+
+    subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
+    output_string += '/'+ sample.name +'_events_' +subjobAppendix+ '.root'
+    makeDirIfNeeded(output_string)
+    return output_string
 
 #
 # Prepare jobs
@@ -210,21 +225,6 @@ if not args.makePlots and args.makeDataCards is None:
                 list_of_numbers[c][prompt_str] = Histogram('_'.join([str(c), prompt_str]), lambda c: c.search_region-0.5, ('', 'Events'), 
                     np.arange(0., srm[args.region].getNumberOfSearchRegions()+1., 1.))                
 
-        subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
-
-        def getOutputName(prompt_string):
-            if not args.isTest:
-                output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', __file__.split('.')[0].rsplit('/')[-1], args.year, args.strategy, args.selection, args.region, sample.output, prompt_string)
-            else:
-                output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year, args.strategy, args.selection, args.region, sample.output, prompt_string)
-
-            if args.isChild:
-                output_string += '/tmp_'+sample.output
-
-            output_string += '/'+ sample.name +'_events_' +subjobAppendix+ '.root'
-            makeDirIfNeeded(output_string)
-            return output_string
-
         #
         # Loop over all events
         #
@@ -238,7 +238,7 @@ if not args.makePlots and args.makeDataCards is None:
             progress(entry - event_range[0], len(event_range))
 
             cutter.cut(True, 'total')
-            
+
             #
             #Triggers
             #
@@ -262,13 +262,13 @@ if not args.makePlots and args.makeDataCards is None:
 
         for prompt_str in ['prompt', 'nonprompt', 'total']:
             for i, c_h in enumerate(list_of_numbers.keys()):
-                output_name = getOutputName(prompt_str)
+                output_name = getOutputName(sample, prompt_str)
                 if i == 0:
                     list_of_numbers[c_h][prompt_str].write(output_name, is_test=args.isTest)
                 else:
                     list_of_numbers[c_h][prompt_str].write(output_name, append=True, is_test=args.isTest)
 
-            cutter.saveCutFlow(getOutputName('total'))
+            cutter.saveCutFlow(getOutputName(sample, 'total'))
     
     closeLogger(log)
 
@@ -316,6 +316,7 @@ else:
         list_of_errors = {'signal' : {}, 'bkgr' : {}}
         x_names = [CATEGORY_TEX_NAMES[i] for i in CATEGORIES]
 
+        sample_manager = getSampleManager(year)
 
         #Gather sample names
         processed_outputs = set()
@@ -363,7 +364,7 @@ else:
         #Loading in background
 
         if args.groupSamples:
-            background_collection = sample_manager.sample_groups.keys()
+            background_collection = sample_manager.sample_groups.keys() if not args.signalOnly else []
         else:
             background_collection = [b for b in bkgr_names]
 
@@ -586,34 +587,36 @@ else:
                     #
                     # Bkgr
                     #
-                    hist_to_plot = {}
-                    for sample_name in background_collection:
-                        # hist_to_plot[sample_name] = ROOT.TH1D(sample_name, sample_name, len(list_of_values['bkgr'][sample_name]), 0, len(list_of_values['bkgr'][sample_name]))
-                        hist_to_plot[sample_name] = ROOT.TH1D(sample_name+supercat, sample_name+supercat, len(SUPER_CATEGORIES[supercat]), 0, len(SUPER_CATEGORIES[supercat]))
-                        for i, c in enumerate(SUPER_CATEGORIES[supercat]):
-                            # hist_to_plot[sample_name].SetBinContent(i+1, list_of_values['bkgr'][sample_name][c]['total'].getHist().GetSumOfWeights()) 
-                            hist_to_plot[sample_name].SetBinContent(i+1, list_of_values['bkgr'][sample_name][c]['total']) 
-                    x_names = [CATEGORY_TEX_NAMES[n] for n in SUPER_CATEGORIES[supercat]]
-                    p = Plot(hist_to_plot.values(), hist_to_plot.keys(), name = 'Events-bar-bkgr-'+supercat, x_name = x_names, y_name = 'Events', y_log='SingleTau' in supercat)            
-                    p.drawBarChart(output_dir = destination+'/BarCharts', message = args.message)
+                    if not args.signalOnly:
+                        hist_to_plot = {}
+                        for sample_name in background_collection:
+                            # hist_to_plot[sample_name] = ROOT.TH1D(sample_name, sample_name, len(list_of_values['bkgr'][sample_name]), 0, len(list_of_values['bkgr'][sample_name]))
+                            hist_to_plot[sample_name] = ROOT.TH1D(sample_name+supercat, sample_name+supercat, len(SUPER_CATEGORIES[supercat]), 0, len(SUPER_CATEGORIES[supercat]))
+                            for i, c in enumerate(SUPER_CATEGORIES[supercat]):
+                                # hist_to_plot[sample_name].SetBinContent(i+1, list_of_values['bkgr'][sample_name][c]['total'].getHist().GetSumOfWeights()) 
+                                hist_to_plot[sample_name].SetBinContent(i+1, list_of_values['bkgr'][sample_name][c]['total']) 
+                        x_names = [CATEGORY_TEX_NAMES[n] for n in SUPER_CATEGORIES[supercat]]
+                        p = Plot(hist_to_plot.values(), hist_to_plot.keys(), name = 'Events-bar-bkgr-'+supercat, x_name = x_names, y_name = 'Events', y_log='SingleTau' in supercat)            
+                        p.drawBarChart(output_dir = destination+'/BarCharts', message = args.message)
                     
                     #
                     # Signal
                     #   
-                    hist_to_plot = []
-                    hist_names = []
-                    for sn, sample_name in enumerate(sorted(list_of_values['signal'].keys(), key=lambda k: int(k.split('-m')[-1]))):
-                        # hist_to_plot.append(ROOT.TH1D(sample_name, sample_name, len(list_of_values['signal'][sample_name]), 0, len(list_of_values['signal'][sample_name])))
-                        hist_to_plot.append(ROOT.TH1D(sample_name, sample_name, len(SUPER_CATEGORIES[supercat]), 0, len(SUPER_CATEGORIES[supercat])))
-                        hist_names.append(sample_name)
-                        for i, c in enumerate(SUPER_CATEGORIES[supercat]):
-                            # hist_to_plot[sn].SetBinContent(i+1, list_of_values['signal'][sample_name][c]['total'].getHist().GetSumOfWeights()) 
-                            hist_to_plot[sn].SetBinContent(i+1, list_of_values['signal'][sample_name][c]['total']) 
-                    x_names = [CATEGORY_TEX_NAMES[n] for n in SUPER_CATEGORIES[supercat]]
-                    p = Plot(hist_to_plot, hist_names, name = 'Events-bar-signal-'+supercat+'-'+args.flavor, x_name = x_names, y_name = 'Events', y_log=True)
-                    p.drawBarChart(output_dir = destination+'/BarCharts', parallel_bins=True, message = args.message)
+                    if not args.backgroundOnly:
+                        hist_to_plot = []
+                        hist_names = []
+                        for sn, sample_name in enumerate(sorted(list_of_values['signal'].keys(), key=lambda k: int(k.split('-m')[-1]))):
+                            # hist_to_plot.append(ROOT.TH1D(sample_name, sample_name, len(list_of_values['signal'][sample_name]), 0, len(list_of_values['signal'][sample_name])))
+                            hist_to_plot.append(ROOT.TH1D(sample_name, sample_name, len(SUPER_CATEGORIES[supercat]), 0, len(SUPER_CATEGORIES[supercat])))
+                            hist_names.append(sample_name)
+                            for i, c in enumerate(SUPER_CATEGORIES[supercat]):
+                                # hist_to_plot[sn].SetBinContent(i+1, list_of_values['signal'][sample_name][c]['total'].getHist().GetSumOfWeights()) 
+                                hist_to_plot[sn].SetBinContent(i+1, list_of_values['signal'][sample_name][c]['total']) 
+                        x_names = [CATEGORY_TEX_NAMES[n] for n in SUPER_CATEGORIES[supercat]]
+                        p = Plot(hist_to_plot, hist_names, name = 'Events-bar-signal-'+supercat+'-'+args.flavor, x_name = x_names, y_name = 'Events', y_log=True)
+                        p.drawBarChart(output_dir = destination+'/BarCharts', parallel_bins=True, message = args.message)
             
-            if not args.noPieCharts:
+            if not args.noPieCharts and not args.signalOnly:
                 example_sample = background_collection[0]
                 for i, c in enumerate(sorted(list_of_values['bkgr'][example_sample].keys())):
 
@@ -638,16 +641,19 @@ else:
                     p = Plot(hist_to_plot_pie, sample_names, name = 'Events_'+str(c), x_name = CATEGORY_TEX_NAMES, y_name = 'Events', extra_text = extra_text)
                     p.drawPieChart(output_dir = destination+'/PieCharts', draw_percent=True, message = args.message)
 
-            # if not args.noCutFlow:
-            #     import glob
-            #     all_files = glob.glob(os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/eventsPerCategory/'+selection_str+'/'+args.region+'/HNL-'+args.flavor+'*/events.root'))
+            if not args.noCutFlow:
+                import glob
+                for sample_name in sample_manager.sample_names:
+                    sample = sample_manager.getSample(sample_name)
+                    in_file = [os.path.join(base_path, sample.output, 'total/events.root')]
+                    if not isValidRootFile(in_file[0]): continue
+                    name = [sample_name]
 
-            #     all_files = sorted(all_files, key = lambda k : int(k.split('/')[-2].split('.')[0].split('-m')[-1]))
-            #     all_names = [k.split('/')[-1].split('.')[0] for k in all_files]
+                    # all_files = sorted(all_files, key = lambda k : int(k.split('/')[-2].split('.')[0].split('-m')[-1]))
+                    # all_names = [k.split('/')[-1].split('.')[0] for k in all_files]
 
-            #     from HNL.EventSelection.cutter import plotCutFlow
-            #     out_name = os.path.expandvars('$CMSSW_BASE/src/HNL/EventSelection/data/Results/eventsPerCategory/'+selection_str+'/'+args.region) +'/CutFlow/Output'
-            #     plotCutFlow(all_files, out_name, all_names, ignore_weights=True)
+                    from HNL.EventSelection.cutter import plotCutFlow
+                    plotCutFlow(in_file, destination+'/cutflow', name, ignore_weights=True, output_name = name[0])
 
             #
             # Produce search region plots
@@ -709,7 +715,6 @@ else:
                         list_of_ac_hist[ac]['bkgr'].append(mergeCategories(ANALYSIS_CATEGORIES[ac], 'bkgr', sample_name))
 
                     extra_text = [extraTextFormat(ac, ypos = 0.82)]
-                    print ac
                     if args.flavor: extra_text.append(extraTextFormat('|V_{'+args.flavor+'N}|^{2} = '+'%.0E' % Decimal(str(args.coupling**2)), textsize = 0.7))
                     if args.rescaleSignal is not None:
                         extra_text.append(extraTextFormat('rescaled to |V_{'+args.flavor+'N}|^{2} = '+'%.0E' % Decimal(str(args.rescaleSignal)), textsize = 0.7))
@@ -719,4 +724,3 @@ else:
                     if args.region == 'highMassSR':
                         plotHighMassRegions(list_of_ac_hist[ac]['signal'], list_of_ac_hist[ac]['bkgr'], signal_names+bkgr_names, 
                             out_path = destination+'/SearchRegions/'+ac, extra_text = extra_text, sample_groups = args.groupSamples)
-
