@@ -55,8 +55,13 @@ if args.includeData and args.region in ['baseline', 'highMassSR', 'lowMassSR']:
 if args.makeDataCards and args.strategy != 'MVA': 
     raise RuntimeError("makeDataCards here is not supported for anything that is not MVA. Please use calcYields for this. The eventual plan is to merge calcYields and plotVariables into 1 but for now they are separated")
 
-if args.strategy == 'MVA' and args.selection != 'HNL':
-    raise RuntimeError("No MVA available for this selection")
+if args.strategy == 'MVA':
+    if args.selection != 'default':
+        raise RuntimeError("No MVA available for this selection")
+    if args.genLevel:
+        raise RuntimeError("No MVA available for at genLevel")
+    if args.region == 'ZZCR':
+        raise RuntimeError("No MVA available for 4 lepton selection")
 
 #
 # General imports
@@ -76,7 +81,7 @@ def getSampleManager(y):
     if args.genLevel:
         # skim_str = 'Gen'
         skim_str = 'noskim'
-    elif args.selection != 'HNL':
+    elif args.selection != 'default':
         skim_str = 'noskim'
     else:
         skim_str = 'Reco'
@@ -88,7 +93,7 @@ if args.isTest:
     if args.year is None: args.year = '2016'
     if args.sample is None and not args.makePlots: args.sample = 'DYJetsToLL-M-50'
     args.isChild = True
-    args.subJob = '0'
+    if args.subJob is None: args.subJob = '0'
 
 #
 # Prepare jobs
@@ -151,9 +156,9 @@ reco_or_gen_str = 'reco' if not args.genLevel else 'gen'
 
 def getOutputName(st, year):
     if not args.isTest:
-        return os.path.join(os.getcwd(), 'data', 'plotVariables', year, args.strategy, args.selection, reco_or_gen_str, args.region, st)
+        return os.path.join(os.getcwd(), 'data', 'plotVariables', '-'.join([args.strategy, args.selection, args.region, reco_or_gen_str]), year, st)
     else:
-        return os.path.join(os.getcwd(), 'data', 'testArea', 'plotVariables', year, args.strategy, args.selection, reco_or_gen_str, args.region, st)
+        return os.path.join(os.getcwd(), 'data', 'testArea', 'plotVariables', '-'.join([args.strategy, args.selection, args.region, reco_or_gen_str]), year, st)
 
 list_of_hist = {}
 for prompt_str in ['prompt', 'nonprompt', 'total']:
@@ -170,7 +175,7 @@ for prompt_str in ['prompt', 'nonprompt', 'total']:
 if args.genLevel and args.selection == 'AN2017014':
     raise RuntimeError('gen level is currently not implemented on AN2017014 analysis selection')
 
-from HNL.Triggers.triggerSelection import applyCustomTriggers, listOfTriggersAN2017014
+from HNL.Triggers.triggerSelection import passTriggers
 
 #
 # Loop over samples and events
@@ -277,7 +282,7 @@ if not args.makePlots and not args.makeDataCards:
             #Triggers
             #
             if args.selection == 'AN2017014':
-                if not cutter.cut(applyCustomTriggers(listOfTriggersAN2017014(chain)), 'pass_triggers'): continue
+                if not cutter.cut(passTriggers(chain, analysis='HNL_old'), 'pass_triggers'): continue
            
             #
             # Event selection
@@ -571,7 +576,7 @@ else:
                         mva_to_use = 'mva_low_'+args.flavor+'_'+args.region
                     else:
                         mva_to_use = 'mva_high_'+args.flavor+'_'+args.region
-                    out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', str(year), args.selection, args.flavor, sample_name, ac+'.shapes.root')
+                    out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([args.strategy, args.selection, args.region]), str(year), args.flavor, sample_name, ac+'.shapes.root')
                     makeDirIfNeeded(out_path)
                     # out_shape_file = ROOT.TFile(out_path, 'recreate')
                     list_of_hist[ac][mva_to_use]['signal'][sample_name].write(out_path, write_name=sample_name)
@@ -594,9 +599,9 @@ else:
             # Set output directory, taking into account the different options
             #
             if not args.isTest:
-                output_dir = os.path.join(os.getcwd(), 'data', 'Results', 'plotVariables', year, args.strategy, args.selection, reco_or_gen_str, args.region)
+                output_dir = os.path.join(os.getcwd(), 'data', 'Results', 'plotVariables', '-'.join([args.strategy, args.selection, args.region]), str(year))
             else:
-                output_dir = os.path.join(os.getcwd(), 'data', 'testArea', 'Results', 'plotVariables', year, args.strategy, args.selection, reco_or_gen_str, args.region)
+                output_dir = os.path.join(os.getcwd(), 'data', 'testArea', 'Results', 'plotVariables', '-'.join([args.strategy, args.selection, args.region]), str(year))
 
 
 

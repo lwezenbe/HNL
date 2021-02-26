@@ -10,7 +10,7 @@
 import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
-submission_parser.add_argument('--flavor', action='store', required=True,  help='flavor for which to run fake rate measurement', choices=['tau', 'e', 'mu'])
+submission_parser.add_argument('--flavor', action='store',  help='flavor for which to run fake rate measurement', choices=['tau', 'e', 'mu'])
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
 submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
@@ -29,6 +29,21 @@ argParser.add_argument('--makePlots', action='store_true', default=False,  help=
 
 args = argParser.parse_args()
 
+
+#
+# Change some settings if this is a test
+#
+if args.isTest:
+    args.isChild = True
+    if args.subJob is None: args.subJob = '0'
+    if args.year is None: args.year = '2016'
+    if args.flavor is None: args.flavor = 'tau'
+    if args.flavor == 'tau': args.tauRegion = 'TauFakesDY'
+    if args.sample is None: 
+        if args.inData: args.sample = 'Data-'+args.year
+        elif args.flavor == 'e': args.sample = 'QCDEMEnriched-80to120'
+        elif args.flavor == 'mu': args.sample = 'QCDmuEnriched-80to120'
+        else:   args.sample = 'DYJetsToLL-M-50'
 
 #
 # Raise errors if needed
@@ -58,14 +73,6 @@ from HNL.ObjectSelection.leptonSelector import isGoodLepton
 from HNL.Tools.helpers import makeDirIfNeeded
 from HNL.Weights.reweighter import Reweighter
 
-#
-# Change some settings if this is a test
-#
-if args.isTest:
-    args.isChild = True
-
-    if args.sample is None: args.sample = 'DYJetsToLL-M-50' if not args.inData else 'Data-'+args.year
-    args.subJob = '0'
 
 #
 # Load in the sample list 
@@ -107,9 +114,9 @@ subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
 def getOutputBase(region):
     data_str = 'DATA' if args.inData else 'MC'
     if not args.isTest:
-        output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0].rsplit('/', 1)[-1], args.year, data_str, args.flavor, region)
+        output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0].rsplit('/', 1)[-1], args.year, data_str, args.flavor, '-'.join([region, args.selection]))
     else:
-        output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0].rsplit('/', 1)[-1], args.year, data_str, args.flavor, region)
+        output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0].rsplit('/', 1)[-1], args.year, data_str, args.flavor, '-'.join([region, args.selection]))
     return output_name
 
 def getOutputName(region):
@@ -261,7 +268,9 @@ else:
     from HNL.Tools.helpers import getObjFromFile, makePathTimeStamped
     from HNL.Plotting.plot import Plot
 
-    base_path = getOutputBase(region_to_select)
+    base_path_in = getOutputBase(region_to_select)
+    base_path_out = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'Results', 
+                        __file__.split('.')[0].rsplit('/', 1)[-1], data_str, args.year, args.flavor, '-'.join([region_to_select, args.selection]))
     in_files = glob.glob(os.path.join(base_path, '*'))
     merge(in_files, __file__, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
 
@@ -272,11 +281,11 @@ else:
 
     for sample_output in samples_to_plot:
         if args.inData:
-            output_dir = makePathTimeStamped(base_path +'/Results')
-            in_file = base_path+'/events.root'
+            output_dir = makePathTimeStamped(base_path_out)
+            in_file = base_path_in+'/events.root'
         else:
-            output_dir = makePathTimeStamped(base_path +'/'+sample_output+'/Results')
-            in_file = base_path+'/'+sample_output+'/events.root'
+            output_dir = makePathTimeStamped(base_path_out +'/'+sample_output)
+            in_file = base_path_in+'/'+sample_output+'/events.root'
 
         fakerates = createFakeRatesWithJetBins('tauttl', None, None, in_file)
         for fr in fakerates.bin_collection:

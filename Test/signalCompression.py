@@ -31,9 +31,11 @@ sample_manager = SampleManager(args.year, 'noskim', 'allsignal_'+str(args.year))
 # Change some settings if this is a test
 #
 if args.isTest: 
+    from HNL.Tools.logger import getLogger, closeLogger
+    log = getLogger('INFO')
     args.isChild = True
-    args.sample = 'HNL-tau-m20'
-    args.subJob = '0'
+    if args.sample is None: args.sample = 'HNL-tau-m20'
+    if args.subJob is None: args.subJob = '0'
 
 if not args.isChild:
     from HNL.Tools.jobSubmitter import submitJobs
@@ -60,7 +62,10 @@ print 'Chain initialized'
 #Since number of subjobs was set to be 1 (HNL samples are small), this name was chosen since no overlap possible
 #If this changes, this needs to be changed as well
 from HNL.Tools.helpers import makeDirIfNeeded
-output_name = os.path.join(os.getcwd(), 'data', os.path.basename(__file__).split('.')[0], sample.output)
+if not args.isTest:
+    output_name = os.path.join(os.getcwd(), 'data', os.path.basename(__file__).split('.')[0], sample.output)
+else:
+    output_name = os.path.join(os.getcwd(), 'data', 'testArea', os.path.basename(__file__).split('.')[0], sample.output)
 output_name += '/'+ sample.name + '.root'
 makeDirIfNeeded(output_name)
 
@@ -145,3 +150,7 @@ if args.plotSoftTau and 'tau' in sample.name:
 plot = Plot(pt_hist, legend_names, name = sample.name, x_name = 'p_{T} [GeV]', y_name = 'Events')
 plot_name = os.path.join(os.path.expandvars('$CMSSW_BASE/src/HNL/Test/data'), os.path.basename(__file__).split('.')[0], 'Plots')
 plot.drawHist(plot_name)
+
+
+if args.isTest:
+    closeLogger(log)

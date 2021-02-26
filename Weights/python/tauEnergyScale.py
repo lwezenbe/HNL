@@ -42,14 +42,15 @@ class TauEnergyScale:
 if __name__ == "__main__":
     #TODO: test needs to be finished
     from HNL.Tools.logger import getLogger, closeLogger
+    import ROOT
     log = getLogger('INFO')
 
     from ROOT import TLorentzVector
     test_vec = ROOT.TLorentzVector()
     test_vec.SetPtEtaPhiE(1., 1., 1., 1.)
 
-    tes = TauEnergyScale(2016, 'deeptauVSjets')
-    tes = TauEnergyScale(2017, 'deeptauVSjets')
-    tes = TauEnergyScale(2018, 'deeptauVSjets')
+    tes = TauEnergyScale(2016, 'HNL')
+    tes = TauEnergyScale(2017, 'HNL')
+    tes = TauEnergyScale(2018, 'HNL')
 
     closeLogger(log)

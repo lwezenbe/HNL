@@ -9,7 +9,7 @@ import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
-submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'], required = True)
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -46,7 +46,7 @@ from random import randrange
 if args.isTest:
     if args.sample is None: args.sample = 'DYJetsToLL-M-50'
     if args.year is None: args.year = '2016'
-    args.subJob = 0
+    if args.subJob is None: args.subJob = 0
     args.isChild = True
 
 

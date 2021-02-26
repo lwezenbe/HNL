@@ -37,6 +37,18 @@ argParser.add_argument('--makePlots', action='store_true', default=False,  help=
 args = argParser.parse_args()
 
 #
+# Change some settings if this is a test
+#
+if args.isTest:
+    args.isChild = True
+
+    if args.sample is None: args.sample = 'DYJetsToLL-M-50'
+    if args.subJob is None: args.subJob = '0'
+    if args.year is None: args.year = '2016'
+    if args.region is None: args.region = 'TauFakesDY'
+    if args.region == 'Mix': args.splitInJets = True
+
+#
 # Throws exceptions if arguments do not add up
 #
 if args.flavorToTest != ['tau']:
@@ -55,6 +67,8 @@ if args.flavorToTest == ['tau']:
             raise RuntimeError('Mix needs either splitInJets or splitInBJets to be True')
         if args.splitInJets and args.splitInBJets:
             raise RuntimeError('Mix can not have splitInJets and splitInBJets being True at the same time')
+        if args.isCheck:
+            raise RuntimeError('Mix can not be used for check')
     else:
         if args.splitInBJets:
             raise RuntimeError('Split in bjets not supported for region other than Mix')
@@ -71,14 +85,6 @@ from HNL.Tools.logger import getLogger, closeLogger
 log = getLogger(args.logLevel)
 
 flavor_dict = {'tau' : 2, 'ele' : 0, 'mu' : 1}
-#
-# Change some settings if this is a test
-#
-if args.isTest:
-    args.isChild = True
-
-    if args.sample is None: args.sample = 'DYJetsToLL-M-50'
-    args.subJob = '0'
 
 if args.isChild and not args.inData and 'Data' in args.sample: exit(0)
 
@@ -227,7 +233,7 @@ if not args.makePlots:
     from HNL.EventSelection.eventSelector import EventSelector
     if args.isCheck:
         if args.flavorToTest == ['tau']:
-            es = EventSelector('TauFakes', chain, chain, True, ec, in_data = args.inData)    
+            es = EventSelector(args.region, chain, chain, True, ec, in_data = args.inData)    
         else:
             raise RuntimeError("Wrong input for flavorToTest with isCheck arg on: "+str(args.flavorToTest))
     else:
@@ -247,16 +253,16 @@ if not args.makePlots:
 
     if 'ele' in args.flavorToTest: 
         if args.inData:
-            fakerate['ele'] = FakeRateEmulator('fakeRate_electron_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'Lukav2', 'fakeRateMap_data_electron_'+args.year+'_mT.root'))
+            fakerate['ele'] = FakeRateEmulator('fakeRate_electron_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data','FakeRates', args.year, 'Lukav2', 'fakeRateMap_data_electron_'+args.year+'_mT.root'))
         else:
-            # fakerate['ele'] = FakeRateEmulator('fakeRate_electron_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'Lukav2', 'fakeRateMap_MC_electron_'+args.year+'.root'))
-            fakerate['ele'] = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, data_str, 'e')), 'e', args.inData)
+            fakerate['ele'] = FakeRateEmulator('fakeRate_electron_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data','FakeRates', args.year, 'Lukav2', 'fakeRateMap_MC_electron_'+args.year+'.root'))
+            # fakerate['ele'] = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, data_str, 'e')), 'e', args.inData)
 
     if 'mu' in args.flavorToTest: 
         if args.inData:
-            fakerate['mu'] = FakeRateEmulator('fakeRate_muon_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'Lukav2', 'fakeRateMap_data_muon_'+args.year+'_mT.root'))
+            fakerate['mu'] = FakeRateEmulator('fakeRate_muon_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data','FakeRates', args.year, 'Lukav2', 'fakeRateMap_data_muon_'+args.year+'_mT.root'))
         else:
-            fakerate['mu'] = FakeRateEmulator('fakeRate_muon_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'Lukav2', 'fakeRateMap_MC_muon_'+args.year+'.root'))
+            fakerate['mu'] = FakeRateEmulator('fakeRate_muon_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data','FakeRates', args.year, 'Lukav2', 'fakeRateMap_MC_muon_'+args.year+'.root'))
 
     co = {}
     for c in ANALYSIS_CATEGORIES.keys() + ['total']:
@@ -305,8 +311,8 @@ if not args.makePlots:
                 fake_factor *= readFakeRatesWithJetBins(fakerate['tau'], chain, flavor_dict['tau'], args.region, args.splitInJets)
             if fake_factor != -999.: is_observed=False
         elif 'ele' in args.flavorToTest:
-            # fake_factor *= fakerate['ele'].returnFakeWeight(chain, flavor_dict['ele'])
-            fake_factor *= readFakeRatesWithJetBins(fakerate['ele'], chain, flavor_dict['ele'], None, False)
+            fake_factor *= fakerate['ele'].returnFakeWeight(chain, flavor_dict['ele'])
+            # fake_factor *= readFakeRatesWithJetBins(fakerate['ele'], chain, flavor_dict['ele'], None, False)
             if fake_factor != -999.: is_observed=False
         elif 'mu' in args.flavorToTest:
             fake_factor *= fakerate['mu'].returnFakeWeight(chain, flavor_dict['mu'])
@@ -359,11 +365,8 @@ else:
     in_files = glob.glob(os.path.join(base_path, '*'))
     merge(in_files, __file__, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
 
-    base_path_split  = base_path.rsplit('/', 2)
-    if args.flavorToTest == ['tau']:
-        output_dir = makePathTimeStamped(base_path_split[0] +'/Results/'+base_path_split[1]+'/'+base_path_split[2])
-    else:
-        output_dir = makePathTimeStamped(base_path_split[0] +'/'+base_path_split[1]+'/Results/'+base_path_split[2])
+    base_path_split  = base_path.rsplit('/data/')
+    output_dir = makePathTimeStamped(base_path_split[0] +'/data/Results/'+base_path_split[1])
 
     closureObjects = {}
     for in_file in in_files:

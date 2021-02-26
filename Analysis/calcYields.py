@@ -29,7 +29,7 @@ submission_parser.add_argument('--noskim', action='store_true', default=False,  
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
 submission_parser.add_argument('--region',   action='store', default='baseline',  help='Choose the selection region', 
-    choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZ', 'WZ', 'ConversionCR'])
+    choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
 submission_parser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data samples')
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
 submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
@@ -74,7 +74,7 @@ if args.isTest:
     args.isChild = True
 
     if args.sample is None: args.sample = 'DYJetsToLL-M-50'
-    args.subJob = '0'
+    if args.subJob is None: args.subJob = '0'
     if args.year is None: args.year = '2016'
 
 #
@@ -85,7 +85,7 @@ def getSampleManager(year):
     if args.noskim:
         skim_str = 'noskim'
     else:
-        skim_str = 'Old' if args.selection == 'AN2017014' else 'Reco'
+        skim_str = 'noskim' if args.selection == 'AN2017014' else 'Reco'
 
     file_list = 'fulllist_'+str(year)+'_mconly' if args.customList is None else args.customList
     sample_manager = SampleManager(year, skim_str, file_list)  
@@ -98,9 +98,10 @@ from HNL.EventSelection.eventCategorization import CATEGORIES, SUPER_CATEGORIES
 from HNL.EventSelection.eventCategorization import CATEGORY_TEX_NAMES
 def listOfCategories(region):
     # if region in ['baseline', 'highMassSR', 'lowMassSR']:
-    return CATEGORIES
+    #     return CATEGORIES
     # else:
     #     return [max(CATEGORIES)]
+    return CATEGORIES
 
 #
 # Extra imports for dividing by region
@@ -121,9 +122,9 @@ else:
 
 def getOutputName(sample, prompt_string):
     if not args.isTest:
-        output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', __file__.split('.')[0].rsplit('/')[-1], args.year, args.strategy, args.selection, args.region, sample.output, prompt_string)
+        output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', __file__.split('.')[0].rsplit('/')[-1], args.year, '-'.join([args.strategy, args.selection, args.region]), sample.output, prompt_string)
     else:
-        output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year, args.strategy, args.selection, args.region, sample.output, prompt_string)
+        output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year, '-'.join([args.strategy, args.selection, args.region]), sample.output, prompt_string)
 
     if args.isChild:
         output_string += '/tmp_'+sample.output
@@ -229,7 +230,7 @@ if not args.makePlots and args.makeDataCards is None:
         # Loop over all events
         #
         from HNL.Tools.helpers import progress
-        from HNL.Triggers.triggerSelection import applyCustomTriggers, listOfTriggersAN2017014
+        from HNL.Triggers.triggerSelection import passTriggers
 
         print 'tot_range', len(event_range)
         for entry in event_range:
@@ -243,7 +244,7 @@ if not args.makePlots and args.makeDataCards is None:
             #Triggers
             #
             if args.selection == 'AN2017014':
-                if not cutter.cut(applyCustomTriggers(listOfTriggersAN2017014(chain)), 'pass_triggers'): continue
+                if not cutter.cut(passTriggers(chain, analysis='HNL_old'), 'pass_triggers'): continue
 
             #Event selection            
             if not es.passedFilter(cutter): continue
@@ -253,12 +254,15 @@ if not args.makePlots and args.makeDataCards is None:
             
             prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
 
-            # print nprompt, prompt_str, chain.M3l, chain.minMossf
+            #Split made because for the other regions, the number of leptons is different and eventcategories dont make sense
+            if args.region in ['baseline', 'highMassSR', 'lowMassSR']:
+                event_category = ec.returnCategory()
+            else:
+                event_category = max(CATEGORIES)
 
             chain.search_region = srm[args.region].getSearchRegion(chain)
-            list_of_numbers[ec.returnCategory()][prompt_str].fill(chain, lw.getLumiWeight())
-            list_of_numbers[ec.returnCategory()]['total'].fill(chain, lw.getLumiWeight())
-
+            list_of_numbers[event_category][prompt_str].fill(chain, lw.getLumiWeight())
+            list_of_numbers[event_category]['total'].fill(chain, lw.getLumiWeight())
 
         for prompt_str in ['prompt', 'nonprompt', 'total']:
             for i, c_h in enumerate(list_of_numbers.keys()):
@@ -268,7 +272,7 @@ if not args.makePlots and args.makeDataCards is None:
                 else:
                     list_of_numbers[c_h][prompt_str].write(output_name, append=True, is_test=args.isTest)
 
-            cutter.saveCutFlow(getOutputName(sample, 'total'))
+        cutter.saveCutFlow(getOutputName(sample, 'total'))
     
     closeLogger(log)
 
@@ -292,9 +296,9 @@ else:
         # Check status of the jobs and merge
         #
         if not args.isTest:
-            base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', __file__.split('.')[0].rsplit('/')[-1], year, args.strategy, args.selection, args.region)
+            base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', __file__.split('.')[0].rsplit('/')[-1], year, '-'.join([args.strategy, args.selection, args.region]))
         else:
-            base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], year, args.strategy, args.selection, args.region)
+            base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], year, '-'.join([args.strategy, args.selection, args.region]))
 
         in_files = glob.glob(os.path.join(base_path, '*', '*'))
         merge(in_files, __file__, jobs, ('sample', 'subJob', 'year'), argParser, istest=args.isTest)
@@ -454,9 +458,9 @@ else:
         search_region_keys = range(1, srm[args.region].getNumberOfSearchRegions()+1) + srm[args.region].getListOfSearchRegionGroups() + ['total']
 
         if args.isTest:
-            destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Analysis/data/testArea/Results/calcYields/'+args.selection+'/'+args.region+'/'+args.flavor))
+            destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Analysis/data/testArea/Results/calcYields/'+'-'.join([args.strategy, args.selection, args.region])+'/'+year+'/'+args.flavor))
         else:
-            destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Analysis/data/Results/calcYields/'+args.selection+'/'+args.region+'/'+args.flavor))
+            destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Analysis/data/Results/calcYields/'+'-'.join([args.strategy, args.selection, args.region])+'/'+year+'/'+args.flavor))
 
         def protectHist(hist):    
             if hist.Integral() < 0.00001:

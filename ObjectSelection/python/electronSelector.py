@@ -393,6 +393,7 @@ def isFOElectronLuka(chain, index):
     if chain._lElectronHOverE[index] >= 0.10:    return False
     if chain._lElectronEInvMinusPInv[index] <= -0.04:    return False
     if not chain._lElectronPassConvVeto[index]: return False
+    # if not chain._lElectronChargeConst[index]: return False
     #Barrel
     if abs(chain._lEtaSC[index]) <= 1.479:
         if chain._lElectronSigmaIetaIeta[index] >= 0.011:    return False

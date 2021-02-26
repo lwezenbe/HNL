@@ -49,7 +49,7 @@ class SignalRegionSelector:
         if not cutter.cut(not est.fourthFOVeto(self.chain, no_tau=self.chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
         if not cutter.cut(not est.threeSameSignVeto(self.chain), 'No three same sign'):        return False
         if not cutter.cut(not est.bVeto(self.chain), 'b-veto'):              return False
-        if not cutter.cut(abs(self.chain.MZossf-MZ) > 15, 'M2l_OSSF_Z_veto'):        return False
+        # if not cutter.cut(abs(self.chain.MZossf-MZ) > 15, 'M2l_OSSF_Z_veto'):        return False
         return True
 
     def passBaseCuts(self, cutter):

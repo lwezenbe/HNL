@@ -156,7 +156,7 @@ class Plot:
             #
             # Calculate range
             #
-            to_check_min = [j for j in self.s]
+            to_check_min = [j for j in self.s] if len(self.s) > 0 else [j for j in self.b]
             if stacked and self.b is None and self.total_s is not None:
                 to_check_max = [self.total_s]
             else:
@@ -166,7 +166,6 @@ class Plot:
                         to_check_max += [self.total_b]
                     else:
                         to_check_max += [k for k in self.b]
-            
 
             self.overall_max = max([pt.getOverallMaximum(to_check_max), 1])
             self.overall_min = pt.getOverallMinimum(to_check_min, zero_not_allowed=True)
@@ -196,14 +195,33 @@ class Plot:
             if stacked:
                 self.hs.SetMinimum(self.min_to_set)
                 self.hs.SetMaximum(self.max_to_set)
+                self.hs.GetXaxis().SetTitleSize(.06)
+                self.hs.GetYaxis().SetTitleSize(.06)
+                self.hs.GetXaxis().SetLabelSize(.06)
+                self.hs.GetYaxis().SetLabelSize(.06)
+                self.hs.GetYaxis().SetTitleOffset(1)
             elif len(self.b) == 0: 
                 self.s[0].SetMinimum(self.min_to_set)
                 self.s[0].SetMaximum(self.max_to_set)
+                self.s[0].GetXaxis().SetTitleSize(.06)
+                self.s[0].GetYaxis().SetTitleSize(.06)
+                self.s[0].GetXaxis().SetLabelSize(.06)
+                self.s[0].GetYaxis().SetLabelSize(.06)
+                self.s[0].GetYaxis().SetTitleOffset(1)
             else:
+                # self.b[0].SetMinimum(1e-5)
                 self.b[0].SetMinimum(self.min_to_set)
                 self.b[0].SetMaximum(self.max_to_set)
+                # self.b[0].GetXaxis().SetRangeUser(15., 900.)
+                self.b[0].GetXaxis().SetTitleSize(.06)
+                self.b[0].GetYaxis().SetTitleSize(.06)
+                self.b[0].GetXaxis().SetLabelSize(.06)
+                self.b[0].GetYaxis().SetLabelSize(.06)
+                self.b[0].GetYaxis().SetTitleOffset(1)
 
             self.plotpad.Update()
+
+
 
     def getYName(self): 
         from HNL.Plotting.plottingTools import allBinsSameWidth
@@ -351,7 +369,8 @@ class Plot:
         # self.tot_err.SetMinimum(0.3)
         # self.tot_err.SetMaximum(1.7)
         self.tot_err.SetMinimum(0.)
-        self.tot_err.SetMaximum(2.)
+        self.tot_err.SetMaximum(max(2., 1.3*pt.getOverallMaximum(ratios, include_error=False)))
+        # self.tot_err.GetXaxis().SetRangeUser(15., 900.)
         self.tot_err.GetXaxis().SetTitleSize(.18)
         self.tot_err.GetYaxis().SetTitleSize(.18)
         self.tot_err.GetXaxis().SetLabelSize(.18)
@@ -554,7 +573,7 @@ class Plot:
                 self.stat_totbkgr_error.SetMarkerStyle(0)
                 self.stat_totbkgr_error.Draw("E2 Same")
             elif 'E' in bkgr_draw_option:
-                for i in xrange(len(self.s)):
+                for i in xrange(len(self.b)):
                     self.stat_bkgr_errors[i].Draw("E Same")
 
 
@@ -791,9 +810,9 @@ class Plot:
         
         self.canvas.cd()
         #Create Legend
-        legend = ROOT.TLegend(0.5, .7, .9, .9)
-        legend.SetNColumns(2)
-        legend.SetTextSize(.02)
+        legend = ROOT.TLegend(0.4, .7, .9, .9)
+        legend.SetNColumns(1)
+        legend.SetTextSize(.03)
        
         loop_obj = [item for item in self.s]
         if len(self.b) > 0: loop_obj.extend(self.b)

@@ -32,8 +32,8 @@ from HNL.Tools.logger import getLogger, closeLogger
 log = getLogger('INFO')
 
 if args.isTest:
-    args.year = '2016'
-    args.sample = 'DY'
+    if args.year is None: args.year = '2016'
+    if args.sample is None: args.sample = 'DYJetsToLL-M-50'
     args.isChild = True
 
 #
@@ -58,7 +58,7 @@ from HNL.EventSelection.eventCategorization import EventCategory
 # Loop over samples and events
 #
 from HNL.Samples.sampleManager import SampleManager
-sample_manager = SampleManager(args.year, 'noskim', 'compareTauIdList_'+str(args.year))
+sample_manager = SampleManager(args.year, 'noskim', 'ObjectSelection/compareTauIdList_'+str(args.year))
 jobs = []
 for sample_name in sample_manager.sample_names:
     sample = sample_manager.getSample(sample_name)
