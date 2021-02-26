@@ -24,7 +24,7 @@ class FilterObject(object):
 class ZZCRfilter(FilterObject):
     
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None):
-        super(ZZCRfilter, self).__init__(name, chain, new_chain, is_reco_level=True, event_categorization = None)
+        super(ZZCRfilter, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
 
     def initEvent(self, cutter):
         return super(ZZCRfilter, self).initEvent(4, cutter, sort_leptons = True)
@@ -42,7 +42,7 @@ class ZZCRfilter(FilterObject):
 class WZCRfilter(FilterObject):
 
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None):
-        super(WZCRfilter, self).__init__(name, chain, new_chain, is_reco_level=True, event_categorization = None)
+        super(WZCRfilter, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
 
     def initEvent(self, cutter):
         return super(WZCRfilter, self).initEvent(3, cutter, sort_leptons = True)
@@ -63,7 +63,7 @@ class WZCRfilter(FilterObject):
 class ConversionCRfilter(FilterObject):
 
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None):
-        super(ConversionCRfilter, self).__init__(name, chain, new_chain, is_reco_level=True, event_categorization = None)
+        super(ConversionCRfilter, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
 
     def initEvent(self, cutter):
         return super(ConversionCRfilter, self).initEvent(3, cutter, sort_leptons = True)
@@ -73,7 +73,7 @@ class ConversionCRfilter(FilterObject):
         if not cutter.cut(containsOSSF(self.chain), 'OSSF present'):         return False
         if not cutter.cut(abs(self.new_chain.M3l-MZ) < 15, 'M3l_onZ'):       return False 
         if not cutter.cut(self.chain.MZossf < 75, 'Mll < 75'):               return False
-        if self.chain.selection == 'AN2017014' and not cutter.cut(passesPtCutsAN2017014(chain), 'pt_cuts'):     return False 
+        if self.chain.selection == 'AN2017014' and not cutter.cut(passesPtCutsAN2017014(self.chain), 'pt_cuts'):     return False 
         if not cutter.cut(not bVeto(self.chain), 'b-veto'):                 return False
         self.chain.category = max(cat.CATEGORIES)
         return True
@@ -81,7 +81,7 @@ class ConversionCRfilter(FilterObject):
 class TauFakeEnrichedDY(FilterObject):
     
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None):
-        super(TauFakeEnrichedDY, self).__init__(name, chain, new_chain, is_reco_level=True, event_categorization = None)
+        super(TauFakeEnrichedDY, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
 
     def initEvent(self, cutter):
         self.chain.obj_sel['tau_wp'] = 'FO'
@@ -112,7 +112,7 @@ class TauFakeEnrichedDY(FilterObject):
 class TauFakeEnrichedTT(FilterObject):
     
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None):
-        super(TauFakeEnrichedTT, self).__init__(name, chain, new_chain, is_reco_level=True, event_categorization = None)
+        super(TauFakeEnrichedTT, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
 
     def initEvent(self, cutter):
         self.chain.obj_sel['tau_wp'] = 'FO'
@@ -148,7 +148,7 @@ from HNL.EventSelection.eventSelectionTools import selectJets
 #Orthogonal due to selection of exactly 1 lepton
 class LightLeptonFakeMeasurementRegion(FilterObject):
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None):
-        super(LightLeptonFakeMeasurementRegion, self).__init__(name, chain, new_chain, is_reco_level=True, event_categorization = None)
+        super(LightLeptonFakeMeasurementRegion, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
 
     def initEvent(self, cutter):
         self.chain.obj_sel['ele_wp'] = 'loose'
@@ -193,7 +193,7 @@ class LightLeptonFakeMeasurementRegion(FilterObject):
 #
 class ClosureTestSelection(FilterObject):
     def __init__(self, name, chain, new_chain, flavor_of_interest, is_reco_level=True, event_categorization = None):
-        super(ClosureTestSelection, self).__init__(name, chain, new_chain, is_reco_level=True, event_categorization = None)
+        super(ClosureTestSelection, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
         self.flavor_of_interest = flavor_of_interest
         self.loose_leptons_of_interest = []
 
@@ -255,7 +255,7 @@ class ClosureTestSelection(FilterObject):
 
 class TauClosureTest(ClosureTestSelection):
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None):
-        super(TauClosureTest, self).__init__(name, chain, new_chain, 2, is_reco_level=True, event_categorization = None)
+        super(TauClosureTest, self).__init__(name, chain, new_chain, 2, is_reco_level=is_reco_level, event_categorization = event_categorization)
         self.chain.obj_sel['tau_wp'] = 'FO'
         self.chain.obj_sel['ele_wp'] = 'tight'
         self.chain.obj_sel['mu_wp'] = 'tight'
@@ -282,7 +282,7 @@ from HNL.EventSelection.signalRegionSelector import SignalRegionSelector
 from HNL.EventSelection.eventSelectionTools import applyConeCorrection
 class ElectronClosureTest(ClosureTestSelection):
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None):
-        super(ElectronClosureTest, self).__init__(name, chain, new_chain, 0, is_reco_level=True, event_categorization = None)
+        super(ElectronClosureTest, self).__init__(name, chain, new_chain, 0, is_reco_level=is_reco_level, event_categorization = event_categorization)
         self.chain.obj_sel['tau_wp'] = 'tight'
         self.chain.obj_sel['ele_wp'] = 'FO'
         self.chain.obj_sel['mu_wp'] = 'tight'
@@ -299,7 +299,7 @@ class ElectronClosureTest(ClosureTestSelection):
 
 class MuonClosureTest(ClosureTestSelection):
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None):
-        super(MuonClosureTest, self).__init__(name, chain, new_chain, 1, is_reco_level=True, event_categorization = None)
+        super(MuonClosureTest, self).__init__(name, chain, new_chain, 1, is_reco_level=is_reco_level, event_categorization = event_categorization)
         self.chain.obj_sel['tau_wp'] = 'tight'
         self.chain.obj_sel['ele_wp'] = 'tight'
         self.chain.obj_sel['mu_wp'] = 'FO'
@@ -316,7 +316,7 @@ class MuonClosureTest(ClosureTestSelection):
 
 class LukaClosureTest(FilterObject):
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None):
-        super(LukaClosureTest, self).__init__(name, chain, new_chain, is_reco_level=True, event_categorization = None)
+        super(LukaClosureTest, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
 
     def initEvent(self, cutter):
         self.chain.obj_sel['ele_wp'] = 'FO'
@@ -349,7 +349,7 @@ class ClosureTestMC(FilterObject):
     flavor_dict = {'tau' : 2, 'ele' : 0, 'mu' : 1}
 
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None, additional_options=None):
-        super(ClosureTestMC, self).__init__(name, chain, new_chain, is_reco_level=True, event_categorization = None)
+        super(ClosureTestMC, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
         self.flavors_of_interest = additional_options
         if self.flavors_of_interest is None: 
             raise RuntimeError('Input for ClosureTestMC for flavors_of_interest is None')
@@ -440,7 +440,7 @@ class ClosureTestDATA(FilterObject):
     flavor_dict = {'tau' : 2, 'ele' : 0, 'mu' : 1}
 
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None, additional_options=None):
-        super(ClosureTestDATA, self).__init__(name, chain, new_chain, is_reco_level=True, event_categorization = None)
+        super(ClosureTestDATA, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
         self.flavors_of_interest = additional_options
         if self.flavors_of_interest is None: 
             raise RuntimeError('Input for ClosureTestDATA for flavors_of_interest is None')

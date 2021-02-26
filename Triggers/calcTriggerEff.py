@@ -38,16 +38,16 @@ log = getLogger(args.logLevel)
 #
 if args.isTest: 
     args.isChild = True
-    args.sample = 'HNL-tau-m40'
-    args.subJob = '0'
-    args.year = '2016'
+    if args.sample is None: args.sample = 'HNL-tau-m40'
+    if args.subJob is None: args.subJob = '0'
+    if args.year is None: args.year = '2016'
 
 
 #
 # Load in the sample list 
 #
 from HNL.Samples.sampleManager import SampleManager
-sample_manager = SampleManager(args.year, 'noskim', 'triggerlist_'+str(args.year))
+sample_manager = SampleManager(args.year, 'noskim', 'Triggers/triggerlist_'+str(args.year))
 
 jobs = []
 for sample_name in sample_manager.sample_names:
@@ -89,21 +89,33 @@ def getOutputName(var, istest=False):
 
     if var == 'HNLmass':
         if args.isTest:
-            output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], 'HNLmass')
+            output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year, 'HNLmass')
         else:
-            output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0].rsplit('/')[-1], 'HNLmass')
+            output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0].rsplit('/')[-1], args.year, 'HNLmass')
+        
+        if args.oldTriggers:
+            output_name += '/oldTriggers'
+        else:
+            output_name += '/defaultTriggers'
+
         if args.separateTriggers is not None:
             output_name += '/'+args.separateTriggers
         if args.isChild:
             output_name += '/tmp_HNLmass'
+
         if args.useRef:        output_name += '/'+ sample.name +'_TrigEff_' +subjobAppendix+ '.root'
         else:   output_name += '/'+ sample.name +'_TrigEffnoMET_' +subjobAppendix+ '.root'
 
     else:
         if args.isTest:
-            output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], sample.output)
+            output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year, sample.output)
         else:
-            output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0].rsplit('/')[-1], sample.output)
+            output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0].rsplit('/')[-1], args.year, sample.output)
+
+        if args.oldTriggers:
+            output_name += '/oldTriggers'
+        else:
+            output_name += '/defaultTriggers'
 
         if args.separateTriggers is not None:
             output_name += '/'+args.separateTriggers

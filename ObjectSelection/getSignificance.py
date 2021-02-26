@@ -20,18 +20,23 @@ submission_parser.add_argument('--isTest',   action='store_true', default=False,
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 submission_parser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
+submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 
 argParser.add_argument('--processExistingFiles',   action='store', default=None,  help='Process the existing files. Leave empty for all choices', choices = ['', 'text', 'plots'])
 
 args = argParser.parse_args()
+
+
+from HNL.Tools.logger import getLogger, closeLogger
+log = getLogger(args.logLevel)
 
 #
 # Change some settings if this is a test
 #
 if args.isTest:
     args.isChild = True
-    args.sample = 'HNL-tau-m60'
-    args.subJob = '0'
+    if args.sample is None: args.sample = 'HNL-tau-m60'
+    if args.subJob is None: args.subJob = '0'
     if args.year is None: args.year = '2016'
 
 #
@@ -184,7 +189,6 @@ if args.processExistingFiles is None:
                         elif len(tau_indices) == 1:
                             list_of_hist[algo][iso_wp][ele_wp][mu_wp]['SingleTau'].Fill(.5, lw.getLumiWeight())
 
-
     #
     # Write
     #
@@ -193,15 +197,13 @@ if args.processExistingFiles is None:
     subjobAppendix = '_subJob' + args.subJob if args.subJob else ''
     signalOrBkgr = 'Signal' if 'HNL' in sample.name else 'Background'
     if args.isTest:
-        output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0], args.year, signalOrBkgr, sample.output)
+        output_name = os.path.join(os.getcwd(), 'data', 'testArea',  __file__.split('.')[0].rsplit('/')[-1], args.year, signalOrBkgr, sample.output)
     else:
-        output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.year, signalOrBkgr, sample.output)
+        output_name = os.path.join(os.getcwd(), 'data',  __file__.split('.')[0].rsplit('/')[-1], args.year, signalOrBkgr, sample.output)
     if args.isChild:
         output_name += '/tmp_'+sample.output
     output_name += '/'+ sample.name +'_events' +subjobAppendix+ '.root'
     makeDirIfNeeded(output_name)
-    print output_name
-
 
     out_file = ROOT.TFile(output_name, 'recreate')
     out_file.cd()
@@ -220,7 +222,7 @@ else:
     from HNL.Tools.mergeFiles import merge
     from HNL.ObjectSelection.tauSelector import getCorrespondingLightLepDiscr
     import glob
-    list_to_merge =   [f for f in glob.glob(os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.year, '*', '*'))  if not 'TextResults' in f]
+    list_to_merge =   [f for f in glob.glob(os.path.join(os.getcwd(), 'data',  __file__.split('.')[0].rsplit('/')[-1], args.year, '*', '*'))  if not 'TextResults' in f]
     merge(list_to_merge, __file__, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
 
     def sortkey(c):
@@ -228,16 +230,11 @@ else:
         # return int(mass_dir.split('-M')[-1])
         return int(mass_dir.split('-m')[-1])
 
-    list_of_input = {'Signal': sorted(glob.glob(os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.year, 'Signal', '*', 'events.root')), key=sortkey),
-                    'Background': glob.glob(os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.year, 'Background', '*', 'events.root'))
+    list_of_input = {'Signal': sorted(glob.glob(os.path.join(os.getcwd(), 'data',  __file__.split('.')[0].rsplit('/')[-1], args.year, 'Signal', '*', 'events.root')), key=sortkey),
+                    'Background': glob.glob(os.path.join(os.getcwd(), 'data',  __file__.split('.')[0].rsplit('/')[-1], args.year, 'Background', '*', 'events.root'))
     }
 
     from HNL.Tools.helpers import getObjFromFile, makeDirIfNeeded
-    # def calcSignificance(S, B):
-    #     try:
-    #         return S/sqrt(S+B)
-    #     except:
-    #         return 0.
 
     from  HNL.Tools.histogram import returnSqrt
     def calcSignificance(signal_hist, background_hist):
@@ -274,7 +271,7 @@ else:
 
         # for signal in list_of_input['Signal']:
         #     for channel in ['Ditau', 'SingleTau']:
-        #         out_name = os.path.join(os.getcwd(), 'data', 'Results', __file__.split('.')[0], args.year, 'TextResults', signal.split('/')[-2]+'_'+channel+'.txt')
+        #         out_name = os.path.join(os.getcwd(), 'data', 'Results',  __file__.split('.')[0].rsplit('/')[-1], args.year, 'TextResults', signal.split('/')[-2]+'_'+channel+'.txt')
         #         makeDirIfNeeded(out_name)
         #         out_file = open(out_name, 'w')
         #         list_of_significances = []
@@ -295,7 +292,7 @@ else:
         for channel in ['Ditau', 'SingleTau']:
             for algo in algos.keys():
                 mass_str = '-'.join([str(m) for m in args.masses])
-                out_name_tex = os.path.join(os.getcwd(), 'data', 'Results', __file__.split('.')[0], args.year, 'TextResults', 'tex', mass_str,  channel+'_'+algo+'.txt')
+                out_name_tex = os.path.join(os.getcwd(), 'data', 'Results',  __file__.split('.')[0].rsplit('/')[-1], args.year, 'TextResults', 'tex', mass_str,  channel+'_'+algo+'.txt')
                 makeDirIfNeeded(out_name_tex)
                 out_file_tex = open(out_name_tex, 'w')
                 out_file_tex.write('\\begin{table}[] \n')
@@ -386,16 +383,8 @@ else:
 
                     p = Plot(list_of_hist[channel][algo][ele_wp]['Signal'], tex_names, name = '_'.join([channel, algo, ele_wp]), bkgr_hist = list_of_hist[channel][algo][ele_wp]['Background'], 
                         y_log = True, draw_significance = True, extra_text = extra_text)   
-                    out_dir = os.path.join(os.getcwd(), 'data', 'Results', __file__.split('.')[0], args.year, 'Plots') 
+                    out_dir = os.path.join(os.getcwd(), 'data', 'Results',  __file__.split('.')[0].rsplit('/')[-1], args.year, 'Plots') 
                     if args.masses: out_dir = os.path.join(out_dir, '-'.join([str(m) for m in args.masses]))
                     p.drawHist(output_dir = out_dir, custom_labels = custom_labels, draw_lines = lines_to_draw)                
 
-
-
-
-
-
-
-
-
-
+closeLogger(log)

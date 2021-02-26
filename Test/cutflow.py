@@ -10,9 +10,9 @@ argParser.add_argument('--isTest',   action='store_true', default=False,  help='
 args = argParser.parse_args()
 
 if args.isTest:
-    args.year = '2016'
-    args.sample = 'DYJetsToLL-M-10to50' 
-    args.subJob = 0
+    if args.year is None: args.year = '2016'
+    if args.sample is None: args.sample = 'DYJetsToLL-M-10to50' 
+    if args.subJob is None: args.subJob = 0
 
     from HNL.Tools.logger import getLogger, closeLogger
     log = getLogger('INFO')

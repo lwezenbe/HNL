@@ -5,19 +5,21 @@ import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
 argParser.add_argument('--isTest',     action='store_true',      default=False,   help='Is this a test?')
-argParser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'], required=True)
+argParser.add_argument('--flavor', action='store', default=None,  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
 args = argParser.parse_args()
 
 if args.isTest:
     from HNL.Tools.logger import getLogger, closeLogger
     log = getLogger('INFO')
-    args.year = '2016'
+    if args.year is None: args.year = '2016'
+    if args.flavor is None: args.flavor = 'tau'
 
 #
 # Load in the sample list 
 #
 from HNL.Samples.sampleManager import SampleManager
-sample_manager = SampleManager(args.year, 'noskim', 'signallist_'+str(args.year))
+sample_manager = SampleManager(args.year, 'noskim', 'allsignal_'+str(args.year))
+print sample_manager.sample_names
 
 
 #

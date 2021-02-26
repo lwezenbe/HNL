@@ -101,7 +101,8 @@ def listOfTriggersEwkino(chain):
 
 def passTriggers(chain, analysis = 'HNL'):
     if analysis == 'HNL_old':
-        return applyCustomTriggers(listOfTriggersAN2017014(chain))
+        if chain.year == 2016: return applyCustomTriggers(listOfTriggersAN2017014(chain))
+        else:   return passTriggers(chain, analysis = 'HNL')
     elif analysis == 'ewkino':
         return applyCustomTriggers(listOfTriggersEwkino(chain))
     else:

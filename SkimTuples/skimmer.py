@@ -24,7 +24,7 @@ submission_parser.add_argument('--summaryFile', action='store_true', default=Fal
 submission_parser.add_argument('--genSkim',  action='store_true',      default=False,               help='skim on generator level leptons')
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
 submission_parser.add_argument('--removeOverlap',  action='store_true',      default=False,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
-submission_parser.add_argument('--skimSelection',  action='store',      default=None,               help='Selection for the skim.', choices=['top', 'TTT', 'Luka', 'Old'])
+submission_parser.add_argument('--skimSelection',  action='store',      default='Luka',               help='Selection for the skim.', choices=['top', 'TTT', 'Luka', 'Old'])
 
 argParser.add_argument('--checkLogs',  action='store_true',      default=False,               help='Check if all files completed successfully')
 

@@ -37,10 +37,9 @@ log = getLogger(args.logLevel)
 #
 if args.isTest:
     args.isChild = True
-    args.sample = 'DYJetsToLL-M-50-ext1'
-    # args.sample = 'HNL-tau-m60'
-    args.subJob = '0'
-    args.year = '2016'
+    if args.sample is None: args.sample = 'DYJetsToLL-M-50-ext1'
+    if args.subJob is None: args.subJob = '0'
+    if args.year is None: args.year = '2016'
 
 #
 # All ID's and WP we want to test
@@ -85,9 +84,9 @@ isBkgr = not 'HNL' in sample.name
 #
 from HNL.Tools.helpers import makeDirIfNeeded
 if args.isTest:
-    output_name = os.path.join(os.getcwd(), 'data', 'testArea', os.path.basename(__file__).split('.')[0])
+    output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year)
 else:
-    output_name = os.path.join(os.getcwd(), 'data', os.path.basename(__file__).split('.')[0])
+    output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0].rsplit('/')[-1], args.year)
 if args.includeReco: output_name = os.path.join(output_name, 'includeReco')
 if args.onlyReco: output_name = os.path.join(output_name, 'onlyReco')
 output_name = os.path.join(output_name, sample.output)
@@ -162,7 +161,7 @@ for entry in event_range:
         if not selectGenLeptonsGeneral(chain, chain, 3): continue
         chain.pt_l = chain.l_pt[0]
         chain.eta_l = chain.l_eta[0]   
-        matched_l = matchGenToReco(chain, chain.l1)
+        matched_l = matchGenToReco(chain, chain.l_indices[0])
         for i, algo in enumerate(algos):
             passed_tot = []
             for wp in algos[algo]:

@@ -4,6 +4,8 @@ WP = { (2016, 'loose', 'CSV') : 0.2217,
         (2016, 'tight', 'CSV') : 0.8953,
 
         (2016, 'loose', 'AN2017014') : 0.5426,
+        (2017, 'loose', 'AN2017014') : 0.5803,              #This number was copied from ewkino, 2017 was not used in AN2017014
+        (2018, 'loose', 'AN2017014') : 0.5803,              #This number was copied from ewkino, 2018 was not used in AN2017014
         
         (2017, 'loose', 'CSV') : 0.1522,
         (2017, 'medium', 'CSV') : 0.4941,

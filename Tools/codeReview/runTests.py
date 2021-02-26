@@ -12,6 +12,7 @@ from HNL.Tools.jobSubmitter import launchCream02
 from HNL.Tools.helpers import makeDirIfNeeded
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--allCombinations',  action='store_true', default=False,  help='Run code that makes long list of all arguments to be combined in tests')
+argParser.add_argument('--rerun',  action='store_true', default=False,  help='rerun failed jobs')
 argParser.add_argument('--checkLogs',  action='store_true', default=False,  help='Run code that makes long list of all arguments to be combined in tests')
 args = argParser.parse_args()
 
@@ -90,15 +91,21 @@ if args.allCombinations:
     if args.checkLogs:
         failed_jobs = []
 
+    job_number = 0
     for code in code_to_test:
         out_name_base = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Tools', 'codeReview', 'data', 'output', 'runTests', code[0].split(' ')[0].split('.')[0]))
         makeDirIfNeeded(out_name_base+'/x')
         combinations = createCommandList(code)
-        for i, comb in enumerate(combinations):
-            out_name = str(i)+'.txt'
+        for comb in combinations:
+            out_name = str(job_number)+'.txt'
             log_name = os.path.join(out_name_base, out_name)
-            if args.checkLogs and not successfullJob(log_name): failed_jobs.append([log_name, comb])
+            if args.checkLogs and not successfullJob(log_name): 
+                if not args.rerun:
+                    failed_jobs.append([log_name, comb])
+                else:
+                    launchCream02(os.path.join(base_path, comb), log_name, jobLabel='test')
             if not args.checkLogs: launchCream02(os.path.join(base_path, comb), log_name, jobLabel='test')
+            job_number += 1
     if args.checkLogs:
         if len(failed_jobs) != 0:
             print "FOLLOWING JOBS FAILED"
@@ -108,6 +115,7 @@ if args.allCombinations:
                 print "JOB:", l[1]
         else:
             print "All jobs completed successfully!"
+    print job_number
 
 else:
     print "This mode requires input in data/input/codeToTest_custom.conf. Make sure you have done that"

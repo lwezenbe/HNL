@@ -65,9 +65,10 @@ log = getLogger(args.logLevel)
 #
 if args.isTest:
     args.isChild = True
-    args.subJob = '0'
+    if args.subJob is None: args.subJob = '0'
     if args.year is None: args.year = '2016'
     if args.sample is None: args.sample = 'WZ'
+    if len(args.discriminators) == 0: args.discriminators.append('iso')
 
 #
 # Make sure we only run over iso when running reco efficiency

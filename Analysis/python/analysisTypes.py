@@ -20,9 +20,9 @@ var_gen_3l = {'minMos':        (lambda c : c.minMos,   np.arange(0., 120., 12.),
         'l1phi':      (lambda c : c.l_eta[l1],       np.arange(0, 3.0, 0.5),       ('#phi (l1)', 'Events')),
         'l2phi':      (lambda c : c.l_eta[l2],       np.arange(0, 3.0, 0.5),       ('#phi (l2)', 'Events')),
         'l3phi':      (lambda c : c.l_eta[l3],       np.arange(0, 3.0, 0.5),       ('#phi (l3)', 'Events')),
-        'l1vispt':      (lambda c : c.l_vispt[l1],       np.arange(0., 100., 2.),       ('p_{T}^{vis} (l1) [GeV]', 'Events')),
-        'l2vispt':      (lambda c : c.l_vispt[l2],       np.arange(0., 100., 2.),       ('p_{T}^{vis} (l2) [GeV]', 'Events')),
-        'l3vispt':      (lambda c : c.l_vispt[l3],       np.arange(0., 100., 2.),       ('p_{T}^{vis} (l3) [GeV]' 'Events'))
+        # 'l1vispt':      (lambda c : c.l_vispt[l1],       np.arange(0., 100., 2.),       ('p_{T}^{vis} (l1) [GeV]', 'Events')),
+        # 'l2vispt':      (lambda c : c.l_vispt[l2],       np.arange(0., 100., 2.),       ('p_{T}^{vis} (l2) [GeV]', 'Events')),
+        # 'l3vispt':      (lambda c : c.l_vispt[l3],       np.arange(0., 100., 2.),       ('p_{T}^{vis} (l3) [GeV]' 'Events'))
         }
 
 var_reco_3l = {

@@ -1,4 +1,4 @@
-from HNL.Samples.sample import Sample, getListOfSampleNames, createSampleList, getSampleFromList
+from HNL.Samples.sample import Sample, getListOfSampleNames, createSampleList, getSampleFromList, SkimSample
 import os
 
 #

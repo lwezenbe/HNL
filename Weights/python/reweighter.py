@@ -41,7 +41,7 @@ if __name__ == '__main__':
     from HNL.Tools.logger import getLogger, closeLogger
     log = getLogger('INFO')
 
-    sm = SampleManager(2016, 'noskim', 'test')
+    sm = SampleManager(2016, 'noskim', 'fulllist_2016')
 
     s = sm.getSample('ZZTo4L')
 

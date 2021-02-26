@@ -200,15 +200,13 @@ def isTightMuonTTT(chain, index):
 
 def isLooseMuonLuka(chain, index):
     if chain._lFlavor[index] != 1:              return False
-    if chain._lPt[index] <= 5: return False
-    if abs(chain._lEta[index]) >= 2.4:           return False
+    if chain._lPt[index] <= 5:                  return False
+    if abs(chain._lEta[index]) >= 2.4:          return False
     if abs(chain._dxy[index]) >= 0.05:          return False
     if abs(chain._dz[index]) >= 0.1:            return False
     if chain._miniIso[index] >= 0.4:            return False
     if chain._3dIPSig[index] >= 8:              return False
     if not chain._lPOGMedium[index]:            return False
-    return True
-
     return True
 
 def isFOMuonLuka(chain, index):
