@@ -94,13 +94,17 @@ def launchOnCondor(logfile, script, arguments, i, job_label = None):
 
 def cleanJobFiles(argparser, script, sub_log = None):
     args         = argparser.parse_args()
+    submitArgs   = getSubmitArgs(argparser, args)
+    arg_string = getArgsStr(submitArgs, to_ignore=['isChild'])
     if args.batchSystem != "HTCondor":
         pass
     else:
-        submitArgs   = getSubmitArgs(argparser, args)
-        arg_string = getArgsStr(submitArgs, to_ignore=['isChild'])
-        logbase = os.path.realpath(os.path.join('jobs', os.path.basename(script).split('.')[0]+(('-'+sub_log) if sub_log else ''), arg_string))
-        os.system('rm -r '+logbase)
+        jobbase = os.path.realpath(os.path.join('jobs', os.path.basename(script).split('.')[0]+(('-'+sub_log) if sub_log else ''), arg_string))
+        os.system('rm -r '+jobbase)
+    
+    logdir  = os.path.join('log', 'Latest', os.path.basename(script).split('.')[0]+(('-'+sub_log) if sub_log else ''), arg_string)
+    clearLogs(logdir)
+
 
 from HNL.Tools.logger import clearLogs
 import json
@@ -126,9 +130,9 @@ def getArgsStr(arg_list, to_ignore):
         if str(arg) in to_ignore:
             continue
         elif isinstance(arg_list[arg], list):
-            args_str += '_' + str(arg) + '-' + '-'.join([str(x) for x in sorted(arg_list[arg])])
+            args_str += '_' + str(arg) + '-' + '-'.join([str(x).replace('/', '-') for x in sorted(arg_list[arg])])
         else:
-            args_str += '_' + str(arg) + '-' + str(arg_list[arg])
+            args_str += '_' + str(arg) + '-' + str(arg_list[arg]).replace('/', '-')
     return args_str 
 
 def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, additionalArgs=None, subLog=None, wallTime='15', queue='localgrid', cores=1, jobLabel='', resubmission = False):
@@ -147,10 +151,15 @@ def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, additio
     
     #Do not include isChild in arg_string
 
-    logbase = os.path.join('log', os.path.basename(script).split('.')[0]+(('-'+subLog) if subLog else ''), arg_string)
-    if not resubmission: clearLogs(logbase)
-    logbase += '/Latest'
+    logbase = os.path.join('log', 'Latest', os.path.basename(script).split('.')[0]+(('-'+subLog) if subLog else ''), arg_string)
+    if not resubmission: makeDirIfNeeded(logbase+'/x')
     script = os.path.realpath(script)
+
+    merge_check_pass = logbase.replace('Latest', 'Merge')
+    merge_check_pass += '/shouldMerge.txt'
+    makeDirIfNeeded(merge_check_pass)
+    with open(merge_check_pass, 'w') as filetowrite:
+        filetowrite.write('True')
 
     # save arguments for later checks
     if not resubmission:
@@ -206,7 +215,7 @@ def checkCompletedJobs(script, subJobList, argparser, subLog = None, additionalA
     arg_string = getArgsStr(submitArgs, to_ignore=['isChild'])
 
     for i, subJob in enumerate(subJobList):
-        logdir  = os.path.join('log', os.path.basename(script).split('.')[0]+(('-'+subLog) if subLog else ''), arg_string, 'Latest', *(str(s) for s in subJob[:-1]))
+        logdir  = os.path.join('log', 'Latest', os.path.basename(script).split('.')[0]+(('-'+subLog) if subLog else ''), arg_string, *(str(s) for s in subJob[:-1]))
         if args.batchSystem != 'HTCondor':
             logfile = os.path.join(logdir, str(subJob[-1]) + ".log")
         else:
@@ -222,6 +231,29 @@ def checkCompletedJobs(script, subJobList, argparser, subLog = None, additionalA
     else:
         print "All jobs completed successfully!"
         return None
+
+def checkShouldMerge(script, argparser, subLog = None, additionalArgs=None):
+    args = argparser.parse_args()
+    submitArgs   = getSubmitArgs(argparser, args, additionalArgs=additionalArgs)
+    arg_string = getArgsStr(submitArgs, to_ignore=['isChild'])
+
+    path_to_check = os.path.join('log', 'Merge', os.path.basename(script).split('.')[0]+(('-'+subLog) if subLog else ''), arg_string, 'shouldMerge.txt')
+    with open(path_to_check) as f:
+        first_line = f.readline()
+
+    if first_line == 'True':
+        return True
+    else:
+        return False
+
+def disableShouldMerge(script, argparser, subLog = None, additionalArgs=None):
+    args = argparser.parse_args()
+    submitArgs   = getSubmitArgs(argparser, args, additionalArgs=additionalArgs)
+    arg_string = getArgsStr(submitArgs, to_ignore=['isChild'])
+
+    path_to_check = os.path.join('log', 'Merge', os.path.basename(script).split('.')[0]+(('-'+subLog) if subLog else ''), arg_string, 'shouldMerge.txt')
+    with open(path_to_check, 'w') as filetowrite:
+        filetowrite.write('False')
 
 if __name__ == '__main__':
     launchCondor('a', 'b', 'c', 0)
