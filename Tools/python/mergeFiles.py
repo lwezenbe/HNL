@@ -14,11 +14,12 @@ def getListOfGroupID(path):
     return list_of_id
 
 def checkForMerge(paths):
-    
-    # for i, p in enumerate(paths):
-    #     if not 'tmp' in p:      paths[i] = None
-    # return [p for p in paths if p is not None] 
-    return [p for p in paths if 'tmp' in p]
+    merge_paths = [p for p in paths if 'tmp' in p]
+    if len(merge_paths) > 0:
+        return [p for p in paths if 'tmp' in p]
+    else:
+        return None
+
 
 #
 #   Function to do the actual merging
@@ -29,7 +30,7 @@ def merge_single_path(path, groups_to_merge=None):
     merge_paths = getSubDir(path)
     merge_paths = checkForMerge(merge_paths)
 
-    if not merge_paths:
+    if merge_paths is None:
         return
 
     for p in merge_paths:
@@ -37,11 +38,17 @@ def merge_single_path(path, groups_to_merge=None):
             if groups_to_merge is not None and group_id not in groups_to_merge: continue
             os.system('hadd  -f '+ p.rsplit('/', 1)[0]+ '/'+group_id+'.root '+p+'/*_'+group_id+'_*root')
             os.system('rm -r '+p+'/*_'+group_id+'_*root')
+        if len(os.listdir(p)) == 0:
+            os.system('rm -r '+p)
 
-from HNL.Tools.jobSubmitter import checkCompletedJobs, submitJobs, cleanJobFiles
+from HNL.Tools.jobSubmitter import checkCompletedJobs, submitJobs, cleanJobFiles, checkShouldMerge, disableShouldMerge
 #For now also have argparser in there just to be able to automatically resubmit
 def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False, groups_to_merge=None):
-    
+
+    if not checkShouldMerge(script, argparser):
+        print "Nothing to merge"
+        return
+
     if not istest:
         if argparser is None:
             pass
@@ -61,3 +68,5 @@ def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False
     for f in paths:
         if '.txt' in f or '.root' in f: continue
         merge_single_path(f, groups_to_merge=groups_to_merge)
+
+    disableShouldMerge(script, argparser)
