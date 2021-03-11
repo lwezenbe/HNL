@@ -1,5 +1,5 @@
 default_tau_algo = 'HNL'
-default_light_algo = 'Luka'
+default_light_algo = 'HNL'
 default_jet_selection = 'HNL'
 default_tau_wp = 'tight'
 default_ele_wp = 'tight'

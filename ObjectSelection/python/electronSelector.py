@@ -234,7 +234,7 @@ def isTightElectronttH(chain, index):
     return True
 
 #    
-# tZq selection
+# tZq MVA selection
 #
 def isLooseElectrontZq(chain, index):
     
@@ -333,15 +333,10 @@ def isLooseElectronTTT(chain, index):
 
 def isFOElectronTTT(chain, index):
     if not isLooseElectronTTT(chain, index):      return False
-    # print 'is loose'
     if chain._lPt[index] < 10: return False
-    # print 'pt < 10 GeV'
     if chain._lElectronHOverE[index] >= 0.10:    return False
-    # print 'H/E'
     if chain._lElectronEInvMinusPInv[index] <= -0.04:    return False
-    # print '1/E-1/p'
     if not chain._lElectronPassConvVeto[index]: return False
-    # print 'conv veto'
     # if chain._lElectronMissingHits[index] > 1:  return False
     #Barrel
     if abs(chain._lEta[index]) <= 1.479:
@@ -349,16 +344,10 @@ def isFOElectronTTT(chain, index):
     #endcap
     else:
         if chain._lElectronSigmaIetaIeta[index] >= 0.03:    return False
-    # print 'sigma ieta ieta'
-    # print 'leptonMVA', chain._leptonMvaTOP[index]
     if chain._leptonMvaTOP[index] <= 0.4:
         if not passMVAloose(chain, index):  return False
-        # print 'MVAloose'
         if chain._ptRatio[index] < 0.5:     return False
-        # print 'ptratio'
         if chain.year == 2016:
-            # print 'pt', chain._lPt[index]
-            # print (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]), slidingCutElectron(chain, index, 25., 0.5, 50., 0.05)
             if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutElectron(chain, index, 25., 0.5, 50., 0.05): return False        
         elif chain.year == 2017:
             if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutElectron(chain, index, 25., 0.5, 50., 0.08): return False        
@@ -393,7 +382,7 @@ def isFOElectronLuka(chain, index):
     if chain._lElectronHOverE[index] >= 0.10:    return False
     if chain._lElectronEInvMinusPInv[index] <= -0.04:    return False
     if not chain._lElectronPassConvVeto[index]: return False
-    # if not chain._lElectronChargeConst[index]: return False
+    if not chain._lElectronChargeConst[index]: return False
     #Barrel
     if abs(chain._lEtaSC[index]) <= 1.479:
         if chain._lElectronSigmaIetaIeta[index] >= 0.011:    return False
@@ -411,6 +400,44 @@ def isTightElectronLuka(chain, index):
     if chain._leptonMvaTOP[index] <= 0.4: return False        
     return True
 
+#
+# HNL selection
+#
+def isLooseElectronHNL(chain, index):
+    if chain._lFlavor[index] != 0:              return False
+    if not isCleanFromMuons(chain, index, 'HNL'):      return False
+    if chain._lPtCorr[index] < 5: return False
+    if abs(chain._lEta[index]) > 2.5: return False
+    if abs(chain._dxy[index]) >= 0.05:          return False
+    if abs(chain._dz[index]) >= 0.1:            return False
+    if chain._miniIso[index] >= 0.4:            return False
+    if chain._3dIPSig[index] >= 8:              return False
+    if chain._lElectronMissingHits[index] >= 2:  return False
+    return True
+
+def isFOElectronHNL(chain, index):
+    if not isLooseElectronHNL(chain, index):      return False
+    if chain._lPtCorr[index] <= 10: return False
+    if chain._lElectronHOverE[index] >= 0.10:    return False
+    if chain._lElectronEInvMinusPInv[index] <= -0.04:    return False
+    if not chain._lElectronPassConvVeto[index]: return False
+    #Barrel
+    if abs(chain._lEtaSC[index]) <= 1.479:
+        if chain._lElectronSigmaIetaIeta[index] >= 0.011:    return False
+    #endcap
+    else:
+        if chain._lElectronSigmaIetaIeta[index] >= 0.03:    return False
+    if chain._leptonMvaTOP[index] <= 0.4:
+        if not chain._lElectronPassMVAFall17NoIsoWPLoose[index]: return False
+        if chain._ptRatio[index] < 0.5:     return False
+        if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) > 0.5: return False
+    return True
+
+def isTightElectronHNL(chain, index):
+    if not isFOElectronHNL(chain, index):      return False
+    if chain._leptonMvaTOP[index] <= 0.4: return False        
+    return True
+
 
 #
 # General functions for selection
@@ -422,6 +449,7 @@ def isLooseElectron(chain, index, algo):
     elif algo == 'leptonMVAtop':        return isLooseElectronTop(chain, index)
     elif algo == 'TTT':                 return isLooseElectronTTT(chain, index)
     elif algo == 'Luka':                 return isLooseElectronLuka(chain, index)
+    elif algo == 'HNL':                 return isLooseElectronHNL(chain, index)
     elif algo == 'ewkino':              return isLooseElectronEwkino(chain, index)
     else:
         print 'Wrong input for "algo" in isLooseElectron'
@@ -434,6 +462,7 @@ def isFOElectron(chain, index, algo):
     elif algo == 'leptonMVAtop':        return isFOElectronTop(chain, index)
     elif algo == 'TTT':                 return isFOElectronTTT(chain, index)
     elif algo == 'Luka':                return isFOElectronLuka(chain, index)
+    elif algo == 'HNL':                return isFOElectronHNL(chain, index)
     elif algo == 'ewkino':              return isFOElectronEwkino(chain, index)
     else:
         print 'Wrong input for "algo" in isFOElectron'
@@ -446,6 +475,7 @@ def isTightElectron(chain, index, algo):
     elif algo == 'leptonMVAtop':        return isTightElectronTop(chain, index)
     elif algo == 'TTT':                 return isTightElectronTTT(chain, index)
     elif algo == 'Luka':                 return isTightElectronLuka(chain, index)
+    elif algo == 'HNL':                 return isTightElectronHNL(chain, index)
     elif algo == 'ewkino':              return isTightElectronEwkino(chain, index)
     else:
         print 'Wrong input for "algo" in isTightElectron'
