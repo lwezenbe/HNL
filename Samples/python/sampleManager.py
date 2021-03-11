@@ -8,7 +8,7 @@ import os
 # No need to include the extensions in the sublists, it will handle that
 #
 
-ALLOWED_SKIMS = ['noskim', 'Reco', 'TTT']
+ALLOWED_SKIMS = ['noskim', 'Reco', 'TTT', 'tZqNewFR']
 BASE_PATH = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Samples', 'InputFiles')
 SAMPLE_GROUPS = {
     'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],

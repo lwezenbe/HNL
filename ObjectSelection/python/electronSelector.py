@@ -503,7 +503,5 @@ def electronConeCorrection(chain, index, algo = None):
     algo = checkElectronAlgorithm(chain, algo)
     if algo == 'cutbased':
         return 1+max(0., chain._relIso[l]-0.1)
-    elif algo == 'TTT':
-        return 0.67/chain._ptRatio[index]
     else:
-        return 0.75/chain._ptRatio[index]
+        return 0.67/chain._ptRatio[index]

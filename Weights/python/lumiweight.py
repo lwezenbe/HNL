@@ -2,7 +2,8 @@ from HNL.Samples.sample import getListOfPathsWithSameOutput
 LUMINOSITY_MAP = {
                     # 2016 : 35546.,
                     # 2016 : 35900.,
-                    2016 : 35545.499064,
+                    # 2016 : 35545.499064,
+                    2016 : 35920.,
                     2017 : 41529.548819,
                     2018 : 59688.059536,
                     }
@@ -25,7 +26,11 @@ class LumiWeight:
 
     def getLumiWeight(self):
         if self.skimmed:
-            return self.sample.chain.lumiweight
+            try:
+                return self.sample.chain.lumiweight
+            except:
+                self.lumi_weight = self.sample.chain._weight*(self.sample.xsec*LUMINOSITY_MAP[self.sample.chain.year])/self.total_hcount.GetSumOfWeights()
+                return self.lumi_weight 
         elif self.sample.is_data:
             return 1.
         else:

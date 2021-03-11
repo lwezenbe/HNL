@@ -45,7 +45,7 @@ from HNL.Tools.jobSubmitter import checkCompletedJobs, submitJobs, cleanJobFiles
 #For now also have argparser in there just to be able to automatically resubmit
 def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False, groups_to_merge=None):
 
-    if not checkShouldMerge(script, argparser):
+    if not istest and not checkShouldMerge(script, argparser):
         print "Nothing to merge"
         return
 
@@ -69,4 +69,4 @@ def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False
         if '.txt' in f or '.root' in f: continue
         merge_single_path(f, groups_to_merge=groups_to_merge)
 
-    disableShouldMerge(script, argparser)
+    if not istest: disableShouldMerge(script, argparser)
