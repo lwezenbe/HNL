@@ -111,8 +111,8 @@ region_to_select = args.tauRegion if args.flavor == 'tau' else 'LightLeptonFakes
 # Define output name
 #
 subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
+data_str = 'DATA' if args.inData else 'MC'
 def getOutputBase(region):
-    data_str = 'DATA' if args.inData else 'MC'
     if not args.isTest:
         output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0].rsplit('/', 1)[-1], args.year, data_str, args.flavor, '-'.join([region, args.selection]))
     else:
@@ -213,7 +213,6 @@ if not args.makePlots:
     from HNL.Triggers.triggerSelection import passTriggers
 
     for entry in event_range:
-        # if entry != 405: continue
         chain.GetEntry(entry)
         progress(entry - event_range[0], len(event_range))
 
@@ -222,10 +221,10 @@ if not args.makePlots:
         #
         #Triggers
         #
-        if args.selection == 'AN2017014':
-            if not cutter.cut(passTriggers(chain, 'HNL_old'), 'pass_triggers'): continue
-        else:
-            if not cutter.cut(passTriggers(chain, 'HNL'), 'pass_triggers'): continue
+        # if args.selection == 'AN2017014':
+        #     if not cutter.cut(passTriggers(chain, 'HNL_old'), 'pass_triggers'): continue
+        # else:
+        #     if not cutter.cut(passTriggers(chain, 'HNL'), 'pass_triggers'): continue
 
         # if not cutter.cut(passTriggers(chain, 'ewkino'), 'pass_triggers'): continue
 
@@ -269,17 +268,23 @@ else:
     from HNL.Plotting.plot import Plot
 
     base_path_in = getOutputBase(region_to_select)
-    base_path_out = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'Results', 
+    if args.isTest:
+        base_path_out = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'testArea', 'Results', 
                         __file__.split('.')[0].rsplit('/', 1)[-1], data_str, args.year, args.flavor, '-'.join([region_to_select, args.selection]))
-    in_files = glob.glob(os.path.join(base_path, '*'))
+    else:
+        base_path_out = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'Results', 
+                        __file__.split('.')[0].rsplit('/', 1)[-1], data_str, args.year, args.flavor, '-'.join([region_to_select, args.selection]))
+                    
+    in_files = glob.glob(os.path.join(base_path_in, '*'))
     merge(in_files, __file__, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
 
     if args.inData:
-        os.system("hadd -f "+base_path+"/events.root "+base_path+'/*/events.root')
+        os.system("hadd -f "+base_path_in+"/events.root "+base_path_in+'/*/events.root')
 
     samples_to_plot = ['Data'] if args.inData else sample_manager.getOutputs()
 
     for sample_output in samples_to_plot:
+        if args.isTest and sample_output != 'DY': continue
         if args.inData:
             output_dir = makePathTimeStamped(base_path_out)
             in_file = base_path_in+'/events.root'

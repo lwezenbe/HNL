@@ -26,6 +26,7 @@ submission_parser.add_argument('--noskim', action='store_true', default=False,  
 submission_parser.add_argument('--isCheck', action='store_true', default=False,  help='Check the setup by using the exact same region as the ttl measurement')
 submission_parser.add_argument('--splitInJets', action='store_true', default=False,  help='Split FR in njets')
 submission_parser.add_argument('--splitInBJets', action='store_true', default=False,  help='Use ttbar FR if b-jet around else use DY FR')
+submission_parser.add_argument('--splitInCategories', action='store_true', default=False,  help='Split into different categories')
 submission_parser.add_argument('--inData',   action='store_true', default=False,  help='Run in data')
 submission_parser.add_argument('--region', action='store', default=None, type=str,  help='What region was the fake rate you want to use measured in?', 
     choices=['TauFakesDY', 'TauFakesTT', 'Mix'])
@@ -181,6 +182,12 @@ def getOutputName():
     makeDirIfNeeded(output_name)
     return output_name
 
+def getCategories():
+    if args.splitInCategories:
+        return ANALYSIS_CATEGORIES.keys() + ['total']
+    else:
+        return ['total']
+
 from HNL.BackgroundEstimation.fakerateArray import loadFakeRatesWithJetBins, readFakeRatesWithJetBins, readFakeRatesWithBJetBins
 #
 #   Code to process events
@@ -214,6 +221,7 @@ if not args.makePlots:
 
     chain.HNLmass = sample.getMass()
     chain.year = int(args.year)
+    chain.selection = args.selection
 
     #
     # Get luminosity weight
@@ -248,8 +256,6 @@ if not args.makePlots:
             fakerate['tau'] = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, data_str, 'tau')), 'tau', args.inData)
         else:
             fakerate['tau'] = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, data_str, 'tau')), 'tau', args.inData)
-    # fakerate['ele'] = FakeRateEmulator('h_tight_e', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join('data','FakeRates', args.year, 'FR_QCD_20201027_'+args.year+'.root'))
-    # fakerate['ele'] = loadFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, data_str, 'e')), 'e')
 
     if 'ele' in args.flavorToTest: 
         if args.inData:
@@ -265,7 +271,7 @@ if not args.makePlots:
             fakerate['mu'] = FakeRateEmulator('fakeRate_muon_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data','FakeRates', args.year, 'Lukav2', 'fakeRateMap_MC_muon_'+args.year+'.root'))
 
     co = {}
-    for c in ANALYSIS_CATEGORIES.keys() + ['total']:
+    for c in getCategories():
         co[c] = {}
         for v in var:
             co[c][v] = ClosureObject('closure-'+v+'-'+c, var[v][0], var[v][2], getOutputName(), bins = var[v][1])
@@ -295,10 +301,11 @@ if not args.makePlots:
             if not es.selector.passedFilter(cutter, args.region): continue
         else:
             if not es.passedFilter(cutter): continue
+            # if not es.selector.passedFilter(cutter, only_electrons = True): continue
             
         if args.inData and not chain.is_data:
             fake_index = es.selector.getFakeIndex()
-            if not chain._lIsPrompt[chain.l_indices[fake_index]]: continue
+            if chain.l_isfake[fake_index]: continue
 
         cat = ec.returnAnalysisCategory()
 
@@ -320,22 +327,24 @@ if not args.makePlots:
         
         if is_observed: fake_factor = -999.
 
+        weight = reweighter.getLumiWeight()
+
         for v in var:
             if v == 'ptFakes' or v == 'etaFakes':
                 #Special case, only for taus, in which case there is only one tau which is in the last position
                 if args.isCheck:
-                    co[cat][v].fillClosure(chain, 1., fake_factor, index=2)
-                    co['total'][v].fillClosure(chain, 1., fake_factor, index=2)
+                    if args.splitInCategories: co[cat][v].fillClosure(chain, weight, fake_factor, index=2)
+                    co['total'][v].fillClosure(chain, weight, fake_factor, index=2)
                 else:
                     #General case
                     for l in es.selector.loose_leptons_of_interest:
-                        co[cat][v].fillClosure(chain, 1., fake_factor, index=l)
-                        co['total'][v].fillClosure(chain, 1., fake_factor, index=l)
+                        if args.splitInCategories: co[cat][v].fillClosure(chain, weight, fake_factor, index=l)
+                        co['total'][v].fillClosure(chain, weight, fake_factor, index=l)
             else:
-                co[cat][v].fillClosure(chain, 1., fake_factor)
-                co['total'][v].fillClosure(chain, 1., fake_factor)
+                if args.splitInCategories: co[cat][v].fillClosure(chain, weight, fake_factor)
+                co['total'][v].fillClosure(chain, weight, fake_factor)
     
-    for i, c in enumerate(ANALYSIS_CATEGORIES.keys() + ['total']):
+    for i, c in enumerate(getCategories()):
         for j, v in enumerate(var):
             if i == 0 and j == 0:
                 co[c][v].write(is_test=args.isTest)
@@ -374,19 +383,19 @@ else:
         if 'isCheck' in in_file and not args.isCheck: continue
         sample_name = in_file.rsplit('/', 1)[-1]
         closureObjects[sample_name] = {}
-        for c in ANALYSIS_CATEGORIES.keys() + ['total']:
+        for c in getCategories():
             closureObjects[sample_name][c] = {}
             for v in var:
                 closureObjects[sample_name][c][v] = ClosureObject('closure-'+v+'-'+c, None, None, in_file+'/events.root')
 
     if not args.inData:
         for sample_name in closureObjects.keys():
-            for c in ANALYSIS_CATEGORIES.keys() + ['total']:
+            for c in getCategories():
                 for v in var:
                     p = Plot(name = v, signal_hist = closureObjects[sample_name][c][v].getObserved(), bkgr_hist = closureObjects[sample_name][c][v].getSideband(), color_palette='Black', color_palette_bkgr='Stack', tex_names = ["Observed", 'Predicted'], draw_ratio = True)
                     p.drawHist(output_dir = output_dir+'/'+sample_name+'/'+c, draw_option='EP')
     else:
-        for c in ANALYSIS_CATEGORIES.keys() + ['total']:
+        for c in getCategories():
             for v in var:
                 backgrounds = [closureObjects["Data"][c][v].getSideband()]
                 background_names = ['Predicted']

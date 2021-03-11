@@ -6,6 +6,7 @@ from HNL.ObjectSelection.leptonSelector import isGoodLepton
 #
 def isCleanFromLeptons(chain, index, wp):
     for l in xrange(chain._nL):
+    # for l in xrange(chain._nLight):
         if not isGoodLepton(chain, l, wp): continue
         if deltaR(chain._lEta[l], chain._jetEta[index], chain._lPhi[l], chain._jetPhi[index]) < 0.4: return False
     return True
@@ -44,7 +45,7 @@ def isGoodJetTTT(chain, index, cleaned = 'loose'):
 
 def isGoodJetLuka(chain, index, cleaned = 'loose'):
     if chain._jetPt[index] < 25:        return False
-    if abs(chain._jetEta[index]) > 5: return False
+    if abs(chain._jetEta[index]) > 5.: return False
     if not chain._jetIsTight[index]:    return False
     if cleaned is not None and not isCleanFromLeptons(chain, index, cleaned):       return False
     return True
@@ -72,6 +73,8 @@ def isGoodJet(chain, index, cleaned = None, selection = None):
         return isGoodJetAN2017014(chain, index, cleaned = cleaned)
     elif selection == 'TTT':
         return isGoodJetTTT(chain, index, cleaned = cleaned)
+    elif selection == 'Luka':
+        return isGoodJetLuka(chain, index, cleaned = cleaned)
     else:
         return True
 

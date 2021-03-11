@@ -55,16 +55,21 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
     chain.leptons = []
 
     for l in xrange(collection):
-        if chain._lFlavor[l] == 0: workingpoint = chain.obj_sel['ele_wp']
-        elif chain._lFlavor[l] == 1: workingpoint = chain.obj_sel['mu_wp']
-        elif chain._lFlavor[l] == 2: workingpoint = chain.obj_sel['tau_wp']
-        else: raise RuntimeError('In selectLeptonsGeneral: flavor provided is neither an electron, muon or tau')
+        if chain._lFlavor[l] == 0: 
+            workingpoint = chain.obj_sel['ele_wp']
+            pt_to_use = chain._lPtCorr[l]
+        elif chain._lFlavor[l] == 1: 
+            workingpoint = chain.obj_sel['mu_wp']
+            pt_to_use = chain._lPtCorr[l]
+        elif chain._lFlavor[l] == 2: 
+            workingpoint = chain.obj_sel['tau_wp']
+            pt_to_use = chain._lPt[l]
+        else: 
+            raise RuntimeError('In selectLeptonsGeneral: flavor provided is neither an electron, muon or tau')
     
         if isGoodLepton(chain, l):
-            chain.leptons.append((chain._lPt[l], l))
+            chain.leptons.append((pt_to_use, l)) 
 
-    if cutter is not None:
-        cutter.cut(len(chain.leptons) >= nL, 'at_least_'+str(nL)+'_lep')
 
     if len(chain.leptons) != nL:  return False
 
