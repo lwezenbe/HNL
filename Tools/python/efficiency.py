@@ -112,6 +112,14 @@ class Efficiency(object):
         self.efficiency_num.add(other_efficiency.efficiency_num)
         self.efficiency_denom.add(other_efficiency.efficiency_denom)
         return
+
+    #
+    # Efficiency objects just use num and denom, so we can just add those of different objects together
+    # and getEfficiency should still be correct
+    #
+    def addNumeratorOnly(self, other_efficiency):
+        self.efficiency_num.add(other_efficiency.efficiency_num)
+        return
     
 
     def write(self, append = False, name=None, is_test=False):
