@@ -21,7 +21,7 @@ submission_parser.add_argument('--summaryFile', action='store_true', default=Fal
 submission_parser.add_argument('--noskim', action='store_true', default=False,  help='Use unskimmed files')
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
-submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
+submission_parser.add_argument('--strategy',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
 submission_parser.add_argument('--region',   action='store', default='baseline', 
     help='apply the cuts of high or low mass regions, use "all" to run both simultaniously', choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZ', 'WZ', 'Conversion'])
 
@@ -38,7 +38,7 @@ import os
 from HNL.Tools.helpers import isValidRootFile, makeDirIfNeeded
 from HNL.Weights.reweighter import Reweighter
 from random import randrange
-
+nl = 3 if args.region != 'ZZCR' else 4
 
 #
 # Set some args for when performing a test
@@ -54,7 +54,7 @@ if args.isTest:
 #Load in samples
 #
 from HNL.Samples.sampleManager import SampleManager
-file_list = 'fulllist_'+str(args.year)+'_mconly' if args.customList is None else args.customList
+file_list = 'TMVA/fulllist_'+str(args.year)+'_mconly' if args.customList is None else args.customList
 skim_str = 'noskim' if args.noskim else 'Reco'
 sample_manager = SampleManager(args.year, skim_str, file_list)
 jobs = []
@@ -65,7 +65,6 @@ for sample_name in sample_manager.sample_names:
         jobs += [(sample.name, str(njob))]
 
 if not args.merge:
-
 
     #
     # Submit subjobs
@@ -98,34 +97,42 @@ if not args.merge:
     # Create new reduced tree (except if it already exists and overwrite option is not used)
     #
     output_base = os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL')) if not args.isTest else os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'testArea'))
-    # output_base = os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL'))
 
     signal_str = 'Signal' if chain.is_signal else 'Background'
-    output_name = os.path.join(output_base, 'TMVA', str(args.year), args.region, signal_str, 'tmp_'+sample.output, sample.output+'_'+sample.name + '_' + str(args.subJob) + '.root')
+    output_name = os.path.join(output_base, 'TMVA', str(args.year), args.region + '-'+args.selection, signal_str, 'tmp_'+sample.output, sample.name + '_' +sample.output+'_'+ str(args.subJob) + '.root')
     makeDirIfNeeded(output_name)
 
     # if not args.isTest and isValidRootFile(output_name):
     #     log.info('Finished: valid outputfile already exists')
     #     exit(0)
 
+    from HNL.EventSelection.eventCategorization import SUPER_CATEGORIES
     output_file = ROOT.TFile(output_name ,"RECREATE")
 
     #
     # Switch off unused branches and create outputTree
     #
-
-    output_tree = ROOT.TTree('trainingtree', 'trainingtree')
+    output_tree = {}
+    for prompt_str in ['prompt', 'nonprompt']:
+        output_tree[prompt_str] = {}
+        for c in SUPER_CATEGORIES.keys():
+            output_tree[prompt_str][c] = ROOT.TTree('trainingtree', 'trainingtree')
+            output_file.mkdir(prompt_str+'/'+c)
 
     #
     # Make new branches
     #
-    from HNL.TMVA.mvaVariables import getAllVariableList
+    from HNL.TMVA.mvaVariables import getAllVariableList, getVariableValue, getVariables
     new_branches = []
     new_branches.extend(getAllVariableList())
-    new_branches.extend(['is_signal/O', 'event_weight/F', 'HNL_mass/F', 'HNL_lowmass/F', 'HNL_highmass/F'])
+    new_branches.extend(['is_signal/O', 'event_weight/F', 'HNL_mass/F', 'HNL_lowmass/F', 'HNL_highmass/F', 'eventNb/I', 'entry/I'])
 
     from HNL.Tools.makeBranches import makeBranches
-    new_vars = makeBranches(output_tree, new_branches)
+    new_vars = {}
+    for ip, prompt_str in enumerate(['prompt', 'nonprompt']):
+        new_vars[prompt_str] = {}
+        for ic, c in enumerate(SUPER_CATEGORIES.keys()):
+            new_vars[prompt_str][c] = makeBranches(output_tree[prompt_str][c], new_branches, already_defined = ic > 0 or ip > 0)
 
     #
     # Start event loop
@@ -133,7 +140,6 @@ if not args.merge:
     if args.isTest:
         max_events = 20000
         event_range = xrange(max_events) if max_events < len(sample.getEventRange(args.subJob)) else sample.getEventRange(args.subJob)
-
     else:
         event_range = sample.getEventRange(args.subJob)    
 
@@ -153,60 +159,43 @@ if not args.merge:
     
         cutter.cut(True, 'Total')
 
-        if not es.passedFilter(cutter): continue
+        if not es.selector.passedFilter(cutter, for_training=True): continue
         if len(chain.l_flavor) == chain.l_flavor.count(2): continue
 
-        #Set Variables
-        new_vars.M3l = chain.M3l
-        new_vars.MT3l = chain.mt3
-        new_vars.minMss = chain.minMss
-        new_vars.minMos = chain.minMos
-        new_vars.maxMos = chain.maxMos
-        new_vars.maxMossf = chain.maxMossf
-        new_vars.mtOther = chain.mtOther
-        new_vars.mtl1 = chain.mtl1
-        new_vars.mtl2 = chain.mtl2
-        new_vars.l1_charge = chain.l_charge[0]
-        new_vars.l2_charge = chain.l_charge[1]
-        new_vars.l3_charge = chain.l_charge[2]
-        new_vars.l1_pt = chain.l_pt[0]
-        new_vars.l2_pt = chain.l_pt[1]
-        new_vars.l3_pt = chain.l_pt[2]
-        new_vars.l1_eta = chain.l_eta[0]
-        new_vars.l2_eta = chain.l_eta[1]
-        new_vars.l3_eta = chain.l_eta[2]
-        new_vars.l1_phi = chain.l_phi[0]
-        new_vars.l2_phi = chain.l_phi[1]
-        new_vars.l3_phi = chain.l_phi[2]
-        new_vars.j1_pt = chain.j_pt[0]
-        new_vars.j2_pt = chain.j_pt[1]
-        new_vars.j1_eta = chain.j_eta[0]
-        new_vars.j2_eta = chain.j_eta[1]
-        new_vars.j1_phi = chain.j_phi[0]
-        new_vars.j2_phi = chain.j_phi[1]
-        new_vars.HT = chain.HT
-        new_vars.LT = chain.LT
-        new_vars.njets = chain.njets
-        new_vars.is_signal = chain.is_signal
-        new_vars.ptConeLeading = chain.pt_cone[0]
-        new_vars.met = chain._met
-        new_vars.dr_minOS = chain.dr_minOS
-        new_vars.HNL_mass = sample.getMass() if chain.is_signal else randrange(10, 800)
-        new_vars.HNL_lowmass = sample.getMass() if chain.is_signal else randrange(10, 80)
-        new_vars.HNL_highmass = sample.getMass() if chain.is_signal else randrange(80, 800)
-        new_vars.event_weight = reweighter.getLumiWeight() if not chain.is_signal else 1.
+        category = ec.returnCategory()
+        super_cat = [sc for sc in SUPER_CATEGORIES.keys() if category in SUPER_CATEGORIES[sc]]
 
-        output_tree.Fill()
+        nprompt = 0
+        for index in chain.l_indices:
+            if chain._lIsPrompt[index]: nprompt += 1
+        
+        prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
 
-    output_tree.AutoSave()
+        for sc in super_cat:
+            #Set Variables
+            for v in getVariables():
+                setattr(new_vars[prompt_str][sc], v, getVariableValue(v)(chain))
 
+            new_vars[prompt_str][sc].is_signal = chain.is_signal
+            new_vars[prompt_str][sc].HNL_mass = sample.getMass() if chain.is_signal else randrange(10, 800)
+            new_vars[prompt_str][sc].HNL_lowmass = sample.getMass() if chain.is_signal else randrange(10, 80)
+            new_vars[prompt_str][sc].HNL_highmass = sample.getMass() if chain.is_signal else randrange(80, 800)
+            new_vars[prompt_str][sc].event_weight = reweighter.getLumiWeight() if not chain.is_signal else 1.
+            new_vars[prompt_str][sc].eventNb = chain._eventNb
+            new_vars[prompt_str][sc].entry = entry
+
+            output_tree[prompt_str][sc].Fill()
+
+    for prompt_str in ['prompt', 'nonprompt']:
+        for c in SUPER_CATEGORIES.keys():
+            output_file.cd(prompt_str+'/'+c)
+            output_tree[prompt_str][c].Write()
 
     output_file.Close()
 
     closeLogger(log)
 
-
-    # cutter.saveCutFlow(output_name) #TODO: For some reason cuts become None after closing file
+    cutter.saveCutFlow(output_name)
 
 
 else:
@@ -221,24 +210,24 @@ else:
 
     merge_base = '/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/' if not args.isTest else '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/TMVA/data/testArea/'
 
-    signal_mergefiles = merge_base+'TMVA/'+str(args.year)+'/'+args.region+'/Signal'
-    background_mergefiles = merge_base+'TMVA/'+str(args.year)+'/'+args.region+'/Background'
+    signal_mergefiles = merge_base+'TMVA/'+str(args.year)+'/'+args.region+'-'+args.selection+'/Signal'
+    background_mergefiles = merge_base+'TMVA/'+str(args.year)+'/'+args.region+'-'+args.selection+'/Background'
     merge([signal_mergefiles, background_mergefiles], __file__, jobs, ('sample', 'subJob'), argParser)
 
-    combined_dir = lambda sd : merge_base+'TMVA/'+str(args.year)+'/'+args.region+'/Combined/'+sd
+    combined_dir = lambda sd : merge_base+'TMVA/'+str(args.year)+'/'+args.region+'-'+args.selection+'/Combined/'+sd
     makeDirIfNeeded(combined_dir('SingleTree')+'/test')
     makeDirIfNeeded(combined_dir('TwoTrees')+'/test')
 
     import glob
-    all_signal_files = glob.glob(merge_base+'TMVA/'+str(args.year)+'/'+args.region+'/Signal/*root')
+    all_signal_files = glob.glob(merge_base+'TMVA/'+str(args.year)+'/'+args.region+'-'+args.selection+'/Signal/*root')
     low_mass = [10, 20, 40, 50, 60, 70, 80]
     high_mass = [90, 100, 120, 130, 150, 200, 300, 400, 500, 600, 800]
-    tau = lambda mass : merge_base+'TMVA/'+str(args.year)+'/'+args.region+'/Signal/HNL-tau-m'+str(mass)+'.root'
-    ele = lambda mass : merge_base+'TMVA/'+str(args.year)+'/'+args.region+'/Signal/HNL-e-m'+str(mass)+'.root'
-    mu = lambda mass : merge_base+'TMVA/'+str(args.year)+'/'+args.region+'/Signal/HNL-mu-m'+str(mass)+'.root'
+    tau = lambda mass : merge_base+'TMVA/'+str(args.year)+'/'+args.region+'-'+args.selection+'/Signal/HNL-tau-m'+str(mass)+'.root'
+    ele = lambda mass : merge_base+'TMVA/'+str(args.year)+'/'+args.region+'-'+args.selection+'/Signal/HNL-e-m'+str(mass)+'.root'
+    mu = lambda mass : merge_base+'TMVA/'+str(args.year)+'/'+args.region+'-'+args.selection+'/Signal/HNL-mu-m'+str(mass)+'.root'
 
 
-    all_bkgr_files = merge_base+'TMVA/'+str(args.year)+'/'+args.region+'/Background/*root'
+    all_bkgr_files = merge_base+'TMVA/'+str(args.year)+'/'+args.region+'-'+args.selection+'/Background/*root'
 
     #Low mass
     low_mass_tau = []
@@ -259,42 +248,26 @@ else:
         if isValidRootFile(mu(mass)): high_mass_mu.append(mu(mass))
 
 
-    makeDirIfNeeded(signal_mergefiles+'/Combined/x')
-    os.system('hadd -f ' + signal_mergefiles+'/Combined/low_tau.root '+' '.join(low_mass_tau))
-    os.system('hadd -f ' + signal_mergefiles+'/Combined/high_tau.root '+' '.join(high_mass_tau))
-    os.system('hadd -f ' + signal_mergefiles+'/Combined/all_tau.root '+' '.join(low_mass_tau) +' '+' '.join(high_mass_tau))
-    os.system('hadd -f ' + signal_mergefiles+'/Combined/low_e.root '+' '.join(low_mass_e))
-    os.system('hadd -f ' + signal_mergefiles+'/Combined/high_e.root '+' '.join(high_mass_e))
-    os.system('hadd -f ' + signal_mergefiles+'/Combined/all_e.root '+' '.join(low_mass_e)+' '+' '.join(high_mass_e))
-    os.system('hadd -f ' + signal_mergefiles+'/Combined/low_mu.root '+' '.join(low_mass_mu))
-    os.system('hadd -f ' + signal_mergefiles+'/Combined/high_mu.root '+' '.join(high_mass_mu))
-    os.system('hadd -f ' + signal_mergefiles+'/Combined/all_mu.root '+' '.join(low_mass_mu) +' '+' '.join(high_mass_mu))
+    makeDirIfNeeded(signal_mergefiles+'/x')
+    os.system('hadd -f ' + signal_mergefiles+'/low_tau.root '+' '.join(low_mass_tau))
+    os.system('hadd -f ' + signal_mergefiles+'/high_tau.root '+' '.join(high_mass_tau))
+    os.system('hadd -f ' + signal_mergefiles+'/all_tau.root '+' '.join(low_mass_tau) +' '+' '.join(high_mass_tau))
+    os.system('hadd -f ' + signal_mergefiles+'/low_e.root '+' '.join(low_mass_e))
+    os.system('hadd -f ' + signal_mergefiles+'/high_e.root '+' '.join(high_mass_e))
+    os.system('hadd -f ' + signal_mergefiles+'/all_e.root '+' '.join(low_mass_e)+' '+' '.join(high_mass_e))
+    os.system('hadd -f ' + signal_mergefiles+'/low_mu.root '+' '.join(low_mass_mu))
+    os.system('hadd -f ' + signal_mergefiles+'/high_mu.root '+' '.join(high_mass_mu))
+    os.system('hadd -f ' + signal_mergefiles+'/all_mu.root '+' '.join(low_mass_mu) +' '+' '.join(high_mass_mu))
 
     makeDirIfNeeded(background_mergefiles+'/Combined/x')
     os.system('hadd -f ' + background_mergefiles+'/Combined/all_bkgr.root '+ all_bkgr_files)
 
-    os.system('hadd -f ' + combined_dir('SingleTree')+'/low_tau.root '+signal_mergefiles+'/Combined/low_tau.root ' +background_mergefiles+'/Combined/all_bkgr.root ')
-    os.system('hadd -f ' + combined_dir('SingleTree')+'/high_tau.root '+signal_mergefiles+'/Combined/high_tau.root ' +background_mergefiles+'/Combined/all_bkgr.root ')
-    os.system('hadd -f ' + combined_dir('SingleTree')+'/all_tau.root '+signal_mergefiles+'/Combined/all_tau.root  ' +background_mergefiles+'/Combined/all_bkgr.root ')
-    os.system('hadd -f ' + combined_dir('SingleTree')+'/low_e.root '+signal_mergefiles+'/Combined/low_e.root '+background_mergefiles+'/Combined/all_bkgr.root ')
-    os.system('hadd -f ' + combined_dir('SingleTree')+'/high_e.root '+signal_mergefiles+'/Combined/high_e.root '+background_mergefiles+'/Combined/all_bkgr.root ')
-    os.system('hadd -f ' + combined_dir('SingleTree')+'/all_e.root '+signal_mergefiles+'/Combined/all_e.root ' +background_mergefiles+'/Combined/all_bkgr.root ')
-    os.system('hadd -f ' + combined_dir('SingleTree')+'/low_mu.root '+signal_mergefiles+'/Combined/low_mu.root '+background_mergefiles+'/Combined/all_bkgr.root ')
-    os.system('hadd -f ' + combined_dir('SingleTree')+'/high_mu.root '+signal_mergefiles+'/Combined/high_mu.root ' +background_mergefiles+'/Combined/all_bkgr.root ')
-    os.system('hadd -f ' + combined_dir('SingleTree')+'/all_mu.root '+signal_mergefiles+'/Combined/all_mu.root ' +background_mergefiles+'/Combined/all_bkgr.root ')
-
-    bkgr_infile = ROOT.TFile(background_mergefiles+'/Combined/all_bkgr.root', 'read')
-    bkgr_intree = bkgr_infile.Get('trainingtree')
-    for flav in ['e', 'mu', 'tau']:
-        for mass_region in ['low', 'high', 'all']:
-            print 'Copying', flav, mass_region
-            signal_infile = ROOT.TFile(signal_mergefiles+'/Combined/'+mass_region +'_'+flav+'.root', 'read')
-            signal_intree = signal_infile.Get('trainingtree')
-
-            two_trees_outfile = ROOT.TFile(combined_dir('TwoTrees')+'/'+mass_region + '_' + flav+'.root', 'recreate')
-            signal_intree.CloneTree().Write('signaltree')
-            bkgr_intree.CloneTree().Write('backgroundtree')
-            two_trees_outfile.Close()
-            signal_infile.Close()
-
-    bkgr_infile.Close()
+    os.system('hadd -f ' + combined_dir('SingleTree')+'/low_tau.root '+signal_mergefiles+'/low_tau.root ' +background_mergefiles+'/Combined/all_bkgr.root ')
+    os.system('hadd -f ' + combined_dir('SingleTree')+'/high_tau.root '+signal_mergefiles+'/high_tau.root ' +background_mergefiles+'/Combined/all_bkgr.root ')
+    os.system('hadd -f ' + combined_dir('SingleTree')+'/all_tau.root '+signal_mergefiles+'/all_tau.root  ' +background_mergefiles+'/Combined/all_bkgr.root ')
+    os.system('hadd -f ' + combined_dir('SingleTree')+'/low_e.root '+signal_mergefiles+'/low_e.root '+background_mergefiles+'/Combined/all_bkgr.root ')
+    os.system('hadd -f ' + combined_dir('SingleTree')+'/high_e.root '+signal_mergefiles+'/high_e.root '+background_mergefiles+'/Combined/all_bkgr.root ')
+    os.system('hadd -f ' + combined_dir('SingleTree')+'/all_e.root '+signal_mergefiles+'/all_e.root ' +background_mergefiles+'/Combined/all_bkgr.root ')
+    os.system('hadd -f ' + combined_dir('SingleTree')+'/low_mu.root '+signal_mergefiles+'/low_mu.root '+background_mergefiles+'/Combined/all_bkgr.root ')
+    os.system('hadd -f ' + combined_dir('SingleTree')+'/high_mu.root '+signal_mergefiles+'/high_mu.root ' +background_mergefiles+'/Combined/all_bkgr.root ')
+    os.system('hadd -f ' + combined_dir('SingleTree')+'/all_mu.root '+signal_mergefiles+'/all_mu.root ' +background_mergefiles+'/Combined/all_bkgr.root ')

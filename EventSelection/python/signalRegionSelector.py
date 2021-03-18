@@ -49,7 +49,6 @@ class SignalRegionSelector:
         if not cutter.cut(not est.fourthFOVeto(self.chain, no_tau=self.chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
         if not cutter.cut(not est.threeSameSignVeto(self.chain), 'No three same sign'):        return False
         if not cutter.cut(not est.bVeto(self.chain), 'b-veto'):              return False
-        # if not cutter.cut(abs(self.chain.MZossf-MZ) > 15, 'M2l_OSSF_Z_veto'):        return False
         return True
 
     def passBaseCuts(self, cutter):
@@ -63,14 +62,15 @@ class SignalRegionSelector:
     
     #Low mass selection
     # @classmethod
-    def passLowMassSelection(self, cutter):
+    def passLowMassSelection(self, cutter, for_training=False):
         if not cutter.cut(self.new_chain.l_pt[l1] < 55, 'l1pt<55'):      return False
         if not cutter.cut(self.new_chain.M3l < 80, 'm3l<80'):            return False
-        if self.is_reco_level:
-            if not cutter.cut(self.chain._met < 75, 'MET < 75'):             return False
-        else:
-            if not cutter.cut(self.chain._gen_met < 75, 'MET < 75'):             return False
-        if not cutter.cut(not est.containsOSSF(self.chain), 'no OSSF'):      return False
+        if not for_training:
+            if self.is_reco_level:
+                if not cutter.cut(self.chain._met < 75, 'MET < 75'):             return False
+            else:
+                if not cutter.cut(self.chain._gen_met < 75, 'MET < 75'):             return False
+            if not cutter.cut(not est.containsOSSF(self.chain), 'no OSSF'):      return False
         return True 
     
     #High mass selection
@@ -85,30 +85,18 @@ class SignalRegionSelector:
             if not cutter.cut(self.new_chain.minMossf > 5, 'minMossf'): return False
         return True 
 
-    def passedFilter(self, cutter):
+    def passedFilter(self, cutter, for_training=False):
         if not self.initEvent(cutter): return False
 
         if not self.is_reco_level:  return True #It has passed the basic selection
 
         if not self.passBaseCuts(cutter): return False
 
-        # if self.chain.strategy != "MVA":
-        #     if self.region == 'lowMassSR':
-        #         return self.passLowMassSelection(cutter)
-        #     elif self.region == 'highMassSR':
-        #         return self.passHighMassSelection(cutter)
-        #     elif self.region == 'baseline':
-        #         return True
-        # elif self.chain.strategy == "MVA":
-        #     return True
-
         if self.region == 'lowMassSR':
-            return self.passLowMassSelection(cutter)
+            return self.passLowMassSelection(cutter, for_training=for_training)
         elif self.region == 'highMassSR':
             return self.passHighMassSelection(cutter)
         elif self.region == 'baseline':
             return True
         else:
             raise RuntimeError("Unknown signal region: "+self.region)
-
-    

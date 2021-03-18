@@ -10,12 +10,14 @@ argParser.add_argument('--plots',     action='store_true',      default=False,  
 argParser.add_argument('--skipTraining',     action='store_true',      default=False,   help='Store plots')
 argParser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', 
     choices=['baseline', 'lowMassSR', 'highMassSR'])
+argParser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
+argParser.add_argument('--writeInTree',   action='store_true', default=False,  help='Write out the tree used for training to be able to analyze it')
 args = argParser.parse_args()
 
 ROOT.gROOT.SetBatch(True)
 
 from HNL.TMVA.inputHandler import InputHandler
-ih = InputHandler(args.year, args.region)
+ih = InputHandler(args.year, args.region, args.selection)
 
 #
 # List the input variables here
@@ -28,12 +30,21 @@ for signal in ih.signal_names:
 
 	input_var = getVariableList(signal)
 
-	out_file_name = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'training', args.year, args.region, signal, signal+'.root'))
+	out_file_name = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'training', args.year, args.region+'-'+args.selection, signal, signal+'.root'))
 
 	if not args.skipTraining:
 		makeDirIfNeeded(out_file_name)
 		out_file = ROOT.TFile(out_file_name, 'RECREATE') 
 		factory = ROOT.TMVA.Factory("factory", out_file,"")
+
+
+		if args.writeInTree:
+			if signal.split('_')[-1] in ['e', 'mu']:
+				name = 'NoTau/trainingtree'
+			else:
+				name='Total/trainingtree'
+			in_tree = ih.getTree(signal, name=name).CloneTree()
+			in_tree.Write('backuptree')
 
 		loader = ih.getLoader(signal, input_var)
 
@@ -46,12 +57,9 @@ for signal in ih.signal_names:
 			n_test_s = ih.numbers[2] 
 			n_test_b = ih.numbers[3]
 			options = "nTrain_Signal="+str(n_train_s)+':nTrain_Background='+str(n_train_b)+ ":nTest_Signal="+str(n_test_s)+ ":nTest_Background="+str(n_test_b)
-			print "HERE?"
-		print options
 		loader.PrepareTrainingAndTestTree(preselection, options)
 
-		# options += ':IgnoreNegWeightsInTraining'
-		factory.BookMethod(loader, ROOT.TMVA.Types.kBDT, 'kBDT', "")
+		factory.BookMethod(loader, ROOT.TMVA.Types.kBDT, 'kBDT', "NegWeightTreatment=NoNegWeightsInTraining")
 
 		factory.TrainAllMethods()
 		factory.TestAllMethods()
@@ -62,16 +70,16 @@ for signal in ih.signal_names:
 	if args.plots:
 		print "Plotting..."
 		ROOT.gROOT.SetBatch(True)
-		ROOT.TMVA.variables('data/training/'+str(args.year)+'/'+args.region+'/'+signal+'/kBDT', out_file_name)
-		ROOT.TMVA.correlationscatters('data/training/'+str(args.year)+'/'+args.region+'/'+signal+'/kBDT', out_file_name)
-		ROOT.TMVA.correlations('data/training/'+str(args.year)+'/'+args.region+'/'+signal+'/kBDT', out_file_name)
-		ROOT.TMVA.mvas('data/training/'+str(args.year)+'/'+args.region+'/'+signal+'/kBDT', out_file_name)
-		# ROOT.TMVA.mvas('data/training/'+str(args.year)+'/'+args.region+'/'+signal+'/kBDT', out_file_name, 1)
-		# ROOT.TMVA.mvas('data/training/'+str(args.year)+'/'+args.region+'/'+signal+'/kBDT', out_file_name, 2)
-		ROOT.TMVA.mvas('data/training/'+str(args.year)+'/'+args.region+'/'+signal+'/kBDT', out_file_name, 3)
-		ROOT.TMVA.efficiencies('data/training/'+str(args.year)+'/'+args.region+'/'+signal+'/kBDT', out_file_name)
-		ROOT.TMVA.paracoor('data/training/'+str(args.year)+'/'+args.region+'/'+signal+'/kBDT', out_file_name)
-		# ROOT.TMVA.bdtcontrolplots('data/training/'+str(args.year)+'/'+args.region+'/'+signal+'/kBDT', out_file_name)
+		ROOT.TMVA.variables('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name)
+		ROOT.TMVA.correlationscatters('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name)
+		ROOT.TMVA.correlations('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name)
+		ROOT.TMVA.mvas('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name)
+		# ROOT.TMVA.mvas('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name, 1)
+		# ROOT.TMVA.mvas('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name, 2)
+		ROOT.TMVA.mvas('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name, 3)
+		ROOT.TMVA.efficiencies('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name)
+		ROOT.TMVA.paracoor('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name)
+		# ROOT.TMVA.bdtcontrolplots('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name)
 
 	### open gui
 	if args.gui:

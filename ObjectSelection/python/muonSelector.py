@@ -311,7 +311,7 @@ def isFakeMuon(chain, index):
 def muonConeCorrection(chain, index, algo = None):
     algo = checkMuonAlgorithm(chain, algo)
     if algo == 'cutbased':
-        return 1+max(0., chain._relIso[l]-0.1)
+        return 1+max(0., chain._relIso[index]-0.1)
     elif algo == 'TTT':
         return 0.67/chain._ptRatio[index]
     else:
