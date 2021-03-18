@@ -60,16 +60,15 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
             pt_to_use = chain._lPtCorr[l]
         elif chain._lFlavor[l] == 1: 
             workingpoint = chain.obj_sel['mu_wp']
-            pt_to_use = chain._lPtCorr[l]
+            pt_to_use = chain._lPt[l]
         elif chain._lFlavor[l] == 2: 
             workingpoint = chain.obj_sel['tau_wp']
             pt_to_use = chain._lPt[l]
         else: 
             raise RuntimeError('In selectLeptonsGeneral: flavor provided is neither an electron, muon or tau')
-    
+
         if isGoodLepton(chain, l):
             chain.leptons.append((pt_to_use, l)) 
-
 
     if len(chain.leptons) != nL:  return False
 
@@ -99,7 +98,7 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         new_chain.l_pt[i] = ptAndIndex[i][0]
         new_chain.l_eta[i] = chain._lEta[ptAndIndex[i][1]]
         new_chain.l_phi[i] = chain._lPhi[ptAndIndex[i][1]]
-        new_chain.l_e[i] = chain._lE[ptAndIndex[i][1]]
+        new_chain.l_e[i] = chain._lECorr[ptAndIndex[i][1]] if chain.l_flavor[i] < 1 else chain._lE[ptAndIndex[i][1]]
         new_chain.l_charge[i] = chain._lCharge[ptAndIndex[i][1]]
         new_chain.l_isFO[i] = isGoodLepton(chain, ptAndIndex[i][1], 'FO')
         new_chain.l_istight[i] = isGoodLepton(chain, ptAndIndex[i][1], 'tight')
@@ -168,6 +167,7 @@ def selectGenLeptonsGeneral(chain, new_chain, nL, cutter=None):
 #
 # Meant for training NN, select up to two jets, if less than two jets, 
 #
+from HNL.ObjectSelection.bTagWP import returnBTagValueBySelection
 def selectFirstTwoJets(chain, new_chain):
     if chain is new_chain:
         new_chain.j_pt = [0.0]*2
@@ -175,6 +175,7 @@ def selectFirstTwoJets(chain, new_chain):
         new_chain.j_phi = [0.0]*2
         new_chain.j_e = [0.0]*2
         new_chain.j_indices = [0.0]*2
+        new_chain.j_btag = [0.0]*2
 
     chain.jets = [(chain._jetPt[j], j) for j in xrange(chain._nJets) if isGoodJet(chain, j)]
 
@@ -186,13 +187,15 @@ def selectFirstTwoJets(chain, new_chain):
             new_chain.j_eta[i] = chain._jetEta[ptAndIndex[i][1]]
             new_chain.j_phi[i] = chain._jetPhi[ptAndIndex[i][1]]
             new_chain.j_e[i] = chain._jetE[ptAndIndex[i][1]]
-            new_chain.j_indices[i] = ptAndIndex[i][0] 
+            new_chain.j_indices[i] = ptAndIndex[i][1] 
+            new_chain.j_btag[i] = returnBTagValueBySelection(chain, ptAndIndex[i][1]) 
         else:
             new_chain.j_pt[i] = 0. 
             new_chain.j_eta[i] = 0.
             new_chain.j_phi[i] = 0.
             new_chain.j_e[i] = 0.
             new_chain.j_indices[i] = -1
+            new_chain.j_btag[i] = -99.
 
     return True 
 
@@ -207,6 +210,7 @@ def selectFirstTwoJets(chain, new_chain):
 # Function to calculate all kinematic variables to be used later on in the selection steps
 # All variables are stored in the chain so they can be called anywhere
 #
+from HNL.Tools.helpers import deltaR
 def calculateEventVariables(chain, new_chain, nL = None, is_reco_level = True):
     calculateGeneralVariables(chain, new_chain, is_reco_level=is_reco_level)
     if nL == 3:
@@ -214,18 +218,31 @@ def calculateEventVariables(chain, new_chain, nL = None, is_reco_level = True):
     if nL == 4:
         calculateFourLepVariables(chain, new_chain)
 
+from HNL.ObjectSelection.leptonSelector import coneCorrection
 def calculateGeneralVariables(chain, new_chain, is_reco_level = True):
     if is_reco_level:
         #ptCone
         new_chain.pt_cone = []
-        for l in xrange(chain._nLight):
-            new_chain.pt_cone.append(chain._lPt[l]*(1+max(0., chain._miniIso[l]-0.4))) #TODO: is this the correct definition?
+        new_chain.dr_closestJet = []
+        for il, l in enumerate(new_chain.l_indices):
+            if chain.l_flavor[il] < 2:
+                new_chain.pt_cone.append(chain._lPtCorr[l]*coneCorrection(chain, l))
+            else:
+                new_chain.pt_cone.append(chain._lPt[l]*coneCorrection(chain, l))
+
+            closest_jet = findClosestJet(chain, il)
+            if closest_jet is None:
+                new_chain.dr_closestJet.append(-1.)
+            else:
+                new_chain.dr_closestJet.append(deltaR(chain.l_eta[il], chain._jetEta[closest_jet], chain.l_phi[il], chain._jetPhi[closest_jet]))
 
         #calculate #jets and #bjets
         new_chain.njets = len(selectJets(chain))
         new_chain.nbjets = nBjets(chain, 'loose')
         new_chain.HT = calcHT(chain, new_chain)
         selectFirstTwoJets(chain, new_chain)
+
+    
 
     new_chain.hasOSSF = containsOSSF(new_chain)
 
@@ -352,17 +369,17 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
     # dR variables
     # 
     new_chain.dr_l1l2 = l1Vec.DeltaR(l2Vec)
-    new_chain.dr_l1l3 = l1Vec.DeltaR(l2Vec)
-    new_chain.dr_l2l3 = l1Vec.DeltaR(l2Vec)
+    new_chain.dr_l1l3 = l1Vec.DeltaR(l3Vec)
+    new_chain.dr_l2l3 = l2Vec.DeltaR(l3Vec)
 
-    new_chain.dr_minOS = lVec[min_os[0]].DeltaR(lVec[min_os[1]]) if min_os is not None else -999.
-    new_chain.dr_maxOS = lVec[max_os[0]].DeltaR(lVec[max_os[1]]) if max_os is not None else -999.
-    new_chain.dr_minSS = lVec[min_ss[0]].DeltaR(lVec[min_ss[1]]) if min_ss is not None else -999.
-    new_chain.dr_maxSS = lVec[max_ss[0]].DeltaR(lVec[max_ss[1]]) if max_ss is not None else -999.
-    new_chain.dr_minOSSF = lVec[min_ossf[0]].DeltaR(lVec[min_ossf[1]]) if min_ossf is not None else -999.
-    new_chain.dr_maxOSSF = lVec[max_ossf[0]].DeltaR(lVec[max_ossf[1]]) if max_ossf is not None else -999.
-    new_chain.dr_minSSSF = lVec[min_sssf[0]].DeltaR(lVec[min_sssf[1]]) if min_sssf is not None else -999.
-    new_chain.dr_maxSSSF = lVec[max_sssf[0]].DeltaR(lVec[max_sssf[1]]) if max_sssf is not None else -999.
+    new_chain.dr_minOS = lVec[min_os[0]].DeltaR(lVec[min_os[1]]) if min_os is not None else -1.
+    new_chain.dr_maxOS = lVec[max_os[0]].DeltaR(lVec[max_os[1]]) if max_os is not None else -1.
+    new_chain.dr_minSS = lVec[min_ss[0]].DeltaR(lVec[min_ss[1]]) if min_ss is not None else -1.
+    new_chain.dr_maxSS = lVec[max_ss[0]].DeltaR(lVec[max_ss[1]]) if max_ss is not None else -1.
+    new_chain.dr_minOSSF = lVec[min_ossf[0]].DeltaR(lVec[min_ossf[1]]) if min_ossf is not None else -1.
+    new_chain.dr_maxOSSF = lVec[max_ossf[0]].DeltaR(lVec[max_ossf[1]]) if max_ossf is not None else -1.
+    new_chain.dr_minSSSF = lVec[min_sssf[0]].DeltaR(lVec[min_sssf[1]]) if min_sssf is not None else -1.
+    new_chain.dr_maxSSSF = lVec[max_sssf[0]].DeltaR(lVec[max_sssf[1]]) if max_sssf is not None else -1.
 
     new_chain.mindr_l1 = min(new_chain.dr_l1l2, new_chain.dr_l1l3)
     new_chain.maxdr_l1 = max(new_chain.dr_l1l2, new_chain.dr_l1l3)
@@ -453,6 +470,16 @@ def bVeto(chain):
     for jet in xrange(chain._nJets):
         if isGoodBJet(chain, jet, 'loose'): return True    
     return False
+
+def findClosestJet(chain, lepton_index):
+    mindr = 1000.
+    mindr_jet = None
+    for jet in selectJets(chain):
+        dr = deltaR(chain.l_eta[lepton_index], chain._jetEta[jet], chain.l_phi[lepton_index], chain._jetPhi[jet])
+        if dr < mindr:
+            mindr = dr
+            mindr_jet = jet
+    return mindr_jet
 
 def fourthFOVeto(chain, no_tau = False):
     if no_tau: collection = chain._nLight 

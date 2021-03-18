@@ -4,9 +4,10 @@ import ROOT
 
 class InputHandler:
 
-    def __init__(self, year, selection):
-        self.in_file = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'InputLists', year+'.conf'))
+    def __init__(self, year, region, selection):
+        self.in_file = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'InputLists', year+'-'+region+'.conf'))
         self.year = year
+        self.region = region
         self.selection = selection
         self.numbers = None
         self.signal_names = None
@@ -51,7 +52,9 @@ class InputHandler:
         signal_paths = {}
         for signal in self.signal_names:
             signal_paths[signal] = []
-        background_paths = []
+        background_paths = {}
+        for bkgr in self.background_names:
+            background_paths[bkgr] = []
         for y in ['2016', '2017', '2018']:
             if self.year == 'all': pass
             else:
@@ -59,40 +62,56 @@ class InputHandler:
 
             for signal in self.signal_names:
                 if self.background_names is None:
-                    signal_paths[signal].append(os.path.join(INPUT_BASE(y), self.selection, 'Combined/SingleTree', signal+'.root'))
+                    signal_paths[signal].append(os.path.join(INPUT_BASE(y), self.region+'-'+self.selection, 'Combined/SingleTree', signal+'.root'))
                 else:
-                    signal_paths[signal].append(os.path.join(INPUT_BASE(y), self.selection, 'Signal', signal+'.root'))
+                    signal_paths[signal].append(os.path.join(INPUT_BASE(y), self.region+'-'+self.selection, 'Signal', signal+'.root'))
             
             if self.background_names is None:
                 background_paths = None
             else:
                 for bkgr in self.background_names:
-                    background_paths.append(os.path.join(INPUT_BASE(y), self.selection, 'Background', bkgr+'.root'))
+                    if bkgr == 'nonprompt':
+                        background_paths[bkgr].append(os.path.join(INPUT_BASE(y), self.region+'-'+self.selection, 'Background', 'Combined', 'all_bkgr.root'))
+                    else:
+                        background_paths[bkgr].append(os.path.join(INPUT_BASE(y), self.region+'-'+self.selection, 'Background', bkgr+'.root'))
 
         self.signal_paths = signal_paths
         self.background_paths = background_paths
 
         return signal_paths, background_paths
 
-    def getTree(self, signal):
-        in_tree = ROOT.TChain('trainingtree') 
-        for sub_signal in self.signal_paths[signal]:
-            in_tree.Add(sub_signal)
-        if self.background_names is not None:
-            for b in self.background_paths:
-                in_tree.Add(b)
+    def getTree(self, signal, name='trainingtree', signal_only = False, bkgr_only=False):
+        in_tree = ROOT.TChain() 
+        if not bkgr_only:
+            for sub_signal in self.signal_paths[signal]:
+                in_tree.Add(sub_signal+'/prompt/'+name)
+                in_tree.Add(sub_signal+'/nonprompt/'+name)
+        if not signal_only:
+            if self.background_names is None and bkgr_only: 
+                raise RuntimeError("You are trying to make empty trees")
+            else:
+                for bn in self.background_names:
+                    for bp in self.background_paths[bn]:
+                        if bn == 'nonprompt':
+                            in_tree.Add(bp+'/nonprompt/'+name)
+                        else:
+                            in_tree.Add(bp+'/prompt/'+name)  
         return in_tree
 
     def getLoader(self, signal, input_variables):
 
-        in_tree = self.getTree(signal)
+        if signal.split('_')[-1] in ['e', 'mu']:
+            name = 'NoTau/trainingtree'
+        else:
+            name='Total/trainingtree'
+        in_tree = self.getTree(signal, name=name)
         nsignal = min(15000, in_tree.Draw("1", "is_signal"))
         nbkgr = min(100000, in_tree.Draw("1", "!is_signal"))
 
         if self.numbers_not_in_file:
             self.numbers = [int(nsignal*0.6), int(nbkgr*0.6), int(nsignal*0.4), int(nbkgr*0.4)]
 
-        loader = ROOT.TMVA.DataLoader('data/training/'+str(self.year)+'/'+self.selection+'/'+signal+'/kBDT')
+        loader = ROOT.TMVA.DataLoader('data/training/'+str(self.year)+'/'+self.region+'-'+self.selection+'/'+signal+'/kBDT')
         cuts = ROOT.TCut("is_signal")
         cutb = ROOT.TCut("!is_signal")
         loader.SetInputTrees(in_tree, cuts, cutb)

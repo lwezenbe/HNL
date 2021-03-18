@@ -532,6 +532,6 @@ def isFakeElectron(chain, index):
 def electronConeCorrection(chain, index, algo = None):
     algo = checkElectronAlgorithm(chain, algo)
     if algo == 'cutbased':
-        return 1+max(0., chain._relIso[l]-0.1)
+        return 1+max(0., chain._relIso[index]-0.1)
     else:
         return 0.67/chain._ptRatio[index]

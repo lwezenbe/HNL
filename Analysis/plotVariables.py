@@ -261,7 +261,7 @@ if not args.makePlots and not args.makeDataCards:
         #
         if args.strategy == 'MVA':
             tmva = {}
-            for sel in ['baseline', 'lowMassSR', 'highMassSR']:
+            for sel in ['lowMassSR', 'highMassSR']:
                 tmva[sel] = {}
                 for n in ['low_tau', 'high_tau', 'low_e', 'high_e', 'low_mu', 'high_mu']:
                     tmva[sel][n] = Reader(chain, 'kBDT', n, sel)
@@ -303,12 +303,6 @@ if not args.makePlots and not args.makeDataCards:
                 chain.category = 17
 
             if args.strategy == 'MVA':
-                chain.mva_high_mu_baseline = tmva['baseline']['high_mu'].predict()
-                chain.mva_low_mu_baseline = tmva['baseline']['low_mu'].predict()
-                chain.mva_high_tau_baseline = tmva['baseline']['high_tau'].predict()
-                chain.mva_low_tau_baseline = tmva['baseline']['low_tau'].predict()
-                chain.mva_low_e_baseline = tmva['baseline']['low_e'].predict()
-                chain.mva_high_e_baseline = tmva['baseline']['high_e'].predict()
                 chain.mva_high_mu_lowMassSR = tmva['lowMassSR']['high_mu'].predict()
                 chain.mva_low_mu_lowMassSR = tmva['lowMassSR']['low_mu'].predict()
                 chain.mva_high_tau_lowMassSR = tmva['lowMassSR']['high_tau'].predict()

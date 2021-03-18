@@ -20,9 +20,9 @@ cType = {
 # Function to add new branches to a tree
 # the ProcessLine makes a new structure newVars that contains a sort of list of all branches as objects, as far as I understand
 #
-def makeBranches(tree, branches):
+def makeBranches(tree, branches, already_defined=False):
     branches = [tuple(branch.split('/')) for branch in branches]        
-    ROOT.gROOT.ProcessLine('struct newVars {' + ';'.join([cType[t] + ' ' + name for name, t in branches]) + ';};')
+    if not already_defined: ROOT.gROOT.ProcessLine('struct newVars {' + ';'.join([cType[t] + ' ' + name for name, t in branches]) + ';};')
     
     from ROOT import newVars
     newVars = newVars()
