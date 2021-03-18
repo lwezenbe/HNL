@@ -24,7 +24,7 @@ submission_parser.add_argument('--summaryFile', action='store_true', default=Fal
 submission_parser.add_argument('--genSkim',  action='store_true',      default=False,               help='skim on generator level leptons')
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
 submission_parser.add_argument('--removeOverlap',  action='store_true',      default=False,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
-submission_parser.add_argument('--skimSelection',  action='store',      default='Luka',               help='Selection for the skim.', choices=['top', 'TTT', 'Luka', 'Old'])
+submission_parser.add_argument('--skimSelection',  action='store',      default='Luka',               help='Selection for the skim.', choices=['top', 'TTT', 'Luka', 'Old', 'LukaFR'])
 
 argParser.add_argument('--checkLogs',  action='store_true',      default=False,               help='Check if all files completed successfully')
 
@@ -191,7 +191,7 @@ if not args.checkLogs:
     from HNL.ObjectSelection.objectSelection import objectSelectionCollection
     if args.skimSelection == 'Old':
         object_selection = objectSelectionCollection('HNL', 'cutbased', 'loose', 'loose', 'loose', True, analysis='HNL')
-    elif args.skimSelection == 'Luka':
+    elif args.skimSelection in ['Luka', 'LukaFR']:
         object_selection = objectSelectionCollection('HNL', 'Luka', 'loose', 'loose', 'loose', False, analysis='HNL')
     elif args.skimSelection == 'TTT':
         object_selection = objectSelectionCollection('HNL', 'TTT', 'loose', 'loose', 'loose', False, analysis='HNL')
@@ -213,11 +213,15 @@ if not args.checkLogs:
             if sample.name == 'ZG' and chain._hasInternalConversion: continue
 
         if args.genSkim:
-            # if not selectGenLeptonsGeneral(chain, new_vars, 3):      continue
-            if not selectGenLeptonsGeneral(chain, chain, 3):      continue
+            selectGenLeptonsGeneral(chain, chain, 3)
         else:
             selectLeptonsGeneral(chain, chain, 3, cutter = cutter)
+
+        if args.skimSelection != 'LukaFR':
             if len(chain.leptons) < 3:       continue
+        else:
+            if len(chain.leptons) < 1:       continue
+
 
         new_vars.lumiweight = lw.getLumiWeight()
         output_tree.Fill()
