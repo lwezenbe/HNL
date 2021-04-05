@@ -94,15 +94,19 @@ if args.isTest:
     if args.sample is None and not args.makePlots: args.sample = 'DYJetsToLL-M-50'
     args.isChild = True
     if args.subJob is None: args.subJob = '0'
+    from HNL.Tools.helpers import generateArgString
+    arg_string =  generateArgString(argParser)
+else:
+    arg_string = None
 
 #
 # Prepare jobs
 #
-jobs = []
+jobs = {}
 for year in ['2016', '2017', '2018']:
     if args.year != 'all' and year != args.year: 
         continue
-
+    jobs[year] = []
     sample_manager = getSampleManager(year)
 
     for sample_name in sample_manager.sample_names:
@@ -110,15 +114,16 @@ for year in ['2016', '2017', '2018']:
         sample = sample_manager.getSample(sample_name)
         if args.sample and args.sample != sample.name: continue
         for njob in xrange(sample.returnSplitJobs()): 
-            jobs += [(sample.name, str(njob), year)]
+            jobs[year] += [(sample.name, str(njob))]
 
 #
 # Submit subjobs
 #
 if not args.isChild and not args.makePlots and not args.makeDataCards:
     from HNL.Tools.jobSubmitter import submitJobs
-    submitJobs(__file__, ('sample', 'subJob', 'year'), jobs, argParser, jobLabel = 'plotVar')
-    exit(0)
+    for year in jobs.keys():
+        submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'plotVar', additionalArgs= [('year', year)])
+        exit(0)
 
 
 #
@@ -341,9 +346,9 @@ if not args.makePlots and not args.makeDataCards:
             for ic, c in enumerate(categories):
                 for prompt_str in ['prompt', 'nonprompt', 'total']:
                     if iv == 0 and ic == 0 and prompt_str == 'prompt':
-                        list_of_hist[prompt_str][c][v][signal_str][sample.name].write(output_name_full +'variables'+subjobAppendix+ '.root', subdirs=[v], is_test=args.isTest)
+                        list_of_hist[prompt_str][c][v][signal_str][sample.name].write(output_name_full +'variables'+subjobAppendix+ '.root', subdirs=[v], is_test=arg_string)
                     else:
-                        list_of_hist[prompt_str][c][v][signal_str][sample.name].write(output_name_full +'variables'+subjobAppendix+ '.root', subdirs=[v], append=True, is_test=args.isTest)
+                        list_of_hist[prompt_str][c][v][signal_str][sample.name].write(output_name_full +'variables'+subjobAppendix+ '.root', subdirs=[v], append=True, is_test=arg_string)
 
         cutter.saveCutFlow(output_name_full +'variables'+subjobAppendix+ '.root')
 
@@ -355,6 +360,7 @@ else:
     from HNL.Analysis.analysisTypes import signal_couplingsquared
 
     for year in ['2016', '2017', '2018']:
+        print 'Processing ', year
         if args.year != 'all' and year != args.year: continue
 
         sample_manager = getSampleManager(year)
@@ -385,7 +391,7 @@ else:
         print 'check merge'
         # Merge files if necessary
         mixed_list = signal_list + bkgr_list + data_list
-        merge(mixed_list, __file__, jobs, ('sample', 'subJob', 'year'), argParser, istest=args.isTest)
+        merge(mixed_list, __file__, jobs[year], ('sample', 'subJob'), argParser, istest=args.isTest, additionalArgs= [('year', year)])
 
 
         if args.groupSamples:
@@ -586,7 +592,7 @@ else:
                     data_hist_tmp = list_of_hist[ac][mva_to_use]['signal'][sample_name].clone('Ditau')
                     data_hist_tmp.write(out_path, write_name='data_obs', append=True)
                     
-                    makeDataCard(str(ac), args.flavor, year, args.strategy, 0, sample_name, bkgr_names, args.selection, shapes=True, coupling_sq = coupling_squared)
+                    makeDataCard(str(ac), args.flavor, year, 0, sample_name, bkgr_names, args.selection, args.strategy, args.region, shapes=True, coupling_sq = coupling_squared)
 
         if args.makePlots:
             #
@@ -619,8 +625,8 @@ else:
             # Create plots for each category
             #
             from HNL.EventSelection.eventCategorization import CATEGORY_NAMES
-            for c in list_of_hist.keys():
-            # for c in cat.SUPER_CATEGORIES.keys():
+            # for c in list_of_hist.keys():
+            for c in cat.SUPER_CATEGORIES.keys():
                 c_name = CATEGORY_NAMES[c] if c not in cat.SUPER_CATEGORIES.keys() else c
 
                 # extra_text = [extraTextFormat(cat.returnTexName(c), xpos = 0.2, ypos = 0.82, textsize = None, align = 12)]  #Text to display event type in plot
@@ -670,7 +676,7 @@ else:
 
                     draw_ratio = None if args.signalOnly or args.bkgrOnly else True
                     if args.groupSamples:
-                        p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = False, extra_text = extra_text, draw_ratio = draw_ratio, year = int(year), color_palette = 'Didar', color_palette_bkgr = 'AN2017')
+                        p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = int(year), color_palette = 'Didar', color_palette_bkgr = 'AN2017')
                     else:
                         p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, y_log = False, extra_text = extra_text, draw_ratio = draw_ratio, year = int(year), color_palette = 'Didar')
 

@@ -40,6 +40,10 @@ if args.isTest:
     if args.sample is None: args.sample = 'DYJetsToLL-M-50-ext1'
     if args.subJob is None: args.subJob = '0'
     if args.year is None: args.year = '2016'
+    from HNL.Tools.helpers import generateArgString
+    arg_string =  generateArgString(argParser)
+else:
+    arg_string = None
 
 #
 # All ID's and WP we want to test
@@ -218,8 +222,8 @@ for eff in ['efficiency', 'fakerate']:
         for i, v in enumerate(list_of_var_hist['fakerate'][algo].keys()):
             for j, wp in enumerate(list_of_var_hist['fakerate'][algo][v].keys()):
                 if a == 0 and i == 0 and j == 0:
-                    list_of_var_hist[eff][algo][v][wp].write(append = False, name = eff+'_'+v, is_test=args.isTest)
+                    list_of_var_hist[eff][algo][v][wp].write(append = False, name = eff+'_'+v, is_test=arg_string)
                 else:
-                    list_of_var_hist[eff][algo][v][wp].write(append = True, name = eff+'_'+v, is_test=args.isTest) 
+                    list_of_var_hist[eff][algo][v][wp].write(append = True, name = eff+'_'+v, is_test=arg_string) 
 
 closeLogger(log)

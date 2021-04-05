@@ -21,7 +21,7 @@ version        = 'v8.0.1'
 # Function to write out a data card, these data cards all contain 1 bin to be clear, readable and flexible
 # and should be combined later on
 #
-def makeDataCard(bin_name, flavor, year, obs_yield, sig_name, bkgr_names, selection, sig_yield=None, bkgr_yields= None, shapes=False, coupling_sq = 1e-4):
+def makeDataCard(bin_name, flavor, year, obs_yield, sig_name, bkgr_names, selection, strategy, region, sig_yield=None, bkgr_yields= None, shapes=False, coupling_sq = 1e-4):
 
     if not shapes and len(bkgr_yields) != len(bkgr_names):
         raise RuntimeError("length of background yields and names is inconsistent")
@@ -39,7 +39,7 @@ def makeDataCard(bin_name, flavor, year, obs_yield, sig_name, bkgr_names, select
     out_file.write('kmax    * \n')
     out_file.write('-'*400 + '\n')
     if shapes:
-        shapes_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', str(year), selection, flavor, sig_name, bin_name+'.shapes.root')
+        shapes_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([strategy, selection, region]), str(year), flavor, sig_name, bin_name+'.shapes.root')
         out_file.write('shapes * * \t' +shapes_path + ' $PROCESS $PROCESS_SYSTEMATIC')
     out_file.write('-'*400 + '\n')
     out_file.write('bin             '+bin_name+ ' \n')

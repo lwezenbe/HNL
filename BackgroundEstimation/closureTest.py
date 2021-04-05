@@ -48,6 +48,10 @@ if args.isTest:
     if args.year is None: args.year = '2016'
     if args.region is None: args.region = 'TauFakesDY'
     if args.region == 'Mix': args.splitInJets = True
+    from HNL.Tools.helpers import generateArgString
+    arg_string =  generateArgString(argParser)
+else:
+    arg_string = None
 
 #
 # Throws exceptions if arguments do not add up
@@ -347,9 +351,9 @@ if not args.makePlots:
     for i, c in enumerate(getCategories()):
         for j, v in enumerate(var):
             if i == 0 and j == 0:
-                co[c][v].write(is_test=args.isTest)
+                co[c][v].write(is_test=arg_string)
             else:
-                co[c][v].write(append=True, is_test=args.isTest)
+                co[c][v].write(append=True, is_test=arg_string)
 
     print "Observed:", co['total']['m3l'].getObserved().GetSumOfWeights()
     print "Predicted:", co['total']['m3l'].getSideband().GetSumOfWeights()

@@ -874,7 +874,7 @@ class Plot:
             self.canvas.Clear()
         return
 
-    def drawGraph(self, output_dir = None):
+    def drawGraph(self, output_dir = None, draw_style = "APLine"):
         
         setDefault()
         
@@ -895,7 +895,7 @@ class Plot:
             graph.SetMarkerStyle(ps.getMarker(i))
             mgraph.Add(graph)
 
-        mgraph.Draw("APLine")
+        mgraph.Draw(draw_style)
         if isinstance(self.x_name, list):
             print 'invalid x_names'
             return

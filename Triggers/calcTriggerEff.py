@@ -41,6 +41,10 @@ if args.isTest:
     if args.sample is None: args.sample = 'HNL-tau-m40'
     if args.subJob is None: args.subJob = '0'
     if args.year is None: args.year = '2016'
+    from HNL.Tools.helpers import generateArgString
+    arg_string =  generateArgString(argParser)
+else:
+    arg_string = None
 
 
 #
@@ -271,15 +275,15 @@ for i, c in enumerate(categories):
     for l, v in enumerate({k for k in var.keys()}): 
         for t in category_map[c]:
             if args.separateTriggers is None:
-                if i == 0 and l == 0:      eff[(c, v, t)].write(is_test=args.isTest)
-                else:           eff[(c, v, t)].write(append=True, is_test=args.isTest)
+                if i == 0 and l == 0:      eff[(c, v, t)].write(is_test=arg_string)
+                else:           eff[(c, v, t)].write(append=True, is_test=arg_string)
             elif args.separateTriggers == 'full':
-                if i == 0 and l == 0:      eff[(c, v, t)].write(is_test=args.isTest)
-                else:           eff[(c, v, t)].write(append=True, is_test=args.isTest)               
+                if i == 0 and l == 0:      eff[(c, v, t)].write(is_test=arg_string)
+                else:           eff[(c, v, t)].write(append=True, is_test=arg_string)               
             else:
                 for j, trigger in enumerate(category_triggers(chain, c)):
-                    if i == 0 and l == 0 and j == 0:       eff[(c, v, t, j)].write(is_test=args.isTest)
-                    else:                       eff[(c, v, t, j)].write(append=True, is_test=args.isTest)
+                    if i == 0 and l == 0 and j == 0:       eff[(c, v, t, j)].write(is_test=arg_string)
+                    else:                       eff[(c, v, t, j)].write(append=True, is_test=arg_string)
 
 
 closeLogger(log)

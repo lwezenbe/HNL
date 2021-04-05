@@ -43,7 +43,7 @@ def merge_single_path(path, groups_to_merge=None):
 
 from HNL.Tools.jobSubmitter import checkCompletedJobs, submitJobs, cleanJobFiles, checkShouldMerge, disableShouldMerge
 #For now also have argparser in there just to be able to automatically resubmit
-def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False, groups_to_merge=None):
+def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False, groups_to_merge=None, additionalArgs=None):
 
     if not istest and not checkShouldMerge(script, argparser):
         print "Nothing to merge"

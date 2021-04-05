@@ -282,3 +282,9 @@ def fileSize(path):
     file_size = file_info.st_size
     file_size_MB = 0.000001*file_size
     return file_size_MB
+
+def generateArgString(arg_parser):
+    args = arg_parser.parse_args()
+    from HNL.Tools.jobSubmitter import getSubmitArgs, getArgsStr
+    submit_args = getSubmitArgs(arg_parser, args)
+    return getArgsStr(submit_args, ['isTest'])

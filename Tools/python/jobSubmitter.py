@@ -43,7 +43,6 @@ def runLocal(command, logfile):
         print int(system('ps uaxw | grep python | grep $USER |grep -c -v grep')), ': sleeping'
         time.sleep(20)
     log.info('Launching ' + command + ' on local machine')
-    print command
     system('python '+command + ' &> ' + logfile + ' &')
 
 from HNL.Tools.helpers import makePathTimeStamped
@@ -144,6 +143,7 @@ def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, additio
         ignore_overwrite = True
         args.overwrite=True
     submitArgs   = getSubmitArgs(argparser, args, dropArgs, additionalArgs)
+    print submitArgs
     if resubmission and 'skimmer' in script and ignore_overwrite:
         arg_string = getArgsStr(submitArgs, to_ignore=['isChild', 'overwrite'])
     else:
@@ -198,7 +198,7 @@ def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, additio
         except: pass
 
         if args.dryRun:     log.info('Dry-run: ' + command)
-        # elif args.batchSystem == 'local': runLocal(command, logfile)
+        elif args.batchSystem == 'local': runLocal(command, logfile)
         elif args.batchSystem == 'HTCondor': 
             arguments = (os.getcwd(), command)
             launchOnCondor(logfile, script, arguments, i, job_label=jobLabel)
