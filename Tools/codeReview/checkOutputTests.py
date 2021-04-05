@@ -26,9 +26,9 @@ def compareHist(path, name):
 
         for xb in xrange(1, x_bins+1):
             for yb in xrange(1, y_bins+1):
-                if hist_prev.getHist().getHist().GetBinContent(xb, yb) != hist_latest.getHist().GetBinContent(xb, yb):
+                if hist_prev.getHist().GetBinContent(xb, yb) != hist_latest.getHist().GetBinContent(xb, yb):
                     return "Different content values in bin ({0}, {1})".format(xb, yb)
-                if hist_prev.getHist().getHist().GetBinError(xb, yb) != hist_latest.getHist().GetBinError(xb, yb):
+                if hist_prev.getHist().GetBinError(xb, yb) != hist_latest.getHist().GetBinError(xb, yb):
                     return "Different error values in bin ({0}, {1})".format(xb, yb)
 
     else:
