@@ -56,6 +56,10 @@ if args.isTest:
     if args.subJob is None: args.subJob = '0'
     if args.year is None: args.year = '2016'
     if args.flavor is None: args.flavor = 'tau'
+    from HNL.Tools.helpers import generateArgString
+    arg_string =  generateArgString(argParser)
+else:
+    arg_string = None
 
 #
 # Load in the sample list 
@@ -296,8 +300,8 @@ if not args.makePlots:
     #
     for i, c_key in enumerate(efficiency.keys()):
         for j, t_key in enumerate(efficiency[c_key].keys()):
-            if i == 0 and j == 0:       efficiency[c_key][t_key].write(is_test=args.isTest)
-            else:                       efficiency[c_key][t_key].write(append=True, is_test=args.isTest)
+            if i == 0 and j == 0:       efficiency[c_key][t_key].write(is_test=arg_string)
+            else:                       efficiency[c_key][t_key].write(append=True, is_test=arg_string)
             
     closeLogger(log)
 

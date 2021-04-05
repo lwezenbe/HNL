@@ -12,7 +12,8 @@ submission_parser.add_argument('--blind',   action='store_true', default=False, 
 submission_parser.add_argument('--useExistingLimits',   action='store_true', default=False,  help='Dont run combine, just plot')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
-submission_parser.add_argument('--datacard', action='store', default='', type=str,  help='What type of analysis do you want to run?', choices=['Combined', 'Ditau', 'NoTau', 'SingleTau', 'TauCombined'])
+submission_parser.add_argument('--datacard', action='store', default='', type=str,  help='What type of analysis do you want to run?', choices=['Combined', 'Ditau', 'NoTau', 'SingleTau', 'TauFinalStates'])
+submission_parser.add_argument('--compareToCards',   type=str, nargs='*',  help='Compare to a specific card if it exists. If you want different selection use "selection/card" otherwise just "card"')
 submission_parser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
 args = argParser.parse_args()
 
@@ -30,10 +31,10 @@ def getDataCard(mass, cardname, year):
 def combineSets(mass, year):
     datacard_massbase = os.path.join(datacards_base(year), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
     #Combined
-    categories = [el for el in glob.glob(datacard_massbase+'/*') if not 'total' in el and not 'Combined' in el and not 'TauCombined' in el]
+    categories = [el for el in glob.glob(datacard_massbase+'/*') if not 'Total' in el and not 'Combined' in el and not 'TauCombined' in el and not 'TauFinalStates' in el]
     runCombineCommand('combineCards.py '+' '.join(categories)+' > '+datacard_massbase+'/Combined.txt')
     #TauCombined
-    categories = [el for el in glob.glob(datacard_massbase+'/*') if not 'total' in el and not 'Combined' in el and not 'TauCombined' in el and not 'NoTau' in el]
+    categories = [el for el in glob.glob(datacard_massbase+'/*') if not 'Total' in el and not 'Combined' in el and not 'TauCombined' in el and not 'NoTau' in el and not 'TauFinalStates' in el]
     runCombineCommand('combineCards.py '+' '.join(categories)+' > '+datacard_massbase+'/TauCombined.txt')
 
 def combineYears(mass, cardname):
@@ -171,7 +172,7 @@ for card in cards_to_read:
     if observed_AN is None and expected_AN is None:
         bkgr_hist = None
     else:
-        bkgr_hist = [observed_AN]
+        bkgr_hist = [observed_AN, expected_AN]
 
     if args.compareToCards is not None:
         for compare_key in compare_graphs.keys():

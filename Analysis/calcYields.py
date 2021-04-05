@@ -76,6 +76,10 @@ if args.isTest:
     if args.sample is None: args.sample = 'DYJetsToLL-M-50'
     if args.subJob is None: args.subJob = '0'
     if args.year is None: args.year = '2016'
+    from HNL.Tools.helpers import generateArgString
+    arg_string =  generateArgString(argParser)
+else:
+    arg_string = None
 
 #
 # Load in the sample list 
@@ -268,9 +272,9 @@ if not args.makePlots and args.makeDataCards is None:
             for i, c_h in enumerate(list_of_numbers.keys()):
                 output_name = getOutputName(sample, prompt_str)
                 if i == 0:
-                    list_of_numbers[c_h][prompt_str].write(output_name, is_test=args.isTest)
+                    list_of_numbers[c_h][prompt_str].write(output_name, is_test=arg_string)
                 else:
-                    list_of_numbers[c_h][prompt_str].write(output_name, append=True, is_test=args.isTest)
+                    list_of_numbers[c_h][prompt_str].write(output_name, append=True, is_test=arg_string)
 
         cutter.saveCutFlow(getOutputName(sample, 'total'))
     

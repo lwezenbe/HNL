@@ -1,5 +1,5 @@
 import ROOT
-from HNL.TMVA.mvaVariables import getVariables, getVariableNames, input_variables
+from HNL.TMVA.mvaVariables import getVariables, getVariableNames, input_variables, getVariableValue
 from array import array
 import os
 
@@ -8,18 +8,28 @@ ctypes = {
     'I' : 'i'
 }
 
+MVA_of_choice = {
+    'high_e' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=3-shrinkage=0.1',
+    'high_mu' : 'kBDT-boostType=Grad-ntrees=100-maxdepth=4-shrinkage=0.1',
+    'high_tau' : 'kBDT-boostType=Grad-ntrees=100-maxdepth=4-shrinkage=0.1',
+    'low_e' : 'kBDT-boostType=RealAdaBoost-ntrees=100-maxdepth=2-shrinkage=1',
+    'low_mu' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=2-shrinkage=0.3',
+    'low_tau' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=2-shrinkage=0.1'
+}
+
 class Reader:
 
-    def __init__(self, chain, method_name, name_to_book, region):
+    def __init__(self, chain, method_name, name_to_book, region, model_name = None):
         self.reader = ROOT.TMVA.Reader("Silent")
         self.chain = chain
         self.method_name = method_name
+        self.model_name = model_name if model_name is not None else MVA_of_choice[name_to_book]
         self.region = region
         self.name_to_book = name_to_book
-        self.variables = input_variables
+        self.variables = getVariableNames(name_to_book)
         self.variable_array = self.initializeArrays()
         self.initializeVariables(name_to_book)
-        self.bookMethod(name_to_book, str(chain.year))
+        self.bookMethod(name_to_book)
 
     def initializeArrays(self):
         arrays = {}
@@ -31,13 +41,16 @@ class Reader:
         for v in getVariableNames(name):
             self.reader.AddVariable(v, self.variable_array[v])
 
-    def bookMethod(self, training_name, year):
-        path_to_weights = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'training', 'all', self.region+'-'+self.chain.selection, training_name, self.method_name, 'weights', 'factory_'+self.method_name+'.weights.xml')
+    def bookMethod(self, training_name):
+        path_to_weights = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'training', 'all', self.region+'-'+self.chain.selection, training_name, self.method_name, 'weights', 'factory_'+self.model_name+'.weights.xml')
         self.reader.BookMVA(training_name, path_to_weights)
 
-    def predict(self):
+    def predict(self, trainingnames=False):
         for v in self.variables:
-            self.variable_array[v][0] = self.variables[v]['var'](self.chain)
+            if not trainingnames:
+                self.variable_array[v][0] = getVariableValue(v)(self.chain)
+            else:
+                self.variable_array[v][0] = getattr(self.chain, v)
 
         return self.reader.EvaluateMVA(self.name_to_book)
 

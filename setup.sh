@@ -29,4 +29,6 @@ cd HNL
 scram b -j 10
 python Stat/python/combineSetup.py
 
+pip install PyPdf2 --user
+
 echo "Setup finished"

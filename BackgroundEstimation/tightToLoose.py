@@ -44,6 +44,10 @@ if args.isTest:
         elif args.flavor == 'e': args.sample = 'QCDEMEnriched-80to120'
         elif args.flavor == 'mu': args.sample = 'QCDmuEnriched-80to120'
         else:   args.sample = 'DYJetsToLL-M-50'
+    from HNL.Tools.helpers import generateArgString
+    arg_string =  generateArgString(argParser)
+else:
+    arg_string = None
 
 #
 # Raise errors if needed
@@ -254,7 +258,7 @@ if not args.makePlots:
     print fakerates.getFakeRate('0jets').getNumerator().GetEntries(), fakerates.getFakeRate('0jets').getDenominator().GetEntries()
     print fakerates.getFakeRate('njets').getNumerator().GetSumOfWeights(), fakerates.getFakeRate('njets').getDenominator().GetSumOfWeights()
     print fakerates.getFakeRate('njets').getNumerator().GetEntries(), fakerates.getFakeRate('njets').getDenominator().GetEntries()
-    fakerates.writeFakeRates(is_test=args.isTest)
+    fakerates.writeFakeRates(is_test=arg_string)
     cutter.saveCutFlow(getOutputName(region_to_select))
     closeLogger(log)
 

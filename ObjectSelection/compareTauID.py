@@ -69,6 +69,10 @@ if args.isTest:
     if args.year is None: args.year = '2016'
     if args.sample is None: args.sample = 'WZ'
     if len(args.discriminators) == 0: args.discriminators.append('iso')
+    from HNL.Tools.helpers import generateArgString
+    arg_string =  generateArgString(argParser)
+else:
+    arg_string = None
 
 #
 # Make sure we only run over iso when running reco efficiency
@@ -423,16 +427,16 @@ for discr in args.discriminators:
                     if args.includeReco == 'noIso' and wp is not None: continue
                     if discr != 'iso' or args.includeReco == 'noIso' or not args.makeCombinations:
                         if a == 0 and i == 0 and j == 0:
-                            list_of_var_hist[eff][discr][algo][v][wp].write(append = False, name = eff, is_test=args.isTest)
+                            list_of_var_hist[eff][discr][algo][v][wp].write(append = False, name = eff, is_test=arg_string)
                         else:
-                            list_of_var_hist[eff][discr][algo][v][wp].write(append = True, name = eff, is_test=args.isTest)
+                            list_of_var_hist[eff][discr][algo][v][wp].write(append = True, name = eff, is_test=arg_string)
                     else:
                         for k, ele_wp in enumerate(algos['ele'][linkIsoToLep('ele', algo)]):
                             for l, mu_wp in enumerate(algos['mu'][linkIsoToLep('mu', algo)]):
                                 if a == 0 and i == 0 and j == 0 and k == 0 and l == 0:
-                                    list_of_var_hist[eff][discr][algo][v][wp][ele_wp][mu_wp].write(append = False, name = eff, is_test=args.isTest)
+                                    list_of_var_hist[eff][discr][algo][v][wp][ele_wp][mu_wp].write(append = False, name = eff, is_test=arg_string)
                                 else:
-                                    list_of_var_hist[eff][discr][algo][v][wp][ele_wp][mu_wp].write(append = True, name = eff, is_test=args.isTest)
+                                    list_of_var_hist[eff][discr][algo][v][wp][ele_wp][mu_wp].write(append = True, name = eff, is_test=arg_string)
 
 print 'Finished'
 

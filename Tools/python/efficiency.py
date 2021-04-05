@@ -122,17 +122,17 @@ class Efficiency(object):
         return
     
 
-    def write(self, append = False, name=None, is_test=False):
+    def write(self, append = False, name=None, is_test=None):
         append_string = 'recreate'
         if append and isValidRootFile(self.path): append_string = 'update'
 
 
-        if not is_test:
+        if is_test is None:
             path_to_use = self.path
         else:
             split_path = self.path.split('/')
             index_to_use = split_path.index('testArea')+1
-            path_to_use = os.path.expandvars("$HOME/Testing/Latest/"+'/'.join(split_path[index_to_use:]))
+            path_to_use = os.path.expandvars("$HOME/Testing/Latest/"+'/'.join(split_path[index_to_use:-1])+'/'+is_test+'/'+split_path[-1])
 
         makeDirIfNeeded(path_to_use)
         output_file = ROOT.TFile(path_to_use, append_string)
@@ -156,5 +156,5 @@ class Efficiency(object):
             # self.getEfficiency().Write()
         output_file.Close()
 
-        if is_test:
-            self.write(append=append, name=name, is_test=False)
+        if is_test is not None:
+            self.write(append=append, name=name, is_test=None)

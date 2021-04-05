@@ -8,7 +8,10 @@ from HNL.Tools.histogram import Histogram
 
 def compareHist(path, name):
     hist_prev = Histogram(getObjFromFile(path, name))
-    hist_latest = Histogram(getObjFromFile(path.replace("Previous", "Latest"), name))
+    hist_latest_base_object  = getObjFromFile(path.replace("Previous", "Latest"), name)
+    if hist_latest_base_object is None:
+        return "Histogram with name '{0}' in file '{1}' is not present in Latest test".format(name, path)
+    hist_latest = Histogram(hist_latest_base_object)
 
     if hist_prev.isTH2 and not hist_latest.isTH2:
         return "Histograms are different type"
@@ -45,7 +48,7 @@ def compareHist(path, name):
 def compareFiles(f, subdir):
     in_file = TFile(f, "read")
     list_of_hist_names = []
-    for c in rootFileContent(in_file, getNested=True):
+    for c in rootFileContent(in_file, basepath='', getNested=True):
         list_of_hist_names.append(c[0])
     in_file.Close()
 
@@ -87,6 +90,7 @@ def checkAllOutput():
 
     faulty_sd = []
     for sd in subdir_list:
+        print "Checking", sd
         makeDirIfNeeded(BASE_FOLDER+'LOG/'+sd+'/x')
         faulty_files = checkSubdirOutput(sd)
         out_file = open(BASE_FOLDER+'LOG/'+sd+'/FULLREPORT.txt', 'w')
