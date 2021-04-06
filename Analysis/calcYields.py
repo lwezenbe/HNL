@@ -141,11 +141,11 @@ def getOutputName(sample, prompt_string):
 #
 # Prepare jobs
 #
-jobs = []
-
+jobs = {}
 for year in ['2016', '2017', '2018']:
     if args.year != 'all' and year != args.year: 
         continue
+    jobs[year] = []
     
     sample_manager = getSampleManager(year)
 
@@ -154,7 +154,7 @@ for year in ['2016', '2017', '2018']:
         if not args.includeData and sample_name == 'Data': continue
         sample = sample_manager.getSample(sample_name)
         for njob in xrange(sample.returnSplitJobs()):
-            jobs += [(sample.name, str(njob), year)]
+            jobs[year] += [(sample.name, str(njob), year)]
 
 #
 #   Code to process events
@@ -166,7 +166,8 @@ if not args.makePlots and args.makeDataCards is None:
     if not args.isChild and not args.runInTerminal:
         from HNL.Tools.jobSubmitter import submitJobs
         print 'submitting'
-        submitJobs(__file__, ('sample', 'subJob', 'year'), jobs, argParser, jobLabel = 'calcYields')
+        for year in jobs.keys():
+            submitJobs(__file__, ('sample', 'subJob', 'year'), jobs[year], argParser, jobLabel = 'calcYields', additionalArgs=[('year', year)])
         exit(0)
 
     sample_manager = getSampleManager(args.year)
@@ -305,7 +306,7 @@ else:
             base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], year, '-'.join([args.strategy, args.selection, args.region]))
 
         in_files = glob.glob(os.path.join(base_path, '*', '*'))
-        merge(in_files, __file__, jobs, ('sample', 'subJob', 'year'), argParser, istest=args.isTest)
+        merge(in_files, __file__, jobs, ('sample', 'subJob', 'year'), argParser, istest=args.isTest, additionalArgs= [('year', year)])
 
         def mergeValues(val_to_merge, err_to_merge):
             if len(val_to_merge) != len(err_to_merge):
@@ -327,25 +328,21 @@ else:
         sample_manager = getSampleManager(year)
 
         #Gather sample names
-        processed_outputs = set()
         signal_names = []
         bkgr_names = []
-        for sample_name in sample_manager.sample_names:
-            sample = sample_manager.getSample(sample_name)
-            if sample.output in processed_outputs: continue     #Current implementation of sample lists would cause double counting otherwise 
-            processed_outputs.add(sample.output)
-            is_signal = True if 'HNL' in sample.output else False
+        for sample_name in sample_manager.sample_outputs:
+            is_signal = True if 'HNL' in sample_name else False
             if args.signalOnly and not is_signal: continue
             if args.backgroundOnly and is_signal: continue
-            if 'HNL' in sample.name and not 'HNL-'+args.flavor in sample.name: continue
-            if not args.includeData and sample.name == 'Data': continue
-            if args.masses is not None and is_signal and not any([str(m) == sample.output.rsplit('-m')[-1] for m in args.masses]): continue
+            if 'HNL' in sample_name and not 'HNL-'+args.flavor in sample_name: continue
+            if not args.includeData and sample_name == 'Data': continue
+            if args.masses is not None and is_signal and not any([str(m) == sample_name.rsplit('-m')[-1] for m in args.masses]): continue
 
-            if not isValidRootFile(os.path.join(base_path, sample.output, 'total/events.root')): continue
+            if not isValidRootFile(os.path.join(base_path, sample_name, 'total/events.root')): continue
             if is_signal: 
-                signal_names.append(sample.output)
+                signal_names.append(sample_name)
             else:
-                bkgr_names.append(sample.output)
+                bkgr_names.append(sample_name)
 
         #Loading in signal
 

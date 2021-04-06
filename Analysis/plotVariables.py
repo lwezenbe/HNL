@@ -122,8 +122,8 @@ for year in ['2016', '2017', '2018']:
 if not args.isChild and not args.makePlots and not args.makeDataCards:
     from HNL.Tools.jobSubmitter import submitJobs
     for year in jobs.keys():
-        submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'plotVar', additionalArgs= [('year', year)])
-        exit(0)
+        submitJobs(__file__, ('sample', 'subJob'), jobs[year], argParser, jobLabel = 'plotVar', additionalArgs= [('year', year)])
+    exit(0)
 
 
 #
@@ -135,7 +135,6 @@ l3 = 2
 l4 = 3
 
 nl = 3 if args.region != 'ZZCR' else 4
-
 
 #
 # Create histograms
@@ -406,13 +405,13 @@ else:
             sample_name = s.split('/')[-1]
             sample_mass = float(sample_name.split('-m')[-1])
             if args.sample is not None and args.sample != sample_name:      continue
-            if sample_name not in sample_manager.sample_names:              continue    
+            if sample_name not in sample_manager.sample_outputs:              continue    
             if args.masses is not None and sample_mass not in args.masses:  continue 
             tmp_signal_list.append(s)
         for i_b, b in enumerate(bkgr_list):
             sample_name = b.split('/')[-1]
             if args.sample is not None and args.sample != sample_name:      continue
-            if sample_name not in sample_manager.sample_names:              continue 
+            if sample_name not in sample_manager.sample_outputs:              continue 
             tmp_bkgr_list.append(b) 
 
         signal_list = [x for x in tmp_signal_list]

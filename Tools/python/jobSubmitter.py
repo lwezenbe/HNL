@@ -119,7 +119,6 @@ def getSubmitArgs(argparser, args, dropArgs=None, additionalArgs = None):
     submitArgs   = {arg: getattr(arg_groups['submission'], arg) for arg in changedArgs if (not dropArgs or arg not in dropArgs)}
     if additionalArgs is not None:
         for additional_arg in additionalArgs:
-            if additional_arg[0] in submitArgs.keys(): continue
             submitArgs[additional_arg[0]] = additional_arg[1]
     return submitArgs
 

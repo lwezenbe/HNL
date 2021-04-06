@@ -35,10 +35,11 @@ class SampleManager:
         self.sample_names_file_full = os.path.join(BASE_PATH, 'Sublists', sample_names_file+'.conf')
         self.sample_dict = self.getSampleDict(self.sample_names_file_full)
         self.sample_names = self.sample_dict.keys()
+        self.need_skim_samples = need_skim_samples
         self.sample_list = self.createSampleList()
         self.sample_groups = SAMPLE_GROUPS
 
-        self.need_skim_samples = need_skim_samples
+        self.sample_outputs = self.getOutputs()
 
         self.lumi_clusters = {}
 
