@@ -432,7 +432,7 @@ class ClosureTestMC(FilterObject):
         # if not cutter.cut(self.chain._passMETFilters, 'pass met filters'): return False
         if 'tau' in self.flavors_of_interest:
             if not cutter.cut(self.chain._met < 50, 'MET>50'): return False
-            if not cutter.cut(containsOSSF(self.chain), 'OSSF present'):                                     return False
+            if not cutter.cut(containsOSSF(self.chain), 'OSSF present'): return False
             if not cutter.cut(not bVeto(self.chain), 'b-veto'): return False
         return True
 

@@ -64,6 +64,8 @@ for sample_name in sample_manager.sample_names:
     for njob in xrange(sample.returnSplitJobs()): 
         jobs += [(sample.name, str(njob))]
 
+from HNL.EventSelection.eventCategorization import SUPER_CATEGORIES
+
 if not args.merge:
 
     #
@@ -106,7 +108,6 @@ if not args.merge:
     #     log.info('Finished: valid outputfile already exists')
     #     exit(0)
 
-    from HNL.EventSelection.eventCategorization import SUPER_CATEGORIES
     output_file = ROOT.TFile(output_name ,"RECREATE")
 
     #
@@ -207,6 +208,48 @@ else:
 
     from HNL.Tools.mergeFiles import merge
     from HNL.Tools.helpers import isValidRootFile
+    from HNL.Tools.makeBranches import makeBranches
+
+    import uproot
+    def mergeSignal(out_name, in_names):
+        num_of_entries = {'tot': {}}
+        for in_name in in_names:
+            mass = int(in_name.rsplit('/')[-1].split('-m')[-1].split('.')[0])
+            num_of_entries[mass] = {}
+            for c in SUPER_CATEGORIES.keys():
+                num_of_entries[mass][c] = 0.
+                for prompt_str in ['prompt', 'nonprompt']:
+                    in_file = uproot.open(in_name)
+                    num_of_entries[mass][c] += len(in_file[prompt_str][c]['trainingtree']['event_weight'])
+        for c in SUPER_CATEGORIES.keys():
+            num_of_entries['tot'][c] = 0.
+            for ent in num_of_entries.keys():
+                if ent == 'tot': continue
+                num_of_entries['tot'][c] +=  num_of_entries[ent][c]
+
+        out_file = ROOT.TFile(out_name, 'recreate')
+        out_trees = {}
+        new_vars = {}
+        for ip, prompt_str in enumerate(['prompt', 'nonprompt']):
+            out_trees[prompt_str] = {}
+            new_vars[prompt_str] = {}
+            for ic, c in enumerate(SUPER_CATEGORIES.keys()):
+                out_file.mkdir(prompt_str+'/'+c)
+                chain = ROOT.TChain(prompt_str+'/'+c+'/trainingtree')
+                for in_name in in_names:
+                    chain.Add(in_name)
+                chain.SetBranchStatus('event_weight', 0)
+                out_trees[prompt_str][c] = chain.CloneTree(0)
+                if chain.GetEntries() > 0: 
+                    new_vars[prompt_str][c] = makeBranches(out_trees[prompt_str][c], ['event_weight/F'], already_defined = ip > 0 or ic > 0)
+
+                    for entry in xrange(chain.GetEntries()):
+                        chain.GetEntry(entry)
+                        new_vars[prompt_str][c].event_weight = num_of_entries['tot'][c]/num_of_entries[chain.HNL_mass][c]
+                        out_trees[prompt_str][c].Fill()
+                    out_file.cd(prompt_str+'/'+c)
+                    out_trees[prompt_str][c].Write()
+                
 
     merge_base = '/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/' if not args.isTest else '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/TMVA/data/testArea/'
 
@@ -247,17 +290,26 @@ else:
         if isValidRootFile(ele(mass)): high_mass_e.append(ele(mass))
         if isValidRootFile(mu(mass)): high_mass_mu.append(mu(mass))
 
+    mergeSignal(signal_mergefiles+'/high_e.root', high_mass_e)
+    mergeSignal(signal_mergefiles+'/high_tau.root', high_mass_tau)
+    mergeSignal(signal_mergefiles+'/high_mu.root', high_mass_mu)
+    mergeSignal(signal_mergefiles+'/low_e.root', low_mass_e)
+    mergeSignal(signal_mergefiles+'/low_tau.root', low_mass_tau)
+    mergeSignal(signal_mergefiles+'/low_mu.root', low_mass_mu)
+    mergeSignal(signal_mergefiles+'/all_e.root', low_mass_e+high_mass_e)
+    mergeSignal(signal_mergefiles+'/all_tau.root', low_mass_tau+high_mass_tau)
+    mergeSignal(signal_mergefiles+'/all_mu.root', low_mass_mu+high_mass_mu)
 
-    makeDirIfNeeded(signal_mergefiles+'/x')
-    os.system('hadd -f ' + signal_mergefiles+'/low_tau.root '+' '.join(low_mass_tau))
-    os.system('hadd -f ' + signal_mergefiles+'/high_tau.root '+' '.join(high_mass_tau))
-    os.system('hadd -f ' + signal_mergefiles+'/all_tau.root '+' '.join(low_mass_tau) +' '+' '.join(high_mass_tau))
-    os.system('hadd -f ' + signal_mergefiles+'/low_e.root '+' '.join(low_mass_e))
-    os.system('hadd -f ' + signal_mergefiles+'/high_e.root '+' '.join(high_mass_e))
-    os.system('hadd -f ' + signal_mergefiles+'/all_e.root '+' '.join(low_mass_e)+' '+' '.join(high_mass_e))
-    os.system('hadd -f ' + signal_mergefiles+'/low_mu.root '+' '.join(low_mass_mu))
-    os.system('hadd -f ' + signal_mergefiles+'/high_mu.root '+' '.join(high_mass_mu))
-    os.system('hadd -f ' + signal_mergefiles+'/all_mu.root '+' '.join(low_mass_mu) +' '+' '.join(high_mass_mu))
+    # makeDirIfNeeded(signal_mergefiles+'/x')
+    # os.system('hadd -f ' + signal_mergefiles+'/low_tau.root '+' '.join(low_mass_tau))
+    # os.system('hadd -f ' + signal_mergefiles+'/high_tau.root '+' '.join(high_mass_tau))
+    # os.system('hadd -f ' + signal_mergefiles+'/all_tau.root '+' '.join(low_mass_tau) +' '+' '.join(high_mass_tau))
+    # os.system('hadd -f ' + signal_mergefiles+'/low_e.root '+' '.join(low_mass_e))
+    # os.system('hadd -f ' + signal_mergefiles+'/high_e.root '+' '.join(high_mass_e))
+    # os.system('hadd -f ' + signal_mergefiles+'/all_e.root '+' '.join(low_mass_e)+' '+' '.join(high_mass_e))
+    # os.system('hadd -f ' + signal_mergefiles+'/low_mu.root '+' '.join(low_mass_mu))
+    # os.system('hadd -f ' + signal_mergefiles+'/high_mu.root '+' '.join(high_mass_mu))
+    # os.system('hadd -f ' + signal_mergefiles+'/all_mu.root '+' '.join(low_mass_mu) +' '+' '.join(high_mass_mu))
 
     makeDirIfNeeded(background_mergefiles+'/Combined/x')
     os.system('hadd -f ' + background_mergefiles+'/Combined/all_bkgr.root '+ all_bkgr_files)
@@ -271,3 +323,5 @@ else:
     os.system('hadd -f ' + combined_dir('SingleTree')+'/low_mu.root '+signal_mergefiles+'/low_mu.root '+background_mergefiles+'/Combined/all_bkgr.root ')
     os.system('hadd -f ' + combined_dir('SingleTree')+'/high_mu.root '+signal_mergefiles+'/high_mu.root ' +background_mergefiles+'/Combined/all_bkgr.root ')
     os.system('hadd -f ' + combined_dir('SingleTree')+'/all_mu.root '+signal_mergefiles+'/all_mu.root ' +background_mergefiles+'/Combined/all_bkgr.root ')
+
+

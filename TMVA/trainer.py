@@ -52,6 +52,7 @@ if not args.isChild and not args.plots:
 		args.isChild = True
 		submitArgs = getSubmitArgs(argParser, args)
 		for signal in ih.signal_names:
+			if args.signalname is not None and signal != args.signalname: continue
 			command = 'python trainer.py'
 			for arg, value in submitArgs.iteritems():
 				if value == False:

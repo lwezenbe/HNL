@@ -27,9 +27,9 @@ def makeDataCard(bin_name, flavor, year, obs_yield, sig_name, bkgr_names, select
         raise RuntimeError("length of background yields and names is inconsistent")
 
     if not shapes:
-        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'dataCards', str(year), selection, flavor, sig_name, 'cutAndCount',  bin_name+'.txt')
+        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'dataCards', str(year), '-'.join([strategy, selection]), flavor, sig_name, 'cutAndCount',  bin_name+'.txt')
     else:
-        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'dataCards', str(year), selection, flavor, sig_name, 'shapes', bin_name+'.txt')
+        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'dataCards', str(year), '-'.join([strategy, selection]), flavor, sig_name, 'shapes', bin_name+'.txt')
     makeDirIfNeeded(out_name)
     out_file = open(out_name, 'w')
 

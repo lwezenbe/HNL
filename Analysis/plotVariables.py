@@ -74,7 +74,7 @@ from HNL.Tools.helpers import getObjFromFile, progress, makeDirIfNeeded
 from HNL.EventSelection.eventCategorization import EventCategory
 from HNL.EventSelection.cutter import Cutter, printSelections
 from HNL.Weights.reweighter import Reweighter
-from HNL.TMVA.reader import Reader
+from HNL.TMVA.reader import Reader, listAvailableMVAs
 from HNL.Samples.sampleManager import SampleManager
 
 def getSampleManager(y):
@@ -267,8 +267,11 @@ if not args.makePlots and not args.makeDataCards:
             tmva = {}
             for sel in ['lowMassSR', 'highMassSR']:
                 tmva[sel] = {}
-                for n in ['low_tau', 'high_tau', 'low_e', 'high_e', 'low_mu', 'high_mu']:
-                    tmva[sel][n] = Reader(chain, 'kBDT', n, sel)
+                for n in listAvailableMVAs():
+                    try:
+                        tmva[sel][n] = Reader(chain, 'kBDT', n, sel)
+                    except:
+                        print 'Error when trying to load in BDT with {0} selection for name {1}'.format(sel, n)
 
         #
         # Loop over all events
@@ -365,10 +368,10 @@ else:
         sample_manager = getSampleManager(year)
         # Collect signal file locations
         # if args.genLevel and args.signalOnly:
-        #     signal_list = glob.glob(getOutputName('signal', year)+'/signalOrdering/*'+args.flavor+'-*')
+        #     signal_list = glob.glob(getOutputName('signal', year)+'/signalOrdering/*')
             
         if not args.bkgrOnly:
-            signal_list = glob.glob(getOutputName('signal', year)+'/*'+args.flavor+'-*')
+            signal_list = glob.glob(getOutputName('signal', year)+'/*')
             for i, s in enumerate(signal_list):
                 if 'signalOrdering' in s:
                     signal_list.pop(i)
@@ -407,6 +410,7 @@ else:
             if args.sample is not None and args.sample != sample_name:      continue
             if sample_name not in sample_manager.sample_outputs:              continue    
             if args.masses is not None and sample_mass not in args.masses:  continue 
+            if args.flavor is not None and '-'+args.flavor+'-' not in sample_name:  continue 
             tmp_signal_list.append(s)
         for i_b, b in enumerate(bkgr_list):
             sample_name = b.split('/')[-1]
@@ -676,12 +680,14 @@ else:
                     draw_ratio = None if args.signalOnly or args.bkgrOnly else True
                     if args.groupSamples:
                         p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = int(year), color_palette = 'Didar', color_palette_bkgr = 'AN2017')
+                        # p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = False, extra_text = extra_text, draw_ratio = draw_ratio, year = int(year), color_palette = 'Didar', color_palette_bkgr = 'AN2017')
                     else:
                         p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, y_log = False, extra_text = extra_text, draw_ratio = draw_ratio, year = int(year), color_palette = 'Didar')
 
 
                     # Draw
-                    p.drawHist(output_dir = os.path.join(output_dir, c_name), normalize_signal = True, draw_option='EHist', min_cutoff = 1)
+                    # p.drawHist(output_dir = os.path.join(output_dir, c_name), normalize_signal = True, draw_option='EHist', min_cutoff = 1)
+                    p.drawHist(output_dir = os.path.join(output_dir, c_name), normalize_signal = False, draw_option='EHist', min_cutoff = 1)
 
                 # if args.
                 
