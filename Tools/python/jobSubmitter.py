@@ -133,7 +133,7 @@ def getArgsStr(arg_list, to_ignore):
             args_str += '_' + str(arg) + '-' + str(arg_list[arg]).replace('/', '-')
     return args_str 
 
-def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, additionalArgs=None, subLog=None, wallTime='15', queue='localgrid', cores=1, jobLabel='', resubmission = False):
+def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, additionalArgs=None, subLog=None, wallTime='15', queue='localgrid', cores=1, jobLabel=None, resubmission = False):
     args         = argparser.parse_args()
     args.isChild = True
 

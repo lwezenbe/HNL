@@ -12,9 +12,11 @@ MVA_of_choice = {
     'high_e' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=3-shrinkage=0.1',
     'high_mu' : 'kBDT-boostType=Grad-ntrees=100-maxdepth=4-shrinkage=0.1',
     'high_tau' : 'kBDT-boostType=Grad-ntrees=100-maxdepth=4-shrinkage=0.1',
-    'low_e' : 'kBDT-boostType=RealAdaBoost-ntrees=100-maxdepth=2-shrinkage=1',
-    'low_mu' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=2-shrinkage=0.3',
-    'low_tau' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=2-shrinkage=0.1'
+    'low_e' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=2-shrinkage=0.3',
+    'low_mu' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=4-shrinkage=0.1',
+    'low_tau' : 'kBDT-boostType=RealAdaBoost-ntrees=100-maxdepth=2-shrinkage=0.1',
+    # 'low_tau' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=2-shrinkage=0.1',
+    # 'HNL-e-m200' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=3-shrinkage=0.1',
 }
 
 class Reader:
@@ -53,6 +55,9 @@ class Reader:
                 self.variable_array[v][0] = getattr(self.chain, v)
 
         return self.reader.EvaluateMVA(self.name_to_book)
+
+def listAvailableMVAs():
+    return MVA_of_choice.keys()
 
 if __name__ == '__main__':
     from HNL.Tools.helpers import getObjFromFile

@@ -8,7 +8,7 @@ import os
 # No need to include the extensions in the sublists, it will handle that
 #
 
-ALLOWED_SKIMS = ['noskim', 'Reco', 'TTT', 'tZqNewFR']
+ALLOWED_SKIMS = ['noskim', 'Reco', 'RecoGeneral', 'TTT', 'tZqNewFR']
 BASE_PATH = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Samples', 'InputFiles')
 SAMPLE_GROUPS = {
     'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],
@@ -24,13 +24,20 @@ SAMPLE_GROUPS = {
 class SampleManager:
 
 
-    def __init__(self, year, skim, sample_names_file, need_skim_samples=False):
+    def __init__(self, year, skim, sample_names_file, need_skim_samples=False, skim_selection=None, region=None):
         if not skim in ALLOWED_SKIMS:
             raise RuntimeError("skim "+skim+" not allowed in the sample manager")
+        if skim_selection is not None and region is not None and not 'General' in skim:
+            raise RuntimeError("Defined param skim_selection and region for input files that do not support them")
+        if 'General' in skim and (skim_selection is None or region is None):
+            raise RuntimeError('Param skim_selection and region should be defined for this skim')
 
         self.year = year
         self.skim = skim
         self.path = os.path.join(BASE_PATH, '_'.join(['sampleList', str(self.year), skim+'.conf']))
+
+        self.skim_selection = skim_selection
+        self.region = region
 
         self.sample_names_file_full = os.path.join(BASE_PATH, 'Sublists', sample_names_file+'.conf')
         self.sample_dict = self.getSampleDict(self.sample_names_file_full)
@@ -103,8 +110,13 @@ class SampleManager:
                 split_jobs
             except:
                 continue
+
+            if self.skim_selection is not None and self.region is not None:
+                path = path.replace('$SKIMSELECTION$', self.skim_selection).replace('$REGION$', self.region)
+
             if name in self.sample_names:
                 split_jobs += '*' + str(self.sample_dict[name])
+
             if not self.need_skim_samples: 
                 yield Sample(name, path, output, split_jobs, xsec)
             else:

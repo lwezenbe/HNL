@@ -306,7 +306,7 @@ else:
             base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], year, '-'.join([args.strategy, args.selection, args.region]))
 
         in_files = glob.glob(os.path.join(base_path, '*', '*'))
-        merge(in_files, __file__, jobs, ('sample', 'subJob', 'year'), argParser, istest=args.isTest, additionalArgs= [('year', year)])
+        merge(in_files, __file__, jobs[year], ('sample', 'subJob', 'year'), argParser, istest=args.isTest, additionalArgs= [('year', year)])
 
         def mergeValues(val_to_merge, err_to_merge):
             if len(val_to_merge) != len(err_to_merge):
@@ -505,7 +505,7 @@ else:
                     
                     # Signal 
                     for sample_name in list_of_values['signal'].keys():
-                        out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', str(year), args.selection, args.flavor, sample_name, ac+'.shapes.root')
+                        out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', args.strategy+'-'+args.selection+'-'+args.region, str(year), args.flavor, sample_name, ac+'.shapes.root')
                         makeDirIfNeeded(out_path)
                         out_shape_file = ROOT.TFile(out_path, 'recreate')
                         n_search_regions = srm[args.region].getNumberOfSearchRegions()
@@ -521,7 +521,7 @@ else:
                             shape_hist[bkgr_sample_name].Write(bkgr_sample_name)
                         out_shape_file.Close()
                         coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][int(sample_name.split('-m')[-1])]
-                        makeDataCard(str(ac), args.flavor, year, 0, sample_name, bkgr_names, args.selection, shapes=True, coupling_sq = coupling_squared)
+                        makeDataCard(str(ac), args.flavor, year, 0, sample_name, bkgr_names, args.selection, args.strategy, args.region, shapes=True, coupling_sq = coupling_squared)
 
         if args.makePlots:
 
@@ -706,18 +706,21 @@ else:
 
                 #Now add histograms together that belong to same analysis super category
                 list_of_ac_hist = {}
-                for ac in ANALYSIS_CATEGORIES.keys():
+                # for ac in ANALYSIS_CATEGORIES.keys():
+                for ac in SUPER_CATEGORIES.keys():
                     list_of_ac_hist[ac] = {'signal':[], 'bkgr':[]}
 
                     signal_names = []
                     for i_name, sample_name in enumerate(list_of_values['signal'].keys()):
                         signal_names.append(sample_name)
-                        list_of_ac_hist[ac]['signal'].append(mergeCategories(ANALYSIS_CATEGORIES[ac], 'signal', sample_name))
+                        # list_of_ac_hist[ac]['signal'].append(mergeCategories(ANALYSIS_CATEGORIES[ac], 'signal', sample_name))
+                        list_of_ac_hist[ac]['signal'].append(mergeCategories(SUPER_CATEGORIES[ac], 'signal', sample_name))
                     
                     bkgr_names = []
                     for i_name, sample_name in enumerate(background_collection):
                         bkgr_names.append(sample_name)
-                        list_of_ac_hist[ac]['bkgr'].append(mergeCategories(ANALYSIS_CATEGORIES[ac], 'bkgr', sample_name))
+                        # list_of_ac_hist[ac]['bkgr'].append(mergeCategories(ANALYSIS_CATEGORIES[ac], 'bkgr', sample_name))
+                        list_of_ac_hist[ac]['bkgr'].append(mergeCategories(SUPER_CATEGORIES[ac], 'bkgr', sample_name))
 
                     extra_text = [extraTextFormat(ac, ypos = 0.82)]
                     if args.flavor: extra_text.append(extraTextFormat('|V_{'+args.flavor+'N}|^{2} = '+'%.0E' % Decimal(str(args.coupling**2)), textsize = 0.7))

@@ -75,7 +75,7 @@ class Sample(object):
         return split_jobs
 
     def returnSplitJobs(self):
-        if 'Calc' in self.split_jobs:
+        if isinstance(self.split_jobs, str) and 'Calc' in self.split_jobs:
             self.split_jobs = self.calcSplitJobs(self.split_jobs)
         return self.split_jobs
 
@@ -89,6 +89,7 @@ class Sample(object):
         
         if sub_path.endswith('.root'):
             hcounter                    = getObjFromFile(sub_path, 'blackJackAndHookers/'+name)
+            if hcounter is None:  hcounter = getObjFromFile(sub_path, name)     #Try without blackJackAndHookers
             return hcounter
         else:
             hcounter = None
@@ -170,7 +171,7 @@ class SkimSample(Sample):
         for f in self.list_of_subjobclusters[int(subjob)]:
             if hcounter is None:     
                 hcounter = self.getHist(name, f)
-            else:                   
+            else:
                 hcounter.Add(self.getHist(name, f))
         return hcounter
             
@@ -199,7 +200,7 @@ class SkimSample(Sample):
 #
 #       create list of samples from input file
 #
-def createSampleList(file_name, sample_manager = None, need_skim_sample = False):
+def createSampleList(file_name, sample_manager = None, need_skim_sample = False, skim_selection = None, region = None):
     sample_infos = [line.split('%')[0].strip() for line in open(file_name)]                     # Strip % comments and \n charachters
     sample_infos = [line.split() for line in sample_infos if line]                              # Get lines into tuples
     for name, path, output, split_jobs, xsec in sample_infos:
@@ -207,6 +208,10 @@ def createSampleList(file_name, sample_manager = None, need_skim_sample = False)
             split_jobs
         except:
             continue
+
+        if skim_selection is not None and region is not None:
+            path = path.replace('$SKIMSELECTION$', skim_selection).replace('$REGION$', region)
+
         if sample_manager != None:
             split_jobs += '*' + str(sample_manager.sample_dict[name])
         if not need_skim_sample: 

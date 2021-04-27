@@ -112,18 +112,19 @@ var_mva = {
         # 'mva_low_e_baseline':        (lambda c : c.mva_low_e_baseline,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
         # 'mva_low_mu_baseline':        (lambda c : c.mva_low_mu_baseline,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
         # 'mva_low_tau_baseline':        (lambda c : c.mva_low_tau_baseline,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
-        'mva_high_e_lowMassSR':        (lambda c : c.mva_high_e_lowMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
-        'mva_high_mu_lowMassSR':        (lambda c : c.mva_high_mu_lowMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
-        'mva_high_tau_lowMassSR':        (lambda c : c.mva_high_tau_lowMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
-        'mva_low_e_lowMassSR':        (lambda c : c.mva_low_e_lowMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
-        'mva_low_mu_lowMassSR':        (lambda c : c.mva_low_mu_lowMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
-        'mva_low_tau_lowMassSR':        (lambda c : c.mva_low_tau_lowMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
-        'mva_high_e_highMassSR':        (lambda c : c.mva_high_e_highMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
-        'mva_high_mu_highMassSR':        (lambda c : c.mva_high_mu_highMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
-        'mva_high_tau_highMassSR':        (lambda c : c.mva_high_tau_highMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
-        'mva_low_e_highMassSR':        (lambda c : c.mva_low_e_highMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
-        'mva_low_mu_highMassSR':        (lambda c : c.mva_low_mu_highMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events')),  
-        'mva_low_tau_highMassSR':        (lambda c : c.mva_low_tau_highMassSR,   np.arange(-1., 1.05, 0.05),         ('MVA score', 'Events'))  
+        'mva_high_e_lowMassSR':        (lambda c : c.mva_high_e_lowMassSR,   np.arange(-1., 1.2, 0.2),         ('MVA score', 'Events')),  
+        'mva_high_mu_lowMassSR':        (lambda c : c.mva_high_mu_lowMassSR,   np.arange(-1., 1.2, 0.2),         ('MVA score', 'Events')),  
+        'mva_high_tau_lowMassSR':        (lambda c : c.mva_high_tau_lowMassSR,   np.arange(-1., 1.2, 0.2),         ('MVA score', 'Events')),  
+        'mva_low_e_lowMassSR':        (lambda c : c.mva_low_e_lowMassSR,   np.arange(-1., 1.2, 0.2),         ('MVA score', 'Events')),  
+        'mva_low_mu_lowMassSR':        (lambda c : c.mva_low_mu_lowMassSR,   np.arange(-1., 1.2, 0.2),         ('MVA score', 'Events')),  
+        'mva_low_tau_lowMassSR':        (lambda c : c.mva_low_tau_lowMassSR,   np.arange(-1., 1.2, 0.2),         ('MVA score', 'Events')),  
+        'mva_high_e_highMassSR':        (lambda c : c.mva_high_e_highMassSR,   np.arange(-1., 1.2, 0.2),         ('MVA score', 'Events')),  
+        'mva_high_mu_highMassSR':        (lambda c : c.mva_high_mu_highMassSR,   np.arange(-1., 1.2, 0.2),         ('MVA score', 'Events')),  
+        'mva_high_tau_highMassSR':        (lambda c : c.mva_high_tau_highMassSR,   np.arange(-1., 1.2, 0.2),         ('MVA score', 'Events')),  
+        'mva_low_e_highMassSR':        (lambda c : c.mva_low_e_highMassSR,   np.arange(-1., 1.2, 0.2),         ('MVA score', 'Events')),  
+        'mva_low_mu_highMassSR':        (lambda c : c.mva_low_mu_highMassSR,   np.arange(-1., 1.2, 0.2),         ('MVA score', 'Events')),  
+        'mva_low_tau_highMassSR':        (lambda c : c.mva_low_tau_highMassSR,   np.arange(-1., 1.2, 0.2),         ('MVA score', 'Events')),  
+        # 'mva_m200_e_highMassSR':        (lambda c : c.mva_m200_e_highMassSR,   np.arange(-1., 1.2, 0.2),         ('MVA score', 'Events')),  
 }
 
 var_noselection = {
@@ -141,7 +142,8 @@ def returnVariables(nl, is_reco, include_mva = False):
                 else: var_of_choice = var_gen_3l
 
         if include_mva:
-                var_of_choice = mergeTwoDictionaries(var_of_choice, var_mva)
+                # var_of_choice = mergeTwoDictionaries(var_of_choice, var_mva)
+                var_of_choice = var_mva
         
         return var_of_choice
 

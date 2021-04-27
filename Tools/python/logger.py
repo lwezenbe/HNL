@@ -6,6 +6,7 @@ ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
 
 SUCCESS_MESSAGE = "JOB SUCCESSFULLY COMPLETED. NO NEED TO RESUBMIT"
+OTHER_ERRORS = ["SysError in <TFile::Flush>", "Input/output error"]
 
 def getLogger(level='INFO', logFile=None):
     # If it already exist, return it
@@ -59,8 +60,16 @@ def successfullJob(fname):
         lines = [line.split('%')[0].strip() for line in open(fname)] 
     except:
         return False
-    passed_lines = [SUCCESS_MESSAGE in line for line in lines]
-    return any(passed_lines)
+    
+    for line in lines:
+        for err in OTHER_ERRORS:
+            if err in line: return False
+            
+        passed = SUCCESS_MESSAGE in line
+
+        if not passed: continue
+        else: return True
+    return False
 
 from HNL.Tools.helpers import makeDirIfNeeded
 def clearLogs(base):
@@ -69,4 +78,3 @@ def clearLogs(base):
     os.system('rm -r '+last_base+'/*')
     os.system('scp -r '+base+'/* '+last_base+'/.')
     os.system('rm -r '+base)
-

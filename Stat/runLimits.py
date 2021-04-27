@@ -17,7 +17,7 @@ submission_parser.add_argument('--compareToCards',   type=str, nargs='*',  help=
 submission_parser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
 args = argParser.parse_args()
 
-datacards_base = lambda year : os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/dataCards/'+year+'/'+args.selection+'/'+args.flavor)
+datacards_base = lambda year : os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/dataCards/'+year+'/'+args.strategy+'-'+args.selection+'/'+args.flavor)
 import glob
 from HNL.Stat.combineTools import runCombineCommand, extractScaledLimitsPromptHNL, makeGraphs
 from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped, getObjFromFile
@@ -106,9 +106,8 @@ if not args.useExistingLimits:
                 exit(0)
 
 compare_dict = {
-    'cut-based': 'Search regions (tight WP)',
-    'Luka': 'Search regions',
-    'MVA': 'BDT'
+    'cutbased-default': 'Search regions',
+    'MVA-default': 'BDT'
 }
 
 for card in cards_to_read:
@@ -119,7 +118,7 @@ for card in cards_to_read:
     for mass in masses:
         if mass not in args.masses: continue
         asymptotic_str = 'asymptotic' if args.asymptotic else ''
-        input_folder = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', str(year_to_read), args.selection, args.flavor, 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', asymptotic_str, card)
+        input_folder = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', str(year_to_read), args.strategy +'-'+ args.selection, args.flavor, 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', asymptotic_str, card)
         tmp_coupling = sqrt(signal_couplingsquared[args.flavor][mass])
 
         tmp_limit = extractScaledLimitsPromptHNL(input_folder + '/higgsCombineTest.AsymptoticLimits.mH120.root', tmp_coupling)
@@ -152,23 +151,20 @@ for card in cards_to_read:
     if args.flavor == 'e':
         observed_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsElectronMixing.root'), 'observed_promptDecays')
         expected_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsElectronMixing.root'), 'expected_central')
-        tex_names = ['observed (EXO-17-012)']
+        tex_names = ['observed (EXO-17-012)', 'expected (EXO-17-012)']
     elif args.flavor == 'mu':
         observed_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsMuonMixing.root'), 'observed_promptDecays')
         expected_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsMuonMixing.root'), 'expected_central')
-        tex_names = ['observed (EXO-17-012)']
+        tex_names = ['observed (EXO-17-012)', 'expected (EXO-17-012)']
 
     else:
         observed_AN = None
         expected_AN = None
         tex_names = None
 
-    print 'graphs', graphs
-    print 'compare_graphs', compare_graphs
-
     coupling_dict = {'tau':'#tau', 'mu':'#mu', 'e':'e', '2l':'l'}
     from HNL.Plotting.plot import Plot
-    destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/Results/runAsymptoticLimits/'+args.selection+'/'+args.flavor+'/'+card+'/'+ year_to_read))
+    destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/Results/runAsymptoticLimits/'+args.strategy+'-'+args.selection+'/'+args.flavor+'/'+card+'/'+ year_to_read))
     if observed_AN is None and expected_AN is None:
         bkgr_hist = None
     else:
@@ -185,5 +181,6 @@ for card in cards_to_read:
                 tex_names.append(compare_dict[compare_sel] + ' ' +compare_reg)
 
     year = args.year[0] if len(args.year) == 1 else 'all'
+    # p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=False, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', year = year)
     p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', year = year)
     p.drawBrazilian(output_dir = destination)
