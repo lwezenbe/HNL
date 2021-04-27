@@ -84,9 +84,14 @@ def getSampleManager(y):
     elif args.selection != 'default':
         skim_str = 'noskim'
     else:
-        skim_str = 'Reco'
+        skim_str = 'RecoGeneral'
+        # skim_str = 'Reco'
     file_list = 'fulllist_'+str(y)+'_mconly' if args.customList is None else args.customList
-    sample_manager = SampleManager(y, skim_str, file_list)
+
+    if skim_str == 'RecoGeneral' and args.region in ['highMassSR', 'lowMassSR']:
+        sample_manager = SampleManager(y, skim_str, file_list, skim_selection=args.selection, region=args.region)
+    else:
+        sample_manager = SampleManager(y, skim_str, file_list)
     return sample_manager
 
 if args.isTest:
