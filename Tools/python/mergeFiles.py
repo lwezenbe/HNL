@@ -45,9 +45,13 @@ from HNL.Tools.jobSubmitter import checkCompletedJobs, submitJobs, cleanJobFiles
 #For now also have argparser in there just to be able to automatically resubmit
 def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False, groups_to_merge=None, additionalArgs=None):
 
-    if not istest and not checkShouldMerge(script, argparser, additionalArgs=additionalArgs):
-        print "Nothing to merge"
-        return
+    try:
+        if not istest and not checkShouldMerge(script, argparser, additionalArgs=additionalArgs):
+            print "Nothing to merge"
+            return
+    except:
+        should_abort = raw_input("The log files you are asking for do not exist. Would you like to skip merging? (y/n) \n")
+        if should_abort in ['y', 'Y']: return
 
     if not istest:
         if argparser is None:

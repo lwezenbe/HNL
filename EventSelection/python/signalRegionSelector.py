@@ -1,6 +1,7 @@
 #Same as controlregionselector but with added option for signal vs background extraction (Want to use cut-based analysis selection or MVA based?)
 import eventSelectionTools as est
 from eventSelectionTools import MZ
+from HNL.ObjectSelection.leptonSelector import isGoodLepton
 
 l1 = 0
 l2 = 1
@@ -8,12 +9,18 @@ l3 = 2
 
 class SignalRegionSelector:
 
-    def __init__(self, region, chain, new_chain, is_reco_level=True, event_categorization = None):
+    def __init__(self, region, chain, new_chain, is_reco_level=True, event_categorization = None, additional_options = None):
         self.region = region
         self.chain = chain
         self.new_chain = new_chain
         self.is_reco_level = is_reco_level
         self.ec = event_categorization
+        self.sideband = additional_options == 'sideband'
+        if self.sideband:
+            self.chain.obj_sel['tau_wp'] = 'FO'
+            self.chain.obj_sel['ele_wp'] = 'FO'
+            self.chain.obj_sel['mu_wp'] = 'FO'
+
 
     def initEvent(self, cutter):
         if self.is_reco_level and not cutter.cut(est.select3Leptons(self.chain, self.new_chain, cutter=cutter), 'select leptons'): return False
@@ -87,6 +94,13 @@ class SignalRegionSelector:
 
     def passedFilter(self, cutter, for_training=False):
         if not self.initEvent(cutter): return False
+
+        if self.sideband:
+            nfail = 0
+            for l in chain.l_indices:
+                if not isGoodLepton(chain, index, 'tight'):
+                    nfail += 1
+            if nfail < 1: return False
 
         if not self.is_reco_level:  return True #It has passed the basic selection
 
