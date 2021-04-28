@@ -85,6 +85,7 @@ if args.allCombinations:
     code_to_test = [l.split('%') for l in code_to_test if l]
 
     out_name = 'data/output/codeToTest_output.txt'
+    makeDirIfNeeded(out_name)
     out_file = open(out_name, 'w')
     out_file.close()
 

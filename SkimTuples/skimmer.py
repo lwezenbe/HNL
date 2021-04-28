@@ -238,7 +238,7 @@ if not args.checkLogs:
 
             new_vars.lumiweight = lw.getLumiWeight()
         else:
-            if not es.passedFilter(cutter): continue
+            if not es.passedFilter(cutter, sample.output): continue
 
         output_tree.Fill()
 

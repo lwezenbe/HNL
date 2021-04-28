@@ -49,10 +49,13 @@ class EventSelector:
             return True
         return False
 
-    def passedFilter(self, cutter, sample_name):
+    def removeOverlapDYandZG(self, sample_name):
         if sample_name == 'DY' and self.chain._zgEventType>=3: return False
         if sample_name == 'ZG' and self.leptonFromMEExternalConversion(): return False
+        return True
 
+    def passedFilter(self, cutter, sample_name):
+        if not self.removeOverlapDYandZG(sample_name): return False
         if self.name != 'NoSelection':
             return self.selector.passedFilter(cutter)
         else:
