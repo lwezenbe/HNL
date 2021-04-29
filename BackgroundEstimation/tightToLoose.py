@@ -234,11 +234,13 @@ if not args.makePlots:
 
         #Event selection
         if args.flavor == 'e':
+            if not es.removeOverlapDYandZG(sample.output): continue
             if not es.selector.passedFilter(cutter, only_electrons=True, require_jets=True): continue
         elif args.flavor == 'mu':
+            if not es.removeOverlapDYandZG(sample.output): continue
             if not es.selector.passedFilter(cutter, only_muons=True, require_jets=True): continue
         else:
-            if not es.passedFilter(cutter): continue
+            if not es.passedFilter(cutter, sample.output): continue
         fake_index = es.selector.getFakeIndex()
         
         if args.inData and not chain.is_data:

@@ -8,16 +8,17 @@ import os
 # No need to include the extensions in the sublists, it will handle that
 #
 
-ALLOWED_SKIMS = ['noskim', 'Reco', 'RecoGeneral', 'TTT', 'tZqNewFR']
+ALLOWED_SKIMS = ['noskim', 'Reco', 'RecoGeneral', 'TTT', 'tZqNewFR', 'Gen']
 BASE_PATH = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Samples', 'InputFiles')
 SAMPLE_GROUPS = {
-    'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],
+    # 'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],
     'TT-T+X': ['ttX', 'TTG', 'TG', 'TTTT'],
     'triboson': ['triboson'],
     'WZ': ['WZ'],
     # 'diboson': ('ZZ', 'WW', 'WZ'),
     'ZZ-H': ['ZZ', 'QCD', 'Higgs'],
-    'XG': ['XG', 'WG']
+    'XG': ['DY', 'ZG', 'WG'],
+    'other':['WJets', 'WW', 'ST', 'TT']
 }
 
 

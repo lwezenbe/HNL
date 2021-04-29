@@ -302,9 +302,10 @@ if not args.makePlots:
 
         #Event selection  
         if args.inData:
+            if not es.removeOverlapDYandZG(sample.output): continue
             if not es.selector.passedFilter(cutter, args.region): continue
         else:
-            if not es.passedFilter(cutter): continue
+            if not es.passedFilter(cutter, sample.output): continue
             # if not es.selector.passedFilter(cutter, only_electrons = True): continue
             
         if args.inData and not chain.is_data:

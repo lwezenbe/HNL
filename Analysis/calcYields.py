@@ -252,7 +252,7 @@ if not args.makePlots and args.makeDataCards is None:
                 if not cutter.cut(passTriggers(chain, analysis='HNL_old'), 'pass_triggers'): continue
 
             #Event selection            
-            if not es.passedFilter(cutter): continue
+            if not es.passedFilter(cutter, sample.output): continue
             nprompt = 0
             for index in chain.l_indices:
                 if chain._lIsPrompt[index]: nprompt += 1

@@ -42,7 +42,20 @@ class EventSelector:
                 raise RuntimeError("Running this would mean unblinding. Dont do this.")
             self.selector = SignalRegionSelector('baseline', chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
 
-    def passedFilter(self, cutter):
+    def leptonFromMEExternalConversion(self):
+        for lepton_index in xrange(self.chain._nL):
+            if self.chain._lMatchPdgId[lepton_index] != 22: continue
+            if not (self.chain._lIsPrompt[lepton_index] and self.chain._lProvenanceConversion[lepton_index]): continue
+            return True
+        return False
+
+    def removeOverlapDYandZG(self, sample_name):
+        if sample_name == 'DY' and self.chain._zgEventType>=3: return False
+        if sample_name == 'ZG' and self.leptonFromMEExternalConversion(): return False
+        return True
+
+    def passedFilter(self, cutter, sample_name):
+        if not self.removeOverlapDYandZG(sample_name): return False
         if self.name != 'NoSelection':
             return self.selector.passedFilter(cutter)
         else:

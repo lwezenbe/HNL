@@ -260,7 +260,7 @@ if not args.makePlots:
         if not args.divideByCategory == 'gendenom' and not passed_baseline_cut: continue
     
         if not args.genLevel:
-            passed = es.passedFilter(cutter)
+            passed = es.passedFilter(cutter, sample.output)
         elif args.divideByCategory == 'gendenom':
             passed = passed_baseline_cut
         else:

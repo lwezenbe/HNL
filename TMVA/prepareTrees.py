@@ -160,6 +160,7 @@ if not args.merge:
     
         cutter.cut(True, 'Total')
 
+        if not es.removeOverlapDYandZG(sample.output): continue
         if not es.selector.passedFilter(cutter, for_training=True): continue
         if len(chain.l_flavor) == chain.l_flavor.count(2): continue
 

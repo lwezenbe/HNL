@@ -15,7 +15,7 @@ class FakeRate(Efficiency):
         for i in xrange(len(chain.l_indices)):
             if not chain.l_flavor[i] == flavor: continue
             if not chain.l_istight[i]:
-                if chain.selection == 'Luka' and flavor == 0:
+                if chain.selection in ['Luka', 'default'] and flavor == 0:
                     man_var = [min(44.9, chain.l_pt[i]), abs(chain.l_eta[i])]
                 else:
                     man_var = None
@@ -26,5 +26,3 @@ class FakeRate(Efficiency):
             return -999.
         else:
             return weight
-
-        

@@ -27,7 +27,7 @@ submission_parser.add_argument('--selection',   action='store', default='default
 submission_parser.add_argument('--strategy',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
 submission_parser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', 
     choices=['baseline', 'lowMassSR', 'highMassSR', 'ZZCR', 'WZCR', 'ConversionCR', 'NoSelection'])
-submission_parser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data')
+submission_parser.add_argument('--includeData',   action='store', default=None, nargs='*',  help='Also run over data', choices=['sideband', 'signalregion'])
 submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
 
@@ -49,7 +49,10 @@ args = argParser.parse_args()
 from HNL.Tools.logger import getLogger, closeLogger
 log = getLogger(args.logLevel)
 
-if args.includeData and args.region in ['baseline', 'highMassSR', 'lowMassSR']:
+if args.includeData is not None and args.region == 'NoSelection':
+    raise RuntimeError('inData does not work with this selection region')
+
+if args.includeData is not None and 'signalregion' in args.includeData and args.region in ['baseline', 'highMassSR', 'lowMassSR']:
     raise RuntimeError('These options combined would mean unblinding. This is not allowed.')
 
 if args.makeDataCards and args.strategy != 'MVA': 
@@ -83,12 +86,13 @@ def getSampleManager(y):
         skim_str = 'noskim'
     elif args.selection != 'default':
         skim_str = 'noskim'
-    else:
+    elif args.region in ['highMassSR', 'lowMassSR']:
         skim_str = 'RecoGeneral'
-        # skim_str = 'Reco'
-    file_list = 'fulllist_'+str(y)+'_mconly' if args.customList is None else args.customList
+    else:
+        skim_str = 'Reco'
+    file_list = 'fulllist_'+str(y) if args.customList is None else args.customList
 
-    if skim_str == 'RecoGeneral' and args.region in ['highMassSR', 'lowMassSR']:
+    if skim_str == 'RecoGeneral':
         sample_manager = SampleManager(y, skim_str, file_list, skim_selection=args.selection, region=args.region)
     else:
         sample_manager = SampleManager(y, skim_str, file_list)
@@ -115,7 +119,7 @@ for year in ['2016', '2017', '2018']:
     sample_manager = getSampleManager(year)
 
     for sample_name in sample_manager.sample_names:
-        if not args.includeData and sample_name == 'Data': continue
+        if args.includeData is None and sample_name == 'Data': continue
         sample = sample_manager.getSample(sample_name)
         if args.sample and args.sample != sample.name: continue
         for njob in xrange(sample.returnSplitJobs()): 
@@ -169,15 +173,6 @@ def getOutputName(st, year):
     else:
         return os.path.join(os.getcwd(), 'data', 'testArea', 'plotVariables', '-'.join([args.strategy, args.selection, args.region, reco_or_gen_str]), year, st)
 
-list_of_hist = {}
-for prompt_str in ['prompt', 'nonprompt', 'total']:
-    list_of_hist[prompt_str] = {}
-    for c in categories:
-        list_of_hist[prompt_str][c] = {}
-        for v in var.keys():
-            list_of_hist[prompt_str][c][v] = {'signal':{}, 'bkgr':{}}
-            if args.includeData: list_of_hist[prompt_str][c][v]['data'] = {}
-
 #
 # Load in the sample list 
 #
@@ -185,7 +180,6 @@ if args.genLevel and args.selection == 'AN2017014':
     raise RuntimeError('gen level is currently not implemented on AN2017014 analysis selection')
 
 from HNL.Triggers.triggerSelection import passTriggers
-
 #
 # Loop over samples and events
 #
@@ -204,31 +198,25 @@ if not args.makePlots and not args.makeDataCards:
        
         if sample.name != args.sample: continue
         if args.sample and sample.name != args.sample: continue
-        if not args.includeData and sample.name == 'Data': continue
+
+        chain = sample.initTree(needhcount=False)
+        if args.includeData is None and chain.is_data: continue
+
+        list_of_hist = {}
+        if chain.is_data: prompt_str = ['sideband', 'signalregion']
+        else: prompt_str = ['prompt', 'nonprompt', 'total']
+        for c in categories:
+            list_of_hist[c] = {}
+            for v in var.keys():
+                list_of_hist[c][v] = {}
+                for ps in prompt_str:
+                    list_of_hist[c][v][ps] = Histogram(str(c)+'-'+v+'-'+sample.output+'-'+ps, var[v][0], var[v][2], var[v][1])
 
         #
         # Load in sample and chain
         #
-        chain = sample.initTree(needhcount=False)
         chain.obj_sel = getObjectSelection(args.selection)
         sample_names.append(sample.name)
-
-        #
-        # Check if sample is a signal or background sample
-        #
-        is_signal = 'HNL' in sample.name
-        if args.includeData and sample.name == 'Data':
-            signal_str = 'data'
-        else:
-            signal_str = 'signal' if is_signal else 'bkgr'
-
-        #
-        # Create histogram for all categories and variables
-        #
-        for prompt_str in ['prompt', 'nonprompt', 'total']:
-            for c in categories:
-                for v in var:
-                    list_of_hist[prompt_str][c][v][signal_str][sample.name] = Histogram(str(c)+'-'+v+'-'+sample.output+'-'+prompt_str, var[v][0], var[v][2], var[v][1])
         
         #
         # Set event range
@@ -282,7 +270,15 @@ if not args.makePlots and not args.makeDataCards:
         # Loop over all events
         #
         ec = EventCategory(chain)
-        es = EventSelector(args.region, chain, chain, not args.genLevel, ec)
+        if chain.is_data:
+            es = {}
+            if 'sideband' in args.includeData:
+                es['sideband'] = EventSelector(args.region, chain, chain, not args.genLevel, ec, additional_options='sideband')
+            elif 'signalregion' in args.includeData:
+                es['signalregion'] = EventSelector(args.region, chain, chain, not args.genLevel, ec)
+        else:
+            es = EventSelector(args.region, chain, chain, not args.genLevel, ec)
+
         for entry in event_range:
             
             chain.GetEntry(entry)
@@ -299,20 +295,37 @@ if not args.makePlots and not args.makeDataCards:
             #
             # Event selection
             #
-            if not es.passedFilter(cutter): continue
-            if args.region != 'NoSelection':
+            if chain.is_data:
+                passed_filters = {}
+                # It can be done like this because passedFilter does not overwrite the existing new_chain
+                # variables if it doesnt pass and there can not be more than one that passes since the 
+                # regions are supposed to be orthogonal
+                for f in es.keys():
+                    passed_filters[f] = es[f].passedFilter(cutter, sample.output)
+                if passed_filters.values().count(True) > 1:
+                    raise RuntimeError('regions in data are supposed to be orthogonal')
+                elif passed_filters.values().count(True) < 1: continue
+
                 if len(chain.l_flavor) == chain.l_flavor.count(2): continue #Not all taus
 
-                nprompt = 0
-                if sample.name != 'Data':
-                    for index in chain.l_indices:
-                        if not args.genLevel and chain._lIsPrompt[index]: nprompt += 1
-                        elif args.genLevel and chain._gen_lIsPrompt[index]: nprompt += 1
-                    
-                prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
-            else:
-                prompt_str = 'prompt'
-                chain.category = 17
+                if 'sideband' in args.includeData and passed_filters['sideband']: prompt_str = 'sideband'
+                if 'signalregion' in args.includeData and passed_filters['signalregion']: prompt_str = 'signalregion'
+
+            elif not chain.is_data:
+                if not es.passedFilter(cutter, sample.output): continue
+                if args.region != 'NoSelection':
+                    if len(chain.l_flavor) == chain.l_flavor.count(2): continue #Not all taus
+
+                    nprompt = 0
+                    if sample.name != 'Data':
+                        for index in chain.l_indices:
+                            if not args.genLevel and chain._lIsPrompt[index]: nprompt += 1
+                            elif args.genLevel and chain._gen_lIsPrompt[index]: nprompt += 1
+                        
+                    prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
+                else:
+                    prompt_str = 'prompt'
+                    chain.category = 17
 
             if args.strategy == 'MVA':
                 chain.mva_high_mu_lowMassSR = tmva['lowMassSR']['high_mu'].predict()
@@ -332,15 +345,24 @@ if not args.makePlots and not args.makeDataCards:
             #
             # Fill the histograms
             #
+            weight = reweighter.getTotalWeight()
+            is_sideband = True if prompt_str == 'sideband' else False
             for v in var.keys():
-                list_of_hist[prompt_str][chain.category][v][signal_str][sample.name].fill(chain, reweighter.getTotalWeight())  
-                list_of_hist['total'][chain.category][v][signal_str][sample.name].fill(chain, reweighter.getTotalWeight())  
+                list_of_hist[chain.category][v][prompt_str].fill(chain, reweighter.getTotalWeight(sideband=is_sideband))  
+                if prompt_str not in ['sideband', 'signalregion']:
+                    list_of_hist[chain.category][v]['total'].fill(chain, reweighter.getTotalWeight())  
              
         #
         # Save histograms
         #
         subjobAppendix = '_subJob' + args.subJob if args.subJob else ''
         
+        is_signal = 'HNL' in sample.name
+        if args.includeData is not None and chain.is_data:
+            signal_str = 'data'
+        else:
+            signal_str = 'signal' if is_signal else 'bkgr'
+
         if args.signalOnly and args.genLevel:       output_name_full = os.path.join(getOutputName(signal_str, args.year), 'signalOrdering', sample.output)
         else:      output_name_full = os.path.join(getOutputName(signal_str, args.year), sample.output) 
 
@@ -351,11 +373,11 @@ if not args.makePlots and not args.makeDataCards:
                 
         for iv, v in enumerate(var.keys()):
             for ic, c in enumerate(categories):
-                for prompt_str in ['prompt', 'nonprompt', 'total']:
-                    if iv == 0 and ic == 0 and prompt_str == 'prompt':
-                        list_of_hist[prompt_str][c][v][signal_str][sample.name].write(output_name_full +'variables'+subjobAppendix+ '.root', subdirs=[v], is_test=arg_string)
+                for ip, prompt_str in enumerate(list_of_hist[c][v].keys()):
+                    if iv == 0 and ic == 0 and ip == 0:
+                        list_of_hist[c][v][prompt_str].write(output_name_full +'variables'+subjobAppendix+ '.root', subdirs=[v], is_test=arg_string)
                     else:
-                        list_of_hist[prompt_str][c][v][signal_str][sample.name].write(output_name_full +'variables'+subjobAppendix+ '.root', subdirs=[v], append=True, is_test=arg_string)
+                        list_of_hist[c][v][prompt_str].write(output_name_full +'variables'+subjobAppendix+ '.root', subdirs=[v], append=True, is_test=arg_string)
 
         cutter.saveCutFlow(output_name_full +'variables'+subjobAppendix+ '.root')
 
@@ -376,7 +398,7 @@ else:
         #     signal_list = glob.glob(getOutputName('signal', year)+'/signalOrdering/*')
             
         if not args.bkgrOnly:
-            signal_list = glob.glob(getOutputName('signal', year)+'/*')
+            signal_list = [s for s in glob.glob(getOutputName('signal', year)+'/*'+args.flavor+'-*') if s.split('/')[-1] in sample_manager.sample_outputs]
             for i, s in enumerate(signal_list):
                 if 'signalOrdering' in s:
                     signal_list.pop(i)
@@ -385,12 +407,13 @@ else:
 
         # Collect background file locations
         if not args.signalOnly:
-            bkgr_list = glob.glob(getOutputName('bkgr', year)+'/*')
+            bkgr_list = [getOutputName('bkgr', year)+'/'+b for b in sample_manager.sample_outputs]
+            bkgr_list = [b for b in glob.glob(getOutputName('bkgr', year)+'/*') if b.split('/')[-1] in sample_manager.sample_outputs]
         else:
             bkgr_list = []
 
         # data
-        if args.includeData:
+        if args.includeData is not None:
             data_list = glob.glob(getOutputName('data', year)+'/Data')
         else:
             data_list = []
@@ -402,7 +425,7 @@ else:
 
 
         if args.groupSamples:
-            background_collection = sample_manager.sample_groups.keys()
+            background_collection = sample_manager.sample_groups.keys()+['non-prompt']
         else:
             background_collection = [b.split('/')[-1] for b in bkgr_list]
 
@@ -431,7 +454,7 @@ else:
         for c in categories:
             list_of_hist[c] = {}
             for v in var:
-                list_of_hist[c][v] = {'signal':{}, 'bkgr':{}}
+                list_of_hist[c][v] = {'signal':{}, 'bkgr':{}, 'data':{}}
 
         # Load in the signal histograms from the files
         for c in categories: 
@@ -450,6 +473,13 @@ else:
 
                         # if args.rescaleSignal is not None:
                         #    list_of_hist[c][v]['signal'][sample_name].hist.Scale(args.rescaleSignal/(args.coupling**2))
+
+
+        if args.includeData is not None:
+            for c in categories:
+                for v in var:
+                    list_of_hist[c][v]['data']['sideband'] = Histogram(getObjFromFile(data_list[0]+'/variables.root', v+'/'+str(c)+'-'+v+'-'+'Data-sideband'))
+                    list_of_hist[c][v]['data']['signalregion'] = Histogram(getObjFromFile(data_list[0]+'/variables.root', v+'/'+str(c)+'-'+v+'-'+'Data-signalregion'))
 
         for c in categories: 
             print 'loading', c
@@ -476,14 +506,8 @@ else:
                                 if c == 1 and iv == 0: print bkgr, "not part of any sample group"
                                 continue
                             # print bkgr, sg
-                            if bkgr == 'DY':
-                                list_of_hist[c][v]['bkgr']['XG'].add(tmp_hist_prompt)
-                                list_of_hist[c][v]['bkgr']['non-prompt'].add(tmp_hist_nonprompt)
-                            elif sg[0] == 'non-prompt':
-                                list_of_hist[c][v]['bkgr'][sg[0]].add(tmp_hist_nonprompt) #TODO: Is this correct? Arent we just ignoring a bunch of events that were prompt?
-                            else:
-                                # print c, v, b, sg
-                                list_of_hist[c][v]['bkgr'][sg[0]].add(tmp_hist_prompt)
+                            list_of_hist[c][v]['bkgr'][sg[0]].add(tmp_hist_prompt)
+                            if args.includeData is None or 'sideband' not in args.includeData:
                                 list_of_hist[c][v]['bkgr']['non-prompt'].add(tmp_hist_nonprompt)
                         else:
                             list_of_hist[c][v]['bkgr'][bkgr].add(tmp_hist_total)
@@ -492,10 +516,9 @@ else:
                         del(tmp_hist_prompt)
                         del(tmp_hist_nonprompt)
 
-        if args.includeData:
-            for c in categories:
-                for v in var:
-                    list_of_hist[c][v]['data'] = Histogram(getObjFromFile(data_list[0]+'/variables.root', v+'/'+str(c)+'-'+v+'-'+'Data-total'))
+                    if args.includeData is not None and 'sideband' in args.includeData:
+                        list_of_hist[c][v]['bkgr']['non-prompt'].add(list_of_hist[c][v]['data']['sideband'])
+
 
         if args.region in ['baseline', 'lowMassSR', 'highMassSR']:
             for ac in cat.ANALYSIS_CATEGORIES.keys():
@@ -668,8 +691,8 @@ else:
                             # else:
                             signal_legendnames.append('HNL '+ sk.split('-')[1] +' m_{N} = '+sk.split('-m')[-1]+ ' GeV')
 
-                    if args.includeData:
-                        observed_hist = list_of_hist[c][v]['data']
+                    if args.includeData is not None and 'signalregion' in args.includeData:
+                        observed_hist = list_of_hist[c][v]['data']['signalregion']
                     else:
                         observed_hist = None
 
