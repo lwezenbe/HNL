@@ -1,18 +1,19 @@
 #Combine signalRegionSelector and controlRegionSelector here
 from HNL.EventSelection.signalRegionSelector import SignalRegionSelector
 from HNL.EventSelection.controlRegionSelector import ZZCRfilter, WZCRfilter, ConversionCRfilter, TauFakeEnrichedDY, TauFakeEnrichedTT, TauClosureTest, ElectronClosureTest, MuonClosureTest, LightLeptonFakeMeasurementRegion, LukaClosureTest, ClosureTestMC, ClosureTestDATA
+from HNL.EventSelection.controlRegionSelector import TauMixCTfilter
 
 class EventSelector:
 
-    def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization=None, in_data=False, additional_options=None):
+    def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization=None, additional_options=None):
         self.name = name
         self.chain = chain
         self.new_chain = new_chain
         self.is_reco_level = is_reco_level
         if self.name in ['baseline', 'lowMassSR', 'highMassSR']:
-            if in_data:
+            if chain.is_data and not 'sideband' in additional_options:
                 raise RuntimeError("Running this would mean unblinding. Dont do this.")
-            self.selector = SignalRegionSelector(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
+            self.selector = SignalRegionSelector(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options=additional_options)
         elif self.name == 'ZZCR':
             self.selector = ZZCRfilter(name, chain, new_chain, is_reco_level=is_reco_level)
         elif self.name == 'WZCR':
@@ -25,6 +26,8 @@ class EventSelector:
             self.selector = TauFakeEnrichedTT(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'LightLeptonFakes':
             self.selector = LightLeptonFakeMeasurementRegion(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
+        elif self.name == 'TauMixCT':
+            self.selector = TauMixCTfilter(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'TauCT':
             self.selector = TauClosureTest(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'ElectronCT':
@@ -38,7 +41,7 @@ class EventSelector:
         elif self.name == 'DataCT':
             self.selector = ClosureTestDATA(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options=additional_options)
         elif self.name == 'NoSelection':
-            if in_data:
+            if chain.is_data and not 'sideband' in additional_options:
                 raise RuntimeError("Running this would mean unblinding. Dont do this.")
             self.selector = SignalRegionSelector('baseline', chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
 

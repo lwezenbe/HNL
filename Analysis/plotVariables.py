@@ -346,7 +346,7 @@ if not args.makePlots and not args.makeDataCards:
             # Fill the histograms
             #
             weight = reweighter.getTotalWeight()
-            is_sideband = True if prompt_str == 'sideband' else False
+            is_sideband = prompt_str == 'sideband'
             for v in var.keys():
                 list_of_hist[chain.category][v][prompt_str].fill(chain, reweighter.getTotalWeight(sideband=is_sideband))  
                 if prompt_str not in ['sideband', 'signalregion']:

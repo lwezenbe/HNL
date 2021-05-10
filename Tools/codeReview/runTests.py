@@ -73,13 +73,6 @@ from HNL.Tools.logger import successfullJob
 # Run exhaustive mode
 #
 if args.allCombinations:
-    print '\n'
-    print "This mode will form all possible combinations of all arguments for each program specified in data/input/codeToTest.conf"
-    print "It is not smart, it will make every combination it can. These are potentially a lot of combinations."
-    print "It is recommended to run this mode in a screen on a mlong machine."
-    print '\n'
-    time.sleep(2)
-
     input_file = 'data/input/codeToTest.conf'
     code_to_test = [line.split('#')[0].strip() for line in open(input_file)]
     code_to_test = [l.split('%') for l in code_to_test if l]

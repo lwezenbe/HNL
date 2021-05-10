@@ -119,6 +119,12 @@ def select3Leptons(chain, new_chain, cutter = None):
     # chain.obj_sel['ele_wp'] = 'tight'
     return selectLeptonsGeneral(chain, new_chain, 3, cutter=cutter, sort_leptons = True)
 
+def select3TightLeptons(chain, new_chain, cutter = None):
+    chain.obj_sel['tau_wp'] = 'tight'
+    chain.obj_sel['mu_wp'] = 'tight'
+    chain.obj_sel['ele_wp'] = 'tight'
+    return selectLeptonsGeneral(chain, new_chain, 3, cutter=cutter, sort_leptons = True)
+
 def select4Leptons(chain, new_chain, cutter = None):
     # chain.obj_sel['tau_wp'] = 'tight'
     # chain.obj_sel['mu_wp'] = 'tight'

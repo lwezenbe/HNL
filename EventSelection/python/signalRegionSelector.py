@@ -97,8 +97,8 @@ class SignalRegionSelector:
 
         if self.sideband:
             nfail = 0
-            for l in chain.l_indices:
-                if not isGoodLepton(chain, index, 'tight'):
+            for l in self.chain.l_indices:
+                if not isGoodLepton(self.chain, l, 'tight'):
                     nfail += 1
             if nfail < 1: return False
 

@@ -9,6 +9,9 @@ class FakeRate(Efficiency):
         ttl = self.evaluateEfficiency(chain, l_index, manual_var_entry)
         return ttl/(1-ttl)
 
+    #
+    # Only to be used in case only one flavor contained in a single fake rate
+    #
     def returnFakeWeight(self, chain, flavor):
         weight = -1.
         nleptons = 0
@@ -23,6 +26,6 @@ class FakeRate(Efficiency):
                 nleptons += 1
 
         if nleptons == 0:
-            return -999.
+            return 1.
         else:
             return weight

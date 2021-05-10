@@ -425,15 +425,20 @@ class ClosureTestMC(FilterObject):
         else:
             return False
 
-    def passedFilter(self, cutter):
+    def passedFilter(self, cutter, region):
         if not self.initEvent(cutter):                                return False
         applyConeCorrection(self.chain, self.new_chain)
+        if 'tau' in self.flavors_of_interest:
+            if region != 'Mix':
+                if not cutter.cut(self.chain._met < 50, 'MET>50'): return False
+                if not cutter.cut(containsOSSF(self.chain), 'OSSF present'): return False
+                if not cutter.cut(not bVeto(self.chain), 'b-veto'): return False
+            else:
+                if not passedFilterTauMixCT(self.chain, self.new_chain, self.is_reco_level, cutter): return False
+
         if not cutter.cut(self.hasCorrectNumberOfFakes(), 'correct number of fakes'): return False
         # if not cutter.cut(self.chain._passMETFilters, 'pass met filters'): return False
-        if 'tau' in self.flavors_of_interest:
-            if not cutter.cut(self.chain._met < 50, 'MET>50'): return False
-            if not cutter.cut(containsOSSF(self.chain), 'OSSF present'): return False
-            if not cutter.cut(not bVeto(self.chain), 'b-veto'): return False
+
         return True
 
 class ClosureTestDATA(FilterObject):
@@ -456,8 +461,8 @@ class ClosureTestDATA(FilterObject):
         return super(ClosureTestDATA, self).initEvent(3, cutter, sort_leptons = False)
 
     def passedFilter(self, cutter, region):
+        if not self.initEvent(cutter):                                return False
         if self.flavors_of_interest == ['tau'] and region == 'TauFakesDY':
-            if not self.initEvent(cutter):                                return False
         
             if not cutter.cut(self.new_chain.l_flavor.count(2) == 1, '1 tau'):                   return False
 
@@ -473,9 +478,37 @@ class ClosureTestDATA(FilterObject):
 
             self.loose_leptons_of_interest = [2]
             return True
-        
+        elif self.flavors_of_interest == ['tau'] and region == 'Mix':
+            return passedFilterTauMixCT(self.chain, self.new_chain, self.is_reco_level, cutter)
+
         else:
             return False
 
     def getFakeIndex(self):
         return 2
+
+
+class TauMixCTfilter(FilterObject):
+
+    def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None):
+        super(TauMixCTfilter, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
+
+    def initEvent(self, cutter):
+        return super(TauMixCTfilter, self).initEvent(3, cutter, sort_leptons = True)
+
+    def passedFilter(self, cutter):
+        if not self.initEvent(cutter):                                return False
+        return passedFilterTauMixCT(self.chain, self.new_chain, self.is_reco_level, cutter)
+
+def passedFilterTauMixCT(chain, new_chain, is_reco_level, cutter):
+    if not cutter.cut(not fourthFOVeto(chain, no_tau=chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
+    if not cutter.cut(not threeSameSignVeto(chain), 'No three same sign'):        return False
+    if not cutter.cut(not bVeto(chain), 'b-veto'):              return False
+    if not cutter.cut(new_chain.l_pt[l1] < 55, 'l1pt<55'):      return False
+    # if not cutter.cut(new_chain.M3l < 80, 'm3l<80'):            return False
+    if is_reco_level:
+        if not cutter.cut(chain._met > 75, 'MET > 75'):             return False
+    else:
+        if not cutter.cut(chain._gen_met > 75, 'MET > 75'):             return False
+    if not cutter.cut(not containsOSSF(chain), 'no OSSF'):      return False
+    return True

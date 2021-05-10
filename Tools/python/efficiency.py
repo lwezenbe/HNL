@@ -16,6 +16,8 @@ class Efficiency(object):
         self.efficiency_denom = None
         self.efficiency = None
 
+        print self.path
+
         #If bins == None, load in histograms from the path
         bins_check = False
         try:

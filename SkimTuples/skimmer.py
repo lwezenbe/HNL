@@ -154,7 +154,7 @@ if not args.checkLogs:
         delete_branches = ['ttg', '_ph']
         #delete_branches.extend(['HLT']) #TODO: For now using pass_trigger, this may need to change
         delete_branches.extend(['tauPOG*2015', 'tau*MvaNew']) #Outdated tau
-        delete_branches.extend(['lMuon', 'Smeared', 'prefire'])
+        delete_branches.extend(['lMuon', 'prefire'])
         #delete_branches.extend(['_met'])
         delete_branches.extend(['jetNeutral', 'jetCharged', 'jetHF'])
         for i in delete_branches:        chain.SetBranchStatus("*"+i+"*", 0)
