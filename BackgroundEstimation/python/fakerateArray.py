@@ -1,6 +1,83 @@
 from fakerate import FakeRate
-class FakerateArray:
 
+default_tau_path = lambda year : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', year, 'MC', 'tau')
+
+
+#
+# Class from reading out from different fake rates of single flavor
+# Made with tau FR from DY and TT in mind
+#
+class SingleFlavorFakeRateCollection:
+    def __init__(self, paths, obj_names, call_names, method = 'fractional', weights = None, names = None):
+        if len(paths) != len(obj_names) or len(paths) != len(call_names):
+            raise RuntimeError('Length of path, obj_names and call_names in SingleFlavorFakeRateCollection should be the same')
+
+        self.fakerates = {}
+        for cn, on, path in zip(call_names, obj_names, paths):
+            if '/' in on:
+                subdirs, on_end = on.split('/')
+                subdirs = subdirs.split('/')
+            else:
+                subdirs = None
+                on_end = on_end
+            self.fakerates[cn] = FakeRate(on_end, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), path, None, subdirs = subdirs)
+
+        self.method = method
+        if method == 'fractional':
+            self.setFractionalWeights(weights, names)
+    
+    def setFractionalWeights(self, weights, names):
+        self.frac_weights = weights
+        self.frac_names = names
+
+    def getFractionalFakeFactor(self, chain, index, weights, names, manual_var_entry = None):
+        fake_factor = 0.
+        for n in names:
+            fake_factor += weights[n]*self.fakerates[n].returnFakeFactor(chain, index, manual_var_entry)
+        return fake_factor
+    
+    def returnFakeFactor(self, chain, l_index = None, manual_var_entry = None):
+        if self.method == 'fractional':
+            if self.frac_weights is None or self.frac_names is None:
+                raise RuntimeError('Invalid input: weights or names is None')
+            return self.getFractionalFakeFactor(chain, l_index, self.frac_weights, self.frac_names, manual_var_entry)
+        else:
+            raise RuntimeError('No other methods supported yet')
+
+class FakeRateCollection:
+
+    def __init__(self, chain, fakerates_flavordict):
+        self.chain = chain
+        self.fakerates = fakerates_flavordict
+
+    def returnFakeFactor(self, l_index, manual_var_entry = None):
+        if self.fakerates[self.chain.l_flavor[l_index]] is not None:
+            return self.fakerates[self.chain.l_flavor[l_index]].returnFakeFactor(self.chain, l_index = l_index, manual_var_entry =  manual_var_entry)
+        else:
+            return 'skip'
+
+    def getFakeWeight(self):
+        weight = -1.
+        nleptons = 0
+        for i in xrange(len(self.chain.l_indices)):
+            if not self.chain.l_istight[i]:
+                if self.chain.selection in ['Luka', 'default'] and self.chain.l_flavor[i] == 0:
+                    man_var = [min(44.9, self.chain.l_pt[i]), abs(self.chain.l_eta[i])]
+                else:
+                    man_var = None
+                
+                ff = self.returnFakeFactor(l_index = i, manual_var_entry = man_var)
+                if ff == 'skip': continue
+
+                weight *= -1*ff
+                nleptons += 1
+
+        if nleptons == 0:
+            return 1.
+        else:
+            return weight
+
+class ConditionalFakeRate:
     def __init__(self, name, var, var_tex, path, bins=None):
         self.bin_collection = {'total': (lambda c : True)}
         self.name = name
@@ -29,12 +106,13 @@ class FakerateArray:
     def getFakeRate(self, bin_name):
         return self.fakerates[bin_name]
 
-
 def createFakeRatesWithJetBins(name, var, var_tex, path, bins = None):
-    fr_array = FakerateArray(name, var, var_tex, path, bins)
+    fr_array = ConditionalFakeRate(name, var, var_tex, path, bins)
     fr_array.addBin('0jets', lambda c: c.njets == 0)
     fr_array.addBin('njets', lambda c: c.njets > 0)
     return fr_array
+
+
 
 import os
 def loadFakeRatesWithJetBins(name, var, var_tex, path_base, flavor, indata=False):

@@ -8,6 +8,7 @@ import numpy as np
 from HNL.Tools.histogram import Histogram
 from HNL.EventSelection.eventSelector import EventSelector
 from HNL.Tools.helpers import makeDirIfNeeded
+from HNL.EventSelection.eventSelectionTools import select3TightLeptons
 import ROOT
 
 #
@@ -29,10 +30,11 @@ submission_parser.add_argument('--noskim', action='store_true', default=False,  
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
 submission_parser.add_argument('--region',   action='store', default='baseline',  help='Choose the selection region', 
-    choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
+    choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZCR', 'WZCR', 'ConversionCR', 'MCCT', 'TauMixCT'])
 submission_parser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data samples')
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
 submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+submission_parser.add_argument('--tag',  action='store',      default=None,               help='Tag with additional information for the output')
 
 argParser.add_argument('--makePlots', action='store_true', default=False,  help='make plots')
 argParser.add_argument('--noTextFiles',   action='store_true', default=False,  help='make text files containing the number of events per category and sample')
@@ -86,13 +88,18 @@ else:
 #
 from HNL.Samples.sampleManager import SampleManager
 def getSampleManager(year):
-    if args.noskim:
+    if args.noskim or args.selection != 'default':
         skim_str = 'noskim'
+    elif args.region in ['highMassSR', 'lowMassSR']:
+        skim_str = 'RecoGeneral'
     else:
-        skim_str = 'noskim' if args.selection == 'AN2017014' else 'Reco'
-
+        skim_str = 'Reco'
     file_list = 'fulllist_'+str(year)+'_mconly' if args.customList is None else args.customList
-    sample_manager = SampleManager(year, skim_str, file_list)  
+
+    if skim_str == 'RecoGeneral':
+        sample_manager = SampleManager(year, skim_str, file_list, skim_selection=args.selection, region=args.region)
+    else:
+        sample_manager = SampleManager(year, skim_str, file_list)
     return sample_manager
 
 #
@@ -123,13 +130,17 @@ else:
     regions.append(args.region)
     srm[args.region] = SearchRegionManager(args.region)
 
+def getOutputBase(sample, prompt_string):
+    tag_string = args.tag if args.tag is not None else 'General'
+    if not args.isTest:
+        output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', __file__.split('.')[0].rsplit('/')[-1], args.year, '-'.join([args.strategy, args.selection, args.region, tag_string]), sample, prompt_string)
+    else:
+        output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year, '-'.join([args.strategy, args.selection, args.region]), sample, prompt_string)
+        # output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year, '-'.join([args.strategy, args.selection, args.region, tag_string]), sample, prompt_string)
+    return output_string
 
 def getOutputName(sample, prompt_string):
-    if not args.isTest:
-        output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', __file__.split('.')[0].rsplit('/')[-1], args.year, '-'.join([args.strategy, args.selection, args.region]), sample.output, prompt_string)
-    else:
-        output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year, '-'.join([args.strategy, args.selection, args.region]), sample.output, prompt_string)
-
+    output_string = getOutputBase(sample.output, prompt_string)
     if args.isChild:
         output_string += '/tmp_'+sample.output
 
@@ -222,7 +233,11 @@ if not args.makePlots and args.makeDataCards is None:
         from HNL.ObjectSelection.objectSelection import getObjectSelection
         chain.obj_sel = getObjectSelection(args.selection)
 
-        es = EventSelector(args.region, chain, chain, True, ec)
+        if not args.region == 'MCCT':
+            es = EventSelector(args.region, chain, chain, True, ec)
+        else:
+            es = EventSelector(args.region, chain, chain, True, ec, additional_options=['tau'])
+
 
         list_of_numbers = {}
         for c in listOfCategories(args.region):
@@ -253,9 +268,13 @@ if not args.makePlots and args.makeDataCards is None:
 
             #Event selection            
             if not es.passedFilter(cutter, sample.output): continue
+            if args.region == 'MCCT' and not select3TightLeptons(chain, chain, cutter): continue
             nprompt = 0
             for index in chain.l_indices:
-                if chain._lIsPrompt[index]: nprompt += 1
+                if args.tag == 'TauFakes':
+                    if chain._lIsPrompt[index] or chain._lFlavor[index]< 2: nprompt += 1
+                else:
+                    if chain._lIsPrompt[index]: nprompt += 1
             
             prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
 
@@ -300,10 +319,7 @@ else:
         #
         # Check status of the jobs and merge
         #
-        if not args.isTest:
-            base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', __file__.split('.')[0].rsplit('/')[-1], year, '-'.join([args.strategy, args.selection, args.region]))
-        else:
-            base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], year, '-'.join([args.strategy, args.selection, args.region]))
+        base_path = getOutputBase('dummy', 'dummy').rsplit('/', 2)[0]
 
         in_files = glob.glob(os.path.join(base_path, '*', '*'))
         merge(in_files, __file__, jobs[year], ('sample', 'subJob', 'year'), argParser, istest=args.isTest, additionalArgs= [('year', year)])

@@ -15,7 +15,7 @@ class ClosureObject(HistogramCollection):
         self.fill('sideband', chain, weight*fake_factor, index = index)
 
     def fillClosure(self, chain, weight, fake_factor, index = None):
-        if fake_factor == -999.:
+        if fake_factor == 1.:
             self.fillObserved(chain, weight, index = index)
         else:
             self.fillSideband(chain, weight, fake_factor, index = index)

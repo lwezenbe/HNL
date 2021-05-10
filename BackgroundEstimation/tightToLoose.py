@@ -142,7 +142,7 @@ if not args.makePlots:
     #
     if not args.isChild:
         from HNL.Tools.jobSubmitter import submitJobs
-        submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'calcYields')
+        submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'tightToLoose')
         exit(0)
 
     #
@@ -196,7 +196,7 @@ if not args.makePlots:
     #
     # Define event selection
     #
-    es = EventSelector(region_to_select, chain, chain, True, ec, in_data = args.inData)            
+    es = EventSelector(region_to_select, chain, chain, True, ec)            
 
     #
     # Create fake rate objects

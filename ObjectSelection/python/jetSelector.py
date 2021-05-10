@@ -84,22 +84,22 @@ def isGoodJet(chain, index, cleaned = None, selection = None):
 #
 from HNL.ObjectSelection.bTagWP import getBTagWP, readBTagValue
 def isLooseBJetHNL(chain, index):
-    if not isGoodJet(chain, index, cleaned='loose', selection='HNL'): return False
+    if not isGoodJet(chain, index, cleaned='FO', selection='HNL'): return False
     if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'loose', 'Deep'): return False
     return True
 
 def isTightBJetHNL(chain, index):
-    if not isGoodJet(chain, index, cleaned='loose', selection='HNL'): return False
+    if not isGoodJet(chain, index, cleaned='FO', selection='HNL'): return False
     if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'tight', 'Deep'): return False
     return True
 
 def isLooseBJetHNLLowPt(chain, index):
-    if not isGoodJet(chain, index, cleaned='loose', selection='HNLLowPt'): return False
+    if not isGoodJet(chain, index, cleaned='FO', selection='HNLLowPt'): return False
     if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'loose', 'Deep'): return False
     return True
 
 def isTightBJetHNLLowPt(chain, index):
-    if not isGoodJet(chain, index, cleaned='loose', selection='HNLowPt'): return False
+    if not isGoodJet(chain, index, cleaned='FO', selection='HNLowPt'): return False
     if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'tight', 'Deep'): return False
     return True
 
