@@ -1,6 +1,4 @@
-import ROOT
-from HNL.Tools.helpers import makeDirIfNeeded, getObjFromFile, isValidRootFile
-from HNL.Tools.histogram import Histogram, HistogramCollection
+from HNL.Tools.histogram import HistogramCollection
 
 class ClosureObject(HistogramCollection):
 

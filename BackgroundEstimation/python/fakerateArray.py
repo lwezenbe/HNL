@@ -23,6 +23,8 @@ class SingleFlavorFakeRateCollection:
             self.fakerates[cn] = FakeRate(on_end, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), path, None, subdirs = subdirs)
 
         self.method = method
+        self.frac_weights = None
+        self.frac_names = None
         if method == 'fractional':
             self.setFractionalWeights(weights, names)
     
@@ -96,7 +98,7 @@ class ConditionalFakeRate:
         for b in self.bin_collection:
             if self.bin_collection[b](chain): self.fakerates[b].fill(chain, weight, passed, index)
 
-    def writeFakeRates(self, append = False, name=None, is_test=None):
+    def writeFakeRates(self, append = False, is_test=None):
         for i, b in enumerate(self.fakerates):
             if i == 0 and not append:
                 self.fakerates[b].write(is_test=is_test)

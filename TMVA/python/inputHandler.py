@@ -103,7 +103,7 @@ class InputHandler:
         if signal.split('_')[-1] in ['e', 'mu']:
             name = 'NoTau/trainingtree'
         else:
-            name='Total/trainingtree'
+            name = 'Total/trainingtree'
         in_tree = self.getTree(signal, name=name)
         nsignal = min(15000, in_tree.Draw("1", "is_signal"))
         nbkgr = min(100000, in_tree.Draw("1", "!is_signal"))

@@ -53,7 +53,7 @@ class EventSelector:
         return False
 
     def removeOverlapDYandZG(self, sample_name):
-        if sample_name == 'DY' and self.chain._zgEventType>=3: return False
+        if sample_name == 'DY' and self.chain._zgEventType >= 3: return False
         if sample_name == 'ZG' and self.leptonFromMEExternalConversion(): return False
         return True
 

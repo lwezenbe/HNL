@@ -1,6 +1,3 @@
-from HNL.Tools.logger import getLogger
-log = getLogger()
-
 #
 # PU reweighting class
 #

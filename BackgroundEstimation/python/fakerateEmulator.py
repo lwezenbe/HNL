@@ -32,5 +32,5 @@ class FakeRateEmulator(FakeRate):
     def add(self, other_efficiency):
         raise RuntimeError('Function "add" disabled for Emulator')
     
-    def write(self, append = False, name=None, subdirs = None):
+    def write(self, append = False, name = None, subdirs = None):
         raise RuntimeError('Function "write" disabled for Emulator')

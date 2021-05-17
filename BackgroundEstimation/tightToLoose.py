@@ -23,7 +23,7 @@ submission_parser.add_argument('--noskim', action='store_true', default=False,  
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--tauRegion', action='store', type=str, default = None, help='What region do you want to select for?', 
     choices=['TauFakesDY', 'TauFakesTT'])
-submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+submission_parser.add_argument('--logLevel',  action='store', default='INFO', help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 
 argParser.add_argument('--makePlots', action='store_true', default=False,  help='Make plots.')
 
@@ -71,8 +71,7 @@ log = getLogger(args.logLevel)
 # Imports
 #
 import numpy as np
-from HNL.Tools.histogram import Histogram
-from HNL.EventSelection.eventSelector import EventSelector
+from HNL.EventSelection.event import Event
 from HNL.ObjectSelection.leptonSelector import isGoodLepton
 from HNL.Tools.helpers import makeDirIfNeeded
 from HNL.Weights.reweighter import Reweighter
@@ -187,26 +186,22 @@ if not args.makePlots:
         ec = None
 
     #
-    # Object ID param
-    # Working points are set in the controlRegionSelector
-    #
-    from HNL.ObjectSelection.objectSelection import objectSelectionCollection, getObjectSelection
-    chain.obj_sel = getObjectSelection(args.selection)
-
-    #
     # Define event selection
     #
-    es = EventSelector(region_to_select, chain, chain, True, ec)            
+    event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=region_to_select)    
 
     #
     # Create fake rate objects
     #
     if args.flavor == 'tau':
-        fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), getOutputName(region_to_select), (np.array([20., 25., 35., 50., 70., 100.]), np.arange(0., 3.0, 0.5)))
+        fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), getOutputName(region_to_select), 
+                                                (np.array([20., 25., 35., 50., 70., 100.]), np.arange(0., 3.0, 0.5)))
     elif args.flavor == 'mu':
-        fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), getOutputName(region_to_select), (np.array([10., 20., 30., 45., 65., 100.]), np.array([0., 1.2, 2.1, 2.4])))
+        fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), getOutputName(region_to_select), 
+                                                (np.array([10., 20., 30., 45., 65., 100.]), np.array([0., 1.2, 2.1, 2.4])))
     elif args.flavor == 'e':
-        fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), getOutputName(region_to_select), (np.array([10., 20., 30., 45., 65., 100.]), np.array([0., .8, 1.442, 2.5])))
+        fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), getOutputName(region_to_select), 
+                                                (np.array([10., 20., 30., 45., 65., 100.]), np.array([0., .8, 1.442, 2.5])))
     else:
         raise RuntimeError('Invalid flavor')
     
@@ -232,16 +227,18 @@ if not args.makePlots:
 
         # if not cutter.cut(passTriggers(chain, 'ewkino'), 'pass_triggers'): continue
 
+        event.initEvent()
+
         #Event selection
         if args.flavor == 'e':
-            if not es.removeOverlapDYandZG(sample.output): continue
-            if not es.selector.passedFilter(cutter, only_electrons=True, require_jets=True): continue
+            if not event.event_selector.removeOverlapDYandZG(sample.output): continue
+            if not event.event_selector.selector.passedFilter(cutter, only_electrons=True, require_jets=True): continue
         elif args.flavor == 'mu':
-            if not es.removeOverlapDYandZG(sample.output): continue
-            if not es.selector.passedFilter(cutter, only_muons=True, require_jets=True): continue
+            if not event.event_selector.removeOverlapDYandZG(sample.output): continue
+            if not event.event_selector.selector.passedFilter(cutter, only_muons=True, require_jets=True): continue
         else:
-            if not es.passedFilter(cutter, sample.output): continue
-        fake_index = es.selector.getFakeIndex()
+            if not event.event_selector.passedFilter(cutter, sample.output): continue
+        fake_index = event.event_selector.selector.getFakeIndex()
         
         if args.inData and not chain.is_data:
             if not chain._lIsPrompt[chain.l_indices[fake_index]]: continue
@@ -270,7 +267,7 @@ if not args.makePlots:
 else:
     from HNL.Tools.mergeFiles import merge
     import glob
-    from HNL.Tools.helpers import getObjFromFile, makePathTimeStamped
+    from HNL.Tools.helpers import makePathTimeStamped
     from HNL.Plotting.plot import Plot
 
     base_path_in = getOutputBase(region_to_select)

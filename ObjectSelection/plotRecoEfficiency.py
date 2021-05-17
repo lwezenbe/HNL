@@ -42,7 +42,7 @@ merge_files = glob.glob(input_file_path + '*')
 for mf in merge_files:
     if "Results" in mf: merge_files.pop(merge_files.index(mf))
     if not args.onlyReco and 'onlyReco' in mf: merge_files.pop(merge_files.index(mf))
-script = os.path.expandvars(os.path.join('$CMSSW', 'src', 'HNL', 'ObjectSelection', 'compareTauID.py')
+script = os.path.expandvars(os.path.join('$CMSSW', 'src', 'HNL', 'ObjectSelection', 'compareTauID.py'))
 merge(merge_files, script, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
 
 list_of_bkgr_eff = {}

@@ -1,4 +1,3 @@
-from HNL.Samples.sample import getListOfPathsWithSameOutput 
 LUMINOSITY_MAP = {
                     # 2016 : 35546.,
                     # 2016 : 35900.,
@@ -39,9 +38,7 @@ class LumiWeight:
             return self.lumi_weight 
 
 if __name__ == '__main__':
-    from HNL.Samples.sample import createSampleList, getSampleFromList
     from HNL.Samples.sampleManager import SampleManager
-    import os
     from HNL.Tools.logger import getLogger, closeLogger
     log = getLogger('INFO')
 

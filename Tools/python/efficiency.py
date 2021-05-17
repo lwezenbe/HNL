@@ -16,8 +16,6 @@ class Efficiency(object):
         self.efficiency_denom = None
         self.efficiency = None
 
-        print self.path
-
         #If bins == None, load in histograms from the path
         bins_check = False
         try:
@@ -39,7 +37,7 @@ class Efficiency(object):
         self.isTH2 = self.efficiency_num.isTH2
         if self.isTH2 and not self.efficiency_denom.isTH2:  print "Warning: efficiency numerator and denominator have different dimensions"
 
-    def isVarCorrectSize():
+    def isVarCorrectSize(self):
         if self.isTH2: return (isinstance(self.var, (list,)) and len(self.var))
         else: return (not isinstance(self.var, (list,)))
 

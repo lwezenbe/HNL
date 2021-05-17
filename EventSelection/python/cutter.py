@@ -1,6 +1,5 @@
 from HNL.Tools.helpers import isValidRootFile, rootFileContent, getObjFromFile, makeDirIfNeeded
 from ROOT import TFile, TH1F
-from HNL.Tools.makeBranches import makeBranches
 
 class Cutter():
 

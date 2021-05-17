@@ -30,7 +30,7 @@ class SignalRegionSelector:
         return True
 
     def initSkim(self, cutter):
-        est.select3Leptons(self.chain, self.new_chain, light_algo = self.chain.obj_sel['light_algo'], no_tau=self.chain.obj_sel['notau'], cutter=cutter, workingpoint = self.chain.obj_sel['workingpoint'])
+        est.select3Leptons(self.chain, self.new_chain, cutter=cutter)
         if len(self.new_chain.l_pt) < 3: return False
 
     #

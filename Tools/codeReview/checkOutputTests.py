@@ -3,9 +3,9 @@ BASE_FOLDER = "/user/lwezenbe/Testing/"
 import glob
 import os
 from ROOT import TFile
-from HNL.Tools.helpers import getSubDir, rootFileContent, getObjFromFile, makeDirIfNeeded
+from HNL.Tools.helpers import rootFileContent, getObjFromFile, makeDirIfNeeded
 from HNL.Tools.histogram import Histogram
-import uproot
+# import uproot
 
 def compareHist(path, name, withinerrors=False):
     hist_prev = Histogram(getObjFromFile(path, name))
@@ -101,7 +101,7 @@ def compareHist(path, name, withinerrors=False):
 #     return None
 
 
-def compareFiles(f, subdir, withinerrors=False):
+def compareFiles(f, withinerrors=False):
     in_file = TFile(f, "read")
     list_of_hist_names = []
     for c in rootFileContent(in_file, basepath='', getNested=True):
@@ -137,7 +137,7 @@ def checkSubdirOutput(subdir, withinerrors=False):
                 list_of_files_to_test.append(root+'/'+f)
     faulty_files = []
     for ft in list_of_files_to_test:
-        if not compareFiles(ft, subdir, withinerrors): faulty_files.append(ft)
+        if not compareFiles(ft, withinerrors): faulty_files.append(ft)
 
     return faulty_files
 

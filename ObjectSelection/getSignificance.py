@@ -20,7 +20,8 @@ submission_parser.add_argument('--isTest',   action='store_true', default=False,
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 submission_parser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
-submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+submission_parser.add_argument('--logLevel',  action='store',      default='INFO', 
+                                        help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 
 argParser.add_argument('--processExistingFiles',   action='store', default=None,  help='Process the existing files. Leave empty for all choices', choices = ['', 'text', 'plots'])
 

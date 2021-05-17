@@ -1,5 +1,5 @@
 import ROOT
-from HNL.TMVA.mvaVariables import getVariables, getVariableNames, input_variables, getVariableValue
+from HNL.TMVA.mvaVariables import getVariableNames, getVariableValue
 from array import array
 import os
 
@@ -44,7 +44,9 @@ class Reader:
             self.reader.AddVariable(v, self.variable_array[v])
 
     def bookMethod(self, training_name):
-        path_to_weights = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'training', 'all', self.region+'-'+self.chain.selection, training_name, self.method_name, 'weights', 'factory_'+self.model_name+'.weights.xml')
+        path_to_weights = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'training', 
+                                        'all', self.region+'-'+self.chain.selection, training_name, self.method_name, 
+                                        'weights', 'factory_'+self.model_name+'.weights.xml')
         self.reader.BookMVA(training_name, path_to_weights)
 
     def predict(self, trainingnames=False):
@@ -60,13 +62,10 @@ def listAvailableMVAs():
     return MVA_of_choice.keys()
 
 if __name__ == '__main__':
-    from HNL.Tools.helpers import getObjFromFile
     # in_file = ROOT.TFile('/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/2016/TMVA/Background/DYJetsToLL-M-50.root')
     in_file = ROOT.TFile('/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/2016/TMVA/Signal/HNL-e-m200.root')
     c = in_file.Get('trainingtree')
-    # print c, c.GetEntries()
     reader = Reader(c, 'high_e', 'kBDT')
-    # print c, c.GetEntries()
 
     for entry in xrange(100):
         c.GetEntry(entry)

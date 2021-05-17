@@ -54,7 +54,7 @@ else:
 for mf in merge_files:
     if "Results" in mf: merge_files.pop(merge_files.index(mf))
 
-script = os.path.expandvars(os.path.join('$CMSSW', 'src', 'HNL', 'Triggers', 'calcTriggerEff.py')
+script = os.path.expandvars(os.path.join('$CMSSW', 'src', 'HNL', 'Triggers', 'calcTriggerEff.py'))
 
 merge(merge_files, script, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
 

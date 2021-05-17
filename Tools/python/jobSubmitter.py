@@ -52,7 +52,7 @@ def getCondorBase(logfile):
     jobfilebase = jobfilebase.rsplit('/', 1)[0]
     return jobfilebase
 
-def makeCondorFile(logfile, script, i, runscriptname, condor_base):
+def makeCondorFile(logfile, i, runscriptname, condor_base):
     logfile = os.path.realpath(logfile)
     submit_file_name = makePathTimeStamped(condor_base)
     submit_file_name += '_'+str(i)+'.sub'
@@ -83,7 +83,7 @@ def launchOnCondor(logfile, script, arguments, i, job_label = None):
     condor_base = getCondorBase(os.path.realpath(logfile))
     runscript_name = makeRunScript(script, arguments, i, condor_base)
     os.system('chmod +x '+runscript_name)
-    submit_file_name = makeCondorFile(logfile, script, i, runscript_name, condor_base)
+    submit_file_name = makeCondorFile(logfile, i, runscript_name, condor_base)
 
     command = 'condor_submit '+submit_file_name
     if job_label is not None: command += ' -batch-name ' +job_label
@@ -110,10 +110,10 @@ import json
 def getSubmitArgs(argparser, args, dropArgs=None, additionalArgs = None):
     #changedArgs looks at all the arguments you gave in the original command. The getattr() skips things like args.sample and so on that have a default of None here but will add those anyway
     #when looping over the subjobs in the zip(subJobArgs, subJob) 
-    arg_groups={}
+    arg_groups = {}
     for group in argparser._action_groups:
-        group_dict={a.dest:getattr(args,a.dest,None) for a in group._group_actions}
-        arg_groups[group.title]=argparse.Namespace(**group_dict)
+        group_dict = {a.dest:getattr(args,a.dest,None) for a in group._group_actions}
+        arg_groups[group.title] = argparse.Namespace(**group_dict)
 
     changedArgs  = [arg for arg in vars(arg_groups['submission']) if getattr(arg_groups['submission'], arg) and argparser.get_default(arg) != getattr(arg_groups['submission'], arg)]
     submitArgs   = {arg: getattr(arg_groups['submission'], arg) for arg in changedArgs if (not dropArgs or arg not in dropArgs)}
@@ -123,7 +123,7 @@ def getSubmitArgs(argparser, args, dropArgs=None, additionalArgs = None):
     return submitArgs
 
 def getArgsStr(arg_list, to_ignore):
-    args_str=''
+    args_str = ''
     for arg in sorted(arg_list.keys()):
         if str(arg) in to_ignore:
             continue
@@ -133,24 +133,32 @@ def getArgsStr(arg_list, to_ignore):
             args_str += '_' + str(arg) + '-' + str(arg_list[arg]).replace('/', '-')
     return args_str 
 
-def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, additionalArgs=None, subLog=None, wallTime='15', queue='localgrid', cores=1, jobLabel=None, resubmission = False):
+def submitJobs(script, subjob_args, subjob_list, argparser, **kwargs):
+    drop_args = kwargs.get('dropArgs', None)
+    additional_args = kwargs.get('additionalArgs', None)
+    sub_log = kwargs.get('additionalArgs', None)
+    wall_time = kwargs.get('wallTime', '15')
+    queue = kwargs.get('queue', 'localgrid')
+    cores = kwargs.get('cores', 1)
+    job_label = kwargs.get('jobLabel', None)
+    resubmission = kwargs.get('resubmission', False)
+    
     args         = argparser.parse_args()
     args.isChild = True
 
     ignore_overwrite = False
     if resubmission and 'skimmer' in script and not args.overwrite:
         ignore_overwrite = True
-        args.overwrite=True
-    submitArgs   = getSubmitArgs(argparser, args, dropArgs, additionalArgs)
-    print submitArgs
+        args.overwrite = True
+    submit_args   = getSubmitArgs(argparser, args, drop_args, additional_args)
     if resubmission and 'skimmer' in script and ignore_overwrite:
-        arg_string = getArgsStr(submitArgs, to_ignore=['isChild', 'overwrite'])
+        arg_string = getArgsStr(submit_args, to_ignore=['isChild', 'overwrite'])
     else:
-        arg_string = getArgsStr(submitArgs, to_ignore=['isChild'])
+        arg_string = getArgsStr(submit_args, to_ignore=['isChild'])
     
     #Do not include isChild in arg_string
 
-    logbase = os.path.join('log', 'Latest', os.path.basename(script).split('.')[0]+(('-'+subLog) if subLog else ''), arg_string)
+    logbase = os.path.join('log', 'Latest', os.path.basename(script).split('.')[0]+(('-'+sub_log) if sub_log else ''), arg_string)
     if not resubmission: makeDirIfNeeded(logbase+'/x')
     script = os.path.realpath(script)
 
@@ -165,19 +173,15 @@ def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, additio
         with open(logbase+'/args.txt', 'w') as f:
             json.dump(args.__dict__, f, indent = 2)
 
-    # # Clear current jobs folder
-    # if args.batchSystem == 'HTCondor':
-    #     os.system('rm jobs/*.sub')
-
-    for i, subJob in enumerate(subJobList):
-        for arg, value in zip(subJobArgs, subJob):
-            if value: submitArgs[arg] = str(value)
+    for i, subJob in enumerate(subjob_list):
+        for arg, value in zip(subjob_args, subJob):
+            if value: submit_args[arg] = str(value)
             else:
-                try:    submitArgs.pop(arg)
+                try:    submit_args.pop(arg)
                 except: pass
         
-        args_str_for_command=' '
-        for arg, value in submitArgs.iteritems():
+        args_str_for_command = ' '
+        for arg, value in submit_args.iteritems():
             if value == False:
                 continue
             elif isinstance(value, list):
@@ -200,11 +204,11 @@ def submitJobs(script, subJobArgs, subJobList, argparser, dropArgs=None, additio
         elif args.batchSystem == 'local': runLocal(command, logfile)
         elif args.batchSystem == 'HTCondor': 
             arguments = (os.getcwd(), command)
-            launchOnCondor(logfile, script, arguments, i, job_label=jobLabel)
+            launchOnCondor(logfile, script, arguments, i, job_label=job_label)
         
-        else:               launchCream02(command, logfile, checkQueue=(i%100==0), wallTimeInHours=wallTime, queue=queue, cores=cores, jobLabel=jobLabel)
+        else:               launchCream02(command, logfile, checkQueue=(i%100==0), wallTimeInHours=wall_time, queue=queue, cores=cores, jobLabel=job_label)
 
-    print len(subJobList), 'jobs submitted'
+    print len(subjob_list), 'jobs submitted'
 
 from HNL.Tools.logger import successfullJob
 def checkCompletedJobs(script, subJobList, argparser, subLog = None, additionalArgs=None):
@@ -213,7 +217,7 @@ def checkCompletedJobs(script, subJobList, argparser, subLog = None, additionalA
     submitArgs   = getSubmitArgs(argparser, args, additionalArgs=additionalArgs)
     arg_string = getArgsStr(submitArgs, to_ignore=['isChild'])
 
-    for i, subJob in enumerate(subJobList):
+    for subJob in subJobList:
         logdir  = os.path.join('log', 'Latest', os.path.basename(script).split('.')[0]+(('-'+subLog) if subLog else ''), arg_string, *(str(s) for s in subJob[:-1]))
         if args.batchSystem != 'HTCondor':
             logfile = os.path.join(logdir, str(subJob[-1]) + ".log")
@@ -255,4 +259,4 @@ def disableShouldMerge(script, argparser, subLog = None, additionalArgs=None):
         filetowrite.write('False')
 
 if __name__ == '__main__':
-    launchCondor('a', 'b', 'c', 0)
+    launchOnCondor('a', 'b', 'c', 0)

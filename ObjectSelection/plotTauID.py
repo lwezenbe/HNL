@@ -55,7 +55,7 @@ for d in args.discriminators:
         merge_files.extend(glob.glob(os.path.join(os.getcwd(), 'data', 'compareTauID', args.year, reco_names[args.includeReco], d, '*', '*', '*')))
 for mf in merge_files:
     if "Results" in mf: merge_files.pop(merge_files.index(mf))
-script = os.path.expandvars(os.path.join('$CMSSW', 'src', 'HNL', 'ObjectSelection', 'compareTauID.py')
+script = os.path.expandvars(os.path.join('$CMSSW', 'src', 'HNL', 'ObjectSelection', 'compareTauID.py'))
 merge(merge_files, script, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
 
 if args.isTest:

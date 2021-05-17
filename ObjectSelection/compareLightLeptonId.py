@@ -137,7 +137,7 @@ else:
 from HNL.Tools.helpers import progress
 from HNL.ObjectSelection.electronSelector import isBaseElectron
 from HNL.ObjectSelection.muonSelector import isBaseMuon
-from HNL.ObjectSelection.leptonSelector import isGoodLepton, isGoodLightLeptonGeneral
+from HNL.ObjectSelection.leptonSelector import isGoodLightLeptonGeneral
 from HNL.EventSelection.eventSelectionTools import selectGenLeptonsGeneral
 from HNL.Tools.helpers import deltaR
 

@@ -6,7 +6,7 @@
 
 import numpy as np
 from HNL.Tools.histogram import Histogram
-from HNL.EventSelection.eventSelector import EventSelector
+from HNL.EventSelection.event import Event
 from HNL.Tools.helpers import makeDirIfNeeded
 from HNL.EventSelection.eventSelectionTools import select3TightLeptons
 import ROOT
@@ -33,7 +33,7 @@ submission_parser.add_argument('--region',   action='store', default='baseline',
     choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZCR', 'WZCR', 'ConversionCR', 'MCCT', 'TauMixCT'])
 submission_parser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data samples')
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
-submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+submission_parser.add_argument('--logLevel',  action='store', default='INFO', help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 submission_parser.add_argument('--tag',  action='store',      default=None,               help='Tag with additional information for the output')
 
 argParser.add_argument('--makePlots', action='store_true', default=False,  help='make plots')
@@ -87,20 +87,20 @@ else:
 # Load in the sample list 
 #
 from HNL.Samples.sampleManager import SampleManager
-def getSampleManager(year):
+def getSampleManager(y):
     if args.noskim or args.selection != 'default':
         skim_str = 'noskim'
     elif args.region in ['highMassSR', 'lowMassSR']:
         skim_str = 'RecoGeneral'
     else:
         skim_str = 'Reco'
-    file_list = 'fulllist_'+str(year)+'_mconly' if args.customList is None else args.customList
+    file_list = 'fulllist_'+str(y)+'_mconly' if args.customList is None else args.customList
 
     if skim_str == 'RecoGeneral':
-        sample_manager = SampleManager(year, skim_str, file_list, skim_selection=args.selection, region=args.region)
+        sm = SampleManager(y, skim_str, file_list, skim_selection=args.selection, region=args.region)
     else:
-        sample_manager = SampleManager(year, skim_str, file_list)
-    return sample_manager
+        sm = SampleManager(y, skim_str, file_list)
+    return sm
 
 #
 # function to have consistent categories in running and plotting
@@ -130,12 +130,14 @@ else:
     regions.append(args.region)
     srm[args.region] = SearchRegionManager(args.region)
 
-def getOutputBase(sample, prompt_string):
+def getOutputBase(sample_name, prompt_string):
     tag_string = args.tag if args.tag is not None else 'General'
     if not args.isTest:
-        output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', __file__.split('.')[0].rsplit('/')[-1], args.year, '-'.join([args.strategy, args.selection, args.region, tag_string]), sample, prompt_string)
+        output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', __file__.split('.')[0].rsplit('/')[-1], 
+                                    args.year, '-'.join([args.strategy, args.selection, args.region, tag_string]), sample_name, prompt_string)
     else:
-        output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year, '-'.join([args.strategy, args.selection, args.region]), sample, prompt_string)
+        output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', 
+                        __file__.split('.')[0].rsplit('/')[-1], args.year, '-'.join([args.strategy, args.selection, args.region]), sample_name, prompt_string)
         # output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year, '-'.join([args.strategy, args.selection, args.region, tag_string]), sample, prompt_string)
     return output_string
 
@@ -224,9 +226,6 @@ if not args.makePlots and args.makeDataCards is None:
         from HNL.Weights.lumiweight import LumiWeight
         lw = LumiWeight(sample, sample_manager)
 
-        from HNL.EventSelection.eventCategorization import EventCategory
-        ec = EventCategory(chain)
-
         #
         # Object ID param
         #
@@ -234,10 +233,9 @@ if not args.makePlots and args.makeDataCards is None:
         chain.obj_sel = getObjectSelection(args.selection)
 
         if not args.region == 'MCCT':
-            es = EventSelector(args.region, chain, chain, True, ec)
+            event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region)
         else:
-            es = EventSelector(args.region, chain, chain, True, ec, additional_options=['tau'])
-
+            event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region, additional_options=['tau'])
 
         list_of_numbers = {}
         for c in listOfCategories(args.region):
@@ -266,13 +264,15 @@ if not args.makePlots and args.makeDataCards is None:
             if args.selection == 'AN2017014':
                 if not cutter.cut(passTriggers(chain, analysis='HNL_old'), 'pass_triggers'): continue
 
-            #Event selection            
-            if not es.passedFilter(cutter, sample.output): continue
+            #Event selection    
+            event.initEvent()
+
+            if not event.passedFilter(cutter, sample.output): continue
             if args.region == 'MCCT' and not select3TightLeptons(chain, chain, cutter): continue
             nprompt = 0
             for index in chain.l_indices:
                 if args.tag == 'TauFakes':
-                    if chain._lIsPrompt[index] or chain._lFlavor[index]< 2: nprompt += 1
+                    if chain._lIsPrompt[index] or chain._lFlavor[index] < 2: nprompt += 1
                 else:
                     if chain._lIsPrompt[index]: nprompt += 1
             
@@ -280,7 +280,7 @@ if not args.makePlots and args.makeDataCards is None:
 
             #Split made because for the other regions, the number of leptons is different and eventcategories dont make sense
             if args.region in ['baseline', 'highMassSR', 'lowMassSR']:
-                event_category = ec.returnCategory()
+                event_category = event.event_category.returnCategory()
             else:
                 event_category = max(CATEGORIES)
 
@@ -307,7 +307,7 @@ else:
     from HNL.Tools.mergeFiles import merge
     import glob
     from HNL.Plotting.plot import Plot
-    from HNL.EventSelection.eventCategorization import CATEGORY_NAMES, ANALYSIS_CATEGORIES
+    from HNL.EventSelection.eventCategorization import CATEGORY_NAMES
 
     from HNL.Tools.helpers import makePathTimeStamped
     from HNL.Plotting.plottingTools import extraTextFormat
@@ -475,14 +475,16 @@ else:
         search_region_keys = range(1, srm[args.region].getNumberOfSearchRegions()+1) + srm[args.region].getListOfSearchRegionGroups() + ['total']
 
         if args.isTest:
-            destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Analysis/data/testArea/Results/calcYields/'+'-'.join([args.strategy, args.selection, args.region])+'/'+year+'/'+args.flavor))
+            destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Analysis/data/testArea/Results/calcYields/'+'-'.join([args.strategy, args.selection, args.region])
+                                                +'/'+year+'/'+args.flavor))
         else:
-            destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Analysis/data/Results/calcYields/'+'-'.join([args.strategy, args.selection, args.region])+'/'+year+'/'+args.flavor))
+            destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Analysis/data/Results/calcYields/'+'-'.join([args.strategy, args.selection, args.region])
+                                                +'/'+year+'/'+args.flavor))
 
         def protectHist(hist):    
             if hist.Integral() < 0.00001:
-                for i in range(1, hist.GetNbinsX()+1):
-                    if hist.GetBinContent(i) <= 0.00001: hist.SetBinContent(i, 0.00001)
+                for bi in range(1, hist.GetNbinsX()+1):
+                    if hist.GetBinContent(bi) <= 0.00001: hist.SetBinContent(bi, 0.00001)
             return hist
 
         if args.makeDataCards is not None:
@@ -498,6 +500,7 @@ else:
                             sig_yield = list_of_values['signal'][s][ac][sr]
                             bkgr_yields = [list_of_values['bkgr'][b][ac][sr] for b in sorted(list_of_values['bkgr'].keys())]
                             bkgr_names = [b for b in sorted(list_of_values['bkgr'].keys())]
+                            coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][int(s.split('-m')[-1])]
                             makeDataCard(str(ac)+'-'+str(sr), args.flavor, year, 0, s, bkgr_names, args.selection, sig_yield, bkgr_yields, coupling_sq = coupling_squared)
             #
             # If we want to use shapes, first make shape histograms, then make datacards
@@ -521,7 +524,8 @@ else:
                     
                     # Signal 
                     for sample_name in list_of_values['signal'].keys():
-                        out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', args.strategy+'-'+args.selection+'-'+args.region, str(year), args.flavor, sample_name, ac+'.shapes.root')
+                        out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', 
+                                                args.strategy+'-'+args.selection+'-'+args.region, str(year), args.flavor, sample_name, ac+'.shapes.root')
                         makeDirIfNeeded(out_path)
                         out_shape_file = ROOT.TFile(out_path, 'recreate')
                         n_search_regions = srm[args.region].getNumberOfSearchRegions()
@@ -663,7 +667,6 @@ else:
                     p.drawPieChart(output_dir = destination+'/PieCharts', draw_percent=True, message = args.message)
 
             if not args.noCutFlow:
-                import glob
                 for sample_name in sample_manager.sample_names:
                     sample = sample_manager.getSample(sample_name)
                     in_file = [os.path.join(base_path, sample.output, 'total/events.root')]
@@ -708,8 +711,8 @@ else:
                             list_of_sr_hist[c]['signal'][sample_name].SetBinContent(sr, list_of_values['signal'][sample_name][c][sr]) 
                             list_of_sr_hist[c]['signal'][sample_name].SetBinError(sr, list_of_errors['signal'][sample_name][c][sr])
 
-                def mergeCategories(ac, signalOrBkgr, sample_name):
-                    filtered_hist = [list_of_sr_hist[c][signalOrBkgr][sample_name] for c in ac]
+                def mergeCategories(analysis_category, signalOrBkgr, sample_name):
+                    filtered_hist = [list_of_sr_hist[cat][signalOrBkgr][sample_name] for cat in analysis_category]
                     if len(filtered_hist) == 0:
                         raise RuntimeError("Tried to merge nonexisting categories")
                     elif len(filtered_hist) == 1:
@@ -722,20 +725,17 @@ else:
 
                 #Now add histograms together that belong to same analysis super category
                 list_of_ac_hist = {}
-                # for ac in ANALYSIS_CATEGORIES.keys():
                 for ac in SUPER_CATEGORIES.keys():
                     list_of_ac_hist[ac] = {'signal':[], 'bkgr':[]}
 
                     signal_names = []
                     for i_name, sample_name in enumerate(list_of_values['signal'].keys()):
                         signal_names.append(sample_name)
-                        # list_of_ac_hist[ac]['signal'].append(mergeCategories(ANALYSIS_CATEGORIES[ac], 'signal', sample_name))
                         list_of_ac_hist[ac]['signal'].append(mergeCategories(SUPER_CATEGORIES[ac], 'signal', sample_name))
                     
                     bkgr_names = []
                     for i_name, sample_name in enumerate(background_collection):
                         bkgr_names.append(sample_name)
-                        # list_of_ac_hist[ac]['bkgr'].append(mergeCategories(ANALYSIS_CATEGORIES[ac], 'bkgr', sample_name))
                         list_of_ac_hist[ac]['bkgr'].append(mergeCategories(SUPER_CATEGORIES[ac], 'bkgr', sample_name))
 
                     extra_text = [extraTextFormat(ac, ypos = 0.82)]

@@ -5,7 +5,6 @@
 #
 
 import numpy as np
-from HNL.Tools.histogram import Histogram
 from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped
 
 #
@@ -29,7 +28,7 @@ submission_parser.add_argument('--inData',   action='store_true', default=False,
 submission_parser.add_argument('--region', action='store', default=None, type=str,  help='What region was the fake rate you want to use measured in?', 
     choices=['TauFakesDY', 'TauFakesTT', 'Mix'])
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
-submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+submission_parser.add_argument('--logLevel',  action='store', default='INFO', help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 
 argParser.add_argument('--makePlots', action='store_true', default=False,  help='make plots')
 argParser.add_argument('--stackMC', action='store_true', default=False,  help='take all MC together')
@@ -61,8 +60,8 @@ if args.flavorToTest != ['tau']:
 if args.flavorToTest == ['tau']:
     if args.region is None:
         raise RuntimeError("Region should be defined for tau fakes")
-        if args.isCheck:
-            raise RuntimeError('Mix can not be used for check')
+    if args.isCheck:
+        raise RuntimeError('Mix can not be used for check')
 
 if args.selection == 'AN2017014':
     raise RuntimeError("selection AN2017014 currently not supported")
@@ -148,7 +147,8 @@ def getOutputBase():
     if not args.isTest:
         output_name = os.path.realpath(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', this_file_name, args.year, data_str, flavors_to_test_str))
     else:
-        output_name = os.path.realpath(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'testArea', this_file_name, args.year, data_str, flavors_to_test_str))
+        output_name = os.path.realpath(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'testArea', this_file_name, 
+                                        args.year, data_str, flavors_to_test_str))
 
     if args.flavorToTest == ['tau']:
         output_name = os.path.join(output_name, args.region)
@@ -175,7 +175,7 @@ def getCategories():
     else:
         return ['total']
 
-from HNL.BackgroundEstimation.fakerateArray import loadFakeRatesWithJetBins, readFakeRatesWithJetBins, readFakeRatesWithBJetBins, FakeRateCollection, SingleFlavorFakeRateCollection
+from HNL.BackgroundEstimation.fakerateArray import FakeRateCollection, SingleFlavorFakeRateCollection
 from HNL.BackgroundEstimation.getTauFakeContributions import getWeights
 #
 #   Code to process events
@@ -217,52 +217,54 @@ if not args.makePlots:
     from HNL.Weights.reweighter import Reweighter
     reweighter = Reweighter(sample, sample_manager)
 
-    #
-    # Object ID param
-    #
-    from HNL.ObjectSelection.objectSelection import getObjectSelection
-    chain.obj_sel = getObjectSelection(args.selection) #Working points are set in controlRegionManager.py
-
-    from HNL.EventSelection.eventCategorization import EventCategory
-    ec = EventCategory(chain)
-
-    from HNL.EventSelection.eventSelector import EventSelector
+    from HNL.EventSelection.event import Event
     if args.isCheck:
         if args.flavorToTest == ['tau']:
-            es = EventSelector(args.region, chain, chain, True, ec)    
+            event =  Event(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.region, additional_options=args.flavorToTest) 
         else:
             raise RuntimeError("Wrong input for flavorToTest with isCheck arg on: "+str(args.flavorToTest))
     else:
         if not args.inData:
-            es = EventSelector('MCCT', chain, chain, True, ec, additional_options=args.flavorToTest) 
+            event =  Event(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region='MCCT', additional_options=args.flavorToTest) 
         else:
-            es = EventSelector('DataCT', chain, chain, True, ec, additional_options=args.flavorToTest) 
+            event =  Event(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region='TauMixCT', additional_options=args.flavorToTest) 
+            # event =  Event(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region='DataCT', additional_options=args.flavorToTest) 
 
     fakerate = {}
     if 'tau' in args.flavorToTest:
-        base_path_tau = lambda proc : os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', args.year, data_str, 'tau', 'TauFakes'+proc, proc, 'events.root'))
+        if not args.inData:
+            base_path_tau = lambda proc : os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', 
+                                                                        args.year, data_str, 'tau', 'TauFakes'+proc+'-'+args.selection, proc, 'events.root'))
+        else:
+            base_path_tau = lambda proc : os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', 
+                                                                        args.year, data_str, 'tau', 'TauFakes'+proc+'-'+args.selection, 'events.root'))
         if args.region == 'TauFakesDY':
             fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('DY'), subdirs = ['total'])
         elif args.region == 'TauFakesTT':
             fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('TT'), subdirs = ['total'])
         else:
-            fakerate[2] = SingleFlavorFakeRateCollection([base_path_tau('DY'), base_path_tau('TT')], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], weights = getWeights(args.year, args.selection, 'TauMixCT'), names = ['DY', 'TT'])
+            fakerate[2] = SingleFlavorFakeRateCollection([base_path_tau('DY'), base_path_tau('TT')], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], 
+                                                            weights = getWeights(args.year, args.selection, 'TauMixCT'), names = ['DY', 'TT'])
             # fakerate[2] = SingleFlavorFakeRateCollection([base_path_tau('DY'), base_path_tau('TT')], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], weights = getWeights(args.year, args.selection, 'MCCT'), names = ['DY', 'TT'])
             # fakerate[2] = SingleFlavorFakeRateCollection([base_path_tau('DY'), base_path_tau('TT')], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], weights = getWeights(args.year, args.selection, 'highMassSR'), names = ['DY', 'TT'])
     else:
         fakerate[2] = None
     if 'ele' in args.flavorToTest: 
         if args.inData:
-            fakerate[0] = FakeRateEmulator('fakeRate_electron_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data','FakeRates', args.year, 'Lukav2', 'fakeRateMap_data_electron_'+args.year+'_mT.root'))
+            fakerate[0] = FakeRateEmulator('fakeRate_electron_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 
+                                            'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.year, 'Lukav2', 'fakeRateMap_data_electron_'+args.year+'_mT.root'))
         else:
-            fakerate[0] = FakeRateEmulator('fakeRate_electron_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data','FakeRates', args.year, 'Lukav2', 'fakeRateMap_MC_electron_'+args.year+'.root'))
+            fakerate[0] = FakeRateEmulator('fakeRate_electron_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 
+                                            'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.year, 'Lukav2', 'fakeRateMap_MC_electron_'+args.year+'.root'))
     else:
         fakerate[0] = None
     if 'mu' in args.flavorToTest: 
         if args.inData:
-            fakerate[1] = FakeRateEmulator('fakeRate_muon_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data','FakeRates', args.year, 'Lukav2', 'fakeRateMap_data_muon_'+args.year+'_mT.root'))
+            fakerate[1] = FakeRateEmulator('fakeRate_muon_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 
+                                            'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.year, 'Lukav2', 'fakeRateMap_data_muon_'+args.year+'_mT.root'))
         else:
-            fakerate[1] = FakeRateEmulator('fakeRate_muon_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data','FakeRates', args.year, 'Lukav2', 'fakeRateMap_MC_muon_'+args.year+'.root'))
+            fakerate[1] = FakeRateEmulator('fakeRate_muon_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 
+                                            'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.year, 'Lukav2', 'fakeRateMap_MC_muon_'+args.year+'.root'))
     else:
         fakerate[1] = None
 
@@ -295,14 +297,15 @@ if not args.makePlots:
             if not cutter.cut(passTriggers(chain, 'HNL'), 'pass_triggers'): continue
 
         #Event selection  
-        if not es.removeOverlapDYandZG(sample.output): continue
-        if not es.selector.passedFilter(cutter, args.region): continue
+        event.initEvent()
+        if not event.event_selector.removeOverlapDYandZG(sample.output): continue
+        if not event.event_selector.selector.passedFilter(cutter, args.region): continue
             
         if args.inData and not chain.is_data:
-            fake_index = es.selector.getFakeIndex()
+            fake_index = event.event_selector.selector.getFakeIndex()
             if chain.l_isfake[fake_index]: continue
 
-        cat = ec.returnAnalysisCategory()
+        cat = event.event_category.returnAnalysisCategory()
 
         fake_factor = fakerate_collection.getFakeWeight()
         weight = reweighter.getLumiWeight()
@@ -315,7 +318,7 @@ if not args.makePlots:
                     co['total'][v].fillClosure(chain, weight, fake_factor, index=2)
                 else:
                     #General case
-                    for l in es.selector.loose_leptons_of_interest:
+                    for l in event.event_selector.selector.loose_leptons_of_interest:
                         if args.splitInCategories: co[cat][v].fillClosure(chain, weight, fake_factor, index=l)
                         co['total'][v].fillClosure(chain, weight, fake_factor, index=l)
             else:
@@ -344,7 +347,7 @@ if not args.makePlots:
 else:
     from HNL.Tools.mergeFiles import merge
     import glob
-    from HNL.Tools.helpers import getObjFromFile, mergeHistograms
+    from HNL.Tools.helpers import mergeHistograms
     from HNL.Plotting.plot import Plot
 
     base_path = getOutputBase()
@@ -364,14 +367,14 @@ else:
         for c in getCategories():
             closureObjects[sample_name][c] = {}
             for v in var:
-                print in_file+'/events.root'
                 closureObjects[sample_name][c][v] = ClosureObject('closure-'+v+'-'+c, None, None, in_file+'/events.root')
 
     if not args.inData and not args.stackMC:
         for sample_name in closureObjects.keys():
             for c in getCategories():
                 for v in var:
-                    p = Plot(name = v, signal_hist = closureObjects[sample_name][c][v].getObserved(), bkgr_hist = closureObjects[sample_name][c][v].getSideband(), color_palette='Black', color_palette_bkgr='Stack', tex_names = ["Observed", 'Predicted'], draw_ratio = True)
+                    p = Plot(name = v, signal_hist = closureObjects[sample_name][c][v].getObserved(), bkgr_hist = closureObjects[sample_name][c][v].getSideband(), 
+                                color_palette='Black', color_palette_bkgr='Stack', tex_names = ["Observed", 'Predicted'], draw_ratio = True)
                     p.drawHist(output_dir = output_dir+'/'+sample_name+'/'+c, draw_option='EP')
     else:
         for c in getCategories():
@@ -403,6 +406,7 @@ else:
                         else:
                             signal_h.Add(closureObjects[sample_name][c][v].getObserved())
 
-                p = Plot(name = v, signal_hist = signal_h, bkgr_hist = backgrounds, color_palette='Black', color_palette_bkgr='StackTauPOGbyName', tex_names = ["Observed"]+background_names, draw_ratio = True, year = args.year)
+                p = Plot(name = v, signal_hist = signal_h, bkgr_hist = backgrounds, color_palette='Black', color_palette_bkgr='StackTauPOGbyName', tex_names = ["Observed"]+background_names, 
+                            draw_ratio = True, year = args.year)
                 p.drawHist(output_dir = output_dir+'/'+'/'+c, draw_option='EP')
         

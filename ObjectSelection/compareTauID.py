@@ -53,7 +53,7 @@ submission_parser.add_argument('--includeReco',   action='store', default=None,
 submission_parser.add_argument('--discriminators', nargs='*', default=['iso', 'ele','mu'],  help='Which discriminators do you want to test?', choices = ['iso', 'ele', 'mu'])
 submission_parser.add_argument('--makeCombinations', action='store_true', default=False,
     help='Makes combinations of iso with different electron and muon working points. Turned off by default because large hadd times for large samples.')
-submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+submission_parser.add_argument('--logLevel',  action='store', default='INFO', help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 args = argParser.parse_args()
 
 

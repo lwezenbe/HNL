@@ -65,7 +65,6 @@ def createCommandList(input_list):
 #
 # Shared constant
 #
-import time
 base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL')
 
 from HNL.Tools.logger import successfullJob

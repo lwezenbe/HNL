@@ -46,8 +46,6 @@ def getSortKeyHNLtruth(item):
 
 #
 # Function to select nL good leptons and save their variables in the chain
-# no_tau: turn on to only accept light leptons
-# tau_algo: if set to 'gen_truth', it will still run over all reco taus but instead of using tight taus it will only look if they were matched to a hadronically decayed gen tau
 #
 def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True):
 
