@@ -17,6 +17,7 @@ class Reweighter:
             self.puReweightingUp   = getReweightingFunction(sample.chain.year, 'up')
             self.puReweightingDown = getReweightingFunction(sample.chain.year, 'down')
 
+        self.fakerate_collection = None
 
     def getLumiWeight(self):
         return self.lumiweighter.getLumiWeight()
@@ -29,11 +30,10 @@ class Reweighter:
 
     def getFakeRateWeight(self):
         try:
-            tot_weight *= self.fakerate_collection.getFakeWeight()
+            return self.fakerate_collection.getFakeWeight()
         except:
-            self.fakerate_collection = returnFakeRateCollection(sample.chain)
-            tot_weight *= self.fakerate_collection.getFakeWeight()
-        return tot_weight
+            self.fakerate_collection = returnFakeRateCollection(self.sample.chain)
+            return self.fakerate_collection.getFakeWeight()
 
 
     def getTotalWeight(self, sideband=False):
@@ -41,15 +41,13 @@ class Reweighter:
         tot_weight *= self.getLumiWeight()
         tot_weight *= self.getPUWeight()
         if sideband:
-            tot_weight *= getFakeRateWeight()
+            tot_weight *= self.getFakeRateWeight()
         return tot_weight
 
 
 
 if __name__ == '__main__':
-    from HNL.Samples.sample import createSampleList, getSampleFromList
     from HNL.Samples.sampleManager import SampleManager
-    import os
     from HNL.Tools.logger import getLogger, closeLogger
     log = getLogger('INFO')
 

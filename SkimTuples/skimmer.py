@@ -27,6 +27,7 @@ submission_parser.add_argument('--removeOverlap',  action='store_true',      def
 submission_parser.add_argument('--skimSelection',  action='store',      default='default',               help='Selection for the skim.', choices=['top', 'TTT', 'Luka', 'AN2017014', 'LukaFR', 'default'])
 submission_parser.add_argument('--region',   action='store', default=None,  help='Choose the selection region', 
     choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
+submission_parser.add_argument('--strategy',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
 argParser.add_argument('--checkLogs',  action='store_true',      default=False,               help='Check if all files completed successfully')
 
 args = argParser.parse_args()
@@ -189,27 +190,22 @@ if not args.checkLogs:
         event_range = sample.getEventRange(args.subJob)   
         
     #prepare object  and event selection
-    from HNL.ObjectSelection.objectSelection import objectSelectionCollection, getObjectSelection
+    from HNL.ObjectSelection.objectSelection import objectSelectionCollection
     if args.region is None:
         if args.skimSelection == 'Old':
-            object_selection = objectSelectionCollection('HNL', 'cutbased', 'loose', 'loose', 'loose', True, analysis='HNL')
+            chain.obj_sel = objectSelectionCollection('HNL', 'cutbased', 'loose', 'loose', 'loose', True, analysis='HNL')
         elif args.skimSelection in ['Luka', 'LukaFR']:
-            object_selection = objectSelectionCollection('HNL', 'Luka', 'loose', 'loose', 'loose', False, analysis='HNL')
+            chain.obj_sel = objectSelectionCollection('HNL', 'Luka', 'loose', 'loose', 'loose', False, analysis='HNL')
         elif args.skimSelection == 'TTT':
-            object_selection = objectSelectionCollection('HNL', 'TTT', 'loose', 'loose', 'loose', False, analysis='HNL')
+            chain.obj_sel = objectSelectionCollection('HNL', 'TTT', 'loose', 'loose', 'loose', False, analysis='HNL')
         else:
-            object_selection = objectSelectionCollection('HNL', 'HNL', 'loose', 'loose', 'loose', False, analysis='HNL')
-    else:
-        object_selection = getObjectSelection(args.skimSelection)
-    chain.obj_sel = object_selection
+            chain.obj_sel = objectSelectionCollection('HNL', 'HNL', 'loose', 'loose', 'loose', False, analysis='HNL')
 
     from HNL.Tools.helpers import progress
-    from HNL.EventSelection.eventSelectionTools import calculateThreeLepVariables, calculateGeneralVariables, selectLeptonsGeneral, selectGenLeptonsGeneral
-    from HNL.EventSelection.eventCategorization import EventCategory
-    from HNL.EventSelection.eventSelector import EventSelector
+    from HNL.EventSelection.eventSelectionTools import selectLeptonsGeneral, selectGenLeptonsGeneral
+    from HNL.EventSelection.event import Event
     if args.region is not None:
-        ec = EventCategory(chain)
-        es = EventSelector(args.region, chain, chain, not args.genSkim, ec)
+        event = Event(chain, chain, is_reco_level=not args.genSkim, selection=args.skimSelection, strategy=args.strategy, region=args.region)
         chain.selection = args.skimSelection
         chain.region = args.region
         chain.strategy = 'MVA' if args.region != 'AN2017014' else 'cutbased'
@@ -238,7 +234,8 @@ if not args.checkLogs:
 
             new_vars.lumiweight = lw.getLumiWeight()
         else:
-            if not es.passedFilter(cutter, sample.output): continue
+            event.initEvent()
+            if not event.passedFilter(cutter, sample.output): continue
 
         output_tree.Fill()
 
@@ -260,7 +257,7 @@ if not args.checkLogs:
     closeLogger(log)
 
 else:
-    from HNL.Tools.jobSubmitter import checkCompletedJobs, submitJobs, cleanJobFiles
+    from HNL.Tools.jobSubmitter import checkCompletedJobs, submitJobs
 
     failed_jobs = checkCompletedJobs(__file__, jobs, argParser)
     if failed_jobs is not None and len(failed_jobs) != 0:   

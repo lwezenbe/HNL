@@ -15,7 +15,7 @@ submission_parser.add_argument('--subJob',   action='store',      default=None, 
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+submission_parser.add_argument('--logLevel',  action='store',     default='INFO', help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 
 submission_parser.add_argument('--summaryFile', action='store_true', default=False,  help='Create text file that shows all selected arguments')
 submission_parser.add_argument('--noskim', action='store_true', default=False,  help='Use unskimmed files')
@@ -101,7 +101,8 @@ if not args.merge:
     output_base = os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL')) if not args.isTest else os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'testArea'))
 
     signal_str = 'Signal' if chain.is_signal else 'Background'
-    output_name = os.path.join(output_base, 'TMVA', str(args.year), args.region + '-'+args.selection, signal_str, 'tmp_'+sample.output, sample.name + '_' +sample.output+'_'+ str(args.subJob) + '.root')
+    output_name = os.path.join(output_base, 'TMVA', str(args.year), args.region + '-'+args.selection, signal_str, 
+                                'tmp_'+sample.output, sample.name + '_' +sample.output+'_'+ str(args.subJob) + '.root')
     makeDirIfNeeded(output_name)
 
     # if not args.isTest and isValidRootFile(output_name):
@@ -145,14 +146,10 @@ if not args.merge:
         event_range = sample.getEventRange(args.subJob)    
 
     from HNL.Tools.helpers import progress
-    from HNL.EventSelection.eventSelector import EventSelector
-    from HNL.EventSelection.eventCategorization import EventCategory
-    ec = EventCategory(chain)
+    from HNL.EventSelection.event import Event
 
     #prepare object  and event selection
-    from HNL.ObjectSelection.objectSelection import getObjectSelection
-    chain.obj_sel = getObjectSelection(args.selection)
-    es = EventSelector(args.region, chain, chain, True, ec)
+    event =  Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region)
 
     for entry in event_range:
         chain.GetEntry(entry)
@@ -160,11 +157,12 @@ if not args.merge:
     
         cutter.cut(True, 'Total')
 
-        if not es.removeOverlapDYandZG(sample.output): continue
-        if not es.selector.passedFilter(cutter, for_training=True): continue
+        event.initEvent()
+        if not event.event_selector.removeOverlapDYandZG(sample.output): continue
+        if not event.event_selector.selector.passedFilter(cutter, for_training=True): continue
         if len(chain.l_flavor) == chain.l_flavor.count(2): continue
 
-        category = ec.returnCategory()
+        category = event.event_category.returnCategory()
         super_cat = [sc for sc in SUPER_CATEGORIES.keys() if category in SUPER_CATEGORIES[sc]]
 
         nprompt = 0
@@ -201,14 +199,12 @@ if not args.merge:
 
 
 else:
-
     #
     # Check subjobs
     #
     from HNL.Tools.jobSubmitter import checkCompletedJobs
 
     from HNL.Tools.mergeFiles import merge
-    from HNL.Tools.helpers import isValidRootFile
     from HNL.Tools.makeBranches import makeBranches
 
     import uproot

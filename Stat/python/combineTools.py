@@ -7,7 +7,7 @@
 #
 import os
 import glob
-from HNL.Tools.helpers import makeDirIfNeeded, tab, getObjFromFile
+from HNL.Tools.helpers import makeDirIfNeeded, tab
 import ROOT
 
 #

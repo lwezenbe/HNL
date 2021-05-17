@@ -152,10 +152,9 @@ def printFourVec(four_vec):
 # Delta phi and R function
 #
 def deltaPhi(phi1, phi2):
-    dphi = phi2-phi1
+    dphi = abs(phi2-phi1)
     if dphi > pi:   dphi -= 2.0*pi
-    if dphi <= -pi: dphi += 2.0*pi
-    return abs(dphi)
+    return dphi
 
 def deltaR(eta1, eta2, phi1, phi2):
     return sqrt(deltaPhi(phi1, phi2)**2 + (eta1-eta2)**2)

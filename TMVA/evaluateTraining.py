@@ -1,7 +1,6 @@
 import ROOT
 import os
-from HNL.Tools.helpers import makeDirIfNeeded, rootFileContent, getObjFromFile, sortByOtherList, progress
-from HNL.TMVA.reader import Reader
+from HNL.Tools.helpers import rootFileContent, sortByOtherList, progress
 from HNL.Plotting.plottingTools import extraTextFormat
 
 import argparse
@@ -20,7 +19,6 @@ from HNL.TMVA.inputHandler import InputHandler
 ih = InputHandler(args.year, args.region, args.selection)
 
 import uproot
-import itertools
 from HNL.Plotting.plot import Plot
 from fpdf import FPDF
 import random
@@ -32,12 +30,6 @@ def fillRandGraph(in_graph, npoints):
         rand_index = random.randint(0, npoints_ingraph)
         new_graph.SetPoint(x, in_graph.GetX()[rand_index], in_graph.GetY()[rand_index])
     return new_graph
-
-#
-# List the input variables here
-#
-from HNL.TMVA.mvaVariables import getVariableList
-
 
 for signal in ih.signal_names:
 
@@ -90,6 +82,6 @@ for signal in ih.signal_names:
     pdf = FPDF()
     for mname in mnames:
         pdf.add_page()
-        pdf.image(os.path.join(out_file_name.rsplit('/', 1)[0], 'kBDT', 'plots', 'roc_'+mname+'.png'),50.,50.,100.,100.)
-        pdf.image(os.path.join(out_file_name.rsplit('/', 1)[0], 'kBDT', 'plots', 'overtrain_'+mname+'.png'),50.,150.,100.,100.)
+        pdf.image(os.path.join(out_file_name.rsplit('/', 1)[0], 'kBDT', 'plots', 'roc_'+mname+'.png'), 50., 50., 100., 100.)
+        pdf.image(os.path.join(out_file_name.rsplit('/', 1)[0], 'kBDT', 'plots', 'overtrain_'+mname+'.png'), 50., 150., 100., 100.)
     pdf.output(out_file_name.rsplit('.', 1)[0]+".pdf", "F")

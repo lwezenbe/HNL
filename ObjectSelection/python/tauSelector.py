@@ -168,12 +168,18 @@ def isLooseTauHNL(chain, index):
     return True
 
 def isFOTauHNL(chain, index):
-    if not isLooseTauHNL(chain, index):              return False
+    if getattr(chain, 'is_loose_lepton', None) is not None and chain.is_loose_lepton[index] is not None and chain.is_loose_lepton[index][1] == 'HNL':
+        if not chain.is_loose_lepton[index][0]: return False
+    else:
+        if not isLooseTauHNL(chain, index):              return False
     # if not tau_id_WP[('deeptauVSjets, 'medium')](chain)[index]:   return False
     return True
 
 def isTightTauHNL(chain, index): 
-    if not isFOTauHNL(chain, index):              return False
+    if getattr(chain, 'is_FO_lepton', None) is not None and chain.is_FO_lepton[index] is not None and chain.is_FO_lepton[index][1] == 'HNL':
+        if not chain.is_FO_lepton[index][0]: return False
+    else:
+        if not isFOTauHNL(chain, index):              return False
     if not tau_id_WP[('deeptauVSjets', 'medium')](chain)[index]:   return False
     return True
 
@@ -189,11 +195,17 @@ def isLooseTauEwkino(chain, index):
     return True
 
 def isFOTauEwkino(chain, index):
-    if not isLooseTauEwkino(chain, index):              return False
+    if getattr(chain, 'is_loose_lepton', None) is not None and chain.is_loose_lepton[index] is not None and chain.is_loose_lepton[index][1] == 'ewkino':
+        if not chain.is_loose_lepton[index][0]: return False
+    else:
+        if not isLooseTauEwkino(chain, index):              return False
     return True
 
 def isTightTauEwkino(chain, index): 
-    if not isFOTauEwkino(chain, index):              return False
+    if getattr(chain, 'is_FO_lepton', None) is not None and chain.is_FO_lepton[index] is not None and chain.is_FO_lepton[index][1] == 'ewkino':
+        if not chain.is_FO_lepton[index][0]: return False
+    else:
+        if not isFOTauEwkino(chain, index):              return False
     if not tau_id_WP[('MVA2017v2', 'tight')](chain)[index]:   return False
     return True
 
@@ -249,14 +261,23 @@ def checkTauWP(chain, wp):
 
 def isGoodTau(chain, index, workingpoint = None, algo = None):
     workingpoint = checkTauWP(chain, workingpoint)
-    algo = checkTauAlgorithm(chain, algo)
+    checked_algo = checkTauAlgorithm(chain, algo)
 
     if workingpoint == 'loose':
-        return isLooseTau(chain, index, algo)
+        if getattr(chain, 'is_loose_lepton', None) is not None and chain.is_loose_lepton[index] is not None and algo is None:
+            return chain.is_loose_lepton[index][0] and chain._lFlavor[index] == 2
+        else:
+            return isLooseTau(chain, index, checked_algo)
     elif workingpoint == 'FO':
-        return isFOTau(chain, index, algo)
+        if getattr(chain, 'is_FO_lepton', None) is not None and chain.is_FO_lepton[index] is not None and algo is None:
+            return chain.is_FO_lepton[index][0] and chain._lFlavor[index] == 2
+        else:
+            return isFOTau(chain, index, checked_algo)
     elif workingpoint == 'tight':
-        return isTightTau(chain, index, algo)
+        if getattr(chain, 'is_tight_lepton', None) is not None and chain.is_tight_lepton[index] is not None and algo is None:
+            return chain.is_tight_lepton[index][0] and chain._lFlavor[index] == 2
+        else:
+            return isTightTau(chain, index, checked_algo)
     else:
         raise RuntimeError("Undefined working point for tau")
 

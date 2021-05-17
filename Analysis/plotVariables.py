@@ -27,8 +27,8 @@ submission_parser.add_argument('--selection',   action='store', default='default
 submission_parser.add_argument('--strategy',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
 submission_parser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', 
     choices=['baseline', 'lowMassSR', 'highMassSR', 'ZZCR', 'WZCR', 'ConversionCR', 'NoSelection'])
-submission_parser.add_argument('--includeData',   action='store', default=None, nargs='*',  help='Also run over data', choices=['sideband', 'signalregion'])
-submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+submission_parser.add_argument('--includeData',   action='store', default=[], nargs='*',  help='Also run over data', choices=['sideband', 'signalregion'])
+submission_parser.add_argument('--logLevel',  action='store', default='INFO',  help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
 
 
@@ -49,14 +49,15 @@ args = argParser.parse_args()
 from HNL.Tools.logger import getLogger, closeLogger
 log = getLogger(args.logLevel)
 
-if args.includeData is not None and args.region == 'NoSelection':
+if len(args.includeData) > 0 and args.region == 'NoSelection':
     raise RuntimeError('inData does not work with this selection region')
 
-if args.includeData is not None and 'signalregion' in args.includeData and args.region in ['baseline', 'highMassSR', 'lowMassSR']:
+if len(args.includeData) > 0 and 'signalregion' in args.includeData and args.region in ['baseline', 'highMassSR', 'lowMassSR']:
     raise RuntimeError('These options combined would mean unblinding. This is not allowed.')
 
 if args.makeDataCards and args.strategy != 'MVA': 
-    raise RuntimeError("makeDataCards here is not supported for anything that is not MVA. Please use calcYields for this. The eventual plan is to merge calcYields and plotVariables into 1 but for now they are separated")
+    raise RuntimeError("makeDataCards here is not supported for anything that is not MVA. Please use calcYields for this."+ 
+                            "The eventual plan is to merge calcYields and plotVariables into 1 but for now they are separated")
 
 if args.strategy == 'MVA':
     if args.selection != 'default':
@@ -70,15 +71,14 @@ if args.strategy == 'MVA':
 # General imports
 #
 import os
-from ROOT import TFile
 from HNL.Tools.histogram import Histogram
 from HNL.Tools.mergeFiles import merge
 from HNL.Tools.helpers import getObjFromFile, progress, makeDirIfNeeded
-from HNL.EventSelection.eventCategorization import EventCategory
-from HNL.EventSelection.cutter import Cutter, printSelections
+from HNL.EventSelection.cutter import Cutter
 from HNL.Weights.reweighter import Reweighter
 from HNL.TMVA.reader import Reader, listAvailableMVAs
 from HNL.Samples.sampleManager import SampleManager
+from HNL.EventSelection.event import Event
 
 def getSampleManager(y):
     if args.genLevel:
@@ -93,10 +93,10 @@ def getSampleManager(y):
     file_list = 'fulllist_'+str(y) if args.customList is None else args.customList
 
     if skim_str == 'RecoGeneral':
-        sample_manager = SampleManager(y, skim_str, file_list, skim_selection=args.selection, region=args.region)
+        sm = SampleManager(y, skim_str, file_list, skim_selection=args.selection, region=args.region)
     else:
-        sample_manager = SampleManager(y, skim_str, file_list)
-    return sample_manager
+        sm = SampleManager(y, skim_str, file_list)
+    return sm
 
 if args.isTest:
     if args.year is None: args.year = '2016'
@@ -119,11 +119,16 @@ for year in ['2016', '2017', '2018']:
     sample_manager = getSampleManager(year)
 
     for sample_name in sample_manager.sample_names:
-        if args.includeData is None and sample_name == 'Data': continue
+        if len(args.includeData) == 0 and sample_name == 'Data': continue
         sample = sample_manager.getSample(sample_name)
         if args.sample and args.sample != sample.name: continue
-        for njob in xrange(sample.returnSplitJobs()): 
-            jobs[year] += [(sample.name, str(njob))]
+        if not sample_name == 'Data':
+            for njob in xrange(sample.returnSplitJobs()): 
+                jobs[year] += [(sample.name, str(njob), None)]
+        else:
+            for njob in xrange(sample.returnSplitJobs()): 
+                for include_data in args.includeData:
+                    jobs[year] += [(sample.name, str(njob), include_data)]                
 
 #
 # Submit subjobs
@@ -131,7 +136,7 @@ for year in ['2016', '2017', '2018']:
 if not args.isChild and not args.makePlots and not args.makeDataCards:
     from HNL.Tools.jobSubmitter import submitJobs
     for year in jobs.keys():
-        submitJobs(__file__, ('sample', 'subJob'), jobs[year], argParser, jobLabel = 'plotVar', additionalArgs= [('year', year)])
+        submitJobs(__file__, ('sample', 'subJob', 'includeData'), jobs[year], argParser, jobLabel = 'plotVar', additionalArgs= [('year', year)])
     exit(0)
 
 
@@ -167,11 +172,11 @@ def listOfCategories(region):
 categories = listOfCategories(args.region)
 reco_or_gen_str = 'reco' if not args.genLevel else 'gen'
 
-def getOutputName(st, year):
+def getOutputName(st, y):
     if not args.isTest:
-        return os.path.join(os.getcwd(), 'data', 'plotVariables', '-'.join([args.strategy, args.selection, args.region, reco_or_gen_str]), year, st)
+        return os.path.join(os.getcwd(), 'data', 'plotVariables', '-'.join([args.strategy, args.selection, args.region, reco_or_gen_str]), y, st)
     else:
-        return os.path.join(os.getcwd(), 'data', 'testArea', 'plotVariables', '-'.join([args.strategy, args.selection, args.region, reco_or_gen_str]), year, st)
+        return os.path.join(os.getcwd(), 'data', 'testArea', 'plotVariables', '-'.join([args.strategy, args.selection, args.region, reco_or_gen_str]), y, st)
 
 #
 # Load in the sample list 
@@ -187,10 +192,6 @@ if not args.makePlots and not args.makeDataCards:
 
     sample_manager = getSampleManager(args.year)
 
-    #prepare object  and event selection
-    from HNL.ObjectSelection.objectSelection import getObjectSelection
-    from HNL.EventSelection.eventSelector import EventSelector
-
     #Start a loop over samples
     sample_names = []
     for sample in sample_manager.sample_list:
@@ -200,10 +201,10 @@ if not args.makePlots and not args.makeDataCards:
         if args.sample and sample.name != args.sample: continue
 
         chain = sample.initTree(needhcount=False)
-        if args.includeData is None and chain.is_data: continue
+        if len(args.includeData) == 0 and chain.is_data: continue
 
         list_of_hist = {}
-        if chain.is_data: prompt_str = ['sideband', 'signalregion']
+        if chain.is_data: prompt_str = ['total']
         else: prompt_str = ['prompt', 'nonprompt', 'total']
         for c in categories:
             list_of_hist[c] = {}
@@ -215,8 +216,13 @@ if not args.makePlots and not args.makeDataCards:
         #
         # Load in sample and chain
         #
-        chain.obj_sel = getObjectSelection(args.selection)
         sample_names.append(sample.name)
+        event = Event(chain, chain, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region)
+
+        if chain.is_data and 'sideband' in args.includeData:
+            event = Event(chain, chain, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region, additional_options='sideband')
+        else:
+            event = Event(chain, chain, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region)
         
         #
         # Set event range
@@ -235,8 +241,6 @@ if not args.makePlots and not args.makeDataCards:
         #
         chain.HNLmass = sample.getMass()
         chain.year = int(args.year)
-        chain.selection = args.selection
-        chain.strategy = args.strategy
 
         #
         # Skip HNL masses that were not defined
@@ -269,16 +273,6 @@ if not args.makePlots and not args.makeDataCards:
         #
         # Loop over all events
         #
-        ec = EventCategory(chain)
-        if chain.is_data:
-            es = {}
-            if 'sideband' in args.includeData:
-                es['sideband'] = EventSelector(args.region, chain, chain, not args.genLevel, ec, additional_options='sideband')
-            elif 'signalregion' in args.includeData:
-                es['signalregion'] = EventSelector(args.region, chain, chain, not args.genLevel, ec)
-        else:
-            es = EventSelector(args.region, chain, chain, not args.genLevel, ec)
-
         for entry in event_range:
             
             chain.GetEntry(entry)
@@ -295,37 +289,22 @@ if not args.makePlots and not args.makeDataCards:
             #
             # Event selection
             #
-            if chain.is_data:
-                passed_filters = {}
-                # It can be done like this because passedFilter does not overwrite the existing new_chain
-                # variables if it doesnt pass and there can not be more than one that passes since the 
-                # regions are supposed to be orthogonal
-                for f in es.keys():
-                    passed_filters[f] = es[f].passedFilter(cutter, sample.output)
-                if passed_filters.values().count(True) > 1:
-                    raise RuntimeError('regions in data are supposed to be orthogonal')
-                elif passed_filters.values().count(True) < 1: continue
+            event.initEvent()
 
+            if not event.passedFilter(cutter, sample.output): continue
+            if args.region != 'NoSelection':
                 if len(chain.l_flavor) == chain.l_flavor.count(2): continue #Not all taus
 
-                if 'sideband' in args.includeData and passed_filters['sideband']: prompt_str = 'sideband'
-                if 'signalregion' in args.includeData and passed_filters['signalregion']: prompt_str = 'signalregion'
-
-            elif not chain.is_data:
-                if not es.passedFilter(cutter, sample.output): continue
-                if args.region != 'NoSelection':
-                    if len(chain.l_flavor) == chain.l_flavor.count(2): continue #Not all taus
-
-                    nprompt = 0
-                    if sample.name != 'Data':
-                        for index in chain.l_indices:
-                            if not args.genLevel and chain._lIsPrompt[index]: nprompt += 1
-                            elif args.genLevel and chain._gen_lIsPrompt[index]: nprompt += 1
-                        
-                    prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
-                else:
-                    prompt_str = 'prompt'
-                    chain.category = 17
+                nprompt = 0
+                if sample.name != 'Data':
+                    for index in chain.l_indices:
+                        if not args.genLevel and chain._lIsPrompt[index]: nprompt += 1
+                        elif args.genLevel and chain._gen_lIsPrompt[index]: nprompt += 1
+                    
+                prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
+            else:
+                prompt_str = None
+                chain.category = 17
 
             if args.strategy == 'MVA':
                 chain.mva_high_mu_lowMassSR = tmva['lowMassSR']['high_mu'].predict()
@@ -346,19 +325,17 @@ if not args.makePlots and not args.makeDataCards:
             # Fill the histograms
             #
             weight = reweighter.getTotalWeight()
-            is_sideband = prompt_str == 'sideband'
             for v in var.keys():
-                list_of_hist[chain.category][v][prompt_str].fill(chain, reweighter.getTotalWeight(sideband=is_sideband))  
-                if prompt_str not in ['sideband', 'signalregion']:
-                    list_of_hist[chain.category][v]['total'].fill(chain, reweighter.getTotalWeight())  
-             
+                if prompt_str is not None: list_of_hist[chain.category][v][prompt_str].fill(chain, reweighter.getTotalWeight(sideband='sideband' in args.includeData))  
+                list_of_hist[chain.category][v]['total'].fill(chain, reweighter.getTotalWeight())  
+ 
         #
         # Save histograms
         #
         subjobAppendix = '_subJob' + args.subJob if args.subJob else ''
         
         is_signal = 'HNL' in sample.name
-        if args.includeData is not None and chain.is_data:
+        if len(args.includeData) > 0 and chain.is_data:
             signal_str = 'data'
         else:
             signal_str = 'signal' if is_signal else 'bkgr'
@@ -413,7 +390,7 @@ else:
             bkgr_list = []
 
         # data
-        if args.includeData is not None:
+        if len(args.includeData) > 0:
             data_list = glob.glob(getOutputName('data', year)+'/Data')
         else:
             data_list = []
@@ -421,7 +398,7 @@ else:
         print 'check merge'
         # Merge files if necessary
         mixed_list = signal_list + bkgr_list + data_list
-        merge(mixed_list, __file__, jobs[year], ('sample', 'subJob'), argParser, istest=args.isTest, additionalArgs= [('year', year)])
+        merge(mixed_list, __file__, jobs[year], ('sample', 'subJob', 'includeData'), argParser, istest=args.isTest, additionalArgs= [('year', year)])
 
 
         if args.groupSamples:
@@ -475,7 +452,7 @@ else:
                         #    list_of_hist[c][v]['signal'][sample_name].hist.Scale(args.rescaleSignal/(args.coupling**2))
 
 
-        if args.includeData is not None:
+        if len(args.includeData) > 0:
             for c in categories:
                 for v in var:
                     list_of_hist[c][v]['data']['sideband'] = Histogram(getObjFromFile(data_list[0]+'/variables.root', v+'/'+str(c)+'-'+v+'-'+'Data-sideband'))
@@ -507,7 +484,7 @@ else:
                                 continue
                             # print bkgr, sg
                             list_of_hist[c][v]['bkgr'][sg[0]].add(tmp_hist_prompt)
-                            if args.includeData is None or 'sideband' not in args.includeData:
+                            if len(args.includeData) == 0 or 'sideband' not in args.includeData:
                                 list_of_hist[c][v]['bkgr']['non-prompt'].add(tmp_hist_nonprompt)
                         else:
                             list_of_hist[c][v]['bkgr'][bkgr].add(tmp_hist_total)
@@ -516,7 +493,7 @@ else:
                         del(tmp_hist_prompt)
                         del(tmp_hist_nonprompt)
 
-                    if args.includeData is not None and 'sideband' in args.includeData:
+                    if len(args.includeData) > 0 and 'sideband' in args.includeData:
                         list_of_hist[c][v]['bkgr']['non-prompt'].add(list_of_hist[c][v]['data']['sideband'])
 
 
@@ -607,7 +584,8 @@ else:
                         mva_to_use = 'mva_low_'+args.flavor+'_'+args.region
                     else:
                         mva_to_use = 'mva_high_'+args.flavor+'_'+args.region
-                    out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([args.strategy, args.selection, args.region]), str(year), args.flavor, sample_name, ac+'.shapes.root')
+                    out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([args.strategy, args.selection, args.region]), 
+                                            str(year), args.flavor, sample_name, ac+'.shapes.root')
                     makeDirIfNeeded(out_path)
                     # out_shape_file = ROOT.TFile(out_path, 'recreate')
                     list_of_hist[ac][mva_to_use]['signal'][sample_name].write(out_path, write_name=sample_name)
@@ -691,7 +669,7 @@ else:
                             # else:
                             signal_legendnames.append('HNL '+ sk.split('-')[1] +' m_{N} = '+sk.split('-m')[-1]+ ' GeV')
 
-                    if args.includeData is not None and 'signalregion' in args.includeData:
+                    if len(args.includeData) > 0 and 'signalregion' in args.includeData:
                         observed_hist = list_of_hist[c][v]['data']['signalregion']
                     else:
                         observed_hist = None
@@ -707,10 +685,13 @@ else:
 
                     draw_ratio = None if args.signalOnly or args.bkgrOnly else True
                     if args.groupSamples:
-                        p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = int(year), color_palette = 'Didar', color_palette_bkgr = 'AN2017')
-                        # p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = False, extra_text = extra_text, draw_ratio = draw_ratio, year = int(year), color_palette = 'Didar', color_palette_bkgr = 'AN2017')
+                        p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = int(year), 
+                                color_palette = 'Didar', color_palette_bkgr = 'AN2017')
+                        # p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = False, extra_text = extra_text, draw_ratio = draw_ratio, year = int(year), 
+                                # color_palette = 'Didar', color_palette_bkgr = 'AN2017')
                     else:
-                        p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, y_log = False, extra_text = extra_text, draw_ratio = draw_ratio, year = int(year), color_palette = 'Didar')
+                        p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, y_log = False, extra_text = extra_text, draw_ratio = draw_ratio, year = int(year), 
+                                color_palette = 'Didar')
 
 
                     # Draw

@@ -17,7 +17,7 @@ for signal in ih.signal_names:
     if signal.split('_')[-1] in ['e', 'mu']:
         name = 'NoTau/trainingtree'
     else:
-        name='Total/trainingtree'
+        name = 'Total/trainingtree'
     signal_tree = ih.getTree(signal, name=name, signal_only=True).CloneTree()
     bkgr_tree = ih.getTree(signal, name=name, bkgr_only=True).CloneTree()
     

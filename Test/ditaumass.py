@@ -36,7 +36,6 @@ if args.isTest:
 #
 var = { 'mvis':      (lambda c : c.m_vis,       np.arange(0., 310., 10.),       ('m_{vis} [GeV]', 'Events'))}
 
-from ROOT import TFile
 from HNL.Tools.histogram import Histogram
 from HNL.Tools.mergeFiles import merge
 from HNL.Tools.helpers import getObjFromFile
@@ -111,7 +110,7 @@ if not args.makePlots:
         #
         # Loop over all events
         #
-        from HNL.Tools.helpers import progress, makeDirIfNeeded, deltaR, getLeptonFourVecFromChain
+        from HNL.Tools.helpers import progress, deltaR, getLeptonFourVecFromChain
         from HNL.ObjectSelection.muonSelector import isGoodMuon
         from HNL.ObjectSelection.tauSelector import isGeneralTau
         from HNL.ObjectSelection.leptonSelector import isGoodLightLepton
@@ -169,7 +168,8 @@ if not args.makePlots:
             #
             tau_index = tau_candidates[0]
             for tau in tau_candidates[1:]:
-                if chain._tauDeepTauVsJetsRaw[tau] > chain._tauDeepTauVsJetsRaw[tau_index]: tau_index == tau
+                if chain._tauDeepTauVsJetsRaw[tau] > chain._tauDeepTauVsJetsRaw[tau_index]: 
+                    tau_index = tau
 
             mu_vec = getLeptonFourVecFromChain(chain, muon_index)
             tau_vec = getLeptonFourVecFromChain(chain, tau_index)

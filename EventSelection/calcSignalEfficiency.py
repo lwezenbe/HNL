@@ -27,17 +27,19 @@ submission_parser.add_argument('--strategy',   action='store', default='MVA',  h
 submission_parser.add_argument('--region', action='store', default='mix', type=str,  help='What region do you want to select for?', 
     choices=['baseline', 'lowMassSR', 'highMassSR', 'mix'])
 submission_parser.add_argument('--baselineCut',   action='store', default=None,  help='Baseline cut for denominator', choices = ['FObase', 'threeLeptonGenFilter'
-    , 'threeLeptonGenFilter7GeV', 'hadronicTauGenFilter', 'tauPlusLightGenFilter', 'threeLeptonGenFilterInverted', 'threeLeptonGenFilter7GeVInverted', 'hadronicTauGenFilterInverted', 'tauPlusLightGenFilterInverted'])
+    , 'threeLeptonGenFilter7GeV', 'hadronicTauGenFilter', 'tauPlusLightGenFilter', 'threeLeptonGenFilterInverted', 'threeLeptonGenFilter7GeVInverted', 'hadronicTauGenFilterInverted', 
+    'tauPlusLightGenFilterInverted'])
 submission_parser.add_argument('--divideByCategory',   action='store', default=None,  help='Look at the efficiency per event category', choices=['gen', 'reco', 'both', 'gendenom'])
 submission_parser.add_argument('--genLevel',   action='store_true', default=False,  help='Check how many events pass cuts on gen level')
 submission_parser.add_argument('--compareTriggerCuts', action='store', default=None,  
     help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', 
     choices=['single', 'cumulative', 'full'])
 submission_parser.add_argument('--flavor', action='store', default=None,  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
-submission_parser.add_argument('--logLevel',  action='store',      default='INFO',               help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+submission_parser.add_argument('--logLevel',  action='store', default='INFO', help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 argParser.add_argument('--makePlots', action='store_true', default=False,  help='make plots')
 argParser.add_argument('--stackBaselineCuts', action='store', type=str, nargs='*', default=None, help='Add baselinecuts to put in comparison', choices = ['FObase', 'threeLeptonGenFilter'
-    , 'threeLeptonGenFilter7GeV', 'hadronicTauGenFilter', 'tauPlusLightGenFilter', 'threeLeptonGenFilterInverted', 'threeLeptonGenFilter7GeVInverted', 'hadronicTauGenFilterInverted', 'tauPlusLightGenFilterInverted'])
+    , 'threeLeptonGenFilter7GeV', 'hadronicTauGenFilter', 'tauPlusLightGenFilter', 'threeLeptonGenFilterInverted', 'threeLeptonGenFilter7GeVInverted', 'hadronicTauGenFilterInverted',
+     'tauPlusLightGenFilterInverted'])
 
 args = argParser.parse_args()
 
@@ -81,13 +83,15 @@ for flavor in flavors:
         for njob in xrange(sample.returnSplitJobs()): 
             jobs[flavor] += [(sample.name, str(njob))]
 
-from HNL.Tools.helpers import getMassRange, isValidRootFile
+from HNL.Tools.helpers import getMassRange
 
 def getOutputBase(flavor):
     if not args.isTest: 
-        output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'),'src', 'HNL', 'EventSelection', 'data', __file__.split('.')[0].rsplit('/')[-1], category_split_str, trigger_str, '-'.join([args.strategy, args.region, args.selection]), flavor, args.year)
+        output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'EventSelection', 'data', __file__.split('.')[0].rsplit('/')[-1], category_split_str, 
+                        trigger_str, '-'.join([args.strategy, args.region, args.selection]), flavor, args.year)
     else:
-        output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'),'src', 'HNL', 'EventSelection', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], category_split_str, trigger_str, '-'.join([args.strategy, args.region, args.selection]), flavor, args.year)
+        output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'EventSelection', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], 
+                        category_split_str, trigger_str, '-'.join([args.strategy, args.region, args.selection]), flavor, args.year)
     return output_name
 
 #
@@ -107,13 +111,15 @@ def createEfficiencies(output_name, event_categories, var_for_eff):
     bins_for_eff = var_for_eff['HNLmass'][1] if not args.makePlots else None
     if args.compareTriggerCuts is None:
         for k in efficiency.keys():
-            efficiency[k]['regularRun'] = Efficiency('efficiency_'+str(k), var_for_eff['HNLmass'][0], var_for_eff['HNLmass'][2], output_name, bins=bins_for_eff, subdirs=['efficiency_'+str(k), 'l1_'+str('r')+'_l2_'+str('e')+'_l3_'+str('g')])
+            efficiency[k]['regularRun'] = Efficiency('efficiency_'+str(k), var_for_eff['HNLmass'][0], var_for_eff['HNLmass'][2], output_name, bins=bins_for_eff, 
+                                                    subdirs=['efficiency_'+str(k), 'l1_'+str('r')+'_l2_'+str('e')+'_l3_'+str('g')])
     elif args.compareTriggerCuts == 'full':
         if args.divideByCategory is None:
             print "Inconsistent input: This mode is to be used together with divideByCategory. Exiting"
             exit(0)
         for k in efficiency.keys():
-            efficiency[k]['full'] = Efficiency('efficiency_'+str(k), var_for_eff['HNLmass'][0], var_for_eff['HNLmass'][2], output_name, bins=bins_for_eff, subdirs=['efficiency_'+str(k), 'l1_'+str('f')+'_l2_'+str('u')+'_l3_'+str('l')])
+            efficiency[k]['full'] = Efficiency('efficiency_'+str(k), var_for_eff['HNLmass'][0], var_for_eff['HNLmass'][2], output_name, bins=bins_for_eff, 
+                                            subdirs=['efficiency_'+str(k), 'l1_'+str('f')+'_l2_'+str('u')+'_l3_'+str('l')])
             # efficiency[k]['full'] = Efficiency('efficiency_'+str(k), var_for_eff['HNLmass'][0], var_for_eff['HNLmass'][2], output_name, bins=bins_for_eff)
     else: #'single' or 'cumulative'
         if args.divideByCategory is None:
@@ -122,7 +128,8 @@ def createEfficiencies(output_name, event_categories, var_for_eff):
         for c in event_categories:
             for ptcuts in returnCategoryPtCuts(c):
                 efficiency[c][ptcuts] = Efficiency('efficiency_'+str(c)+'_l1_'+str(ptcuts[0])+'_l2_'+str(ptcuts[1])+'_l3_'+str(ptcuts[2]), 
-                    var_for_eff['HNLmass'][0], var_for_eff['HNLmass'][2], output_name, bins=bins_for_eff, subdirs=['efficiency_'+str(c), 'l1_'+str(ptcuts[0])+'_l2_'+str(ptcuts[1])+'_l3_'+str(ptcuts[2])])
+                    var_for_eff['HNLmass'][0], var_for_eff['HNLmass'][2], output_name, bins=bins_for_eff, subdirs=['efficiency_'+str(c), 
+                    'l1_'+str(ptcuts[0])+'_l2_'+str(ptcuts[1])+'_l3_'+str(ptcuts[2])])
 
     return efficiency
 
@@ -203,7 +210,7 @@ if not args.makePlots:
     # Loop over all events
     #
     from HNL.Tools.helpers import progress
-    from HNL.EventSelection.eventSelectionTools import select3Leptons, selectGenLeptonsGeneral, lowMassCuts, highMassCuts, passedCustomPtCuts, passBaseCuts
+    from HNL.EventSelection.eventSelectionTools import selectGenLeptonsGeneral, passedCustomPtCuts
     from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
     from HNL.ObjectSelection.leptonSelector import isGoodLepton
 
@@ -218,12 +225,12 @@ if not args.makePlots:
     from HNL.ObjectSelection.objectSelection import getObjectSelection
     chain.obj_sel = getObjectSelection(args.selection)
 
-    from HNL.EventSelection.eventSelector import EventSelector
+    from HNL.EventSelection.event import Event
     if args.region == 'mix':
         region_to_select = 'lowMassSR' if chain.HNLmass <= 80 else 'highMassSR'
-        es = EventSelector(region_to_select, chain, chain, True, ec)    
+        event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=region_to_select)
     else:
-        es = EventSelector(args.region, chain, chain, True, ec)    
+        event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region)
 
     for entry in event_range:
         
@@ -259,8 +266,9 @@ if not args.makePlots:
         if args.baselineCut is not None and 'Inverted' in args.baselineCut: passed_baseline_cut = not passed_baseline_cut   #Invert selection if needed
         if not args.divideByCategory == 'gendenom' and not passed_baseline_cut: continue
     
+        event.initEvent()
         if not args.genLevel:
-            passed = es.passedFilter(cutter, sample.output)
+            passed = event.passedFilter(cutter, sample.output)
         elif args.divideByCategory == 'gendenom':
             passed = passed_baseline_cut
         else:
@@ -340,9 +348,12 @@ else:
                             else: efficiency[cut_key][sk_key]['regularRun'].addNumeratorOnly(efficiency[cut_key][cat_key]['regularRun'])
 
         if args.isTest:
-            output_dir = makePathTimeStamped(os.path.join(os.path.expandvars('$CMSSW_BASE'),'src', 'HNL', 'EventSelection', 'data', 'testArea', 'Results', __file__.split('.')[0].rsplit('/')[-1], category_split_str, trigger_str, '-'.join([args.strategy, args.region, args.selection]), args.flavor, cut_str, args.year))
+            output_dir = makePathTimeStamped(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'EventSelection', 'data', 'testArea', 'Results', 
+                                            __file__.split('.')[0].rsplit('/')[-1], category_split_str, trigger_str, '-'.join([args.strategy, args.region, args.selection]), 
+                                            args.flavor, cut_str, args.year))
         else:
-            output_dir = makePathTimeStamped(os.path.join(os.path.expandvars('$CMSSW_BASE'),'src', 'HNL', 'EventSelection', 'data', 'Results', __file__.split('.')[0].rsplit('/')[-1], category_split_str, trigger_str, '-'.join([args.strategy, args.region, args.selection]), args.flavor, cut_str, args.year))
+            output_dir = makePathTimeStamped(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'EventSelection', 'data', 'Results', __file__.split('.')[0].rsplit('/')[-1], 
+                                            category_split_str, trigger_str, '-'.join([args.strategy, args.region, args.selection]), args.flavor, cut_str, args.year))
     
         legend_dict = {
             'noFilter' : 'No Filter',
@@ -371,7 +382,8 @@ else:
                 extra_text_cat = extra_text + [extraTextFormat(category_name)]
                 # legend_names = [legend_dict[x] for x in [cut_str]+bkgr_names]
                 legend_names = [legend_dict[x] for x in bkgr_names+[cut_str]]
-                p = Plot(h_signal, legend_names, 'efficiency_'+str(category_name), h_bkgr.GetXaxis().GetTitle(), 'Efficiency', bkgr_hist = h_bkgr, x_log=True, y_log=True, extra_text=extra_text_cat, draw_ratio = draw_ratio, color_palette = 'Didar', color_palette_bkgr = 'Black')
+                p = Plot(h_signal, legend_names, 'efficiency_'+str(category_name), h_bkgr.GetXaxis().GetTitle(), 'Efficiency', bkgr_hist = h_bkgr, x_log=True, y_log=True, 
+                        extra_text=extra_text_cat, draw_ratio = draw_ratio, color_palette = 'Didar', color_palette_bkgr = 'Black')
                 p.drawHist(output_dir = output_dir, draw_option = 'EP', bkgr_draw_option = 'EP', draw_lines = lines)
 
         # hist_for_special_plot = [efficiency['threeLeptonGenFilter']['NoTau']['regularRun'], efficiency['hadronicTauGenFilter']['TauFinalStates']['regularRun']]

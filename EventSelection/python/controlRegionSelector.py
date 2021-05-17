@@ -1,6 +1,8 @@
-from HNL.EventSelection.eventSelectionTools import *
+from HNL.EventSelection.eventSelectionTools import selectLeptonsGeneral, selectGenLeptonsGeneral, calculateEventVariables
+from HNL.EventSelection.eventSelectionTools import bVeto, massDiff, passesZcuts, passesPtCutsAN2017014, containsOSSF, fourthFOVeto, threeSameSignVeto
+from HNL.EventSelection.eventSelectionTools import l1, l2, l3, l4, MZ
 import HNL.EventSelection.eventCategorization as cat
-from HNL.ObjectSelection.leptonSelector import *
+from HNL.ObjectSelection.leptonSelector import isGoodLightLepton
 from HNL.Tools.helpers import getFourVec, deltaPhi, deltaR
 
 class FilterObject(object):

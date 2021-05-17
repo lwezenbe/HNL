@@ -25,7 +25,7 @@ def checkForMerge(paths):
 #   Function to do the actual merging
 #   Input path = path up to but not including the tmp folders
 #
-def merge_single_path(path, groups_to_merge=None):
+def mergeSinglePath(path, groups_to_merge=None):
     
     merge_paths = getSubDir(path)
     merge_paths = checkForMerge(merge_paths)
@@ -72,6 +72,6 @@ def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False
 
     for f in paths:
         if '.txt' in f or '.root' in f: continue
-        merge_single_path(f, groups_to_merge=groups_to_merge)
+        mergeSinglePath(f, groups_to_merge=groups_to_merge)
 
     if not istest: disableShouldMerge(script, argparser, additionalArgs=additionalArgs)

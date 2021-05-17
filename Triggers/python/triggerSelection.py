@@ -4,6 +4,7 @@ def applyCustomTriggers(triggers):
     else:
         return triggers
 
+from HNL.EventSelection.eventCategorization import returnCategoryTriggers
 def applyTriggersPerCategory(chain, cat):
     triggers = returnCategoryTriggers(chain, cat)
     return applyCustomTriggers(triggers)

@@ -43,7 +43,8 @@ for sample in sample_manager.sample_list:
         n_events = chain.GetEntries()
 
         extrapolated_time = passed_time * n_events/(sample.split_jobs*1000)
-        out_file.write(' \t '.join([sample.name+' \t', str(sample.split_jobs), str(len(sample.getEventRange(0))), str(n_events), str(passed_time)+'s', str(datetime.timedelta(seconds=extrapolated_time))]))
+        out_file.write(' \t '.join([sample.name+' \t', str(sample.split_jobs), str(len(sample.getEventRange(0))), str(n_events), str(passed_time)+'s', 
+                        str(datetime.timedelta(seconds=extrapolated_time))]))
         out_file.write('\n')
         print datetime.timedelta(seconds=extrapolated_time)
     except:
