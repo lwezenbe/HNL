@@ -327,7 +327,7 @@ if not args.makePlots and not args.makeDataCards:
             weight = reweighter.getTotalWeight()
             for v in var.keys():
                 if prompt_str is not None: list_of_hist[chain.category][v][prompt_str].fill(chain, reweighter.getTotalWeight(sideband='sideband' in args.includeData))  
-                list_of_hist[chain.category][v]['total'].fill(chain, reweighter.getTotalWeight())  
+                list_of_hist[chain.category][v]['total'].fill(chain, reweighter.getTotalWeight(sideband='sideband' in args.includeData))  
  
         #
         # Save histograms
@@ -348,15 +348,18 @@ if not args.makePlots and not args.makeDataCards:
         else:
             output_name_full += '/'
                 
+        if len(args.includeData) > 0 and chain.is_data: writename = 'variables-'+args.includeData
+        else: writename = 'variables'
+
         for iv, v in enumerate(var.keys()):
             for ic, c in enumerate(categories):
                 for ip, prompt_str in enumerate(list_of_hist[c][v].keys()):
                     if iv == 0 and ic == 0 and ip == 0:
-                        list_of_hist[c][v][prompt_str].write(output_name_full +'variables'+subjobAppendix+ '.root', subdirs=[v], is_test=arg_string)
+                        list_of_hist[c][v][prompt_str].write(output_name_full +writename+subjobAppendix+ '.root', subdirs=[v], is_test=arg_string)
                     else:
-                        list_of_hist[c][v][prompt_str].write(output_name_full +'variables'+subjobAppendix+ '.root', subdirs=[v], append=True, is_test=arg_string)
+                        list_of_hist[c][v][prompt_str].write(output_name_full +writename+subjobAppendix+ '.root', subdirs=[v], append=True, is_test=arg_string)
 
-        cutter.saveCutFlow(output_name_full +'variables'+subjobAppendix+ '.root')
+        cutter.saveCutFlow(output_name_full +writename+subjobAppendix+ '.root')
 
     closeLogger(log)
 
