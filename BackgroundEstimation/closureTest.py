@@ -25,13 +25,13 @@ submission_parser.add_argument('--noskim', action='store_true', default=False,  
 submission_parser.add_argument('--isCheck', action='store_true', default=False,  help='Check the setup by using the exact same region as the ttl measurement')
 submission_parser.add_argument('--splitInCategories', action='store_true', default=False,  help='Split into different categories')
 submission_parser.add_argument('--inData',   action='store_true', default=False,  help='Run in data')
-submission_parser.add_argument('--region', action='store', default=None, type=str,  help='What region was the fake rate you want to use measured in?', 
-    choices=['TauFakesDY', 'TauFakesTT', 'Mix'])
+submission_parser.add_argument('--subregion', action='store', default=None, type=str,  help='What region was the tau fake rate you want to use measured in?')
+submission_parser.add_argument('--application', action='store', default=None, type=str,  help='What region was the tau fake rate you want to use applied for?', 
+    choices=['TauFakesDY', 'TauFakesTT', 'WeightedMix', 'OSSFsplitMix'])
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--logLevel',  action='store', default='INFO', help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 
 argParser.add_argument('--makePlots', action='store_true', default=False,  help='make plots')
-argParser.add_argument('--stackMC', action='store_true', default=False,  help='take all MC together')
 
 args = argParser.parse_args()
 
@@ -44,7 +44,8 @@ if args.isTest:
     if args.sample is None: args.sample = 'DYJetsToLL-M-50'
     if args.subJob is None: args.subJob = '0'
     if args.year is None: args.year = '2016'
-    if args.region is None: args.region = 'TauFakesDY'
+    if args.subregion is None: args.subregion = 'TauFakesDY'
+    if args.application is None: args.application = args.subregion if args.subregion in ['TauFakesDY', 'TauFakesTT'] else 'Mix'
     from HNL.Tools.helpers import generateArgString
     arg_string =  generateArgString(argParser)
 else:
@@ -58,7 +59,7 @@ if args.flavorToTest != ['tau']:
         raise RuntimeError("Nothing to check, you are using an imported fakerate")
 
 if args.flavorToTest == ['tau']:
-    if args.region is None:
+    if args.subregion is None:
         raise RuntimeError("Region should be defined for tau fakes")
     if args.isCheck:
         raise RuntimeError('Mix can not be used for check')
@@ -151,7 +152,7 @@ def getOutputBase():
                                         args.year, data_str, flavors_to_test_str))
 
     if args.flavorToTest == ['tau']:
-        output_name = os.path.join(output_name, args.region)
+        output_name = os.path.join(output_name, args.subregion, args.application)
 
     if args.isCheck:
         output_name += '/isCheck'
@@ -186,7 +187,7 @@ if not args.makePlots:
     #
     if not args.isChild:
         from HNL.Tools.jobSubmitter import submitJobs
-        submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'closureTest')
+        submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'closureTestv2')
         exit(0)
 
     #
@@ -217,18 +218,14 @@ if not args.makePlots:
     from HNL.Weights.reweighter import Reweighter
     reweighter = Reweighter(sample, sample_manager)
 
-    from HNL.EventSelection.event import Event
+    from HNL.EventSelection.event import ClosureTestEvent
     if args.isCheck:
         if args.flavorToTest == ['tau']:
-            event =  Event(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.region, additional_options=args.flavorToTest) 
+            event =  Event(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.subregion, additional_options=args.flavorToTest) 
         else:
             raise RuntimeError("Wrong input for flavorToTest with isCheck arg on: "+str(args.flavorToTest))
     else:
-        if not args.inData:
-            event =  Event(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region='MCCT', additional_options=args.flavorToTest) 
-        else:
-            event =  Event(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region='TauMixCT', additional_options=args.flavorToTest) 
-            # event =  Event(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region='DataCT', additional_options=args.flavorToTest) 
+        event =  ClosureTestEvent(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.subregion, flavors_of_interest=args.flavorToTest, in_data=args.inData) 
 
     fakerate = {}
     if 'tau' in args.flavorToTest:
@@ -238,15 +235,16 @@ if not args.makePlots:
         else:
             base_path_tau = lambda proc : os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', 
                                                                         args.year, data_str, 'tau', 'TauFakes'+proc+'-'+args.selection, 'events.root'))
-        if args.region == 'TauFakesDY':
+        if args.application == 'TauFakesDY':
             fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('DY'), subdirs = ['total'])
-        elif args.region == 'TauFakesTT':
+        elif args.application == 'TauFakesTT':
             fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('TT'), subdirs = ['total'])
-        else:
+        elif args.application == 'WeightedMix':
             fakerate[2] = SingleFlavorFakeRateCollection([base_path_tau('DY'), base_path_tau('TT')], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], 
-                                                            weights = getWeights(args.year, args.selection, 'TauMixCT'), names = ['DY', 'TT'])
-            # fakerate[2] = SingleFlavorFakeRateCollection([base_path_tau('DY'), base_path_tau('TT')], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], weights = getWeights(args.year, args.selection, 'MCCT'), names = ['DY', 'TT'])
-            # fakerate[2] = SingleFlavorFakeRateCollection([base_path_tau('DY'), base_path_tau('TT')], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], weights = getWeights(args.year, args.selection, 'highMassSR'), names = ['DY', 'TT'])
+                                                            frac_weights = getWeights(args.year, args.selection, args.subregion), frac_names = ['DY', 'TT'])   
+        elif args.application == 'OSSFsplitMix':
+                fakerate[2] = SingleFlavorFakeRateCollection([base_path_tau('DY'), base_path_tau('TT')], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], method = 'OSSFsplitMix',
+                                                    ossf_map = {True : 'DY', False : 'TT'})  
     else:
         fakerate[2] = None
     if 'ele' in args.flavorToTest: 
@@ -284,6 +282,9 @@ if not args.makePlots:
 
     print 'tot_range', len(event_range)
     for entry in event_range:
+        # if entry not in [5896, 9935, 10782, 13457]: continue
+        # if entry not in [2045, 10048, 11401, 12152, 13979, 14373, 19893]: continue
+
         chain.GetEntry(entry)
         progress(entry - event_range[0], len(event_range))
 
@@ -296,19 +297,29 @@ if not args.makePlots:
         else:
             if not cutter.cut(passTriggers(chain, 'HNL'), 'pass_triggers'): continue
 
-        #Event selection  
+        #Event selection 
         event.initEvent()
-        if not event.event_selector.removeOverlapDYandZG(sample.output): continue
-        if not event.event_selector.selector.passedFilter(cutter, args.region): continue
-            
+        if not event.passedFilter(cutter, sample.output): continue
+        # print "new event"
+        # print chain.is_FO_lepton
+        # print chain.is_tight_lepton
+        # print "passed"
+
         if args.inData and not chain.is_data:
-            fake_index = event.event_selector.selector.getFakeIndex()
-            if chain.l_isfake[fake_index]: continue
+            fake_index = event.getFakeIndex()
+            # print fake_index
+            # print [chain.l_isfake[i] for i in fake_index]
+            if any([chain.l_isfake[i] for i in fake_index]): continue
+            # if chain.l_isfake[fake_index]: continue
+
+        # print "PROMPT"
 
         cat = event.event_category.returnAnalysisCategory()
 
         fake_factor = fakerate_collection.getFakeWeight()
         weight = reweighter.getLumiWeight()
+
+        print 'FF', fake_factor, weight
 
         for v in var:
             if v == 'ptFakes' or v == 'etaFakes':
@@ -318,7 +329,7 @@ if not args.makePlots:
                     co['total'][v].fillClosure(chain, weight, fake_factor, index=2)
                 else:
                     #General case
-                    for l in event.event_selector.selector.loose_leptons_of_interest:
+                    for l in event.loose_leptons_of_interest:
                         if args.splitInCategories: co[cat][v].fillClosure(chain, weight, fake_factor, index=l)
                         co['total'][v].fillClosure(chain, weight, fake_factor, index=l)
             else:
@@ -369,44 +380,44 @@ else:
             for v in var:
                 closureObjects[sample_name][c][v] = ClosureObject('closure-'+v+'-'+c, None, None, in_file+'/events.root')
 
-    if not args.inData and not args.stackMC:
+    if not args.inData:
         for sample_name in closureObjects.keys():
             for c in getCategories():
                 for v in var:
                     p = Plot(name = v, signal_hist = closureObjects[sample_name][c][v].getObserved(), bkgr_hist = closureObjects[sample_name][c][v].getSideband(), 
                                 color_palette='Black', color_palette_bkgr='Stack', tex_names = ["Observed", 'Predicted'], draw_ratio = True)
                     p.drawHist(output_dir = output_dir+'/'+sample_name+'/'+c, draw_option='EP')
-    else:
-        for c in getCategories():
-            for v in var:
-                if args.inData:
-                    backgrounds = [closureObjects["Data"][c][v].getSideband()]
-                    background_names = ['Predicted']
-                else:
-                    backgrounds = []
-                    background_names = []
+    
+    for c in getCategories():
+        for v in var:
+            if args.inData:
+                backgrounds = [closureObjects["Data"][c][v].getSideband()]
+                background_names = ['Predicted']
+            else:
+                backgrounds = []
+                background_names = []
 
-                tmp_bkgr_collection = {}
-                for sample_name in closureObjects.keys():
+            tmp_bkgr_collection = {}
+            for sample_name in closureObjects.keys():
+                if 'Data' in sample_name: continue
+                tmp_bkgr_collection[sample_name] = closureObjects[sample_name][c][v].getSideband()
+
+            grouped_backgrounds = mergeHistograms(tmp_bkgr_collection, sample_manager.sample_groups)
+            for b in grouped_backgrounds:
+                backgrounds.append(grouped_backgrounds[b])
+                background_names.append(b)
+
+            if args.inData:
+                signal_h = closureObjects['Data'][c][v].getObserved()
+            else:
+                for isample, sample_name in enumerate(closureObjects.keys()):
                     if 'Data' in sample_name: continue
-                    tmp_bkgr_collection[sample_name] = closureObjects[sample_name][c][v].getSideband()
+                    if isample == 0:
+                        signal_h = closureObjects[sample_name][c][v].getObserved()
+                    else:
+                        signal_h.Add(closureObjects[sample_name][c][v].getObserved())
 
-                grouped_backgrounds = mergeHistograms(tmp_bkgr_collection, sample_manager.sample_groups)
-                for b in grouped_backgrounds:
-                    backgrounds.append(grouped_backgrounds[b])
-                    background_names.append(b)
-
-                if args.inData:
-                    signal_h = closureObjects['Data'][c][v].getObserved()
-                else:
-                    for isample, sample_name in enumerate(closureObjects.keys()):
-                        if 'Data' in sample_name: continue
-                        if isample == 0:
-                            signal_h = closureObjects[sample_name][c][v].getObserved()
-                        else:
-                            signal_h.Add(closureObjects[sample_name][c][v].getObserved())
-
-                p = Plot(name = v, signal_hist = signal_h, bkgr_hist = backgrounds, color_palette='Black', color_palette_bkgr='StackTauPOGbyName', tex_names = ["Observed"]+background_names, 
-                            draw_ratio = True, year = args.year)
-                p.drawHist(output_dir = output_dir+'/'+'/'+c, draw_option='EP')
-        
+            p = Plot(name = v, signal_hist = signal_h, bkgr_hist = backgrounds, color_palette='Black', color_palette_bkgr='StackTauPOGbyName', tex_names = ["Observed"]+background_names, 
+                        draw_ratio = True, year = args.year)
+            p.drawHist(output_dir = output_dir+'/Stacked/'+c, draw_option='EP')
+    

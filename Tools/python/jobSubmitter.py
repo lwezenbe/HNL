@@ -136,7 +136,7 @@ def getArgsStr(arg_list, to_ignore):
 def submitJobs(script, subjob_args, subjob_list, argparser, **kwargs):
     drop_args = kwargs.get('dropArgs', None)
     additional_args = kwargs.get('additionalArgs', None)
-    sub_log = kwargs.get('additionalArgs', None)
+    sub_log = kwargs.get('subLog', None)
     wall_time = kwargs.get('wallTime', '15')
     queue = kwargs.get('queue', 'localgrid')
     cores = kwargs.get('cores', 1)
