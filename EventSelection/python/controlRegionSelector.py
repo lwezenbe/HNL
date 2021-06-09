@@ -284,6 +284,8 @@ class TauMixCTfilter(FilterObject):
         super(TauMixCTfilter, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
         self.high_met = additional_options.get('high_met', True)
         self.b_veto = additional_options.get('b_veto', True)
+        self.m3lcut = additional_options.get('m3lcut', False)
+        self.no_met = additional_options.get('no_met', False)
 
     def initEvent(self, cutter, sideband=None):
         return super(TauMixCTfilter, self).initEvent(3, cutter, sort_leptons = True, sideband=sideband)
@@ -291,7 +293,7 @@ class TauMixCTfilter(FilterObject):
     def passedFilter(self, cutter, kwargs):
         if not self.initEvent(cutter, sideband=kwargs.get('sideband', None)):                                return False
         from HNL.EventSelection.eventFilters import passedFilterTauMixCT
-        return passedFilterTauMixCT(self.chain, self.new_chain, self.is_reco_level, cutter, high_met = self.high_met, b_veto = self.b_veto)
+        return passedFilterTauMixCT(self.chain, self.new_chain, self.is_reco_level, cutter, high_met = self.high_met, b_veto = self.b_veto, m3lcut = self.m3lcut, no_met = self.no_met)
 
 
 

@@ -77,23 +77,24 @@ def passHighMassSelection(chain, new_chain, is_reco_level, cutter):
 # CR filters
 #
 
-def passedFilterTauMixCT(chain, new_chain, is_reco_level, cutter, high_met = True, b_veto = True):
+def passedFilterTauMixCT(chain, new_chain, is_reco_level, cutter, high_met = True, b_veto = True, m3lcut = False, no_met=False):
     if not cutter.cut(not fourthFOVeto(chain, no_tau=chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
     if not cutter.cut(not threeSameSignVeto(chain), 'No three same sign'):        return False
     if b_veto and not cutter.cut(not bVeto(chain), 'b-veto'):              return False
     if not cutter.cut(new_chain.l_pt[l1] < 55, 'l1pt<55'):      return False
-    # if not cutter.cut(new_chain.M3l < 80, 'm3l<80'):            return False
-    if is_reco_level:
-        if high_met:
-            if not cutter.cut(chain._met > 75, 'MET > 75'):             return False
+    if m3lcut and not cutter.cut(new_chain.M3l < 80, 'm3l<80'):            return False
+    if not no_met:
+        if is_reco_level:
+            if high_met:
+                if not cutter.cut(chain._met > 75, 'MET > 75'):             return False
+            else:
+                if not cutter.cut(chain._met < 75, 'MET < 75'):             return False
         else:
-            if not cutter.cut(chain._met < 75, 'MET < 75'):             return False
-    else:
-        if high_met:
-            if not cutter.cut(chain._gen_met > 75, 'MET > 75'):             return False
-        else:
-            if not cutter.cut(chain._gen_met < 75, 'MET < 75'):             return False    
-    # if not cutter.cut(not containsOSSF(chain), 'no OSSF'):      return False
+            if high_met:
+                if not cutter.cut(chain._gen_met > 75, 'MET > 75'):             return False
+            else:
+                if not cutter.cut(chain._gen_met < 75, 'MET < 75'):             return False    
+        # if not cutter.cut(not containsOSSF(chain), 'no OSSF'):      return False
     return True
 
 def passedFilterZZCR(chain, new_chain, cutter): 
@@ -123,7 +124,7 @@ def passedFilterConversionCR(chain, new_chain, cutter):
     chain.category = max(cat.CATEGORIES)
     return True   
 
-def passedFilterTauFakeEnrichedDY(chain, new_chain, cutter, inverted_cut=False, b_veto=False):
+def passedFilterTauFakeEnrichedDY(chain, new_chain, cutter, inverted_cut=False, b_veto=False, nometcut=False):
     if not cutter.cut(new_chain.l_flavor.count(2) == 1, '1 tau'):                   return False
 
     if not cutter.cut(new_chain.l_flavor[0] == new_chain.l_flavor[1], 'SF'):        return False
@@ -133,7 +134,7 @@ def passedFilterTauFakeEnrichedDY(chain, new_chain, cutter, inverted_cut=False, 
     l2Vec = getFourVec(new_chain.l_pt[1], new_chain.l_eta[1], new_chain.l_phi[1], new_chain.l_e[1])
 
     if not cutter.cut(abs(91.19 - (l1Vec + l2Vec).M()) < 15, 'Z window'):             return False
-    if not cutter.cut(chain._met < 50, 'MET < 50'):                                 return False
+    if not nometcut and not cutter.cut(chain._met < 50, 'MET < 50'):                                 return False
 
     if b_veto and not cutter.cut(not bVeto(chain), 'b-veto'): return False
 

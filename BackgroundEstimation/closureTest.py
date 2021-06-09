@@ -119,7 +119,8 @@ else:
     var = {
             'minMos':               (lambda c : c.minMos,       np.arange(0., 160., 10.),         ('min(M_{OS}) [GeV]', 'Events')),
             'm3l':                  (lambda c : c.M3l,          np.arange(0., 240., 15.),         ('M_{3l} [GeV]', 'Events')),
-            'met':                  (lambda c : c._met,         np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
+            # 'met':                  (lambda c : c._met,         np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
+            'met':                  (lambda c : c._met,         np.arange(0., 90., 3.),         ('p_{T}^{miss} [GeV]', 'Events')),
             'mtOther':              (lambda c : c.mtOther,      np.arange(0., 300., 15.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
             'ptFakes':              (lambda c, i : c.l_pt[i],         np.arange(0., 300., 15.),       ('p_{T} [GeV]', 'Events')),
             'etaFakes':             (lambda c, i : c.l_eta[i],        np.arange(-2.5, 3.0, 0.5),       ('#eta', 'Events')),
@@ -187,7 +188,7 @@ if not args.makePlots:
     #
     if not args.isChild:
         from HNL.Tools.jobSubmitter import submitJobs
-        submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'closureTestv2')
+        submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'closureTest')
         exit(0)
 
     #
@@ -300,26 +301,17 @@ if not args.makePlots:
         #Event selection 
         event.initEvent()
         if not event.passedFilter(cutter, sample.output): continue
-        # print "new event"
-        # print chain.is_FO_lepton
-        # print chain.is_tight_lepton
-        # print "passed"
 
         if args.inData and not chain.is_data:
             fake_index = event.getFakeIndex()
-            # print fake_index
-            # print [chain.l_isfake[i] for i in fake_index]
             if any([chain.l_isfake[i] for i in fake_index]): continue
-            # if chain.l_isfake[fake_index]: continue
 
-        # print "PROMPT"
 
         cat = event.event_category.returnAnalysisCategory()
 
         fake_factor = fakerate_collection.getFakeWeight()
         weight = reweighter.getLumiWeight()
 
-        print 'FF', fake_factor, weight
 
         for v in var:
             if v == 'ptFakes' or v == 'etaFakes':

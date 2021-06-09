@@ -67,7 +67,7 @@ def makeCondorFile(logfile, i, runscriptname, condor_base):
     return submit_file_name
 
 from HNL.Tools.helpers import makeDirIfNeeded
-def makeRunScript(script, arguments, i, condor_base):
+def makeRunScript(arguments, i, condor_base):
     original_script = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Tools', 'scripts', 'runOnCondor.sh'))
     new_script_name = os.path.realpath(os.path.join(condor_base, 'runscripts', str(i)+'.sh'))
     makeDirIfNeeded(new_script_name)
@@ -79,9 +79,9 @@ def makeRunScript(script, arguments, i, condor_base):
     new_script.close()
     return new_script_name
 
-def launchOnCondor(logfile, script, arguments, i, job_label = None):
+def launchOnCondor(logfile, arguments, i, job_label = None):
     condor_base = getCondorBase(os.path.realpath(logfile))
-    runscript_name = makeRunScript(script, arguments, i, condor_base)
+    runscript_name = makeRunScript(arguments, i, condor_base)
     os.system('chmod +x '+runscript_name)
     submit_file_name = makeCondorFile(logfile, i, runscript_name, condor_base)
 
@@ -204,7 +204,7 @@ def submitJobs(script, subjob_args, subjob_list, argparser, **kwargs):
         elif args.batchSystem == 'local': runLocal(command, logfile)
         elif args.batchSystem == 'HTCondor': 
             arguments = (os.getcwd(), command)
-            launchOnCondor(logfile, script, arguments, i, job_label=job_label)
+            launchOnCondor(logfile, arguments, i, job_label=job_label)
         
         else:               launchCream02(command, logfile, checkQueue=(i%100==0), wallTimeInHours=wall_time, queue=queue, cores=cores, jobLabel=job_label)
 
