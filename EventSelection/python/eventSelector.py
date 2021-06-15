@@ -38,7 +38,7 @@ class FilterObject(object):
 from HNL.EventSelection.signalRegionSelector import SignalRegionSelector
 # from HNL.EventSelection.controlRegionSelector import ZZCRfilter, WZCRfilter, ConversionCRfilter, TauFakeEnrichedDY, TauFakeEnrichedTT, TauClosureTest, ElectronClosureTest, MuonClosureTest, LightLeptonFakeMeasurementRegion, LukaClosureTest, ClosureTestMC, ClosureTestDATA
 from HNL.EventSelection.controlRegionSelector import ZZCRfilter, WZCRfilter, ConversionCRfilter, TauFakeEnrichedDY, TauFakeEnrichedTT, LightLeptonFakeMeasurementRegion, ClosureTestMC, ClosureTestDATA, GeneralMCCTRegion
-from HNL.EventSelection.controlRegionSelector import TauMixCTfilter
+from HNL.EventSelection.controlRegionSelector import TauMixCTfilter, GeneralTrileptonFilter
 
 class EventSelector:
 
@@ -51,6 +51,8 @@ class EventSelector:
             if chain.is_data and not 'sideband' in additional_options:
                 raise RuntimeError("Running this would mean unblinding. Dont do this.")
             self.selector = SignalRegionSelector(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options=additional_options)
+        elif self.name == 'trilepton':
+            self.selector = GeneralTrileptonFilter(name, chain, new_chain, is_reco_level=is_reco_level)
         elif self.name == 'ZZCR':
             self.selector = ZZCRfilter(name, chain, new_chain, is_reco_level=is_reco_level)
         elif self.name == 'WZCR':
