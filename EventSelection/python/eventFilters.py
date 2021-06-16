@@ -77,12 +77,13 @@ def passHighMassSelection(chain, new_chain, is_reco_level, cutter):
 # CR filters
 #
 
-def passedFilterTauMixCT(chain, new_chain, is_reco_level, cutter, high_met = True, b_veto = True, m3lcut = False, no_met=False):
+def passedFilterTauMixCT(chain, new_chain, is_reco_level, cutter, high_met = True, b_veto = True, m3lcut = False, no_met=False, m3lcut_inverted = False):
     if not cutter.cut(not fourthFOVeto(chain, no_tau=chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
     if not cutter.cut(not threeSameSignVeto(chain), 'No three same sign'):        return False
     if b_veto and not cutter.cut(not bVeto(chain), 'b-veto'):              return False
     if not cutter.cut(new_chain.l_pt[l1] < 55, 'l1pt<55'):      return False
     if m3lcut and not cutter.cut(new_chain.M3l < 80, 'm3l<80'):            return False
+    if m3lcut_inverted and not cutter.cut(new_chain.M3l > 150, 'm3l>150'):            return False
     if not no_met:
         if is_reco_level:
             if high_met:
@@ -94,7 +95,7 @@ def passedFilterTauMixCT(chain, new_chain, is_reco_level, cutter, high_met = Tru
                 if not cutter.cut(chain._gen_met > 75, 'MET > 75'):             return False
             else:
                 if not cutter.cut(chain._gen_met < 75, 'MET < 75'):             return False    
-        # if not cutter.cut(not containsOSSF(chain), 'no OSSF'):      return False
+        if not cutter.cut(not containsOSSF(chain), 'no OSSF'):      return False
     return True
 
 def passedFilterZZCR(chain, new_chain, cutter): 
@@ -121,7 +122,6 @@ def passedFilterConversionCR(chain, new_chain, cutter):
     if not cutter.cut(chain.MZossf < 75, 'Mll < 75'):               return False
     if chain.selection == 'AN2017014' and not cutter.cut(passesPtCutsAN2017014(chain), 'pt_cuts'):     return False 
     if not cutter.cut(not bVeto(chain), 'b-veto'):                 return False
-    chain.category = max(cat.CATEGORIES)
     return True   
 
 def passedFilterTauFakeEnrichedDY(chain, new_chain, cutter, inverted_cut=False, b_veto=False, nometcut=False):

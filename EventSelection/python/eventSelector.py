@@ -58,13 +58,13 @@ class EventSelector:
         elif self.name == 'ConversionCR':
             self.selector = ConversionCRfilter(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'TauFakesDY':
-            self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'use_default_objects' : True})
+            self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'tightWP' : True})
         elif self.name == 'TauFakesDYCT':
-            self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'use_default_objects' : True, 'b_veto' : True})
+            self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'tightWP' : True, 'b_veto' : True})
         elif self.name == 'TauFakesDYCTnomet':
-            self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'use_default_objects' : True, 'b_veto' : True, 'nometcut':True})
+            self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'tightWP' : True, 'b_veto' : True, 'nometcut':True})
         elif self.name == 'TauFakesTT':
-            self.selector = TauFakeEnrichedTT(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'use_default_objects' : True})
+            self.selector = TauFakeEnrichedTT(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'tightWP' : True})
         elif self.name == 'TauFakesDYttl':
             self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'TauFakesTTttl':
@@ -83,6 +83,8 @@ class EventSelector:
             self.selector = TauMixCTfilter(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options={'high_met' : False, 'm3lcut' : True, 'b_veto' : False})
         elif self.name == 'TauMixCTM3lcut':
             self.selector = TauMixCTfilter(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options={'m3lcut' : True})
+        elif self.name == 'TauMixCTM3lcutInverted':
+            self.selector = TauMixCTfilter(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options={'high_met' : False, 'm3lcut_inverted' : True, 'b_veto' : False})
         elif self.name == 'TauMixCTNoBveto':
             self.selector = TauMixCTfilter(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options={'b_veto' : False})
         elif self.name == 'TauMixCTLowMetNoBveto':
@@ -120,7 +122,7 @@ class EventSelector:
         if sample_name == 'ZG' and self.leptonFromMEExternalConversion(): return False
         return True
 
-    def passedFilter(self, cutter, sample_name, kwargs):
+    def passedFilter(self, cutter, sample_name, kwargs={}):
         if not self.removeOverlapDYandZG(sample_name): return False
         if self.name != 'NoSelection':
             return self.selector.passedFilter(cutter, kwargs)

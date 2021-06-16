@@ -27,7 +27,7 @@ submission_parser.add_argument('--splitInCategories', action='store_true', defau
 submission_parser.add_argument('--inData',   action='store_true', default=False,  help='Run in data')
 submission_parser.add_argument('--subregion', action='store', default=None, type=str,  help='What region was the tau fake rate you want to use measured in?')
 submission_parser.add_argument('--application', action='store', default=None, type=str,  help='What region was the tau fake rate you want to use applied for?', 
-    choices=['TauFakesDY', 'TauFakesTT', 'WeightedMix', 'OSSFsplitMix'])
+    choices=['TauFakesDY', 'TauFakesDYnomet', 'TauFakesTT', 'WeightedMix', 'OSSFsplitMix'])
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--logLevel',  action='store', default='INFO', help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 
@@ -45,7 +45,7 @@ if args.isTest:
     if args.subJob is None: args.subJob = '0'
     if args.year is None: args.year = '2016'
     if args.subregion is None: args.subregion = 'TauFakesDY'
-    if args.application is None: args.application = args.subregion if args.subregion in ['TauFakesDY', 'TauFakesTT'] else 'Mix'
+    if args.application is None: args.application = args.subregion if args.subregion in ['TauFakesDY', 'TauFakesTT'] else 'TauFakesDY'
     from HNL.Tools.helpers import generateArgString
     arg_string =  generateArgString(argParser)
 else:
@@ -61,8 +61,6 @@ if args.flavorToTest != ['tau']:
 if args.flavorToTest == ['tau']:
     if args.subregion is None:
         raise RuntimeError("Region should be defined for tau fakes")
-    if args.isCheck:
-        raise RuntimeError('Mix can not be used for check')
 
 if args.selection == 'AN2017014':
     raise RuntimeError("selection AN2017014 currently not supported")
@@ -124,21 +122,21 @@ else:
             'mtOther':              (lambda c : c.mtOther,      np.arange(0., 300., 15.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
             'ptFakes':              (lambda c, i : c.l_pt[i],         np.arange(0., 300., 15.),       ('p_{T} [GeV]', 'Events')),
             'etaFakes':             (lambda c, i : c.l_eta[i],        np.arange(-2.5, 3.0, 0.5),       ('#eta', 'Events')),
-            'ptLeading':            (lambda c : c.l_pt[0],         np.arange(0., 300., 15.),       ('p_{T} [GeV]', 'Events')),
+            'ptLeading':            (lambda c : c.l_pt[0],         np.arange(0., 100., 15.),       ('p_{T} [GeV]', 'Events')),
             'ptLeadingLukabins':    (lambda c : c.l_pt[0],         np.linspace(10., 200., num = 10),       ('p_{T} [GeV]', 'Events')),
             'etaLeading':           (lambda c : abs(c.l_eta[0]),        np.arange(0., 3.0, 0.5),       ('|#eta|', 'Events')),
             'etaLeadingFine':       (lambda c : abs(c.l_eta[0]),        np.arange(0, 2.75, 0.25),       ('|#eta|', 'Events')),
-            'ptSubleading':         (lambda c : c.l_pt[1],         np.arange(0., 300., 15.),       ('p_{T} [GeV]', 'Events')),
+            'ptSubleading':         (lambda c : c.l_pt[1],         np.arange(0., 100., 15.),       ('p_{T} [GeV]', 'Events')),
             'ptSubleadingLukabins': (lambda c : c.l_pt[1],         np.linspace(10., 200., num = 10),       ('p_{T} [GeV]', 'Events')),
             'etaSubleading':        (lambda c : abs(c.l_eta[1]),        np.arange(0., 3.0, 0.5),       ('|#eta|', 'Events')),
             'etaSubleadingFine':    (lambda c : abs(c.l_eta[1]),        np.arange(0, 2.75, 0.25),       ('|#eta|', 'Events')),
-            'ptTrailing':           (lambda c : c.l_pt[2],         np.arange(0., 300., 15.),       ('p_{T} [GeV]', 'Events')),
+            'ptTrailing':           (lambda c : c.l_pt[2],         np.arange(0., 100., 15.),       ('p_{T} [GeV]', 'Events')),
             'ptTrailingLukabins':   (lambda c : c.l_pt[2],         np.linspace(10., 200., num = 10),       ('p_{T} [GeV]', 'Events')),
             'etaTrailing':          (lambda c : abs(c.l_eta[2]),        np.arange(0., 3.0, 0.5),       ('|#eta|', 'Events')),
             'etaTrailingFine':      (lambda c : abs(c.l_eta[2]),        np.arange(0, 2.75, 0.25),       ('|#eta|', 'Events')),
             'mt3':                  (lambda c : c.mt3,          np.arange(0., 315., 15.),         ('M_{T}(3l) [GeV]', 'Events')),
             'LT':                   (lambda c : c.LT,           np.arange(0., 915., 15.),         ('L_{T} [GeV]', 'Events')),
-            'HT':                   (lambda c : c.HT,           np.arange(0., 915., 15.),         ('H_{T} [GeV]', 'Events'))
+            'HT':                   (lambda c : c.HT,           np.arange(0., 915., 15.),         ('H_{T} [GeV]', 'Events')),
     }   
 
 subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
@@ -222,7 +220,7 @@ if not args.makePlots:
     from HNL.EventSelection.event import ClosureTestEvent
     if args.isCheck:
         if args.flavorToTest == ['tau']:
-            event =  Event(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.subregion, additional_options=args.flavorToTest) 
+            event =  ClosureTestEvent(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.subregion, flavors_of_interest=args.flavorToTest, in_data=args.inData) 
         else:
             raise RuntimeError("Wrong input for flavorToTest with isCheck arg on: "+str(args.flavorToTest))
     else:
@@ -232,10 +230,10 @@ if not args.makePlots:
     if 'tau' in args.flavorToTest:
         if not args.inData:
             base_path_tau = lambda proc : os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', 
-                                                                        args.year, data_str, 'tau', 'TauFakes'+proc+'-'+args.selection, proc, 'events.root'))
+                                                                        args.year, data_str, 'tau', 'TauFakes'+proc+'ttl-'+args.selection, proc, 'events.root'))
         else:
             base_path_tau = lambda proc : os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', 
-                                                                        args.year, data_str, 'tau', 'TauFakes'+proc+'-'+args.selection, 'events.root'))
+                                                                        args.year, data_str, 'tau', 'TauFakes'+proc+'ttl-'+args.selection, 'events.root'))
         if args.application == 'TauFakesDY':
             fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('DY'), subdirs = ['total'])
         elif args.application == 'TauFakesTT':
@@ -283,8 +281,6 @@ if not args.makePlots:
 
     print 'tot_range', len(event_range)
     for entry in event_range:
-        # if entry not in [5896, 9935, 10782, 13457]: continue
-        # if entry not in [2045, 10048, 11401, 12152, 13979, 14373, 19893]: continue
 
         chain.GetEntry(entry)
         progress(entry - event_range[0], len(event_range))
@@ -311,7 +307,6 @@ if not args.makePlots:
 
         fake_factor = fakerate_collection.getFakeWeight()
         weight = reweighter.getLumiWeight()
-
 
         for v in var:
             if v == 'ptFakes' or v == 'etaFakes':

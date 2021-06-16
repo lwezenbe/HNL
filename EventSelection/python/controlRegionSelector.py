@@ -16,8 +16,8 @@ class ZZCRfilter(FilterObject):
     def initEvent(self, cutter, sideband = None):
         return super(ZZCRfilter, self).initEvent(4, cutter, sort_leptons = True, sideband = sideband)
 
-    def passedFilter(self, cutter, kwargs):
-        from HNL.EventSelection.eventFilters import passedFilterWZCR
+    def passedFilter(self, cutter, kwargs={}):
+        from HNL.EventSelection.eventFilters import passedFilterZZCR
         if not self.initEvent(cutter, sideband=kwargs.get('sideband', None)):           return False
         if not passedFilterZZCR(self.chain, self.new_chain, cutter):                    return False
         return True
@@ -30,7 +30,7 @@ class WZCRfilter(FilterObject):
     def initEvent(self, cutter, sideband = None):
         return super(WZCRfilter, self).initEvent(3, cutter, sort_leptons = True, sideband = sideband)
 
-    def passedFilter(self, cutter, kwargs):
+    def passedFilter(self, cutter, kwargs={}):
         from HNL.EventSelection.eventFilters import passedFilterWZCR
         if not self.initEvent(cutter, sideband=kwargs.get('sideband', None)):                                                 return False
         if not passedFilterWZCR(self.chain, self.new_chain, is_reco_level = self.is_reco_level, cutter = cutter):                    return False
@@ -44,10 +44,10 @@ class ConversionCRfilter(FilterObject):
     def initEvent(self, cutter, sideband = None):
         return super(ConversionCRfilter, self).initEvent(3, cutter, sort_leptons = True, sideband = sideband)
 
-    def passedFilter(self, cutter, kwargs):
+    def passedFilter(self, cutter, kwargs={}):
         from HNL.EventSelection.eventFilters import passedFilterConversionCR
         if not self.initEvent(cutter, sideband=kwargs.get('sideband', None)):                                                 return False
-        if not passedFilterConversionCR(self.chain, self.new_chain, is_reco_level = self.is_reco_level, cutter = cutter):                    return False
+        if not passedFilterConversionCR(self.chain, self.new_chain, cutter = cutter):                    return False
         return True       
 
 class TauFakeEnrichedDY(FilterObject):
@@ -55,6 +55,7 @@ class TauFakeEnrichedDY(FilterObject):
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None, additional_args = None):
         super(TauFakeEnrichedDY, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
         self.use_default_objects = additional_args.get('tightwp', False) if additional_args is not None else False
+        self.nometcut = additional_args.get('nometcut', False) if additional_args is not None else False
         self.b_veto = additional_args.get('b_veto', False) if additional_args is not None else False
         if not self.use_default_objects:
             self.chain.obj_sel['tau_wp'] = 'FO'
@@ -64,10 +65,10 @@ class TauFakeEnrichedDY(FilterObject):
     def initEvent(self, cutter):
         return super(TauFakeEnrichedDY, self).initEvent(3, cutter, sort_leptons = False, sideband = None)
 
-    def passedFilter(self, cutter, kwargs):
+    def passedFilter(self, cutter, kwargs={}):
         if not self.initEvent(cutter):                                return False
         from HNL.EventSelection.eventFilters import passedFilterTauFakeEnrichedDY
-        if not passedFilterTauFakeEnrichedDY(self.chain, self.new_chain, cutter): return False
+        if not passedFilterTauFakeEnrichedDY(self.chain, self.new_chain, cutter, nometcut = self.nometcut): return False
         return True
 
     def getFakeIndex(self):
@@ -86,7 +87,7 @@ class TauFakeEnrichedTT(FilterObject):
     def initEvent(self, cutter):
         return super(TauFakeEnrichedTT, self).initEvent(3, cutter, sort_leptons = False, sideband = None)
 
-    def passedFilter(self, cutter, kwargs):
+    def passedFilter(self, cutter, kwargs={}):
         if not self.initEvent(cutter):                                return False
         from HNL.EventSelection.eventFilters import passedFilterTauFakeEnrichedTT
         if not passedFilterTauFakeEnrichedTT(self.chain, self.new_chain, cutter): return False        
@@ -108,7 +109,7 @@ class LightLeptonFakeMeasurementRegion(FilterObject):
     def initEvent(self, cutter):
         return super(LightLeptonFakeMeasurementRegion, self).initEvent(1, cutter, sort_leptons = False, sideband = None)
 
-    def passedFilter(self, cutter, kwargs):
+    def passedFilter(self, cutter, kwargs={}):
         if not cutter.cut(self.chain._passMETFilters, 'pass met filters'): return False
 
         #Select exactly one lepton and veto a second loose lepton
@@ -151,7 +152,7 @@ class GeneralMCCTRegion(FilterObject):
     def initEvent(self, cutter):
         return super(GeneralMCCTRegion, self).initEvent(3, cutter, sort_leptons = False, sideband = None)
 
-    def passedFilter(self, cutter, kwargs):
+    def passedFilter(self, cutter, kwargs={}):
         if not self.initEvent(cutter):                                return False
         from HNL.EventSelection.eventFilters import passedGeneralMCCT
         flavors = kwargs.get('flavors', [])
@@ -285,15 +286,16 @@ class TauMixCTfilter(FilterObject):
         self.high_met = additional_options.get('high_met', True)
         self.b_veto = additional_options.get('b_veto', True)
         self.m3lcut = additional_options.get('m3lcut', False)
+        self.m3lcut_inverted = additional_options.get('m3lcut_inverted', False)
         self.no_met = additional_options.get('no_met', False)
 
     def initEvent(self, cutter, sideband=None):
         return super(TauMixCTfilter, self).initEvent(3, cutter, sort_leptons = True, sideband=sideband)
 
-    def passedFilter(self, cutter, kwargs):
+    def passedFilter(self, cutter, kwargs={}):
         if not self.initEvent(cutter, sideband=kwargs.get('sideband', None)):                                return False
         from HNL.EventSelection.eventFilters import passedFilterTauMixCT
-        return passedFilterTauMixCT(self.chain, self.new_chain, self.is_reco_level, cutter, high_met = self.high_met, b_veto = self.b_veto, m3lcut = self.m3lcut, no_met = self.no_met)
+        return passedFilterTauMixCT(self.chain, self.new_chain, self.is_reco_level, cutter, high_met = self.high_met, b_veto = self.b_veto, m3lcut = self.m3lcut, no_met = self.no_met, m3lcut_inverted = self.m3lcut_inverted)
 
 
 

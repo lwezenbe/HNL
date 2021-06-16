@@ -24,6 +24,7 @@ class Event(object):
         self.chain.is_loose_lepton = [None]*self.chain._nL
         self.chain.is_FO_lepton = [None]*self.chain._nL
         self.chain.is_tight_lepton = [None]*self.chain._nL
+        self.chain.conecorrection_applied = False
         self.processLeptons()
 
     def processLeptons(self):
@@ -52,7 +53,7 @@ class Event(object):
     def passedFilter(self, cutter, sample_name, **kwargs):
         passed =  self.event_selector.passedFilter(cutter, sample_name, kwargs)
         if passed:
-            # self.chain.category = self.event_category.returnCategory()
+            self.chain.category = self.event_category.returnCategory()
             return True
         return False
 

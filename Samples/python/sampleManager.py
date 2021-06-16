@@ -21,15 +21,12 @@ BASE_PATH = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Sampl
 #     'other':['WJets', 'WW', 'QCD']
 # }
 SAMPLE_GROUPS = {
-    # 'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],
-    'TT-T+X': ['ttX', 'TTG', 'TG', 'TTTT', 'ST', 'TT'],
+    'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],
+    'TT-T+X': ['ttX', 'TTG', 'TG', 'TTTT'],
     'triboson': ['triboson'],
-    'WZ': ['WZ', 'WW'],
-    # 'diboson': ('ZZ', 'WW', 'WZ'),
+    'WZ': ['WZ'],
     'ZZ-H': ['ZZ', 'Higgs'],
     'XG': ['ZG', 'WG'],
-    'DY' : ['DY'],
-    'WJets' : ['WJets'],
     'QCD':['QCD']
 }
 

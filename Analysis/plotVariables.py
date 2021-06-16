@@ -81,7 +81,6 @@ from HNL.EventSelection.event import Event
 
 def getSampleManager(y):
     if args.genLevel:
-        # skim_str = 'Gen'
         skim_str = 'noskim'
     elif args.selection != 'default':
         skim_str = 'noskim'
@@ -163,7 +162,7 @@ else:
 
 import HNL.EventSelection.eventCategorization as cat
 def listOfCategories(region):
-    if region in ['baseline', 'highMassSR', 'lowMassSR']:
+    if nl == 3:
         return cat.CATEGORIES
     else:
         return [max(cat.CATEGORIES)]
@@ -214,9 +213,11 @@ if not args.makePlots and not args.makeDataCards:
         #
         # Load in sample and chain
         #
+
         sample_names.append(sample.name)
         event = Event(chain, chain, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region)
-        
+
+
         #
         # Set event range
         #
@@ -284,7 +285,8 @@ if not args.makePlots and not args.makeDataCards:
             #
             event.initEvent()
 
-            if not event.passedFilter(cutter, sample.output, sideband = chain.is_data and 'sideband' in args.includeData): continue
+            need_sideband = [0, 1, 2] if chain.is_data and 'sideband' in args.includeData else None
+            if not event.passedFilter(cutter, sample.output, sideband = need_sideband): continue
             prompt_str = None
             if args.region != 'NoSelection':
                 if len(chain.l_flavor) == chain.l_flavor.count(2): continue #Not all taus
@@ -314,7 +316,6 @@ if not args.makePlots and not args.makeDataCards:
                 chain.mva_low_e_highMassSR = tmva['highMassSR']['low_e'].predict()
                 chain.mva_high_e_highMassSR = tmva['highMassSR']['high_e'].predict()
 
-                # print chain.mva_low_mu_baseline, chain.mva_low_mu_lowMassSR, chain.mva_low_mu_highMassSR
             #
             # Fill the histograms
             #
@@ -478,7 +479,6 @@ else:
                             if len(sg) == 0:
                                 if c == 1 and iv == 0: print bkgr, "not part of any sample group"
                                 continue
-                            # print bkgr, sg
                             list_of_hist[c][v]['bkgr'][sg[0]].add(tmp_hist_prompt)
                             if len(args.includeData) == 0 or 'sideband' not in args.includeData:
                                 list_of_hist[c][v]['bkgr']['non-prompt'].add(tmp_hist_nonprompt)
@@ -630,15 +630,15 @@ else:
             # Create plots for each category
             #
             from HNL.EventSelection.eventCategorization import CATEGORY_NAMES
-            for c in list_of_hist.keys():
-            # for c in cat.SUPER_CATEGORIES.keys():
+            # for c in list_of_hist.keys():
+            for c in cat.SUPER_CATEGORIES.keys():
                 c_name = CATEGORY_NAMES[c] if c not in cat.SUPER_CATEGORIES.keys() else c
 
                 # extra_text = [extraTextFormat(cat.returnTexName(c), xpos = 0.2, ypos = 0.82, textsize = None, align = 12)]  #Text to display event type in plot
                 extra_text = [extraTextFormat(c_name, xpos = 0.2, ypos = 0.82, textsize = None, align = 12)]  #Text to display event type in plot
                 if not args.bkgrOnly:
                     extra_text.append(extraTextFormat('V_{'+args.flavor+'N} = '+str(args.coupling)))  #Text to display event type in plot
-                    if not args.signalOnly: extra_text.append(extraTextFormat('Signal scaled to background', textsize = 0.7))  #Text to display event type in plot
+                    # if not args.signalOnly: extra_text.append(extraTextFormat('Signal scaled to background', textsize = 0.7))  #Text to display event type in plot
 
                 # Plots that display chosen for chosen signal masses and backgrounds the distributions for the different variables
                 # S and B in same canvas for each variable
@@ -663,7 +663,8 @@ else:
                             # if 'filtered' in sk:
                             #     signal_legendnames.append('HNL m_{N} = 30 GeV w Pythia filter')
                             # else:
-                            signal_legendnames.append('HNL '+ sk.split('-')[1] +' m_{N} = '+sk.split('-m')[-1]+ ' GeV')
+                            # signal_legendnames.append('HNL '+ sk.split('-')[1] +' m_{N} = '+sk.split('-m')[-1]+ ' GeV')
+                            signal_legendnames.append('HNL m_{N}='+sk.split('-m')[-1]+ 'GeV')
 
                     if len(args.includeData) > 0 and 'signalregion' in args.includeData:
                         observed_hist = list_of_hist[c][v]['data']['signalregion']

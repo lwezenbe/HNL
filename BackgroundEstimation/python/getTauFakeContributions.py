@@ -15,6 +15,7 @@ cat_dict = {
     'MCCT' : [17],
     'DataCT' : [17],
     'TauMixCT' : [17],
+    'TauMixCTM3lcutInverted' : [17],
     'TauFakesTT' : [17],
     'TauFakesDY' : [17]
 }
