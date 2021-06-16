@@ -84,8 +84,8 @@ from HNL.Samples.sampleManager import SampleManager
 def getSampleManager(y):
     if args.noskim or args.selection != 'default':
         skim_str = 'noskim'
-    # elif args.region in ['highMassSR', 'lowMassSR']:
-    #     skim_str = 'RecoGeneral'
+    elif args.region in ['highMassSR', 'lowMassSR']:
+        skim_str = 'RecoGeneral'
     else:
         skim_str = 'Reco'
     file_list = 'fulllist_'+str(y)+'_mconly' if args.customList is None else args.customList
@@ -132,7 +132,6 @@ def getOutputBase(sample_name, prompt_string):
     else:
         output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', 
                         __file__.split('.')[0].rsplit('/')[-1], args.year, '-'.join([args.strategy, args.selection, args.region]), sample_name, prompt_string)
-        # output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year, '-'.join([args.strategy, args.selection, args.region, tag_string]), sample, prompt_string)
     return output_string
 
 def getOutputName(sample, prompt_string):
@@ -226,10 +225,7 @@ if not args.makePlots and args.makeDataCards is None:
         from HNL.ObjectSelection.objectSelection import getObjectSelection
         chain.obj_sel = getObjectSelection(args.selection)
 
-        if not args.region == 'MCCT' and not args.region == 'DataCT':
-            event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region)
-        else:
-            event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region, additional_options=['tau'])
+        event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region)
 
         list_of_numbers = {}
         for c in listOfCategories(args.region):
@@ -265,11 +261,10 @@ if not args.makePlots and args.makeDataCards is None:
                 if not event.passedFilter(cutter, sample.output, inverted_cut = True, sideband = [2] if args.tag == 'TauFakes' else None): continue
             else:
                 if not event.passedFilter(cutter, sample.output, sideband = [2] if args.tag == 'TauFakes' else None): continue
-            # if args.region == 'MCCT' and not select3TightLeptons(chain, chain, cutter): continue
+
             nprompt = 0
             for i, index in enumerate(chain.l_indices):
                 if args.tag == 'TauFakes':
-                    # if chain._lIsPrompt[index] or chain._lFlavor[index] < 2 or chain.l_istight[i]: nprompt += 1
                     if chain._lIsPrompt[index] or chain._lFlavor[index] < 2 or chain.l_istight[i]: nprompt += 1
                 else:
                     if chain._lIsPrompt[index]: nprompt += 1

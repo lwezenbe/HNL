@@ -89,18 +89,6 @@ class EventSelector:
             self.selector = TauMixCTfilter(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options={'b_veto' : False})
         elif self.name == 'TauMixCTLowMetNoBveto':
             self.selector = TauMixCTfilter(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options={'high_met' : False, 'b_veto' : False})
-        # elif self.name == 'TauCT':
-        #     self.selector = TauClosureTest(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
-        # elif self.name == 'ElectronCT':
-        #     self.selector = ElectronClosureTest(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
-        # elif self.name == 'MuonCT':
-        #     self.selector = MuonClosureTest(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
-        # elif self.name == 'LukaCT':
-        #     self.selector = LukaClosureTest(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
-        # elif self.name == 'MCCT':
-        #     self.selector = ClosureTestMC(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options=additional_options)
-        # elif self.name == 'DataCT':
-        #     self.selector = ClosureTestDATA(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options=additional_options)
         elif self.name == 'MCCT':
             self.selector = GeneralMCCTRegion(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'NoSelection':
