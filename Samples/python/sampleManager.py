@@ -10,15 +10,24 @@ import os
 
 ALLOWED_SKIMS = ['noskim', 'Reco', 'RecoGeneral', 'TTT', 'tZqNewFR', 'Gen']
 BASE_PATH = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Samples', 'InputFiles')
+# SAMPLE_GROUPS = {
+#     # 'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],
+#     'TT-T+X': ['ttX', 'TTG', 'TG', 'TTTT', 'ST', 'TT'],
+#     'triboson': ['triboson'],
+#     'WZ': ['WZ'],
+#     # 'diboson': ('ZZ', 'WW', 'WZ'),
+#     'ZZ-H': ['ZZ', 'Higgs'],
+#     'XG': ['DY', 'ZG', 'WG'],
+#     'other':['WJets', 'WW', 'QCD']
+# }
 SAMPLE_GROUPS = {
-    # 'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],
-    'TT-T+X': ['ttX', 'TTG', 'TG', 'TTTT', 'ST', 'TT'],
+    'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],
+    'TT-T+X': ['ttX', 'TTG', 'TG', 'TTTT'],
     'triboson': ['triboson'],
     'WZ': ['WZ'],
-    # 'diboson': ('ZZ', 'WW', 'WZ'),
     'ZZ-H': ['ZZ', 'Higgs'],
-    'XG': ['DY', 'ZG', 'WG'],
-    'other':['WJets', 'WW', 'QCD']
+    'XG': ['ZG', 'WG'],
+    'QCD':['QCD']
 }
 
 

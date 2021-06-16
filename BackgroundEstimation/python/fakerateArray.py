@@ -8,7 +8,7 @@ default_tau_path = lambda year : os.path.join(os.path.expandvars('$CMSSW_BASE'),
 # Made with tau FR from DY and TT in mind
 #
 class SingleFlavorFakeRateCollection:
-    def __init__(self, paths, obj_names, call_names, method = 'fractional', weights = None, names = None):
+    def __init__(self, paths, obj_names, call_names, method = 'fractional', **kwargs):
         if len(paths) != len(obj_names) or len(paths) != len(call_names):
             raise RuntimeError('Length of path, obj_names and call_names in SingleFlavorFakeRateCollection should be the same')
 
@@ -23,26 +23,29 @@ class SingleFlavorFakeRateCollection:
             self.fakerates[cn] = FakeRate(on_end, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), path, None, subdirs = subdirs)
 
         self.method = method
-        self.frac_weights = None
-        self.frac_names = None
-        if method == 'fractional':
-            self.setFractionalWeights(weights, names)
-    
-    def setFractionalWeights(self, weights, names):
-        self.frac_weights = weights
-        self.frac_names = names
+        self.frac_weights = kwargs.get('frac_weights')
+        self.frac_names = kwargs.get('frac_names')
+        self.ossf_map = kwargs.get('ossf_map')
 
-    def getFractionalFakeFactor(self, chain, index, weights, names, manual_var_entry = None):
+    def getFractionalFakeFactor(self, chain, index, manual_var_entry = None):
         fake_factor = 0.
-        for n in names:
-            fake_factor += weights[n]*self.fakerates[n].returnFakeFactor(chain, index, manual_var_entry)
+        for n in self.frac_names:
+            fake_factor += self.frac_weights[n]*self.fakerates[n].returnFakeFactor(chain, index, manual_var_entry)
         return fake_factor
+
+    def getOSSFFakeFactor(self, chain, index, manual_var_entry = None):
+        from HNL.EventSelection.eventSelectionTools import containsOSSF
+        contains_ossf = containsOSSF(chain)
+        return self.fakerates[self.ossf_map[contains_ossf]].returnFakeFactor(chain, index, manual_var_entry)
+
     
     def returnFakeFactor(self, chain, l_index = None, manual_var_entry = None):
         if self.method == 'fractional':
             if self.frac_weights is None or self.frac_names is None:
                 raise RuntimeError('Invalid input: weights or names is None')
-            return self.getFractionalFakeFactor(chain, l_index, self.frac_weights, self.frac_names, manual_var_entry)
+            return self.getFractionalFakeFactor(chain, l_index, manual_var_entry)
+        elif self.method == 'OSSFsplitMix':
+            return self.getOSSFFakeFactor(chain, l_index, manual_var_entry)
         else:
             raise RuntimeError('No other methods supported yet')
 

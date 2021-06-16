@@ -29,8 +29,7 @@ submission_parser.add_argument('--coupling', type = float, action='store', defau
 submission_parser.add_argument('--noskim', action='store_true', default=False,  help='Use no skim sample list')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
-submission_parser.add_argument('--region',   action='store', default='baseline',  help='Choose the selection region', 
-    choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZCR', 'WZCR', 'ConversionCR', 'MCCT', 'TauMixCT'])
+submission_parser.add_argument('--region',   action='store', default='baseline',  help='Choose the selection region')
 submission_parser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data samples')
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
 submission_parser.add_argument('--logLevel',  action='store', default='INFO', help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
@@ -55,19 +54,14 @@ argParser.add_argument('--rescaleSignal', type = float,  action='store', default
 
 args = argParser.parse_args()
 
+nl = 3 if args.region != 'ZZCR' else 4
+
 
 from HNL.Tools.logger import getLogger, closeLogger
 log = getLogger(args.logLevel)
 
 if args.includeData and args.region in ['baseline', 'highMassSR', 'lowMassSR']:
     raise RuntimeError('These options combined would mean unblinding. This is not allowed.')
-
-l1 = 0
-l2 = 1
-l3 = 2
-l4 = 3
-nl = 3 if args.region != 'ZZCR' else 4
-
 
 #
 # Change some settings if this is a test
@@ -90,8 +84,8 @@ from HNL.Samples.sampleManager import SampleManager
 def getSampleManager(y):
     if args.noskim or args.selection != 'default':
         skim_str = 'noskim'
-    elif args.region in ['highMassSR', 'lowMassSR']:
-        skim_str = 'RecoGeneral'
+    # elif args.region in ['highMassSR', 'lowMassSR']:
+    #     skim_str = 'RecoGeneral'
     else:
         skim_str = 'Reco'
     file_list = 'fulllist_'+str(y)+'_mconly' if args.customList is None else args.customList
@@ -232,7 +226,7 @@ if not args.makePlots and args.makeDataCards is None:
         from HNL.ObjectSelection.objectSelection import getObjectSelection
         chain.obj_sel = getObjectSelection(args.selection)
 
-        if not args.region == 'MCCT':
+        if not args.region == 'MCCT' and not args.region == 'DataCT':
             event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region)
         else:
             event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region, additional_options=['tau'])
@@ -267,12 +261,16 @@ if not args.makePlots and args.makeDataCards is None:
             #Event selection    
             event.initEvent()
 
-            if not event.passedFilter(cutter, sample.output): continue
-            if args.region == 'MCCT' and not select3TightLeptons(chain, chain, cutter): continue
+            if args.region == 'TauFakesTT':
+                if not event.passedFilter(cutter, sample.output, inverted_cut = True, sideband = [2] if args.tag == 'TauFakes' else None): continue
+            else:
+                if not event.passedFilter(cutter, sample.output, sideband = [2] if args.tag == 'TauFakes' else None): continue
+            # if args.region == 'MCCT' and not select3TightLeptons(chain, chain, cutter): continue
             nprompt = 0
-            for index in chain.l_indices:
+            for i, index in enumerate(chain.l_indices):
                 if args.tag == 'TauFakes':
-                    if chain._lIsPrompt[index] or chain._lFlavor[index] < 2: nprompt += 1
+                    # if chain._lIsPrompt[index] or chain._lFlavor[index] < 2 or chain.l_istight[i]: nprompt += 1
+                    if chain._lIsPrompt[index] or chain._lFlavor[index] < 2 or chain.l_istight[i]: nprompt += 1
                 else:
                     if chain._lIsPrompt[index]: nprompt += 1
             

@@ -148,9 +148,9 @@ class EventCategory():
             elif f == 1:  self.n_mu += 1
             elif f == 2:  self.n_tau += 1
         
-        if self.n_l != 3: 
-            print "flavorContent in eventCategorization is seeing inconsistent entries"
-            exit(0)
+        # if self.n_l != 3: 
+            # print "flavorContent in eventCategorization is seeing inconsistent entries"
+            # exit(0)
 
     def hasOSSFpair(self, flavor):
         for first_lepton in [l1, l2]:
@@ -177,6 +177,10 @@ class EventCategory():
 
     def returnCategory(self):
         self.flavorContent()
+
+        if self.n_l != 3: 
+            return CATEGORY_FROM_NAME['Other']
+
         if self.n_tau > 2:
             return CATEGORY_FROM_NAME['Other']
 

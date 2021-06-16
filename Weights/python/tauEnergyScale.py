@@ -16,7 +16,7 @@ class TauEnergyScale:
     
     def __init__(self, year, algorithm):
         self.testool = TauESTool(YEARLIB[year], ALGOLIB[algorithm])
-        self.tfestool = TauESTool(YEARLIB[year])
+        self.tfestool = TauFESTool(YEARLIB[year])
 
     #tlv is four vector to correct
     def applyES(self, tlv, dm, genmatch):
@@ -26,7 +26,7 @@ class TauEnergyScale:
             else:
                 pass
         else:
-            tlv *= self.tfestool.getTES(tlv.Pt(), dm, genmatch)
+            tlv *= self.testool.getTES(tlv.Pt(), dm, genmatch)
         return tlv
 
     #tlv is four vector to correct
@@ -36,8 +36,10 @@ class TauEnergyScale:
                 return self.tfestool.getFES(tlv.Eta(), dm, genmatch)
             else:
                 return 1.
+        elif genmatch == 5:
+            return self.testool.getTES(tlv.Pt(), dm, genmatch)
         else:
-            return self.tfestool.getTES(tlv.Pt(), dm, genmatch)
+            return 1.
 
 if __name__ == "__main__":
     #TODO: test needs to be finished

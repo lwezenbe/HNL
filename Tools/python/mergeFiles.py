@@ -63,7 +63,7 @@ def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False
                 should_resubmit = raw_input("Would you like to resubmit the failed jobs? (y/n) \n")
                 if should_resubmit == 'y' or should_resubmit == 'Y':
                     print 'resubmitting:'
-                    submitJobs(script, subjobargs, failed_jobs, argparser, resubmission=True)
+                    submitJobs(script, subjobargs, failed_jobs, argparser, resubmission=True, jobLabel='resubmission')
                 else:
                     pass    
                 if should_resubmit != 'skip': exit(0)

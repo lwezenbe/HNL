@@ -103,11 +103,11 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         if not chain.is_data:
             new_chain.l_isfake[i] = isFakeLepton(chain, ptAndIndex[i][1])
         
-        #Apply tau energy scale
-        # if not chain.is_data and new_chain.l_flavor[i] == 2:
-        #     tlv = getFourVec(new_chain.l_pt[i], new_chain.l_eta[i], new_chain.l_phi[i], new_chain.l_e[i])
-        #     new_chain.l_pt *= tes.readES(tlv, chain._tauDecayMode[new_chain.l_indices[i]], chain._tauGenStatus[new_chain.l_indices[i]])
-        #     new_chain.l_e *= tes.readES(tlv, chain._tauDecayMode[new_chain.l_indices[i]], chain._tauGenStatus[new_chain.l_indices[i]])
+        # Apply tau energy scale
+        if not chain.is_data and new_chain.l_flavor[i] == 2:
+            tlv = getFourVec(new_chain.l_pt[i], new_chain.l_eta[i], new_chain.l_phi[i], new_chain.l_e[i])
+            new_chain.l_pt[i] *= tes.readES(tlv, chain._tauDecayMode[new_chain.l_indices[i]], chain._tauGenStatus[new_chain.l_indices[i]])
+            new_chain.l_e[i] *= tes.readES(tlv, chain._tauDecayMode[new_chain.l_indices[i]], chain._tauGenStatus[new_chain.l_indices[i]])
 
     return True
 
@@ -599,10 +599,20 @@ def calcLT(chain, new_chain, is_reco_level = True):
 #
 from HNL.ObjectSelection.leptonSelector import coneCorrection
 def applyConeCorrection(chain, new_chain, light_algo = None, tau_algo = None, analysis = None):
-    for i, chain_index in enumerate(new_chain.l_indices):
-        if isGoodLepton(chain, chain_index, workingpoint = 'FO') and not isGoodLepton(chain, chain_index, workingpoint = 'tight'):
-            new_chain.l_pt[i] *= coneCorrection(chain, chain_index, light_algo)
-            new_chain.l_e[i] *= coneCorrection(chain, chain_index, light_algo)
+    try:
+        chain.conecorrection_applied
+    except:
+        chain.conecorrection_applied = False
+
+    if not chain.conecorrection_applied:
+        for i, chain_index in enumerate(new_chain.l_indices):
+            if isGoodLepton(chain, chain_index, workingpoint = 'FO') and not isGoodLepton(chain, chain_index, workingpoint = 'tight'):
+                print coneCorrection(chain, chain_index, light_algo)
+                new_chain.l_pt[i] *= coneCorrection(chain, chain_index, light_algo)
+                new_chain.l_e[i] *= coneCorrection(chain, chain_index, light_algo)
+    
+    chain.conecorrection_applied = True
+
 
 
 #

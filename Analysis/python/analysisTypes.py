@@ -142,8 +142,8 @@ def returnVariables(nl, is_reco, include_mva = False):
                 else: var_of_choice = var_gen_3l
 
         if include_mva:
-                # var_of_choice = mergeTwoDictionaries(var_of_choice, var_mva)
-                var_of_choice = var_mva
+                var_of_choice = mergeTwoDictionaries(var_of_choice, var_mva)
+                # var_of_choice = var_mva
         
         return var_of_choice
 
