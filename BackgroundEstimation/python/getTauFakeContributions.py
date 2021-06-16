@@ -13,8 +13,17 @@ cat_dict = {
     'highMassSR' : SUPER_CATEGORIES['SingleTau'],
     'lowMassSR' : SUPER_CATEGORIES['SingleTau'],
     'MCCT' : [17],
-    'TauMixCT' : [17]
+    'DataCT' : [17],
+    'TauMixCT' : [17],
+    'TauMixCTM3lcutInverted' : [17],
+    'TauFakesTT' : [17],
+    'TauFakesDY' : [17]
 }
+
+TT_contributions = ['TT', 'TG', 'TTG', 'ttX', 'ST', 'TTTT']
+DY_contributions = ['DY', 'WJets', 'WZ', 'ZZ', 'WW', 'triboson', 'Higgs']
+# TT_contributions = ['TT']
+# DY_contributions = ['DY']
 
 def determineWeights(years, selections, regions, strategy):
     weights = {}
@@ -27,11 +36,14 @@ def determineWeights(years, selections, regions, strategy):
                 tt_tot = 0.
                 dy_tot = 0.
                 for c in cat_dict[region]:
-                    tmp_tt_hist = getObjFromFile(in_file_path(year, selection, region, 'TT', strategy), str(c)+'_nonprompt')
-                    tmp_dy_hist = getObjFromFile(in_file_path(year, selection, region, 'DY', strategy), str(c)+'_nonprompt')
-                    tt_tot += tmp_tt_hist.GetSumOfWeights()
-                    dy_tot += tmp_dy_hist.GetSumOfWeights()
-                    print tt_tot, dy_tot
+                    for tt_c in TT_contributions:
+                        tmp_tt_hist = getObjFromFile(in_file_path(year, selection, region, tt_c, strategy), str(c)+'_nonprompt')
+                        tt_tot += tmp_tt_hist.GetSumOfWeights()
+                    for dy_c in DY_contributions:
+                        print in_file_path(year, selection, region, dy_c, strategy), str(c)+'_nonprompt'
+                        tmp_dy_hist = getObjFromFile(in_file_path(year, selection, region, dy_c, strategy), str(c)+'_nonprompt')
+                        dy_tot += tmp_dy_hist.GetSumOfWeights()
+                print tt_tot, dy_tot
                 weights[year][selection][region] = {'DY' : dy_tot/(tt_tot+dy_tot), 'TT' : tt_tot/(tt_tot+dy_tot)}            
 
     json_f = json.dumps(weights)
@@ -52,8 +64,7 @@ if __name__ == '__main__':
     argParser.add_argument('--selections',   action='store', nargs='*', default=['default'],  help='Select the type of selection for objects', 
                                 choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
     argParser.add_argument('--strategy',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
-    argParser.add_argument('--regions',   action='store', nargs='*', default=['highMassSR', 'lowMassSR'],  help='Choose the selection region', 
-        choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZCR', 'WZCR', 'ConversionCR', 'MCCT', 'TauMixCT'])
+    argParser.add_argument('--regions',   action='store', nargs='*', default=['highMassSR', 'lowMassSR'],  help='Choose the selection region')
     args = argParser.parse_args()
 
     determineWeights(args.years, args.selections, args.regions, args.strategy)

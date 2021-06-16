@@ -8,12 +8,13 @@
 #
 import os
 import argparse
-from HNL.Tools.jobSubmitter import launchCream02
+from HNL.Tools.jobSubmitter import launchCream02, launchOnCondor
 from HNL.Tools.helpers import makeDirIfNeeded
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--allCombinations',  action='store_true', default=False,  help='Run code that makes long list of all arguments to be combined in tests')
 argParser.add_argument('--rerun',  action='store_true', default=False,  help='rerun failed jobs')
 argParser.add_argument('--checkLogs',  action='store_true', default=False,  help='Run code that makes long list of all arguments to be combined in tests')
+argParser.add_argument('--batchSystem',  action='store', default='Cream02',  help='What batch system to use', choices = ['Cream02', 'HTCondor'])
 args = argParser.parse_args()
 
 if not args.checkLogs:
@@ -67,6 +68,19 @@ def createCommandList(input_list):
 #
 base_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL')
 
+# launchOnCondor(logfile, arguments, i, job_label = None)
+
+def submitJob(command, log_name, **kwargs):
+    label = kwargs.get('label', 'Test')
+    i = kwargs.get('i')
+    if args.batchSystem == 'Cream02':
+        launchCream02(command, log_name, jobLabel=label)
+    elif args.batchSystem == 'HTCondor':
+        launchOnCondor(log_name, (os.getcwd(), command), i, job_label = label)
+    else:
+        raise RuntimeError('Unknown batch system: {0}'.format(args.batchSystem))
+
+
 from HNL.Tools.logger import successfullJob
 #
 # Run exhaustive mode
@@ -96,8 +110,8 @@ if args.allCombinations:
                 if not args.rerun:
                     failed_jobs.append([log_name, comb])
                 else:
-                    launchCream02(os.path.join(base_path, comb), log_name, jobLabel='test')
-            if not args.checkLogs: launchCream02(os.path.join(base_path, comb), log_name, jobLabel='test')
+                    submitJob(os.path.join(base_path, comb), log_name, i=job_number, jobLabel='test')
+            if not args.checkLogs: submitJob(os.path.join(base_path, comb), log_name, i=job_number, jobLabel='test')
             job_number += 1
     if args.checkLogs:
         if len(failed_jobs) != 0:

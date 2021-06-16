@@ -812,7 +812,7 @@ class Plot:
         self.canvas.cd()
         #Create Legend
         legend = ROOT.TLegend(0.4, .7, .9, .9)
-        legend.SetNColumns(1)
+        legend.SetNColumns(2)
         legend.SetTextSize(.03)
        
         loop_obj = [item for item in self.s]

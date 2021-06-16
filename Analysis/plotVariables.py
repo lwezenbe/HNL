@@ -25,8 +25,7 @@ submission_parser.add_argument('--genLevel',   action='store_true',     default=
 submission_parser.add_argument('--coupling', action='store', default=0.01, type=float,  help='How large is the coupling?')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT', ])
 submission_parser.add_argument('--strategy',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
-submission_parser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', 
-    choices=['baseline', 'lowMassSR', 'highMassSR', 'ZZCR', 'WZCR', 'ConversionCR', 'NoSelection'])
+submission_parser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?')
 submission_parser.add_argument('--includeData',   action='store', default=[], nargs='*',  help='Also run over data', choices=['sideband', 'signalregion'])
 submission_parser.add_argument('--logLevel',  action='store', default='INFO',  help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
@@ -82,7 +81,6 @@ from HNL.EventSelection.event import Event
 
 def getSampleManager(y):
     if args.genLevel:
-        # skim_str = 'Gen'
         skim_str = 'noskim'
     elif args.selection != 'default':
         skim_str = 'noskim'
@@ -119,10 +117,10 @@ for year in ['2016', '2017', '2018']:
     sample_manager = getSampleManager(year)
 
     for sample_name in sample_manager.sample_names:
-        if len(args.includeData) == 0 and sample_name == 'Data': continue
+        if len(args.includeData) == 0 and 'Data' in sample_name: continue
         sample = sample_manager.getSample(sample_name)
         if args.sample and args.sample != sample.name: continue
-        if not sample_name == 'Data':
+        if not 'Data' in sample_name:
             for njob in xrange(sample.returnSplitJobs()): 
                 jobs[year] += [(sample.name, str(njob), None)]
         else:
@@ -164,7 +162,7 @@ else:
 
 import HNL.EventSelection.eventCategorization as cat
 def listOfCategories(region):
-    if region in ['baseline', 'highMassSR', 'lowMassSR']:
+    if nl == 3:
         return cat.CATEGORIES
     else:
         return [max(cat.CATEGORIES)]
@@ -196,7 +194,6 @@ if not args.makePlots and not args.makeDataCards:
     sample_names = []
     for sample in sample_manager.sample_list:
         if sample.name not in sample_manager.sample_names: continue
-       
         if sample.name != args.sample: continue
         if args.sample and sample.name != args.sample: continue
 
@@ -204,26 +201,23 @@ if not args.makePlots and not args.makeDataCards:
         if len(args.includeData) == 0 and chain.is_data: continue
 
         list_of_hist = {}
-        if chain.is_data: prompt_str = ['total']
-        else: prompt_str = ['prompt', 'nonprompt', 'total']
+        if chain.is_data: prompt_string = ['total']
+        else: prompt_string = ['prompt', 'nonprompt', 'total']
         for c in categories:
             list_of_hist[c] = {}
             for v in var.keys():
                 list_of_hist[c][v] = {}
-                for ps in prompt_str:
+                for ps in prompt_string:
                     list_of_hist[c][v][ps] = Histogram(str(c)+'-'+v+'-'+sample.output+'-'+ps, var[v][0], var[v][2], var[v][1])
 
         #
         # Load in sample and chain
         #
+
         sample_names.append(sample.name)
         event = Event(chain, chain, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region)
 
-        if chain.is_data and 'sideband' in args.includeData:
-            event = Event(chain, chain, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region, additional_options='sideband')
-        else:
-            event = Event(chain, chain, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region)
-        
+
         #
         # Set event range
         #
@@ -291,17 +285,19 @@ if not args.makePlots and not args.makeDataCards:
             #
             event.initEvent()
 
-            if not event.passedFilter(cutter, sample.output): continue
+            need_sideband = [0, 1, 2] if chain.is_data and 'sideband' in args.includeData else None
+            if not event.passedFilter(cutter, sample.output, sideband = need_sideband): continue
+            prompt_str = None
             if args.region != 'NoSelection':
                 if len(chain.l_flavor) == chain.l_flavor.count(2): continue #Not all taus
 
                 nprompt = 0
-                if sample.name != 'Data':
+                if not 'Data' in sample.name:
                     for index in chain.l_indices:
                         if not args.genLevel and chain._lIsPrompt[index]: nprompt += 1
                         elif args.genLevel and chain._gen_lIsPrompt[index]: nprompt += 1
                     
-                prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
+                    prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
             else:
                 prompt_str = None
                 chain.category = 17
@@ -320,7 +316,6 @@ if not args.makePlots and not args.makeDataCards:
                 chain.mva_low_e_highMassSR = tmva['highMassSR']['low_e'].predict()
                 chain.mva_high_e_highMassSR = tmva['highMassSR']['high_e'].predict()
 
-                # print chain.mva_low_mu_baseline, chain.mva_low_mu_lowMassSR, chain.mva_low_mu_highMassSR
             #
             # Fill the histograms
             #
@@ -337,14 +332,18 @@ if not args.makePlots and not args.makeDataCards:
         is_signal = 'HNL' in sample.name
         if len(args.includeData) > 0 and chain.is_data:
             signal_str = 'data'
+            sample_output_name = sample.output +'-'+args.includeData[0] if len(args.includeData) == 1 else None
         else:
             signal_str = 'signal' if is_signal else 'bkgr'
+            sample_output_name = sample.output
 
-        if args.signalOnly and args.genLevel:       output_name_full = os.path.join(getOutputName(signal_str, args.year), 'signalOrdering', sample.output)
-        else:      output_name_full = os.path.join(getOutputName(signal_str, args.year), sample.output) 
+
+        if args.signalOnly and args.genLevel:       output_name_full = os.path.join(getOutputName(signal_str, args.year), 'signalOrdering', sample_output_name)
+        else:      output_name_full = os.path.join(getOutputName(signal_str, args.year), sample_output_name) 
+
 
         if args.isChild:
-            output_name_full += '/tmp_'+sample.output+ '/'+sample.name+'_'
+            output_name_full += '/tmp_'+sample_output_name+ '/'+sample.name+'_'
         else:
             output_name_full += '/'
                 
@@ -357,7 +356,6 @@ if not args.makePlots and not args.makeDataCards:
                         list_of_hist[c][v][prompt_str].write(output_name_full +'variables'+subjobAppendix+ '.root', subdirs=[v], append=True, is_test=arg_string)
 
         cutter.saveCutFlow(output_name_full +'variables'+subjobAppendix+ '.root')
-
     closeLogger(log)
 
 #If the option to not run over the events again is made, load in the already created histograms here
@@ -441,7 +439,6 @@ else:
                     for s in signal_list:
                         sample_name = s.split('/')[-1]
 
-                        # print sample_name
                         sample_mass = float(sample_name.split('-m')[-1])
                         list_of_hist[c][v]['signal'][sample_name] = Histogram(getObjFromFile(s+'/variables.root', v+'/'+str(c)+'-'+v+'-'+sample_name+'-total')) 
 
@@ -455,8 +452,8 @@ else:
         if len(args.includeData) > 0:
             for c in categories:
                 for v in var:
-                    list_of_hist[c][v]['data']['sideband'] = Histogram(getObjFromFile(data_list[0]+'/variables.root', v+'/'+str(c)+'-'+v+'-'+'Data-sideband'))
-                    list_of_hist[c][v]['data']['signalregion'] = Histogram(getObjFromFile(data_list[0]+'/variables.root', v+'/'+str(c)+'-'+v+'-'+'Data-signalregion'))
+                    list_of_hist[c][v]['data']['sideband'] = Histogram(getObjFromFile(data_list[0]+'/variables.root', v+'/'+str(c)+'-'+v+'-'+'Data-total'))
+                    list_of_hist[c][v]['data']['signalregion'] = Histogram(getObjFromFile(data_list[0]+'/variables.root', v+'/'+str(c)+'-'+v+'-'+'Data-total'))
 
         for c in categories: 
             print 'loading', c
@@ -482,7 +479,6 @@ else:
                             if len(sg) == 0:
                                 if c == 1 and iv == 0: print bkgr, "not part of any sample group"
                                 continue
-                            # print bkgr, sg
                             list_of_hist[c][v]['bkgr'][sg[0]].add(tmp_hist_prompt)
                             if len(args.includeData) == 0 or 'sideband' not in args.includeData:
                                 list_of_hist[c][v]['bkgr']['non-prompt'].add(tmp_hist_nonprompt)
@@ -642,7 +638,7 @@ else:
                 extra_text = [extraTextFormat(c_name, xpos = 0.2, ypos = 0.82, textsize = None, align = 12)]  #Text to display event type in plot
                 if not args.bkgrOnly:
                     extra_text.append(extraTextFormat('V_{'+args.flavor+'N} = '+str(args.coupling)))  #Text to display event type in plot
-                    if not args.signalOnly: extra_text.append(extraTextFormat('Signal scaled to background', textsize = 0.7))  #Text to display event type in plot
+                    # if not args.signalOnly: extra_text.append(extraTextFormat('Signal scaled to background', textsize = 0.7))  #Text to display event type in plot
 
                 # Plots that display chosen for chosen signal masses and backgrounds the distributions for the different variables
                 # S and B in same canvas for each variable
@@ -667,7 +663,8 @@ else:
                             # if 'filtered' in sk:
                             #     signal_legendnames.append('HNL m_{N} = 30 GeV w Pythia filter')
                             # else:
-                            signal_legendnames.append('HNL '+ sk.split('-')[1] +' m_{N} = '+sk.split('-m')[-1]+ ' GeV')
+                            # signal_legendnames.append('HNL '+ sk.split('-')[1] +' m_{N} = '+sk.split('-m')[-1]+ ' GeV')
+                            signal_legendnames.append('HNL m_{N}='+sk.split('-m')[-1]+ 'GeV')
 
                     if len(args.includeData) > 0 and 'signalregion' in args.includeData:
                         observed_hist = list_of_hist[c][v]['data']['signalregion']

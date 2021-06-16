@@ -61,8 +61,11 @@ jobs = []
 for sample_name in sample_manager.sample_names:
     if sample_name == 'Data': continue
     sample = sample_manager.getSample(sample_name)
-    for njob in xrange(sample.returnSplitJobs()): 
-        jobs += [(sample.name, str(njob))]
+    try:
+        for njob in xrange(sample.returnSplitJobs()): 
+            jobs += [(sample.name, str(njob))]
+    except:
+        continue
 
 from HNL.EventSelection.eventCategorization import SUPER_CATEGORIES
 
@@ -158,8 +161,7 @@ if not args.merge:
         cutter.cut(True, 'Total')
 
         event.initEvent()
-        if not event.event_selector.removeOverlapDYandZG(sample.output): continue
-        if not event.event_selector.selector.passedFilter(cutter, for_training=True): continue
+        if not event.passedFilter(cutter, sample.output, for_training=True): continue
         if len(chain.l_flavor) == chain.l_flavor.count(2): continue
 
         category = event.event_category.returnCategory()

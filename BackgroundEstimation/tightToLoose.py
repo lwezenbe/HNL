@@ -22,7 +22,7 @@ submission_parser.add_argument('--dryRun',   action='store_true', default=False,
 submission_parser.add_argument('--noskim', action='store_true', default=False,  help='measure in data')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--tauRegion', action='store', type=str, default = None, help='What region do you want to select for?', 
-    choices=['TauFakesDY', 'TauFakesTT'])
+    choices=['TauFakesDYttl', 'TauFakesTTttl', 'TauFakesDYttlnomet'])
 submission_parser.add_argument('--logLevel',  action='store', default='INFO', help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 
 argParser.add_argument('--makePlots', action='store_true', default=False,  help='Make plots.')
@@ -38,7 +38,7 @@ if args.isTest:
     if args.subJob is None: args.subJob = '0'
     if args.year is None: args.year = '2016'
     if args.flavor is None: args.flavor = 'tau'
-    if args.flavor == 'tau': args.tauRegion = 'TauFakesDY'
+    if args.flavor == 'tau' and args.tauRegion is None: args.tauRegion = 'TauFakesDY'
     if args.sample is None: 
         if args.inData: args.sample = 'Data-'+args.year
         elif args.flavor == 'e': args.sample = 'QCDEMEnriched-80to120'
@@ -212,6 +212,7 @@ if not args.makePlots:
     from HNL.Triggers.triggerSelection import passTriggers
 
     for entry in event_range:
+
         chain.GetEntry(entry)
         progress(entry - event_range[0], len(event_range))
 
@@ -231,13 +232,11 @@ if not args.makePlots:
 
         #Event selection
         if args.flavor == 'e':
-            if not event.event_selector.removeOverlapDYandZG(sample.output): continue
-            if not event.event_selector.selector.passedFilter(cutter, only_electrons=True, require_jets=True): continue
+            if not event.passedFilter(cutter, sample.output, only_electrons = True, require_jets = True): continue
         elif args.flavor == 'mu':
-            if not event.event_selector.removeOverlapDYandZG(sample.output): continue
-            if not event.event_selector.selector.passedFilter(cutter, only_muons=True, require_jets=True): continue
+            if not event.passedFilter(cutter, sample.output, only_muons = True, require_jets = True): continue
         else:
-            if not event.event_selector.passedFilter(cutter, sample.output): continue
+            if not event.passedFilter(cutter, sample.output): continue
         fake_index = event.event_selector.selector.getFakeIndex()
         
         if args.inData and not chain.is_data:
