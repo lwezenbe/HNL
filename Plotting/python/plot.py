@@ -231,8 +231,8 @@ class Plot:
 
 
         if '[' in self.y_name:
-            return
-        elif add_x_width: 
+            return self.y_name
+        elif add_x_width and not '/' in self.y_name: 
             self.y_name +=  ' / ' +str(test_hist.GetBinWidth(1)) +' '+ pt.getUnit(self.x_name)
 
         return self.y_name

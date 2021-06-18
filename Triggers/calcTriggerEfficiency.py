@@ -15,10 +15,11 @@ submission_parser.add_argument('--batchSystem', action='store',         default=
 submission_parser.add_argument('--dryRun',   action='store_true',       default=False,  help='do not launch subjobs, only show them')
 submission_parser.add_argument('--genLevel',   action='store_true',     default=False,  help='Use gen level variables')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT', ])
-submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the analysis which triggers to use', choices=['An2017014', 'HNL' ])
+submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the analysis which triggers to use', choices=['AN2017014', 'HNL' ])
 submission_parser.add_argument('--logLevel',  action='store', default='INFO',  help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
 submission_parser.add_argument('--useRef', action='store_true', default=False,  help='pass ref cuts')
+submission_parser.add_argument('--noskim', action='store_true', default=False,  help='pass ref cuts')
 submission_parser.add_argument('--separateTriggers', action='store', default=None,  
     help='Look at each trigger separately for each set of triggers. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', 
     choices=['single', 'cumulative', 'full'])
@@ -30,6 +31,7 @@ args = argParser.parse_args()
 import numpy as np
 import os
 from HNL.Tools.efficiency import Efficiency
+from HNL.EventSelection.eventCategorization import CATEGORIES
 
 #
 # Change some settings if this is a test
@@ -56,7 +58,11 @@ log = getLogger(args.logLevel)
 #
 from HNL.Samples.sampleManager import SampleManager
 def getSampleManager(year):
-    return SampleManager(year, 'Reco', 'Triggers/triggerlist_'+str(year))
+    if not args.noskim:
+        return SampleManager(year, 'Reco', 'Triggers/triggerlist_'+str(year))
+    else:
+        return SampleManager(year, 'noskim', 'Triggers/triggerlist_'+str(year))
+
 
 #
 # Prepare jobs
@@ -101,15 +107,21 @@ def getOutputName(year, sample_name):
 #
 # Define variables
 #
+leading_lep_split = [5., 10., 15., 30., 55., 1000.]
+
+leading_lep_cat = [str(leading_lep_split[i])+'to'+str(leading_lep_split[i+1]) for i in xrange(len(leading_lep_split)-1)]
+
 var = {'l1pt' : (lambda c : c.l_pt[0],                          np.arange(0., 100., 15.),                 ('p_{T}(l1) [GeV]', 'Efficiency')),
-        'l2pt' : (lambda c : c.l_pt[1],                          np.arange(0., 100., 15.),                  ('p_{T}(l2) [GeV]', 'Efficiency')),
-        'l3pt' : (lambda c : c.l_pt[2],                          np.arange(0., 100., 15.),                  ('p_{T}(l3) [GeV]', 'Efficiency')),
+        'l2pt' : (lambda c : c.l_pt[1],                          np.arange(5., 40., 5.),                  ('p_{T}(l2) [GeV]', 'Efficiency')),
+        'l3pt' : (lambda c : c.l_pt[2],                          np.arange(5., 40., 5.),                  ('p_{T}(l3) [GeV]', 'Efficiency')),
         'l1eta' : (lambda c : abs(c.l_eta[0]),                          np.arange(0., 3., .5),                  ('|#eta|(l1) [GeV]', 'Efficiency')),
         'l2eta' : (lambda c : abs(c.l_eta[1]),                          np.arange(0., 3., .5),                  ('|#eta|(l2) [GeV]', 'Efficiency')),
         'l3eta' : (lambda c : abs(c.l_eta[2]),                          np.arange(0., 3., .5),                  ('|#eta|(l3) [GeV]', 'Efficiency')),
         'l1-2D' : (lambda c : (c.l_pt[0], abs(c.l_eta[0])),      (np.arange(0., 100., 15.), np.arange(0., 3., .5)), ('p_{T}(l1) [GeV]', '|#eta|(l1)')),
-        'l2-2D' : (lambda c : (c.l_pt[1], abs(c.l_eta[1])),      (np.arange(0., 100., 15.), np.arange(0., 3., .5)), ('p_{T}(l2) [GeV]', '|#eta|(subleading)')),
-        'l3-2D' : (lambda c : (c.l_pt[2], abs(c.l_eta[2])),      (np.arange(0., 100., 15.), np.arange(0., 3., .5)), ('p_{T}(l3) [GeV]', '|#eta|(subleading)'))}
+        'l2-2D' : (lambda c : (c.l_pt[1], abs(c.l_eta[1])),      (np.arange(5., 40., 5.), np.arange(0., 3., .5)), ('p_{T}(l2) [GeV]', '|#eta|(subleading)')),
+        'l3-2D' : (lambda c : (c.l_pt[2], abs(c.l_eta[2])),      (np.arange(5., 40., 5.), np.arange(0., 3., .5)), ('p_{T}(l3) [GeV]', '|#eta|(subleading)')),
+        'l2l3-2D' : (lambda c : (c.l_pt[2], c.l_pt[1]),      (np.arange(5., 40., 5.), np.arange(5., 40., 5.)), ('p_{T}(l3) [GeV]', 'p_{T}(l2) [GeV]')),
+        'l-3D' : (lambda c : (c.l_pt[2], c.l_pt[1], c.l_pt[0]),      (np.arange(5., 40., 5.), np.arange(5., 40., 5.), np.array([0., 15., 20., 25., 30., 40., 55., 100., 1000.])), ('p_{T}(l3) [GeV]', 'p_{T}(l2) [GeV]', 'p_{T}(l1) [GeV]'))}
 
 
 if not args.makePlots:
@@ -120,7 +132,7 @@ if not args.makePlots:
         from HNL.Tools.jobSubmitter import submitJobs
         print 'submitting'
         for year in jobs.keys():
-            submitJobs(__file__, ('sample', 'subJob', 'year'), jobs[year], argParser, jobLabel = 'calcTriggerEff', additionalArgs=[('year', year)])
+            submitJobs(__file__, ('sample', 'subJob'), jobs[year], argParser, jobLabel = 'calcTriggerEff', additionalArgs=[('year', year)])
         exit(0)
 
     if len(args.year) != 1:
@@ -160,7 +172,14 @@ if not args.makePlots:
 
     efficiencies = {}
     for v in var:
-        efficiencies[v] = Efficiency(v, var[v][0], var[v][2], getOutputName(year, sample.output), var[v][1])
+        efficiencies[v] = {}
+        for c in CATEGORIES:
+            efficiencies[v][c] = {}
+            if '3D' in v: 
+                efficiencies[v][c]['3D'] = Efficiency(v+'-'+str(c)+'-3D', var[v][0], var[v][2], getOutputName(year, sample.output), var[v][1], subdirs = [str(c), v, '3D'])
+            else:
+                for llc in leading_lep_cat:
+                    efficiencies[v][c][llc] = Efficiency(v+'-'+str(c)+'-'+llc, var[v][0], var[v][2], getOutputName(year, sample.output), var[v][1], subdirs = [str(c), v, llc])
 
     #
     # Define event selection
@@ -181,14 +200,24 @@ if not args.makePlots:
         if args.useRef and not cutter.cut(chain._passTrigger_ref, 'passed ref filter'):     continue
 
         event.initEvent()
-        if not event.passedFilter(cutter, sample.output): continue
+        if not event.passedFilter(cutter, sample.output, offline_thresholds = False): continue
 
         from HNL.Triggers.triggerSelection import passTriggers
+        passed = passTriggers(chain, args.analysis)
+
         for v in var:
-            efficiencies[v].fill(chain, reweighter.getTotalWeight(), passTriggers(chain, args.analysis))
+            if not '3D' in v:
+                for llc in leading_lep_cat:
+                    lowpt, highpt = llc.split('to')
+                    if chain.l_pt[0] < float(lowpt) or chain.l_pt[0] > float(highpt): continue
+                    efficiencies[v][chain.category][llc].fill(chain, reweighter.getTotalWeight(), passed)
+            else:
+                efficiencies[v][chain.category]['3D'].fill(chain, reweighter.getTotalWeight(), passed)
 
     for iv, v in enumerate(var):
-        efficiencies[v].write(append = iv > 0, is_test=arg_string)
+        for ic, c in enumerate(CATEGORIES):
+            for illc, llc in enumerate(efficiencies[v][c].keys()):
+                efficiencies[v][c][llc].write(append = iv > 0 or ic > 0 or illc > 0, is_test=arg_string)
 
     closeLogger(log)
 
@@ -202,19 +231,46 @@ else:
         base_path_in = getOutputBase(year, '*')
                        
         in_files = glob.glob(base_path_in)
-        merge(in_files, __file__, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
+        merge(in_files, __file__, jobs[year], ('sample', 'subJob'), argParser, istest=args.isTest, additionalArgs=[('year', year)])
 
         sample_manager = getSampleManager(year)  
         samples_to_plot = sample_manager.getOutputs()
 
         for sample_output in samples_to_plot:
             if args.sample and sample_output != args.sample: continue
-            for v in var:
-                eff = Efficiency(v, var[v][0], var[v][2], getOutputName(year, sample_output).rsplit('/', 2)[0]+'/efficiency.root')
-                p = Plot(eff.getEfficiency(), 'efficiency', v, year = int(year))
 
-                output_string = getOutputBase(year, sample_output).replace('Triggers/data/', 'Triggers/data/Results/')
-                if '2D' in v:
-                    p.draw2D(output_dir=output_string)
+            #Gather all the information
+            from HNL.EventSelection.eventCategorization import TRIGGER_CATEGORIES
+            efficiencies = {}
+            for v in var:
+                efficiencies[v] = {}
+                if '3D' in v:
+                    leading_cat = ['3D']
                 else:
-                    p.drawHist(output_string)
+                    leading_cat = leading_lep_cat
+                for llc in leading_cat:
+                    efficiencies[v][llc] = {}
+                    for c in CATEGORIES:
+                        print v, llc, c
+                        for tc in TRIGGER_CATEGORIES:
+                            if not c in TRIGGER_CATEGORIES[tc]: continue
+                            if tc in efficiencies[v][llc].keys():
+                                efficiencies[v][llc][tc].add(Efficiency(v+'-'+str(c)+'-'+llc, var[v][0], var[v][2], getOutputName(year, sample.output).rsplit('/', 2)[0]+'/efficiency.root', None, subdirs = [str(c), v, llc]))
+                            else:
+                                efficiencies[v][llc][tc] = Efficiency(v+'-'+str(c)+'-'+llc, var[v][0], var[v][2], getOutputName(year, sample.output).rsplit('/', 2)[0]+'/efficiency.root', None, subdirs = [str(c), v, llc]).clone(out_name = v+'-'+tc)
+
+                for tc in TRIGGER_CATEGORIES:
+                    output_string = getOutputBase(year, sample_output).replace('Triggers/data/', 'Triggers/data/Results/')
+                    if '3D' in v:
+                        sliced_eff = efficiencies[v]['3D'][tc].getEfficiency(hist_object=True).slice3DalongZ()
+                        p = Plot([sliced_eff[x] for x in sliced_eff], 'efficiency', tc, year = int(year))
+                        p.draw2D(output_dir=output_string, names = [tc+'/3D/'+x for x in sliced_eff])
+
+                    elif '2D' in v:
+                        for llc in leading_cat:
+                            p = Plot(efficiencies[v][llc][tc].getEfficiency(), 'efficiency', tc+'/'+v+'/'+llc, year = int(year))
+                            p.draw2D(output_dir=output_string, names = [tc+'/'+v+'/'+llc])
+                    else:
+                        for llc in leading_cat:
+                            p = Plot(efficiencies[v][llc][tc].getEfficiency(), 'efficiency', tc+'/'+v+'/'+llc, year = int(year))
+                            p.drawHist(output_string)

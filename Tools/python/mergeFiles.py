@@ -58,7 +58,6 @@ def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False
             pass
         else:
             failed_jobs = checkCompletedJobs(script, subjob_list, argparser, additionalArgs=additionalArgs)
-            print failed_jobs
             if failed_jobs is not None and len(failed_jobs) != 0:   
                 should_resubmit = raw_input("Would you like to resubmit the failed jobs? (y/n) \n")
                 if should_resubmit == 'y' or should_resubmit == 'Y':

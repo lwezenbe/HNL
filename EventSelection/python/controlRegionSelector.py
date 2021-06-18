@@ -1,5 +1,5 @@
 from HNL.EventSelection.eventSelectionTools import selectLeptonsGeneral, selectGenLeptonsGeneral, calculateEventVariables
-from HNL.EventSelection.eventSelectionTools import bVeto, massDiff, passesZcuts, passesPtCutsAN2017014, containsOSSF, fourthFOVeto, threeSameSignVeto, nBjets
+from HNL.EventSelection.eventSelectionTools import bVeto, massDiff, passesZcuts, containsOSSF, fourthFOVeto, threeSameSignVeto, nBjets
 from HNL.EventSelection.eventSelectionTools import l1, l2, l3, l4, MZ
 from HNL.ObjectSelection.leptonSelector import isGoodLightLepton
 from HNL.Tools.helpers import getFourVec, deltaPhi, deltaR

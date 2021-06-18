@@ -22,18 +22,35 @@ class Histogram:
             self.name = self.hist.GetName()
             self.var_tex = (self.hist.GetXaxis().GetTitle(), self.hist.GetYaxis().GetTitle())
             self.isTH2 = isinstance(self.hist, ROOT.TH2)
+            self.isTH3 = isinstance(self.hist, ROOT.TH3)
             self.var = None           #TODO: Is it possible to store the variable as well
             self.bins = None          #TODO: Read bins from axis and return  
+
+            bins_x = np.array([self.hist.GetXaxis().GetBinLowEdge(b) for b in xrange(1, self.hist.GetXaxis().GetNbins()+1)]+[self.hist.GetXaxis().GetBinUpEdge(self.hist.GetXaxis().GetLast())])
+            if not self.isTH2 and not self.isTH3:
+                self.bins = bins_x
+            elif self.isTH2:
+                bins_y = np.array([self.hist.GetYaxis().GetBinLowEdge(b) for b in xrange(1, self.hist.GetYaxis().GetNbins()+1)]+[self.hist.GetYaxis().GetBinUpEdge(self.hist.GetYaxis().GetLast())])
+                self.bins = (bins_x, bins_y)
+            elif self.isTH3:
+                bins_y = np.array([self.hist.GetYaxis().GetBinLowEdge(b) for b in xrange(1, self.hist.GetYaxis().GetNbins()+1)]+[self.hist.GetYaxis().GetBinUpEdge(self.hist.GetYaxis().GetLast())])
+                bins_z = np.array([self.hist.GetZaxis().GetBinLowEdge(b) for b in xrange(1, self.hist.GetZaxis().GetNbins()+1)]+[self.hist.GetZaxis().GetBinUpEdge(self.hist.GetZaxis().GetLast())])
+                self.bins = (bins_x, bins_y, bins_z)
+
         elif len(args) == 4:
             self.name = args[0]
             self.var = args[1]
             self.var_tex = args[2]
             self.bins = args[3]
-            self.isTH2 = isinstance(self.bins, (tuple,))
+            self.isTH2 = isinstance(self.bins, (tuple,)) and len(self.bins) == 2
+            self.isTH3 = isinstance(self.bins, (tuple,)) and len(self.bins) == 3
             self.hist = None      
 
             if self.isTH2:
                 self.hist = ROOT.TH2D(self.name, self.name, len(self.bins[0])-1, self.bins[0], len(self.bins[1])-1, self.bins[1])
+                self.hist.Sumw2()
+            elif self.isTH3:
+                self.hist = ROOT.TH3D(self.name, self.name, len(self.bins[0])-1, self.bins[0], len(self.bins[1])-1, self.bins[1], len(self.bins[2])-1, self.bins[2])
                 self.hist.Sumw2()
             else:
                 self.hist = ROOT.TH1D(self.name, self.name, len(self.bins)-1, self.bins)
@@ -82,6 +99,42 @@ class Histogram:
 
         self.hist.Fill(xval, yval, weight)
 
+    def fill3D(self, chain, weight, index = None):
+        if self.var is None:
+            print "\033[93m !Warning! \033[0m This histogram was loaded from a root file, the variable to fill is not known at the moment. Histogram will not be filled."
+            return
+
+        if index is not None:
+            var = self.var(chain, index)
+        else:
+            var = self.var(chain)
+
+        if self.overflow:
+            xval = min(max(self.hist.GetXaxis().GetBinCenter(1), var[0]), self.hist.GetXaxis().GetBinCenter(self.hist.GetXaxis().GetLast()))
+            yval = min(max(self.hist.GetYaxis().GetBinCenter(1), var[1]), self.hist.GetYaxis().GetBinCenter(self.hist.GetYaxis().GetLast()))
+            zval = min(max(self.hist.GetZaxis().GetBinCenter(1), var[2]), self.hist.GetZaxis().GetBinCenter(self.hist.GetYaxis().GetLast()))
+        else:
+            xval = var[0]
+            yval = var[1]
+            zval = var[2]
+
+        self.hist.Fill(xval, yval, zval, weight)
+
+    def slice3DalongZ(self):
+        sliced_hist = {}
+        for i_n, n in enumerate(self.bins[2]):
+            if i_n == len(self.bins[2])-1: continue
+            out_name = str(n)+'to'+str(self.bins[2][i_n + 1])
+            sliced_hist[out_name] = ROOT.TH2D(self.name+'-2D', self.name+'-2D', len(self.bins[0])-1, self.bins[0], len(self.bins[1])-1, self.bins[1])
+            sliced_hist[out_name].SetXTitle(self.var_tex[0])
+            sliced_hist[out_name].SetYTitle(self.var_tex[1])
+            for xb in xrange(1, sliced_hist[out_name].GetNbinsX()+1):
+                for yb in xrange(1, sliced_hist[out_name].GetNbinsY()+1):
+                    sliced_hist[out_name].SetBinContent(xb, yb, self.hist.GetBinContent(xb, yb, i_n+1))
+                    sliced_hist[out_name].SetBinError(xb, yb, self.hist.GetBinError(xb, yb, i_n+1))
+        return sliced_hist
+
+
     def fill(self, chain, weight, index = None):
         if self.var is None:
             print "\033[93m !Warning! \033[0m This histogram was loaded from a root file, the variable to fill is not known at the moment. Histogram will not be filled."
@@ -89,6 +142,8 @@ class Histogram:
 
         if self.isTH2:
             self.fill2D(chain, weight, index)
+        elif self.isTH3:
+            self.fill3D(chain, weight, index)
         else:
             self.fill1D(chain, weight, index)
 

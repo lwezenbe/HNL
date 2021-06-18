@@ -84,6 +84,7 @@ class SampleManager:
     def makeLumiClusters(self):
         self.lumi_clusters = {}
         for n in self.sample_names:
+            print n
             if 'ext' in n:
                 tmp_sample_name = n.rsplit('-', 1)[0]
             else:

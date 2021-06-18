@@ -495,29 +495,6 @@ def fourthFOVeto(chain, no_tau = False):
         if isGoodLepton(chain, lepton, 'FO'): return True
     return False
 
-from HNL.EventSelection.eventCategorization import CATEGORY_FROM_NAME
-def passesPtCutsAN2017014(chain):
-    if chain.l_pt[l1] < 15: return False
-    if chain.l_pt[l2] < 10: return False
-    if chain.l_flavor[l3] == 1 and chain.l_pt[l3] < 5:      return False    
-    if chain.l_flavor[l3] == 0 and chain.l_pt[l3] < 10:      return False
-
-    if chain.category == CATEGORY_FROM_NAME['EEE']:
-        return (chain.l_pt[l1] > 19 and chain.l_pt[l2] > 15) or chain.l_pt[l1] > 30
-    elif chain.category == CATEGORY_FROM_NAME['SS-EEMu'] or chain.category == CATEGORY_FROM_NAME['OS-EEMu']:
-        if chain.l_flavor[l3] == 0 and chain.l_pt[l3] < 15:
-            return chain.l_pt[l1] > 23
-        elif chain.l_flavor[l3] == 1:
-            if chain.l_pt[l3] < 8:
-                return chain.l_pt[l1] > 25 and chain.l_pt[l2] > 15
-            else:
-                return chain.l_pt[l1] > 23 or chain.l_pt[l2] > 15
-    elif chain.category == CATEGORY_FROM_NAME['SS-EMuMu'] or chain.category == CATEGORY_FROM_NAME['OS-EMuMu']:
-        if chain.l_flavor[l3] == 1 and chain.l_pt[l3] < 9:
-            return chain.l_pt[l1] > 23
-
-    return True
-
 def passesPtCutsUpdated(chain):
     #
     # Copy cuts from last analysis for 
