@@ -1,8 +1,5 @@
 from fakerate import FakeRate
 
-default_tau_path = lambda year : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', year, 'MC', 'tau')
-
-
 #
 # Class from reading out from different fake rates of single flavor
 # Made with tau FR from DY and TT in mind

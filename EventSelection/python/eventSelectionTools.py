@@ -70,7 +70,7 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
 
     if len(chain.leptons) != nL:  return False
 
-    tes = TauEnergyScale(chain.year, chain.obj_sel['tau_algo'])
+    tes = TauEnergyScale(chain.era, chain.year, chain.obj_sel['tau_algo'])
 
     if chain is new_chain:
         new_chain.l_pt = [0.0]*nL

@@ -12,7 +12,8 @@ argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--flavor', action='store',  help='flavor for which to run fake rate measurement', choices=['tau', 'e', 'mu'])
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
-submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -38,7 +39,7 @@ if args.isTest:
     if args.subJob is None: args.subJob = '0'
     if args.year is None: args.year = '2016'
     if args.flavor is None: args.flavor = 'tau'
-    if args.flavor == 'tau' and args.tauRegion is None: args.tauRegion = 'TauFakesDY'
+    if args.flavor == 'tau' and args.tauRegion is None: args.tauRegion = 'TauFakesDYttl'
     if args.sample is None: 
         if args.inData: args.sample = 'Data-'+args.year
         elif args.flavor == 'e': args.sample = 'QCDEMEnriched-80to120'
@@ -96,7 +97,7 @@ elif args.flavor == 'mu':
 elif args.flavor == 'e':
     sublist = 'BackgroundEstimation/ElectronFakes'
 
-sample_manager = SampleManager(args.year, skim_str, sublist)
+sample_manager = SampleManager(args.era, args.year, skim_str, sublist)
 
 #
 # Define job list
@@ -117,9 +118,9 @@ subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
 data_str = 'DATA' if args.inData else 'MC'
 def getOutputBase(region):
     if not args.isTest:
-        output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0].rsplit('/', 1)[-1], args.year, data_str, args.flavor, '-'.join([region, args.selection]))
+        output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0].rsplit('/', 1)[-1], args.era+'-'+args.year, data_str, args.flavor, '-'.join([region, args.selection]))
     else:
-        output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0].rsplit('/', 1)[-1], args.year, data_str, args.flavor, '-'.join([region, args.selection]))
+        output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0].rsplit('/', 1)[-1], args.era+'-'+args.year, data_str, args.flavor, '-'.join([region, args.selection]))
     return output_name
 
 def getOutputName(region):
@@ -151,7 +152,8 @@ if not args.makePlots:
     if not args.inData and 'Data' in sample.name: exit(0)
     chain = sample.initTree(needhcount = False)
     chain.HNLmass = sample.getMass()
-    chain.year = int(args.year)
+    chain.year = args.year
+    chain.era = args.era
 
     #
     # Initialize reweighter
@@ -176,8 +178,8 @@ if not args.makePlots:
     #
     # Get luminosity weight
     #
-    from HNL.Weights.lumiweight import LumiWeight
-    lw = LumiWeight(sample, sample_manager)
+    from HNL.Weights.reweighter import Reweighter
+    lw = Reweighter(sample, sample_manager)
 
     from HNL.EventSelection.eventCategorization import EventCategory
     try:
@@ -272,10 +274,10 @@ else:
     base_path_in = getOutputBase(region_to_select)
     if args.isTest:
         base_path_out = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'testArea', 'Results', 
-                        __file__.split('.')[0].rsplit('/', 1)[-1], data_str, args.year, args.flavor, '-'.join([region_to_select, args.selection]))
+                        __file__.split('.')[0].rsplit('/', 1)[-1], data_str, args.era+'-'+args.year, args.flavor, '-'.join([region_to_select, args.selection]))
     else:
         base_path_out = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'Results', 
-                        __file__.split('.')[0].rsplit('/', 1)[-1], data_str, args.year, args.flavor, '-'.join([region_to_select, args.selection]))
+                        __file__.split('.')[0].rsplit('/', 1)[-1], data_str, args.era+'-'+args.year, args.flavor, '-'.join([region_to_select, args.selection]))
                     
     in_files = glob.glob(os.path.join(base_path_in, '*'))
     merge(in_files, __file__, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
@@ -298,5 +300,5 @@ else:
         for fr in fakerates.bin_collection:
             ttl = fakerates.getFakeRate(fr).getEfficiency()
 
-            p = Plot(signal_hist = ttl, name = 'ttl_'+fr, year = int(args.year))
+            p = Plot(signal_hist = ttl, name = 'ttl_'+fr, year = args.year, era = args.era)
             p.draw2D(output_dir = output_dir, names = ['ttl_'+fr])

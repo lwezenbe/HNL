@@ -13,7 +13,8 @@ import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
-submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -45,7 +46,7 @@ from HNL.EventSelection.eventCategorization import EventCategory
 # Load in the sample list 
 #
 from HNL.Samples.sampleManager import SampleManager
-sample_manager = SampleManager(args.year, 'noskim', 'ditaumass_'+str(args.year))
+sample_manager = SampleManager(args.era, args.year, 'noskim', 'ditaumass_'+args.era+args.year)
 
 #
 # Loop over samples and events
@@ -104,7 +105,8 @@ if not args.makePlots:
         else:
             event_range = xrange(chain.GetEntries())
 
-        chain.year = int(args.year)
+        chain.year = args.year
+        chain.era = args.era
         
         print sample.name
         #
@@ -184,9 +186,9 @@ if not args.makePlots:
         
         subjobAppendix = '_subJob' + args.subJob if args.subJob else '_0'
         if not args.isTest:
-            output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.year, sample.output)
+            output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0], args.era+'-'+args.year, sample.output)
         else:
-            output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0], args.year, sample.output)
+            output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0], args.era+'-'+args.year, sample.output)
 
         output_name += '/tmp_'+sample.output+ '/'+sample.name+'_'
                 
@@ -202,7 +204,7 @@ else:
     import glob
     
 
-    hist_list = glob.glob(os.getcwd()+'/data/'+__file__.split('.')[0]+'/'+args.year+'/*')
+    hist_list = glob.glob(os.getcwd()+'/data/'+__file__.split('.')[0]+'/'+args.era+'-'+args.year+'/*')
 
     # Merge files if necessary
     merge(hist_list, __file__, jobs, ('sample', 'subJob'), argParser)
@@ -233,7 +235,7 @@ from HNL.Tools.helpers import makePathTimeStamped
 #
 # Set output directory, taking into account the different options
 #
-output_dir = os.path.join(os.getcwd(), 'data', 'Results', __file__.split('.')[0], args.year)
+output_dir = os.path.join(os.getcwd(), 'data', 'Results', __file__.split('.')[0], args.era+'-'+args.year)
 
 output_dir = makePathTimeStamped(output_dir)
 
@@ -242,7 +244,7 @@ output_dir = makePathTimeStamped(output_dir)
 #
 for v in var:
     # Create plot object (if signal and background are displayed, also show the ratio)
-    p = Plot(list_of_hist[v], legend_names[v], v, y_log = False, color_palette='StackTauPOGbyName', year = args.year)
+    p = Plot(list_of_hist[v], legend_names[v], v, y_log = False, color_palette='StackTauPOGbyName', year = args.year, era = args.era)
 
     # Draw
     p.drawHist(output_dir = output_dir, draw_option='Stack')

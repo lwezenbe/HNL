@@ -12,7 +12,8 @@ import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
-submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'], required = True)
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -28,6 +29,7 @@ submission_parser.add_argument('--skimSelection',  action='store',      default=
 submission_parser.add_argument('--region',   action='store', default=None,  help='Choose the selection region', 
     choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
 submission_parser.add_argument('--strategy',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
+submission_parser.add_argument('--reprocess',  action='store_true',      default=False,               help='Reprocess already skimmed files')
 argParser.add_argument('--checkLogs',  action='store_true',      default=False,               help='Check if all files completed successfully')
 
 args = argParser.parse_args()
@@ -45,12 +47,12 @@ if args.isTest:
 #Load in samples
 #
 from HNL.Samples.sampleManager import SampleManager
-file_list = 'fulllist_'+str(args.year)+'_mconly' if args.customList is None else args.customList
+file_list = 'fulllist_'+args.era+args.year+'_mconly' if args.customList is None else args.customList
 gen_name = 'Reco' if not args.genSkim else 'Gen'
-if args.region is None:
-    sample_manager = SampleManager(args.year, 'noskim', file_list, need_skim_samples=True)
+if args.region is None and not args.reprocess:
+    sample_manager = SampleManager(args.era, args.year, 'noskim', file_list, need_skim_samples=True)
 else:
-    sample_manager = SampleManager(args.year, gen_name, file_list, need_skim_samples=False)
+    sample_manager = SampleManager(args.era, args.year, gen_name, file_list, need_skim_samples=False)
 
 #
 # Subjobs
@@ -81,7 +83,7 @@ if not args.checkLogs:
         
         if args.summaryFile:
             gen_name = 'Gen' if args.genSkim else 'Reco'
-            f = open(os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL', args.skimSelection, str(args.year), gen_name, 'summary.txt')), 'w')
+            f = open(os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL', args.skimSelection, args.era+args.year, gen_name, 'summary.txt')), 'w')
             for arg in vars(args):
                 if not getattr(args, arg): continue
                 f.write(arg + '    ' + str(getattr(args, arg)) +  '\n')
@@ -100,8 +102,8 @@ if not args.checkLogs:
     # print sample.list_of_subjobclusters
 
 
-    print 'year'
-    chain.year = int(args.year)
+    chain.year = args.year
+    chain.era = args.era
     chain.is_signal = 'HNL' in sample.name
 
     #
@@ -134,7 +136,7 @@ if not args.checkLogs:
     else:
         output_base = os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL', skim_selection_string)) if not args.isTest else os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'SkimTuples', 'data', 'testArea', skim_selection_string))
     
-    output_name = os.path.join(output_base, str(args.year), gen_name, 'tmp_'+output_file_name, sample.name + '_' + str(args.subJob) + '.root')
+    output_name = os.path.join(output_base, args.era+args.year, gen_name, 'tmp_'+output_file_name, sample.name + '_' + str(args.subJob) + '.root')
 
     makeDirIfNeeded(output_name)
 
@@ -232,7 +234,7 @@ if not args.checkLogs:
                 if len(chain.leptons) < 1:       continue
 
 
-            new_vars.lumiweight = lw.getLumiWeight()
+            new_vars.lumiweight = lw.getLumiWeight(recalculate = args.reprocess)
         else:
             event.initEvent()
             if not event.passedFilter(cutter, sample.output): continue

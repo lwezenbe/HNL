@@ -11,11 +11,11 @@ class Reweighter:
         #lumi weights
         self.lumiweighter = LumiWeight(sample, sample_manager)
 
-        #pu weights
+        # pu weights
         if not sample.is_data:
-            self.puReweighting     = getReweightingFunction(sample.chain.year, 'central')
-            self.puReweightingUp   = getReweightingFunction(sample.chain.year, 'up')
-            self.puReweightingDown = getReweightingFunction(sample.chain.year, 'down')
+            self.puReweighting     = getReweightingFunction(sample.chain.era, sample.chain.year, 'central')
+            self.puReweightingUp   = getReweightingFunction(sample.chain.era, sample.chain.year, 'up')
+            self.puReweightingDown = getReweightingFunction(sample.chain.era, sample.chain.year, 'down')
 
         self.fakerate_collection = None
 
@@ -39,6 +39,7 @@ class Reweighter:
     def getTotalWeight(self, sideband=False):
         tot_weight = 1.
         tot_weight *= self.getLumiWeight()
+        print self.sample.chain._nTrueInt, self.getPUWeight()
         tot_weight *= self.getPUWeight()
         if sideband:
             tot_weight *= self.getFakeRateWeight()

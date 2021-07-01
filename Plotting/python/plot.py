@@ -48,7 +48,7 @@ from HNL.Plotting.style import setDefault, setDefault2D
 class Plot:
     
     def __init__(self, signal_hist = None, tex_names = None, name = None, x_name = None, y_name = None, bkgr_hist = None, observed_hist = None, syst_hist = None, extra_text = None, 
-        x_log = None, y_log = None, draw_ratio = None, draw_significance = False, color_palette = 'Didar', color_palette_bkgr = 'StackTauPOGbyName', year = 2016):
+        x_log = None, y_log = None, draw_ratio = None, draw_significance = False, color_palette = 'Didar', color_palette_bkgr = 'StackTauPOGbyName', year = '2016', era = 'prelegacy'):
 
         self.s = makeList(getHistList(signal_hist)) if signal_hist is not None else []
         try:
@@ -59,7 +59,7 @@ class Plot:
             self.total_s = None
 
         self.name = name if name else self.s[0].GetTitle()
-        # self.year = int(year)
+        self.era = era
         self.year = year
 
         self.b = makeList(getHistList(bkgr_hist)) if bkgr_hist is not None else []
@@ -844,7 +844,7 @@ class Plot:
         ROOT.gPad.Update() 
         self.canvas.Update()
         #CMS lumi
-        cl.CMS_lumi(self.canvas, 4, 11, 'Preliminary', self.year)
+        cl.CMS_lumi(self.canvas, 4, 11, 'Preliminary', self.era+self.year)
 
         #Save everything
         self.savePlot(output_dir +'/'+ self.name, message)
@@ -869,7 +869,7 @@ class Plot:
                 output_name = output_dir +'/'+names[ih] #Not using name here because loop over things with different names
             else:
                 output_name = output_dir +'/'+h.GetName() #Not using name here because loop over things with different names
-            cl.CMS_lumi(self.canvas, 4, 0, 'Preliminary', self.year)
+            cl.CMS_lumi(self.canvas, 4, 0, 'Preliminary', self.era+self.year)
             self.savePlot(output_name, message)
             self.canvas.Clear()
         return
@@ -936,7 +936,7 @@ class Plot:
  
         ROOT.gPad.Update() 
         self.canvas.Update()
-        cl.CMS_lumi(self.canvas, 4, 11, 'Simulation', self.year)
+        cl.CMS_lumi(self.canvas, 4, 11, 'Simulation', self.era+self.year)
 
         #Save everything
         self.savePlot(output_dir +'/'+ self.name, message = None)
@@ -1014,7 +1014,7 @@ class Plot:
         ROOT.gPad.Update() 
         self.canvas.Update()
         #CMS lumi
-        cl.CMS_lumi(self.canvas, 4, 11, 'Preliminary', self.year)
+        cl.CMS_lumi(self.canvas, 4, 11, 'Preliminary', self.era+self.year)
 
         #Save everything
         self.savePlot(output_dir +'/'+ self.name, message)
@@ -1056,7 +1056,7 @@ class Plot:
 
         #Save everything
         self.savePlot(output_dir +'/'+ self.name, message)
-        ROOT.SetOwnership(self.canvas, self.year)
+        ROOT.SetOwnership(self.canvas, self.era+self.year)
         return
 
 
@@ -1151,7 +1151,7 @@ class Plot:
  
         ROOT.gPad.Update() 
         self.canvas.Update()
-        cl.CMS_lumi(self.canvas, 4, 11, 'Simulation', self.year)
+        cl.CMS_lumi(self.canvas, 4, 11, 'Simulation', self.era+self.year)
 
         #Save everything
         self.savePlot(output_dir +'/'+ self.name, message = None)

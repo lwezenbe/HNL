@@ -85,52 +85,52 @@ def isGoodJet(chain, index, cleaned = None, selection = None):
 from HNL.ObjectSelection.bTagWP import getBTagWP, readBTagValue
 def isLooseBJetHNL(chain, index):
     if not isGoodJet(chain, index, cleaned='FO', selection='HNL'): return False
-    if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'loose', 'Deep'): return False
+    if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.era, chain.year, 'loose', 'Deep'): return False
     return True
 
 def isTightBJetHNL(chain, index):
     if not isGoodJet(chain, index, cleaned='FO', selection='HNL'): return False
-    if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'tight', 'Deep'): return False
+    if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.era, chain.year, 'tight', 'Deep'): return False
     return True
 
 def isLooseBJetHNLLowPt(chain, index):
     if not isGoodJet(chain, index, cleaned='FO', selection='HNLLowPt'): return False
-    if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'loose', 'Deep'): return False
+    if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.era, chain.year, 'loose', 'Deep'): return False
     return True
 
 def isTightBJetHNLLowPt(chain, index):
     if not isGoodJet(chain, index, cleaned='FO', selection='HNLowPt'): return False
-    if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'tight', 'Deep'): return False
+    if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.era, chain.year, 'tight', 'Deep'): return False
     return True
 
 def isLooseBJetAN2017014(chain, index):
     if not isGoodJet(chain, index, cleaned=None, selection='AN2017014'): return False
-    if readBTagValue(chain, index, 'AN2017014') < getBTagWP(chain.year, 'loose', 'AN2017014'): return False
+    if readBTagValue(chain, index, 'AN2017014') < getBTagWP(chain.era, chain.year, 'loose', 'AN2017014'): return False
     return True
 
 def isTightBJetAN2017014(chain, index):
     if not isGoodJet(chain, index, cleaned=None, selection='AN2017014'): return False
-    if readBTagValue(chain, index, 'AN2017014') < getBTagWP(chain.year, 'tight', 'AN2017014'): return False
+    if readBTagValue(chain, index, 'AN2017014') < getBTagWP(chain.era, chain.year, 'tight', 'AN2017014'): return False
     return True
 
 def isLooseBJetTTT(chain, index):
     if not isGoodJet(chain, index, cleaned='loose', selection='TTT'): return False
-    if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'loose', 'Deep'): return False
+    if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.era, chain.year, 'loose', 'Deep'): return False
     return True
 
 def isTightBJetTTT(chain, index):
     if not isGoodJet(chain, index, cleaned='loose', selection='TTT'): return False
-    if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'tight', 'Deep'): return False
+    if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.era, chain.year, 'tight', 'Deep'): return False
     return True
 
 def isLooseBJetLuka(chain, index):
     if not isGoodJet(chain, index, cleaned='loose', selection='Luka'): return False
-    if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'loose', 'Deep'): return False
+    if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.era, chain.year, 'loose', 'Deep'): return False
     return True
 
 def isTightBJetLuka(chain, index):
     if not isGoodJet(chain, index, cleaned='loose', selection='Luka'): return False
-    if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.year, 'tight', 'Deep'): return False
+    if readBTagValue(chain, index, 'Deep') < getBTagWP(chain.era, chain.year, 'tight', 'Deep'): return False
     return True
 
 def isLooseBJet(chain, index, selection):

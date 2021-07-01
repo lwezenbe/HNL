@@ -5,9 +5,9 @@
 from TauPOG.TauIDSFs.TauIDSFTool import TauIDSFTool
 from HNL.ObjectSelection.tauSelector import getCorrespondingLightLepDiscr
 
-YEARLIB = {2016 : '2016Legacy',
-            2017: '2017ReReco',
-            2018: '2018ReReco'}
+YEARLIB = {'prelegacy2016' : '2016Legacy',
+            'prelegacy2017': '2017ReReco',
+            'prelegacy2018': '2018ReReco'}
 
 ISOLIB = {'deeptauVSjets' : 'DeepTau2017v2p1VSjet', 'MVA2017v2': 'MVAoldDM2017v2'}
 ELIB = {'deeptauVSe' : 'DeepTau2017v2p1VSe', 'againstElectron': 'antiEleMVA6'}
@@ -25,10 +25,10 @@ WPLIB = {'vvvloose': 'VVVLoose',
 
 class TauSF:
     
-    def __init__(self, year, algorithm, wp_iso, wp_e, wp_mu):
-        self.sftool_iso = TauIDSFTool(YEARLIB[year], ISOLIB[algorithm], WPLIB[wp_iso])
-        self.sftool_e = TauIDSFTool(YEARLIB[year], ELIB[getCorrespondingLightLepDiscr(algorithm)[0]],  WPLIB[wp_e])
-        self.sftool_mu = TauIDSFTool(YEARLIB[year], MULIB[getCorrespondingLightLepDiscr(algorithm)[1]],  WPLIB[wp_mu])
+    def __init__(self, era, year, algorithm, wp_iso, wp_e, wp_mu):
+        self.sftool_iso = TauIDSFTool(YEARLIB[era+year], ISOLIB[algorithm], WPLIB[wp_iso])
+        self.sftool_e = TauIDSFTool(YEARLIB[era+year], ELIB[getCorrespondingLightLepDiscr(algorithm)[0]],  WPLIB[wp_e])
+        self.sftool_mu = TauIDSFTool(YEARLIB[era+year], MULIB[getCorrespondingLightLepDiscr(algorithm)[1]],  WPLIB[wp_mu])
 
     def getSF(self, chain, index):
         if chain._tauGenStatus[index] == 1 or chain._tauGenStatus[index] == 3:

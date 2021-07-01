@@ -7,7 +7,8 @@ import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
-submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018', 'all'])
+submission_parser.add_argument('--year',     action='store',       default=None,   help='Select year. Enter "all" for all years', required=True)
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
 submission_parser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', 
     choices=['baseline', 'lowMassSR', 'highMassSR'])
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
@@ -27,7 +28,7 @@ args = argParser.parse_args()
 ROOT.gROOT.SetBatch(True)
 
 from HNL.TMVA.inputHandler import InputHandler
-ih = InputHandler(args.year, args.region, args.selection)
+ih = InputHandler(args.era, args.year, args.region, args.selection)
 
 ntrees = ['100', '200', '300']
 maxdepth = ['2', '3', '4']
@@ -39,7 +40,7 @@ shrinkage = ['0.1', '0.3', '1']
 # boosttypes=['RealAdaBoost']
 # shrinkage=['0.1']
 
-out_file_name = lambda signal_name : os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'training', args.year, 
+out_file_name = lambda signal_name : os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'training', args.era+args.year, 
                                                             args.region+'-'+args.selection, signal_name, signal_name+'.root'))
 
 
@@ -126,16 +127,16 @@ if args.plots:
     for signal in ih.signal_names:
         print "Plotting..."
         ROOT.gROOT.SetBatch(True)
-        ROOT.TMVA.variables('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal))
-        ROOT.TMVA.correlationscatters('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal))
-        ROOT.TMVA.correlations('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal))
-        ROOT.TMVA.mvas('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal))
-        # ROOT.TMVA.mvas('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal), 1)
-        # ROOT.TMVA.mvas('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal), 2)
-        ROOT.TMVA.mvas('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal), 3)
-        ROOT.TMVA.efficiencies('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal))
-        # ROOT.TMVA.paracoor('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal))
-        # ROOT.TMVA.bdtcontrolplots('data/training/'+str(args.year)+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal))
+        ROOT.TMVA.variables('data/training/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal))
+        ROOT.TMVA.correlationscatters('data/training/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal))
+        ROOT.TMVA.correlations('data/training/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal))
+        ROOT.TMVA.mvas('data/training/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal))
+        # ROOT.TMVA.mvas('data/training/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal), 1)
+        # ROOT.TMVA.mvas('data/training/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal), 2)
+        ROOT.TMVA.mvas('data/training/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal), 3)
+        ROOT.TMVA.efficiencies('data/training/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal))
+        # ROOT.TMVA.paracoor('data/training/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal))
+        # ROOT.TMVA.bdtcontrolplots('data/training/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/'+signal+'/kBDT', out_file_name(signal))
 
         ### open gui
         if args.gui:

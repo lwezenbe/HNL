@@ -106,14 +106,14 @@ def listOfTriggersEwkino(chain):
 
 def passTriggers(chain, analysis = 'HNL'):
     if analysis == 'AN2017014':
-        if chain.year == 2016: return applyCustomTriggers(listOfTriggersAN2017014(chain))
+        if chain.year == '2016': return applyCustomTriggers(listOfTriggersAN2017014(chain))
         else:   return passTriggers(chain, analysis = 'HNL')
     elif analysis == 'ewkino':
         return applyCustomTriggers(listOfTriggersEwkino(chain))
     else:
-        if chain.year == 2016 and any(listOfTriggers2016(chain)): return True
-        elif chain.year == 2017 and any(listOfTriggers2017(chain)): return True
-        elif chain.year == 2018 and any(listOfTriggers2018(chain)): return True
+        if '2016' in chain.year and any(listOfTriggers2016(chain)): return True
+        elif chain.year == '2017' and any(listOfTriggers2017(chain)): return True
+        elif chain.year == '2018' and any(listOfTriggers2018(chain)): return True
     return False
 
 def offlineThresholdsAN2017014(chain):
@@ -210,3 +210,4 @@ def passOfflineThresholds(chain, analysis):
 #     if not passTriggers(chain, analysis): return False
 #     if not passOfflineThresholds(chain, analysis): return False
 #     return True
+

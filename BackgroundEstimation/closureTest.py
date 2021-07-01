@@ -14,7 +14,8 @@ import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--flavorToTest',   action='store', nargs='*', default = None,  help='Select flavor to perform closure test on', choices=['ele', 'mu', 'tau'])
-submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
@@ -89,7 +90,7 @@ if not args.inData:
     sublist = 'fulllist_'+args.year+'_nosignal_mconly'
 else:
     sublist = 'fulllist_'+args.year+'_nosignal'
-sample_manager = SampleManager(args.year, skim_str, sublist)
+sample_manager = SampleManager(args.era, args.year, skim_str, sublist)
 
 this_file_name = __file__.split('.')[0].rsplit('/', 1)[-1]
 
@@ -145,10 +146,10 @@ def getOutputBase():
     flavors_to_test_str = '-'.join(sorted(args.flavorToTest))
 
     if not args.isTest:
-        output_name = os.path.realpath(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', this_file_name, args.year, data_str, flavors_to_test_str))
+        output_name = os.path.realpath(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', this_file_name, args.era+'-'+args.year, data_str, flavors_to_test_str))
     else:
         output_name = os.path.realpath(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'testArea', this_file_name, 
-                                        args.year, data_str, flavors_to_test_str))
+                                        args.era+'-'+args.year, data_str, flavors_to_test_str))
 
     if args.flavorToTest == ['tau']:
         output_name = os.path.join(output_name, args.region, args.application)
@@ -208,7 +209,8 @@ if not args.makePlots:
         event_range = sample.getEventRange(args.subJob)    
 
     chain.HNLmass = sample.getMass()
-    chain.year = int(args.year)
+    chain.year = args.year
+    chain.era = args.era
     chain.selection = args.selection
     chain.region = args.region
 
@@ -231,38 +233,40 @@ if not args.makePlots:
     if 'tau' in args.flavorToTest:
         if not args.inData:
             base_path_tau = lambda proc : os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', 
-                                                                        args.year, data_str, 'tau', 'TauFakes'+proc+'ttl-'+args.selection, proc, 'events.root'))
+                                                                        args.era+'-'+args.year, data_str, 'tau', 'TauFakes'+proc+'ttl-'+args.selection, proc, 'events.root'))
         else:
             base_path_tau = lambda proc : os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', 
-                                                                        args.year, data_str, 'tau', 'TauFakes'+proc+'ttl-'+args.selection, 'events.root'))
+                                                                        args.era+'-'+args.year, data_str, 'tau', 'TauFakes'+proc+'ttl-'+args.selection, 'events.root'))
         if args.application == 'TauFakesDY':
             fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('DY'), subdirs = ['total'])
         elif args.application == 'TauFakesTT':
             fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('TT'), subdirs = ['total'])
         elif args.application == 'WeightedMix':
             fakerate[2] = SingleFlavorFakeRateCollection([base_path_tau('DY'), base_path_tau('TT')], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], 
-                                                            frac_weights = getWeights(args.year, args.selection, args.region), frac_names = ['DY', 'TT'])   
+                                                            frac_weights = getWeights(args.era, args.year, args.selection, args.region), frac_names = ['DY', 'TT'])   
         elif args.application == 'OSSFsplitMix':
                 fakerate[2] = SingleFlavorFakeRateCollection([base_path_tau('DY'), base_path_tau('TT')], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], method = 'OSSFsplitMix',
                                                     ossf_map = {True : 'DY', False : 'TT'})  
     else:
         fakerate[2] = None
     if 'ele' in args.flavorToTest: 
+        mod_year = '2016' if '2016' in args.year else args.year
         if args.inData:
-            fakerate[0] = FakeRateEmulator('fakeRate_electron_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 
-                                            'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.year, 'Lukav2', 'fakeRateMap_data_electron_'+args.year+'_mT.root'))
+            fakerate[0] = FakeRateEmulator('fakeRate_electron_'+mod_year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 
+                                            'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', mod_year, 'Lukav2', 'fakeRateMap_data_electron_'+mod_year+'_mT.root'))
         else:
-            fakerate[0] = FakeRateEmulator('fakeRate_electron_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 
-                                            'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.year, 'Lukav2', 'fakeRateMap_MC_electron_'+args.year+'.root'))
+            fakerate[0] = FakeRateEmulator('fakeRate_electron_'+mod_year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 
+                                            'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', mod_year, 'Lukav2', 'fakeRateMap_MC_electron_'+mod_year+'.root'))
     else:
         fakerate[0] = None
     if 'mu' in args.flavorToTest: 
+        mod_year = '2016' if '2016' in args.year else args.year
         if args.inData:
-            fakerate[1] = FakeRateEmulator('fakeRate_muon_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 
-                                            'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.year, 'Lukav2', 'fakeRateMap_data_muon_'+args.year+'_mT.root'))
+            fakerate[1] = FakeRateEmulator('fakeRate_muon_'+mod_year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 
+                                            'HNL', 'BackgroundEstimation', 'data', 'FakeRates', mod_year, 'Lukav2', 'fakeRateMap_data_muon_'+mod_year+'_mT.root'))
         else:
-            fakerate[1] = FakeRateEmulator('fakeRate_muon_'+args.year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 
-                                            'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.year, 'Lukav2', 'fakeRateMap_MC_muon_'+args.year+'.root'))
+            fakerate[1] = FakeRateEmulator('fakeRate_muon_'+mod_year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 
+                                            'HNL', 'BackgroundEstimation', 'data', 'FakeRates', mod_year, 'Lukav2', 'fakeRateMap_MC_muon_'+mod_year+'.root'))
     else:
         fakerate[1] = None
 
@@ -406,6 +410,6 @@ else:
                         signal_h.Add(closureObjects[sample_name][c][v].getObserved())
 
             p = Plot(name = v, signal_hist = signal_h, bkgr_hist = backgrounds, color_palette='Black', color_palette_bkgr='StackTauPOGbyName', tex_names = ["Observed"]+background_names, 
-                        draw_ratio = True, year = args.year)
+                        draw_ratio = True, year = args.year, era = args.era)
             p.drawHist(output_dir = output_dir+'/Stacked/'+c, draw_option='EP')
     

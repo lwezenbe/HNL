@@ -16,7 +16,8 @@ import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
-submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -67,7 +68,7 @@ else:
 # Load in the sample list 
 #
 from HNL.Samples.sampleManager import SampleManager
-sample_manager = SampleManager(args.year, 'noskim', 'allsignal_'+str(args.year))
+sample_manager = SampleManager(args.era, args.year, 'noskim', 'allsignal_'+str(args.year))
 
 subjobAppendix = 'subJob' + args.subJob if args.subJob is not None else ''
 category_split_str = 'allCategories' if args.divideByCategory is None else 'divideByCategory-'+args.divideByCategory
@@ -88,10 +89,10 @@ from HNL.Tools.helpers import getMassRange
 def getOutputBase(flavor):
     if not args.isTest: 
         output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'EventSelection', 'data', __file__.split('.')[0].rsplit('/')[-1], category_split_str, 
-                        trigger_str, '-'.join([args.strategy, args.region, args.selection]), flavor, args.year)
+                        trigger_str, '-'.join([args.strategy, args.region, args.selection]), flavor, args.era+'-'+args.year)
     else:
         output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'EventSelection', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], 
-                        category_split_str, trigger_str, '-'.join([args.strategy, args.region, args.selection]), flavor, args.year)
+                        category_split_str, trigger_str, '-'.join([args.strategy, args.region, args.selection]), flavor, args.era+'-'+args.year)
     return output_name
 
 #
@@ -190,15 +191,16 @@ if not args.makePlots:
         event_range = sample.getEventRange(args.subJob)    
 
     chain.HNLmass = sample.getMass()
-    chain.year = int(args.year)
+    chain.year = args.year
+    chain.era = args.era
     chain.selection = args.selection
     chain.strategy = args.strategy
 
     #
     # Get luminosity weight
     #
-    from HNL.Weights.lumiweight import LumiWeight
-    lw = LumiWeight(sample, sample_manager)
+    from HNL.Weights.reweighter import Reweighter
+    lw = Reweighter(sample, sample_manager)
 
     #
     # Import and create cutter to provide cut flow
@@ -350,10 +352,10 @@ else:
         if args.isTest:
             output_dir = makePathTimeStamped(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'EventSelection', 'data', 'testArea', 'Results', 
                                             __file__.split('.')[0].rsplit('/')[-1], category_split_str, trigger_str, '-'.join([args.strategy, args.region, args.selection]), 
-                                            args.flavor, cut_str, args.year))
+                                            args.flavor, cut_str, args.era+'-'+args.year))
         else:
             output_dir = makePathTimeStamped(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'EventSelection', 'data', 'Results', __file__.split('.')[0].rsplit('/')[-1], 
-                                            category_split_str, trigger_str, '-'.join([args.strategy, args.region, args.selection]), args.flavor, cut_str, args.year))
+                                            category_split_str, trigger_str, '-'.join([args.strategy, args.region, args.selection]), args.flavor, cut_str, args.era+'-'+args.year))
     
         legend_dict = {
             'noFilter' : 'No Filter',

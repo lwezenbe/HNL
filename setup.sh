@@ -24,6 +24,7 @@ cd TauPOG
 scram b -j10
 
 cd -
+python3 -m pip install git+https://github.com/cms-nanoAOD/correctionlib.git
 git clone https://github.com/lwezenbe/HNL
 cd HNL
 scram b -j 10

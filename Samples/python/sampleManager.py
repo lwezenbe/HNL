@@ -30,11 +30,18 @@ SAMPLE_GROUPS = {
     'QCD':['QCD']
 }
 
+ERA_DICT = {
+    'prelegacy': ['2016', '2017', '2018'],
+    'UL': ['2016pre', '2016post', '2017', '2018']
+}
+
 
 class SampleManager:
 
 
-    def __init__(self, year, skim, sample_names_file, need_skim_samples=False, skim_selection=None, region=None):
+    def __init__(self, era, year, skim, sample_names_file, need_skim_samples=False, skim_selection=None, region=None):
+        if not year in ERA_DICT[era]:
+            raise RuntimeError('year {0} not allowed for era {1}'.format(year, era))
         if not skim in ALLOWED_SKIMS:
             raise RuntimeError("skim "+skim+" not allowed in the sample manager")
         if skim_selection is not None and region is not None and not 'General' in skim:
@@ -42,9 +49,10 @@ class SampleManager:
         if 'General' in skim and (skim_selection is None or region is None):
             raise RuntimeError('Param skim_selection and region should be defined for this skim')
 
+        self.era = era
         self.year = year
         self.skim = skim
-        self.path = os.path.join(BASE_PATH, '_'.join(['sampleList', str(self.year), skim+'.conf']))
+        self.path = os.path.join(BASE_PATH, '_'.join(['sampleList', self.era + self.year, skim+'.conf']))
 
         self.skim_selection = skim_selection
         self.region = region
