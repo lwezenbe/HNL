@@ -52,7 +52,7 @@ gen_name = 'Reco' if not args.genSkim else 'Gen'
 if args.region is None and not args.reprocess:
     sample_manager = SampleManager(args.era, args.year, 'noskim', file_list, need_skim_samples=True)
 else:
-    sample_manager = SampleManager(args.era, args.year, gen_name, file_list, need_skim_samples=False)
+    sample_manager = SampleManager(args.era, args.year, gen_name, file_list, need_skim_samples=True)
 
 #
 # Subjobs
@@ -116,7 +116,7 @@ if not args.checkLogs:
     # Get lumiweight
     #
     from HNL.Weights.lumiweight import LumiWeight
-    lw = LumiWeight(sample, sample_manager)
+    lw = LumiWeight(sample, sample_manager, recalculate = args.reprocess)
 
     #
     # Create new reduced tree (except if it already exists and overwrite option is not used)
@@ -124,7 +124,7 @@ if not args.checkLogs:
     from HNL.Tools.helpers import isValidRootFile, makeDirIfNeeded
     if sample.is_data:
         output_file_name = 'Data'
-    elif chain.is_signal or args.region is not None: 
+    elif chain.is_signal or args.region is not None or args.reprocess: 
         output_file_name = sample.path.split('/')[-1].rsplit('.', 1)[0]
     else:
         output_file_name = sample.path.split('/')[-2]
@@ -186,7 +186,7 @@ if not args.checkLogs:
     #
 
     if args.isTest:
-        max_events = 20000
+        max_events = 20
         event_range = xrange(max_events) if max_events < len(sample.getEventRange(args.subJob)) else sample.getEventRange(args.subJob)  
     else:
         event_range = sample.getEventRange(args.subJob)   
@@ -234,7 +234,7 @@ if not args.checkLogs:
                 if len(chain.leptons) < 1:       continue
 
 
-            new_vars.lumiweight = lw.getLumiWeight(recalculate = args.reprocess)
+            new_vars.lumiweight = lw.getLumiWeight()
         else:
             event.initEvent()
             if not event.passedFilter(cutter, sample.output): continue

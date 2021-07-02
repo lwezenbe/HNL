@@ -13,11 +13,12 @@ LUMINOSITY_MAP = {
 
 class LumiWeight:
 
-    def __init__(self, sample, sample_manager):
+    def __init__(self, sample, sample_manager, recalculate = False):
         self.sample = sample
         self.skimmed = sample_manager.skim != 'noskim'
+        self.recalculate = recalculate
 
-        if not self.skimmed and not self.sample.is_data: 
+        if (not self.skimmed or recalculate) and not self.sample.is_data: 
             self.lumi_cluster = sample_manager.makeLumiClusters()[sample.shavedName()]
             self.total_hcount = 0
 
@@ -27,10 +28,10 @@ class LumiWeight:
         elif self.skimmed:
             self.total_hcount = self.sample.getHist('hCounter')
 
-    def getLumiWeight(self, recalculate = False):
+    def getLumiWeight(self):
         if self.sample.is_data:
             return 1.
-        elif not self.skimmed or recalculate:
+        elif not self.skimmed or self.recalculate:
             #the _weight is needed because otherwise the hcounter might be wrong for the denominator
             self.lumi_weight = self.sample.chain._weight*(self.sample.xsec*LUMINOSITY_MAP[self.sample.chain.era+self.sample.chain.year])/self.total_hcount
             return self.lumi_weight 
