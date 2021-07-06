@@ -138,6 +138,8 @@ def offlineThresholdsAN2017014(chain):
         if chain.l_flavor[l3] == 1 and chain.l_pt[l3] < 9:
             return chain.l_pt[l1] > 23
 
+    return True
+
 def offlineThresholds2016(chain):
     if chain.l_pt[l1] < 15: return False
     if chain.l_pt[l2] < 10: return False
