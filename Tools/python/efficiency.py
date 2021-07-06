@@ -89,7 +89,7 @@ class Efficiency(object):
         
         if self.isTH2:
             bin_to_read = self.getEfficiency().FindBin(var[0], var[1])
-        if self.isTH3:
+        elif self.isTH3:
             bin_to_read = self.getEfficiency().FindBin(var[0], var[1], var[2])
         else:
             bin_to_read = self.getEfficiency().FindBin(var)

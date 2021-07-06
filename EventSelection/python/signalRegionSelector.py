@@ -7,7 +7,7 @@ from HNL.EventSelection.eventFilters import passBaseCuts, passLowMassSelection, 
 
 class SignalRegionSelector(FilterObject):
 
-    def __init__(self, region, chain, new_chain, is_reco_level=True, event_categorization = None, additional_options = None):
+    def __init__(self, region, chain, new_chain, is_reco_level=True, event_categorization = None):
         super(SignalRegionSelector, self).__init__(region, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
 
 
@@ -33,8 +33,12 @@ class SignalRegionSelector(FilterObject):
             raise RuntimeError("Unknown signal region: "+region)
 
     def passedFilter(self, cutter, kwargs):
+        sideband=kwargs.get('sideband', None)
 
-        if not self.initEvent(cutter, sideband=kwargs.get('sideband', None)): return False
+        if self.chain.is_data and sideband is None:
+            raise RuntimeError("Running this would mean unblinding. Dont do this.")
+
+        if not self.initEvent(cutter, sideband=sideband): return False
 
         if not self.is_reco_level:  return True #It has passed the basic selection
 

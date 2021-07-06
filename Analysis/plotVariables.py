@@ -236,6 +236,8 @@ if not args.makePlots and not args.makeDataCards:
         #
         chain.HNLmass = sample.getMass()
         chain.year = int(args.year)
+        chain.region = args.region
+        chain.analysis = args.analysis
 
         #
         # Skip HNL masses that were not defined
@@ -351,7 +353,7 @@ if not args.makePlots and not args.makeDataCards:
         else:
             output_name_full += '/'
                 
-        if len(args.includeData) > 0 and chain.is_data: writename = 'variables-'+args.includeData
+        if len(args.includeData) > 0 and chain.is_data: writename = 'variables-'+args.includeData[0]
         else: writename = 'variables'
 
         for iv, v in enumerate(var.keys()):

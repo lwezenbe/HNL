@@ -25,7 +25,7 @@ submission_parser.add_argument('--noskim', action='store_true', default=False,  
 submission_parser.add_argument('--isCheck', action='store_true', default=False,  help='Check the setup by using the exact same region as the ttl measurement')
 submission_parser.add_argument('--splitInCategories', action='store_true', default=False,  help='Split into different categories')
 submission_parser.add_argument('--inData',   action='store_true', default=False,  help='Run in data')
-submission_parser.add_argument('--subregion', action='store', default=None, type=str,  help='What region was the tau fake rate you want to use measured in?')
+submission_parser.add_argument('--region', action='store', default=None, type=str,  help='What region was the tau fake rate you want to use measured in?')
 submission_parser.add_argument('--application', action='store', default=None, type=str,  help='What region was the tau fake rate you want to use applied for?', 
     choices=['TauFakesDY', 'TauFakesDYnomet', 'TauFakesTT', 'WeightedMix', 'OSSFsplitMix'])
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
@@ -44,8 +44,8 @@ if args.isTest:
     if args.sample is None: args.sample = 'DYJetsToLL-M-50'
     if args.subJob is None: args.subJob = '0'
     if args.year is None: args.year = '2016'
-    if args.subregion is None: args.subregion = 'TauFakesDY'
-    if args.application is None: args.application = args.subregion if args.subregion in ['TauFakesDY', 'TauFakesTT'] else 'TauFakesDY'
+    if args.region is None: args.region = 'TauFakesDY'
+    if args.application is None: args.application = args.region if args.region in ['TauFakesDY', 'TauFakesTT'] else 'TauFakesDY'
     from HNL.Tools.helpers import generateArgString
     arg_string =  generateArgString(argParser)
 else:
@@ -59,7 +59,7 @@ if args.flavorToTest != ['tau']:
         raise RuntimeError("Nothing to check, you are using an imported fakerate")
 
 if args.flavorToTest == ['tau']:
-    if args.subregion is None:
+    if args.region is None:
         raise RuntimeError("Region should be defined for tau fakes")
 
 if args.selection == 'AN2017014':
@@ -151,7 +151,7 @@ def getOutputBase():
                                         args.year, data_str, flavors_to_test_str))
 
     if args.flavorToTest == ['tau']:
-        output_name = os.path.join(output_name, args.subregion, args.application)
+        output_name = os.path.join(output_name, args.region, args.application)
 
     if args.isCheck:
         output_name += '/isCheck'
@@ -210,6 +210,7 @@ if not args.makePlots:
     chain.HNLmass = sample.getMass()
     chain.year = int(args.year)
     chain.selection = args.selection
+    chain.region = args.region
 
     #
     # Get luminosity weight
@@ -220,11 +221,11 @@ if not args.makePlots:
     from HNL.EventSelection.event import ClosureTestEvent
     if args.isCheck:
         if args.flavorToTest == ['tau']:
-            event =  ClosureTestEvent(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.subregion, flavors_of_interest=args.flavorToTest, in_data=args.inData) 
+            event =  ClosureTestEvent(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.region, flavors_of_interest=args.flavorToTest, in_data=args.inData) 
         else:
             raise RuntimeError("Wrong input for flavorToTest with isCheck arg on: "+str(args.flavorToTest))
     else:
-        event =  ClosureTestEvent(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.subregion, flavors_of_interest=args.flavorToTest, in_data=args.inData) 
+        event =  ClosureTestEvent(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.region, flavors_of_interest=args.flavorToTest, in_data=args.inData) 
 
     fakerate = {}
     if 'tau' in args.flavorToTest:
@@ -240,7 +241,7 @@ if not args.makePlots:
             fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('TT'), subdirs = ['total'])
         elif args.application == 'WeightedMix':
             fakerate[2] = SingleFlavorFakeRateCollection([base_path_tau('DY'), base_path_tau('TT')], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], 
-                                                            frac_weights = getWeights(args.year, args.selection, args.subregion), frac_names = ['DY', 'TT'])   
+                                                            frac_weights = getWeights(args.year, args.selection, args.region), frac_names = ['DY', 'TT'])   
         elif args.application == 'OSSFsplitMix':
                 fakerate[2] = SingleFlavorFakeRateCollection([base_path_tau('DY'), base_path_tau('TT')], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], method = 'OSSFsplitMix',
                                                     ossf_map = {True : 'DY', False : 'TT'})  
