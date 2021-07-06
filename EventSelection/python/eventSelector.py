@@ -115,9 +115,11 @@ class EventSelector:
     def passedFilter(self, cutter, sample_name, kwargs={}):
         if not self.removeOverlapDYandZG(sample_name): return False
         if self.name != 'NoSelection':
-            return self.selector.passedFilter(cutter, kwargs)
+            passed = self.selector.passedFilter(cutter, kwargs)
+            if not passed: return False
+
             from HNL.Triggers.triggerSelection import passOfflineThresholds
-            offline_thresholds = kwargs.get('offline_tresholds', True)
-            if offline_tresholds and not cutter.cut(passOfflineThresholds(chain, chain.analysis), "Pass offline thresholds"): return False
+            offline_thresholds = kwargs.get('offline_thresholds', True)
+            if offline_thresholds and not cutter.cut(passOfflineThresholds(self.chain, self.chain.analysis), "Pass offline thresholds"): return False
         else:
             return True

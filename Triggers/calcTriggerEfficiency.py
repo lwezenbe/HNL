@@ -14,7 +14,7 @@ submission_parser.add_argument('--isTest',   action='store_true',       default=
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 submission_parser.add_argument('--dryRun',   action='store_true',       default=False,  help='do not launch subjobs, only show them')
 submission_parser.add_argument('--genLevel',   action='store_true',     default=False,  help='Use gen level variables')
-submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT', ])
+submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the analysis which triggers to use', choices=['AN2017014', 'HNL' ])
 submission_parser.add_argument('--logLevel',  action='store', default='INFO',  help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
@@ -31,7 +31,7 @@ args = argParser.parse_args()
 import numpy as np
 import os
 from HNL.Tools.efficiency import Efficiency
-from HNL.EventSelection.eventCategorization import CATEGORIES
+from HNL.EventSelection.eventCategorization import CATEGORIES_TO_USE as CATEGORIES
 
 #
 # Change some settings if this is a test
@@ -132,7 +132,7 @@ if not args.makePlots:
         from HNL.Tools.jobSubmitter import submitJobs
         print 'submitting'
         for year in jobs.keys():
-            submitJobs(__file__, ('sample', 'subJob'), jobs[year], argParser, jobLabel = 'calcTriggerEff', additionalArgs=[('year', year)])
+            submitJobs(__file__, ('sample', 'subJob'), jobs[year], argParser, jobLabel = 'calcTriggerEff-NEW', additionalArgs=[('year', year)])
         exit(0)
 
     if len(args.year) != 1:
@@ -148,6 +148,7 @@ if not args.makePlots:
     chain = sample.initTree(needhcount = False)
     chain.HNLmass = sample.getMass()
     chain.year = int(year)
+    chain.analysis = args.analysis
 
     #
     # Initialize reweighter
@@ -200,7 +201,7 @@ if not args.makePlots:
         if args.useRef and not cutter.cut(chain._passTrigger_ref, 'passed ref filter'):     continue
 
         event.initEvent()
-        if not event.passedFilter(cutter, sample.output, offline_thresholds = False): continue
+        if not event.passedFilter(cutter, sample.output, offline_thresholds = True): continue
 
         from HNL.Triggers.triggerSelection import passTriggers
         passed = passTriggers(chain, args.analysis)
