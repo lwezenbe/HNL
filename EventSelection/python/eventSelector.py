@@ -48,9 +48,7 @@ class EventSelector:
         self.new_chain = new_chain
         self.is_reco_level = is_reco_level
         if self.name in ['baseline', 'lowMassSR', 'highMassSR']:
-            if chain.is_data and not 'sideband' in additional_options:
-                raise RuntimeError("Running this would mean unblinding. Dont do this.")
-            self.selector = SignalRegionSelector(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options=additional_options)
+            self.selector = SignalRegionSelector(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'trilepton':
             self.selector = GeneralTrileptonFilter(name, chain, new_chain, is_reco_level=is_reco_level)
         elif self.name == 'ZZCR':
@@ -120,6 +118,8 @@ class EventSelector:
 
             from HNL.Triggers.triggerSelection import passOfflineThresholds
             offline_thresholds = kwargs.get('offline_thresholds', True)
-            if offline_thresholds and not cutter.cut(passOfflineThresholds(self.chain, self.chain.analysis), "Pass offline thresholds"): return False
+            if offline_thresholds and not cutter.cut(passOfflineThresholds(self.chain, self.chain.analysis), "Pass offline thresholds"): 
+                return False
+            return True
         else:
             return True
