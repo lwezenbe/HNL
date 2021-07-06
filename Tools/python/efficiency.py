@@ -31,14 +31,18 @@ class Efficiency(object):
             if subdirs is not None:
                 for d in subdirs:
                     obj_name += d+'/'
+            print obj_name+self.name+'_num'
             self.efficiency_num = Histogram(getObjFromFile(self.path, obj_name+self.name+'_num'))
             self.efficiency_denom = Histogram(getObjFromFile(self.path, obj_name+self.name+'_denom'))
      
         self.isTH2 = self.efficiency_num.isTH2
+        self.isTH3 = self.efficiency_num.isTH3
         if self.isTH2 and not self.efficiency_denom.isTH2:  print "Warning: efficiency numerator and denominator have different dimensions"
+        if self.isTH3 and not self.efficiency_denom.isTH3:  print "Warning: efficiency numerator and denominator have different dimensions"
 
     def isVarCorrectSize(self):
-        if self.isTH2: return (isinstance(self.var, (list,)) and len(self.var))
+        if self.isTH2: return (isinstance(self.var, (list,)) and len(self.var) == 2)
+        elif self.isTH3: return (isinstance(self.var, (list,)) and len(self.var) == 3)
         else: return (not isinstance(self.var, (list,)))
 
     def fill(self, chain, weight, passed, index = None):
@@ -52,12 +56,15 @@ class Efficiency(object):
     def getDenominator(self):
         return self.efficiency_denom.getHist().Clone()
 
-    def getEfficiency(self, inPercent = False):
+    def getEfficiency(self, inPercent = False, hist_object=False):
         if self.efficiency is None:
             eff = self.getNumerator().Clone('tmp_'+self.name)
             eff.Divide(eff, self.getDenominator(), 1., 1., "B")
             if inPercent: eff.Scale(100.)
-            self.efficiency = eff.Clone(self.name+'_efficiency')
+            if hist_object:
+                self.efficiency = Histogram(eff.Clone(self.name+'_efficiency'))
+            else:
+                self.efficiency = eff.Clone(self.name+'_efficiency')
         return self.efficiency
 
     def evaluateEfficiency(self, chain, index = None, manual_var_entry = None):
@@ -73,11 +80,17 @@ class Efficiency(object):
         if self.isTH2:
             var[0] = min(max(self.getEfficiency().GetXaxis().GetBinCenter(1), var[0]), self.getEfficiency().GetXaxis().GetBinCenter(self.getEfficiency().GetXaxis().GetLast()))
             var[1] = min(max(self.getEfficiency().GetYaxis().GetBinCenter(1), var[1]), self.getEfficiency().GetYaxis().GetBinCenter(self.getEfficiency().GetYaxis().GetLast()))  
+        elif self.isTH3:
+            var[0] = min(max(self.getEfficiency().GetXaxis().GetBinCenter(1), var[0]), self.getEfficiency().GetXaxis().GetBinCenter(self.getEfficiency().GetXaxis().GetLast()))
+            var[1] = min(max(self.getEfficiency().GetYaxis().GetBinCenter(1), var[1]), self.getEfficiency().GetYaxis().GetBinCenter(self.getEfficiency().GetYaxis().GetLast()))  
+            var[2] = min(max(self.getEfficiency().GetZaxis().GetBinCenter(1), var[2]), self.getEfficiency().GetZaxis().GetBinCenter(self.getEfficiency().GetZaxis().GetLast()))  
         else:
             var = min(max(self.getEfficiency().GetXaxis().GetBinCenter(1), var), self.getEfficiency().GetXaxis().GetBinCenter(self.getEfficiency().GetXaxis().GetLast()))
         
         if self.isTH2:
             bin_to_read = self.getEfficiency().FindBin(var[0], var[1])
+        if self.isTH3:
+            bin_to_read = self.getEfficiency().FindBin(var[0], var[1], var[2])
         else:
             bin_to_read = self.getEfficiency().FindBin(var)
 

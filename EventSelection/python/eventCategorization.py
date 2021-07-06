@@ -72,6 +72,7 @@ CATEGORY_TEX_NAMES = {
 }
 
 CATEGORIES = sorted(CATEGORY_NAMES.keys())
+CATEGORIES_TO_USE = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
                 
 #
 # Super categories are a super collection of categories
@@ -98,8 +99,8 @@ ANALYSIS_CATEGORIES = {
     }
 #TODO: This category is a bit dodgy, because it is used in trigger calc but it is quite fragile. If the categories dont give the same output when given as input to returnCategoryTriggers, weird things will happen in that code
 TRIGGER_CATEGORIES = {
-    'TauTauE': [1, 2], 
-    'TauTauMu': [3, 4], 
+    # 'TauTauE': [1, 2], 
+    # 'TauTauMu': [3, 4], 
     'TauEE': [5, 6], 
     'TauMuMu': [7, 8], 
     'TauEMu':[9, 10], 

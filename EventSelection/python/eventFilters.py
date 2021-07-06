@@ -2,7 +2,7 @@
 #       Selection of filters to drag and drop into selectors         #
 ######################################################################
 
-from HNL.EventSelection.eventSelectionTools import bVeto, massDiff, passesZcuts, passesPtCutsAN2017014, containsOSSF, fourthFOVeto, threeSameSignVeto, nBjets
+from HNL.EventSelection.eventSelectionTools import bVeto, massDiff, passesZcuts, containsOSSF, fourthFOVeto, threeSameSignVeto, nBjets
 from HNL.EventSelection.eventSelectionTools import l1, l2, l3, l4, MZ
 from HNL.Tools.helpers import getFourVec, deltaPhi, deltaR
 
@@ -18,7 +18,6 @@ l4 = 3
 
 # AN 2017-014 base selection
 def baseFilterAN2017(chain, new_chain, cutter):
-    if not cutter.cut(passesPtCutsAN2017014(chain), 'pt_cuts'):         return False 
     if not cutter.cut(not bVeto(chain), 'b-veto'):              return False
     if not cutter.cut(not threeSameSignVeto(chain), 'three_same_sign_veto'):                    return False
     if not cutter.cut(not fourthFOVeto(chain, no_tau=chain.obj_sel['notau']), '4th_l_veto'):   return False

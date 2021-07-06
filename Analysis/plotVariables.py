@@ -25,6 +25,7 @@ submission_parser.add_argument('--genLevel',   action='store_true',     default=
 submission_parser.add_argument('--coupling', action='store', default=0.01, type=float,  help='How large is the coupling?')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT', ])
 submission_parser.add_argument('--strategy',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
+submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino'])
 submission_parser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?')
 submission_parser.add_argument('--includeData',   action='store', default=[], nargs='*',  help='Also run over data', choices=['sideband', 'signalregion'])
 submission_parser.add_argument('--logLevel',  action='store', default='INFO',  help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
@@ -277,8 +278,8 @@ if not args.makePlots and not args.makeDataCards:
             #
             #Triggers
             #
-            if args.selection == 'AN2017014':
-                if not cutter.cut(passTriggers(chain, analysis='HNL_old'), 'pass_triggers'): continue
+            from HNL.Triggers.triggerSelection import passTriggers
+            if not cutter.cut(passTriggers(chain, analysis=args.analysis), 'pass_triggers'): continue
            
             #
             # Event selection
@@ -287,6 +288,9 @@ if not args.makePlots and not args.makeDataCards:
 
             need_sideband = [0, 1, 2] if chain.is_data and 'sideband' in args.includeData else None
             if not event.passedFilter(cutter, sample.output, sideband = need_sideband): continue
+            from HNL.Triggers.triggerSelection import passOfflineThresholds
+            if not cutter.cut(passOfflineThresholds(chain, analysis=args.analysis), 'pass_triggers'): continue
+
             prompt_str = None
             if args.region != 'NoSelection':
                 if len(chain.l_flavor) == chain.l_flavor.count(2): continue #Not all taus

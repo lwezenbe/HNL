@@ -1,5 +1,5 @@
 from HNL.EventSelection.eventSelectionTools import selectLeptonsGeneral, selectGenLeptonsGeneral, calculateEventVariables
-from HNL.EventSelection.eventSelectionTools import bVeto, massDiff, passesZcuts, passesPtCutsAN2017014, containsOSSF, fourthFOVeto, threeSameSignVeto, nBjets
+from HNL.EventSelection.eventSelectionTools import bVeto, massDiff, passesZcuts, containsOSSF, fourthFOVeto, threeSameSignVeto, nBjets
 from HNL.EventSelection.eventSelectionTools import l1, l2, l3, l4, MZ
 from HNL.ObjectSelection.leptonSelector import isGoodLightLepton
 from HNL.Tools.helpers import getFourVec, deltaPhi, deltaR
@@ -7,6 +7,18 @@ from HNL.EventSelection.eventSelectionTools import applyConeCorrection
 from HNL.EventSelection.signalRegionSelector import SignalRegionSelector
 
 from HNL.EventSelection.eventSelector import FilterObject
+
+class GeneralTrileptonFilter(FilterObject):
+    
+    def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None):
+        super(GeneralTrileptonFilter, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
+
+    def initEvent(self, cutter, sideband = None):
+        return super(GeneralTrileptonFilter, self).initEvent(3, cutter, sort_leptons = True, sideband = sideband)
+
+    def passedFilter(self, cutter, kwargs):
+        if not self.initEvent(cutter, sideband=kwargs.get('sideband', None)):           return False
+        return True
 
 class ZZCRfilter(FilterObject):
     
