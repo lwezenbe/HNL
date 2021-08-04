@@ -48,22 +48,22 @@ if __name__ == '__main__':
     from HNL.Tools.logger import getLogger, closeLogger
     log = getLogger('INFO')
 
-    sm = SampleManager(2016, 'noskim', 'fulllist_2016')
+    sm = SampleManager('UL', '2017', 'Reco', 'fulllist_UL2017_mconly')
 
     # s = sm.getSample('ZZTo4L')
-    s = sm.getSample('HNL-tau-m800')
-    # s = sm.getSample('DYJetsToLL-M-50')
+    # s = sm.getSample('HNL-tau-m800')
+    s = sm.getSample('DYJetsToLL-M-50')
 
     chain = s.initTree()
     lw = LumiWeight(s, sm)
     chain.GetEntry(5)
-    chain.year = '2016'
-    chain.era = 'prelegacy'
+    chain.year = '2017'
+    chain.era = 'UL'
     print s.name
     print lw.getLumiWeight() 
     print 'chain._weight: ', chain._weight, 'expected -41444.199'
     print 'xsec ', s.xsec, lw.sample.xsec, 'expected 18610'
-    print 'luminosity ', LUMINOSITY_MAP[chain.year], 'expected 35546.'
+    print 'luminosity ', LUMINOSITY_MAP[chain.era+chain.year], 'expected 35546.'
     print 'hCount ', s.hcount, lw.total_hcount, 'more than 2.05023673303e+12'
 
     closeLogger(log)

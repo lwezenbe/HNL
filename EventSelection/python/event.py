@@ -134,7 +134,6 @@ class ClosureTestEvent(Event):
         try:
             return [self.event_selector.selector.getFakeIndex()]
         except:
-            print [self.new_chain.l_flavor[x] for x in xrange(3)], self.flavors_of_interest
             return [x for x in xrange(3) if self.new_chain.l_flavor[x] in self.translated_flavors_of_interest]
 
     

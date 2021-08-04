@@ -39,7 +39,6 @@ class Reweighter:
     def getTotalWeight(self, sideband=False):
         tot_weight = 1.
         tot_weight *= self.getLumiWeight()
-        print self.sample.chain._nTrueInt, self.getPUWeight()
         tot_weight *= self.getPUWeight()
         if sideband:
             tot_weight *= self.getFakeRateWeight()
@@ -52,13 +51,14 @@ if __name__ == '__main__':
     from HNL.Tools.logger import getLogger, closeLogger
     log = getLogger('INFO')
 
-    sm = SampleManager(2016, 'noskim', 'fulllist_2016')
+    sm = SampleManager('UL', '2017', 'Reco', 'fulllist_UL2017_mconly')
 
     s = sm.getSample('ZZTo4L')
 
     chain = s.initTree()
     chain.GetEntry(5)
-    chain.year = 2016
+    chain.year = '2017'
+    chain.era = 'UL'
     reweighter = Reweighter(s, sm)
 
 

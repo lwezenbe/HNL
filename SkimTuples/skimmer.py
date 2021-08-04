@@ -13,7 +13,7 @@ argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
 submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
-submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -28,6 +28,7 @@ submission_parser.add_argument('--removeOverlap',  action='store_true',      def
 submission_parser.add_argument('--skimSelection',  action='store',      default='default',               help='Selection for the skim.', choices=['top', 'TTT', 'Luka', 'AN2017014', 'LukaFR', 'default'])
 submission_parser.add_argument('--region',   action='store', default=None,  help='Choose the selection region', 
     choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
+submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino'])
 submission_parser.add_argument('--strategy',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
 submission_parser.add_argument('--reprocess',  action='store_true',      default=False,               help='Reprocess already skimmed files')
 argParser.add_argument('--checkLogs',  action='store_true',      default=False,               help='Check if all files completed successfully')
@@ -104,6 +105,7 @@ if not args.checkLogs:
 
     chain.year = args.year
     chain.era = args.era
+    chain.analysis = args.analysis
     chain.is_signal = 'HNL' in sample.name
 
     #
@@ -186,22 +188,22 @@ if not args.checkLogs:
     #
 
     if args.isTest:
-        max_events = 20
+        max_events = 20000
         event_range = xrange(max_events) if max_events < len(sample.getEventRange(args.subJob)) else sample.getEventRange(args.subJob)  
     else:
         event_range = sample.getEventRange(args.subJob)   
         
     #prepare object  and event selection
-    from HNL.ObjectSelection.objectSelection import objectSelectionCollection
+    from HNL.ObjectSelection.objectSelection import objectSelectionCollection, getObjectSelection
     if args.region is None:
         if args.skimSelection == 'Old':
-            chain.obj_sel = objectSelectionCollection('HNL', 'cutbased', 'loose', 'loose', 'loose', True, analysis='HNL')
+            chain.obj_sel = objectSelectionCollection('HNL', 'cutbased', 'loose', 'loose', 'loose', True, analysis=args.analysis)
         elif args.skimSelection in ['Luka', 'LukaFR']:
-            chain.obj_sel = objectSelectionCollection('HNL', 'Luka', 'loose', 'loose', 'loose', False, analysis='HNL')
+            chain.obj_sel = objectSelectionCollection('HNL', 'Luka', 'loose', 'loose', 'loose', False, analysis=args.analysis)
         elif args.skimSelection == 'TTT':
-            chain.obj_sel = objectSelectionCollection('HNL', 'TTT', 'loose', 'loose', 'loose', False, analysis='HNL')
+            chain.obj_sel = objectSelectionCollection('HNL', 'TTT', 'loose', 'loose', 'loose', False, analysis=args.analysis)
         else:
-            chain.obj_sel = objectSelectionCollection('HNL', 'HNL', 'loose', 'loose', 'loose', False, analysis='HNL')
+            chain.obj_sel = objectSelectionCollection('HNL', 'HNL', 'loose', 'loose', 'loose', False, analysis=args.analysis)
 
     from HNL.Tools.helpers import progress
     from HNL.EventSelection.eventSelectionTools import selectLeptonsGeneral, selectGenLeptonsGeneral

@@ -55,8 +55,8 @@ if __name__ == "__main__":
     test_vec = ROOT.TLorentzVector()
     test_vec.SetPtEtaPhiE(1., 1., 1., 1.)
 
-    tes = TauEnergyScale(2016, 'HNL')
-    tes = TauEnergyScale(2017, 'HNL')
-    tes = TauEnergyScale(2018, 'HNL')
+    tes = TauEnergyScale('UL', '2016', 'HNL')
+    tes = TauEnergyScale('UL', '2017', 'HNL')
+    tes = TauEnergyScale('UL', '2018', 'HNL')
 
     closeLogger(log)

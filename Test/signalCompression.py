@@ -16,7 +16,7 @@ submission_parser.add_argument('--subJob',   action='store',      default=None, 
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
-submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 
 argParser.add_argument('--plotSoftTau',   action='store_true', default=False,  help='Extra overlay of softest tau in the process')
 argParser.add_argument('--makePlots',   action='store_true', default=False,  help='Use existing root files to make the plots')

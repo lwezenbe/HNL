@@ -44,6 +44,11 @@ WP_UL = { ('2016pre', 'loose', 'CSV') : 0.2217,
         ('2018', 'medium', 'CSV') : 0.4184,
         ('2018', 'tight', 'CSV') : 0.7527,
 
+        ('2016pre', 'loose', 'AN2017014') : 0.5426,
+        ('2016post', 'loose', 'AN2017014') : 0.5426,
+        ('2017', 'loose', 'AN2017014') : 0.5803,              #This number was copied from ewkino, 2017 was not used in AN2017014
+        ('2018', 'loose', 'AN2017014') : 0.5803,              #This number was copied from ewkino, 2018 was not used in AN2017014
+
         ('2016pre', 'loose', 'Deep') : 0.0614,
         ('2016pre', 'medium', 'Deep') : 0.3093,
         ('2016pre', 'tight', 'Deep') : 0.7221,

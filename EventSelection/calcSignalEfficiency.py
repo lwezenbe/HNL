@@ -27,6 +27,7 @@ submission_parser.add_argument('--selection',   action='store', default='default
 submission_parser.add_argument('--strategy',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
 submission_parser.add_argument('--region', action='store', default='mix', type=str,  help='What region do you want to select for?', 
     choices=['baseline', 'lowMassSR', 'highMassSR', 'mix'])
+submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino'])
 submission_parser.add_argument('--baselineCut',   action='store', default=None,  help='Baseline cut for denominator', choices = ['FObase', 'threeLeptonGenFilter'
     , 'threeLeptonGenFilter7GeV', 'hadronicTauGenFilter', 'tauPlusLightGenFilter', 'threeLeptonGenFilterInverted', 'threeLeptonGenFilter7GeVInverted', 'hadronicTauGenFilterInverted', 
     'tauPlusLightGenFilterInverted'])
@@ -195,6 +196,7 @@ if not args.makePlots:
     chain.era = args.era
     chain.selection = args.selection
     chain.strategy = args.strategy
+    chain.analysis = args.analysis
 
     #
     # Get luminosity weight

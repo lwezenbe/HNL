@@ -86,11 +86,11 @@ def getSampleManager(y):
         skim_str = 'noskim'
     elif args.selection != 'default':
         skim_str = 'noskim'
-    elif args.region in ['highMassSR', 'lowMassSR']:
-        skim_str = 'RecoGeneral'
+    # elif args.region in ['highMassSR', 'lowMassSR']:
+    #     skim_str = 'RecoGeneral'
     else:
         skim_str = 'Reco'
-    file_list = 'fulllist_'+str(y) if args.customList is None else args.customList
+    file_list = 'fulllist_'+args.era+str(y) if args.customList is None else args.customList
 
     if skim_str == 'RecoGeneral':
         sm = SampleManager(args.era, y, skim_str, file_list, skim_selection=args.selection, region=args.region)

@@ -15,7 +15,7 @@ argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--flavorToTest',   action='store', nargs='*', default = None,  help='Select flavor to perform closure test on', choices=['ele', 'mu', 'tau'])
 submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
-submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
@@ -27,6 +27,7 @@ submission_parser.add_argument('--isCheck', action='store_true', default=False, 
 submission_parser.add_argument('--splitInCategories', action='store_true', default=False,  help='Split into different categories')
 submission_parser.add_argument('--inData',   action='store_true', default=False,  help='Run in data')
 submission_parser.add_argument('--region', action='store', default=None, type=str,  help='What region was the tau fake rate you want to use measured in?')
+submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino'])
 submission_parser.add_argument('--application', action='store', default=None, type=str,  help='What region was the tau fake rate you want to use applied for?', 
     choices=['TauFakesDY', 'TauFakesDYnomet', 'TauFakesTT', 'WeightedMix', 'OSSFsplitMix'])
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
@@ -87,9 +88,9 @@ else:
 
 if not args.inData:
     # sublist = 'BackgroundEstimation/ClosureTests'
-    sublist = 'fulllist_'+args.year+'_nosignal_mconly'
+    sublist = 'fulllist_'+args.era+args.year+'_nosignal_mconly'
 else:
-    sublist = 'fulllist_'+args.year+'_nosignal'
+    sublist = 'fulllist_'+args.era+args.year+'_nosignal'
 sample_manager = SampleManager(args.era, args.year, skim_str, sublist)
 
 this_file_name = __file__.split('.')[0].rsplit('/', 1)[-1]
@@ -213,6 +214,7 @@ if not args.makePlots:
     chain.era = args.era
     chain.selection = args.selection
     chain.region = args.region
+    chain.analysis = args.analysis
 
     #
     # Get luminosity weight
@@ -253,20 +255,20 @@ if not args.makePlots:
         mod_year = '2016' if '2016' in args.year else args.year
         if args.inData:
             fakerate[0] = FakeRateEmulator('fakeRate_electron_'+mod_year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 
-                                            'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', mod_year, 'Lukav2', 'fakeRateMap_data_electron_'+mod_year+'_mT.root'))
+                                            'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'Lukav2', 'fakeRateMap_data_electron_'+mod_year+'_mT.root'))
         else:
             fakerate[0] = FakeRateEmulator('fakeRate_electron_'+mod_year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 
-                                            'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', mod_year, 'Lukav2', 'fakeRateMap_MC_electron_'+mod_year+'.root'))
+                                            'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'Lukav2', 'fakeRateMap_MC_electron_'+mod_year+'.root'))
     else:
         fakerate[0] = None
     if 'mu' in args.flavorToTest: 
         mod_year = '2016' if '2016' in args.year else args.year
         if args.inData:
             fakerate[1] = FakeRateEmulator('fakeRate_muon_'+mod_year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 
-                                            'HNL', 'BackgroundEstimation', 'data', 'FakeRates', mod_year, 'Lukav2', 'fakeRateMap_data_muon_'+mod_year+'_mT.root'))
+                                            'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'Lukav2', 'fakeRateMap_data_muon_'+mod_year+'_mT.root'))
         else:
             fakerate[1] = FakeRateEmulator('fakeRate_muon_'+mod_year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 
-                                            'HNL', 'BackgroundEstimation', 'data', 'FakeRates', mod_year, 'Lukav2', 'fakeRateMap_MC_muon_'+mod_year+'.root'))
+                                            'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'Lukav2', 'fakeRateMap_MC_muon_'+mod_year+'.root'))
     else:
         fakerate[1] = None
 

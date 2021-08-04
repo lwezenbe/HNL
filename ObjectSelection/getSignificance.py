@@ -13,7 +13,8 @@ import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
-submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -36,7 +37,8 @@ log = getLogger(args.logLevel)
 #
 if args.isTest:
     args.isChild = True
-    if args.sample is None: args.sample = 'HNL-tau-m60'
+    # if args.sample is None: args.sample = 'HNL-tau-m60'
+    if args.sample is None: args.sample = 'DYJetsToLL-M-50'
     if args.subJob is None: args.subJob = '0'
     if args.year is None: args.year = '2016'
 
@@ -46,7 +48,7 @@ if args.isTest:
 # Make sure all algo keys and WP have a corresponding entry in HNL.ObjectSelection.tauSelector
 #
 algos = {'MVA2017v2': ['vloose', 'loose', 'medium', 'tight', 'vtight'],
-                'MVA2017v2New': ['vloose', 'loose', 'medium', 'tight', 'vtight'],
+                # 'MVA2017v2New': ['vloose', 'loose', 'medium', 'tight', 'vtight'],
                 'deeptauVSjets': ['vvvloose', 'vvloose', 'vloose', 'loose', 'medium', 'tight', 'vtight', 'vvtight']
                 }
 
@@ -54,7 +56,7 @@ def getEleWPs(iso_algo):
     if 'deeptau' in iso_algo:
         return ['vvvloose', 'vvloose', 'vloose', 'loose', 'medium', 'tight', 'vtight', 'vvtight']
     else:
-        return ['loose', 'tight']
+        return ['tight']
 
 def getMuWPs(iso_algo):
     if 'deeptau' in iso_algo:
@@ -66,7 +68,7 @@ def getMuWPs(iso_algo):
 # Load in the sample list 
 #
 from HNL.Samples.sampleManager import SampleManager
-sample_manager = SampleManager(args.year, 'noskim', 'ObjectSelection/compareTauIdList_'+str(args.year))
+sample_manager = SampleManager(args.era, args.year, 'noskim', 'ObjectSelection/compareTauIdList_'+args.era+str(args.year))
 
 from HNL.Tools.helpers import getFourVec
 
@@ -92,7 +94,8 @@ if args.processExistingFiles is None:
     #
     sample = sample_manager.getSample(args.sample)
     chain = sample.initTree()
-    chain.year = int(args.year)
+    chain.year = args.year
+    chain.era = args.era
     isBkgr = not 'HNL' in sample.name
 
     #
@@ -169,7 +172,7 @@ if args.processExistingFiles is None:
             if not isCleanFromLightLeptons(chain, index):       continue
             if chain._tauDecayMode[index] == 5 or chain._tauDecayMode[index] == 6: continue
             for algo in algos.keys():
-                if tau_DMfinding[algo](chain)[index]:   base_tau_indices_per_algo[algo].append(index)
+                if tau_DMfinding[chain.era][algo](chain)[index]:   base_tau_indices_per_algo[algo].append(index)
 
         for algo in algos.keys():
             for iso_wp in algos[algo]:
@@ -177,7 +180,7 @@ if args.processExistingFiles is None:
                     for mu_wp in getMuWPs(algo):
                         tau_indices = []
                         for t in base_tau_indices_per_algo[algo]:
-                            if not tau_id_WP[(algo, iso_wp)](chain)[t]:             continue
+                            if not tau_id_WP[chain.era][(algo, iso_wp)](chain)[t]:             continue
                             if not passedElectronDiscr(chain, t, algo, ele_wp):     continue
                             if not passedMuonDiscr(chain, t, algo, mu_wp):          continue
                             tau_indices.append(t)
@@ -198,9 +201,9 @@ if args.processExistingFiles is None:
     subjobAppendix = '_subJob' + args.subJob if args.subJob else ''
     signalOrBkgr = 'Signal' if 'HNL' in sample.name else 'Background'
     if args.isTest:
-        output_name = os.path.join(os.getcwd(), 'data', 'testArea',  __file__.split('.')[0].rsplit('/')[-1], args.year, signalOrBkgr, sample.output)
+        output_name = os.path.join(os.getcwd(), 'data', 'testArea',  __file__.split('.')[0].rsplit('/')[-1], args.era+args.year, signalOrBkgr, sample.output)
     else:
-        output_name = os.path.join(os.getcwd(), 'data',  __file__.split('.')[0].rsplit('/')[-1], args.year, signalOrBkgr, sample.output)
+        output_name = os.path.join(os.getcwd(), 'data',  __file__.split('.')[0].rsplit('/')[-1], args.era+args.year, signalOrBkgr, sample.output)
     if args.isChild:
         output_name += '/tmp_'+sample.output
     output_name += '/'+ sample.name +'_events' +subjobAppendix+ '.root'
@@ -223,7 +226,7 @@ else:
     from HNL.Tools.mergeFiles import merge
     from HNL.ObjectSelection.tauSelector import getCorrespondingLightLepDiscr
     import glob
-    list_to_merge =   [f for f in glob.glob(os.path.join(os.getcwd(), 'data',  __file__.split('.')[0].rsplit('/')[-1], args.year, '*', '*'))  if not 'TextResults' in f]
+    list_to_merge =   [f for f in glob.glob(os.path.join(os.getcwd(), 'data',  __file__.split('.')[0].rsplit('/')[-1], args.era+args.year, '*', '*'))  if not 'TextResults' in f]
     merge(list_to_merge, __file__, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
 
     def sortkey(c):
@@ -231,8 +234,8 @@ else:
         # return int(mass_dir.split('-M')[-1])
         return int(mass_dir.split('-m')[-1])
 
-    list_of_input = {'Signal': sorted(glob.glob(os.path.join(os.getcwd(), 'data',  __file__.split('.')[0].rsplit('/')[-1], args.year, 'Signal', '*', 'events.root')), key=sortkey),
-                    'Background': glob.glob(os.path.join(os.getcwd(), 'data',  __file__.split('.')[0].rsplit('/')[-1], args.year, 'Background', '*', 'events.root'))
+    list_of_input = {'Signal': sorted(glob.glob(os.path.join(os.getcwd(), 'data',  __file__.split('.')[0].rsplit('/')[-1], args.era+args.year, 'Signal', '*', 'events.root')), key=sortkey),
+                    'Background': glob.glob(os.path.join(os.getcwd(), 'data',  __file__.split('.')[0].rsplit('/')[-1], args.era+args.year, 'Background', '*', 'events.root'))
     }
 
     from HNL.Tools.helpers import getObjFromFile, makeDirIfNeeded
@@ -293,7 +296,7 @@ else:
         for channel in ['Ditau', 'SingleTau']:
             for algo in algos.keys():
                 mass_str = '-'.join([str(m) for m in args.masses])
-                out_name_tex = os.path.join(os.getcwd(), 'data', 'Results',  __file__.split('.')[0].rsplit('/')[-1], args.year, 'TextResults', 'tex', mass_str,  channel+'_'+algo+'.txt')
+                out_name_tex = os.path.join(os.getcwd(), 'data', 'Results',  __file__.split('.')[0].rsplit('/')[-1], args.era+args.year, 'TextResults', 'tex', mass_str,  channel+'_'+algo+'.txt')
                 makeDirIfNeeded(out_name_tex)
                 out_file_tex = open(out_name_tex, 'w')
                 out_file_tex.write('\\begin{table}[] \n')
@@ -384,7 +387,7 @@ else:
 
                     p = Plot(list_of_hist[channel][algo][ele_wp]['Signal'], tex_names, name = '_'.join([channel, algo, ele_wp]), bkgr_hist = list_of_hist[channel][algo][ele_wp]['Background'], 
                         y_log = True, draw_significance = True, extra_text = extra_text)   
-                    out_dir = os.path.join(os.getcwd(), 'data', 'Results',  __file__.split('.')[0].rsplit('/')[-1], args.year, 'Plots') 
+                    out_dir = os.path.join(os.getcwd(), 'data', 'Results',  __file__.split('.')[0].rsplit('/')[-1], args.era+args.year, 'Plots') 
                     if args.masses: out_dir = os.path.join(out_dir, '-'.join([str(m) for m in args.masses]))
                     p.drawHist(output_dir = out_dir, custom_labels = custom_labels, draw_lines = lines_to_draw)                
 

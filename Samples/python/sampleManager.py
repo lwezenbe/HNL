@@ -125,6 +125,7 @@ class SampleManager:
         sample_infos = [line.split('%')[0].strip() for line in open(self.path)]                     # Strip % comments and \n charachters
         sample_infos = [line.split() for line in sample_infos if line]                              # Get lines into tuples
         for name, path, output, split_jobs, xsec in sample_infos:
+            if name not in self.sample_names: continue
             try:
                 split_jobs
             except:

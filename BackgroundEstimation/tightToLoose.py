@@ -21,6 +21,7 @@ submission_parser.add_argument('--inData',   action='store_true', default=False,
 submission_parser.add_argument('--batchSystem',   action='store', default='HTCondor',  help='help')
 submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 submission_parser.add_argument('--noskim', action='store_true', default=False,  help='measure in data')
+submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino'])
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--tauRegion', action='store', type=str, default = None, help='What region do you want to select for?', 
     choices=['TauFakesDYttl', 'TauFakesTTttl', 'TauFakesDYttlnomet'])
@@ -41,10 +42,14 @@ if args.isTest:
     if args.flavor is None: args.flavor = 'tau'
     if args.flavor == 'tau' and args.tauRegion is None: args.tauRegion = 'TauFakesDYttl'
     if args.sample is None: 
-        if args.inData: args.sample = 'Data-'+args.year
-        elif args.flavor == 'e': args.sample = 'QCDEMEnriched-80to120'
-        elif args.flavor == 'mu': args.sample = 'QCDmuEnriched-80to120'
-        else:   args.sample = 'DYJetsToLL-M-50'
+        if args.era != 'UL':
+            if args.inData: args.sample = 'Data-'+args.year
+            elif args.flavor == 'e': args.sample = 'QCDEMEnriched-80to120'
+            elif args.flavor == 'mu': args.sample = 'QCDmuEnriched-80to120'
+            else:   args.sample = 'DYJetsToLL-M-50'
+        else:
+            if args.inData: args.sample = 'Data-'+args.year
+            else:   args.sample = 'DYJetsToLL-M-50'
     from HNL.Tools.helpers import generateArgString
     arg_string =  generateArgString(argParser)
 else:
@@ -118,9 +123,9 @@ subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
 data_str = 'DATA' if args.inData else 'MC'
 def getOutputBase(region):
     if not args.isTest:
-        output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0].rsplit('/', 1)[-1], args.era+'-'+args.year, data_str, args.flavor, '-'.join([region, args.selection]))
+        output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', __file__.split('.')[0].rsplit('/', 1)[-1], args.era+'-'+args.year, data_str, args.flavor, '-'.join([region, args.selection]))
     else:
-        output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0].rsplit('/', 1)[-1], args.era+'-'+args.year, data_str, args.flavor, '-'.join([region, args.selection]))
+        output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'testArea', __file__.split('.')[0].rsplit('/', 1)[-1], args.era+'-'+args.year, data_str, args.flavor, '-'.join([region, args.selection]))
     return output_name
 
 def getOutputName(region):
@@ -154,6 +159,7 @@ if not args.makePlots:
     chain.HNLmass = sample.getMass()
     chain.year = args.year
     chain.era = args.era
+    chain.analysis = args.analysis
 
     #
     # Initialize reweighter
@@ -234,9 +240,9 @@ if not args.makePlots:
 
         #Event selection
         if args.flavor == 'e':
-            if not event.passedFilter(cutter, sample.output, only_electrons = True, require_jets = True): continue
+            if not event.passedFilter(cutter, sample.output, only_electrons = True, require_jets = True, offline_thresholds=False): continue
         elif args.flavor == 'mu':
-            if not event.passedFilter(cutter, sample.output, only_muons = True, require_jets = True): continue
+            if not event.passedFilter(cutter, sample.output, only_muons = True, require_jets = True, offline_thresholds=False): continue
         else:
             if not event.passedFilter(cutter, sample.output): continue
         fake_index = event.event_selector.selector.getFakeIndex()

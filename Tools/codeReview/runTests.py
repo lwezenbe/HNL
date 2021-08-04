@@ -86,7 +86,7 @@ from HNL.Tools.logger import successfullJob
 # Run exhaustive mode
 #
 if args.allCombinations:
-    input_file = 'data/input/codeToTest.conf'
+    input_file = 'data/input/codeToTest_UL.conf'
     code_to_test = [line.split('#')[0].strip() for line in open(input_file)]
     code_to_test = [l.split('%') for l in code_to_test if l]
 
@@ -106,6 +106,7 @@ if args.allCombinations:
         for comb in combinations:
             out_name = str(job_number)+'.txt'
             log_name = os.path.join(out_name_base, out_name)
+            if args.batchSystem == 'HTCondor' and not args.rerun: log_name += '.err'
             if args.checkLogs and not successfullJob(log_name): 
                 if not args.rerun:
                     failed_jobs.append([log_name, comb])
@@ -119,7 +120,7 @@ if args.allCombinations:
             for l in failed_jobs:
                 print '\033[93m', "FAILED JOB:", '\033[0m'
                 print "LOG:", l[0]
-                print "JOB:", l[1]
+                print "JOB: python", l[1]
         else:
             print "All jobs completed successfully!"
     print job_number

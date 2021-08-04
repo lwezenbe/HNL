@@ -4,7 +4,7 @@
 import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--year',     action='store',      default=None,   help='Select year')
-argParser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
+argParser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 argParser.add_argument('--isTest',     action='store_true',      default=False,   help='Is this a test?')
 argParser.add_argument('--flavor', action='store', default=None,  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
 args = argParser.parse_args()

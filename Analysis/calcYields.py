@@ -30,6 +30,7 @@ submission_parser.add_argument('--coupling', type = float, action='store', defau
 submission_parser.add_argument('--noskim', action='store_true', default=False,  help='Use no skim sample list')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
+submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino'])
 submission_parser.add_argument('--region',   action='store', default='baseline',  help='Choose the selection region')
 submission_parser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data samples')
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
@@ -85,8 +86,8 @@ from HNL.Samples.sampleManager import SampleManager
 def getSampleManager(y):
     if args.noskim or args.selection != 'default':
         skim_str = 'noskim'
-    elif args.region in ['highMassSR', 'lowMassSR']:
-        skim_str = 'RecoGeneral'
+    # elif args.region in ['highMassSR', 'lowMassSR']:
+    #     skim_str = 'RecoGeneral'
     else:
         skim_str = 'Reco'
     file_list = 'fulllist_'+args.era+str(y)+'_mconly' if args.customList is None else args.customList
@@ -214,7 +215,9 @@ if not args.makePlots and args.makeDataCards is None:
         chain.year = year
         chain.era = args.era
         chain.selection = args.selection
+        chain.region = args.region
         chain.strategy = args.strategy
+        chain.analysis = args.analysis
 
         #
         # Get luminosity weight
