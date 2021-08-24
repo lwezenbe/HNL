@@ -279,7 +279,7 @@ else:
 for entry in event_range:
 
     chain.GetEntry(entry)
-    progress(entry - event_range[0], len(event_range))
+    if args.isTest: progress(entry - event_range[0], len(event_range))
 
     #
     # If reco efficiency should be included, we start from genuine generator level taus and match

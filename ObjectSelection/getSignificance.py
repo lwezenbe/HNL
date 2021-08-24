@@ -148,7 +148,7 @@ if args.processExistingFiles is None:
 
     for entry in event_range:
         chain.GetEntry(entry)
-        progress(entry - event_range[0], len(event_range))
+        if args.isTest: progress(entry - event_range[0], len(event_range))
 
         lepton_indices = []
         for l in xrange(chain._nLight):

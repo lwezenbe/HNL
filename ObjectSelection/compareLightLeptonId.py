@@ -160,7 +160,7 @@ def matchGenToReco(in_chain, l):
 for entry in event_range:
 
     chain.GetEntry(entry)
-    progress(entry - event_range[0], len(event_range))
+    if args.isTest: progress(entry - event_range[0], len(event_range))
 
     #Loop over generator level taus if reco and id are measured
     if args.includeReco:

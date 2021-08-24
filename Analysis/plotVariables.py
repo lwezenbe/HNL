@@ -277,7 +277,7 @@ if not args.makePlots and not args.makeDataCards:
         for entry in event_range:
             
             chain.GetEntry(entry)
-            progress(entry - event_range[0], len(event_range))
+            if args.isTest: progress(entry - event_range[0], len(event_range))
  
             cutter.cut(True, 'Total')
 

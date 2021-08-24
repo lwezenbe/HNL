@@ -199,7 +199,7 @@ if not args.makePlots:
     from HNL.EventSelection.eventSelectionTools import select3Leptons
     for entry in event_range:
         chain.GetEntry(entry)
-        progress(entry - event_range[0], len(event_range))
+        if args.isTest: progress(entry - event_range[0], len(event_range))
 
         cutter.cut(True, 'total')
         if args.useRef and not cutter.cut(chain._passTrigger_ref, 'passed ref filter'):     continue

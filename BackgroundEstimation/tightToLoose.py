@@ -223,7 +223,7 @@ if not args.makePlots:
     for entry in event_range:
 
         chain.GetEntry(entry)
-        # progress(entry - event_range[0], len(event_range))
+        if args.isTest: progress(entry - event_range[0], len(event_range))
 
         cutter.cut(True, 'total')
         
@@ -248,8 +248,6 @@ if not args.makePlots:
             if not event.passedFilter(cutter, sample.output): continue
         fake_index = event.event_selector.selector.getFakeIndex()
         
-        print entry, 'passed'
-
         if args.inData and not chain.is_data:
             if not chain._lIsPrompt[chain.l_indices[fake_index]]: continue
             passed = True #Always fill both denom and enum for this case (subtraction of prompt contribution)
