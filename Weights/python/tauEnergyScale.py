@@ -9,7 +9,8 @@ YEARLIB = {'prelegacy2016' : '2016Legacy',
             'prelegacy2017': '2017ReReco',
             'prelegacy2018': '2018ReReco',
             
-            'UL2016' : '2016Legacy',
+            'UL2016pre' : '2016Legacy',
+            'UL2016post' : '2016Legacy',
             'UL2017': '2017ReReco',
             'UL2018': '2018ReReco'}
 
@@ -55,7 +56,8 @@ if __name__ == "__main__":
     test_vec = ROOT.TLorentzVector()
     test_vec.SetPtEtaPhiE(1., 1., 1., 1.)
 
-    tes = TauEnergyScale('UL', '2016', 'HNL')
+    tes = TauEnergyScale('UL', '2016pre', 'HNL')
+    tes = TauEnergyScale('UL', '2016post', 'HNL')
     tes = TauEnergyScale('UL', '2017', 'HNL')
     tes = TauEnergyScale('UL', '2018', 'HNL')
 

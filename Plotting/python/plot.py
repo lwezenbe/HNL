@@ -148,9 +148,9 @@ class Plot:
 
         if is2D:
             if self.x_log:
-                self.plotpad.SetLogx()  
+                self.canvas.SetLogx()  
             if self.y_log:
-                self.plotpad.SetLogy()      
+                self.canvas.SetLogy()      
         else:      
 
             #

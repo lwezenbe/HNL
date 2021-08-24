@@ -48,7 +48,8 @@ if args.isTest:
 #Load in samples
 #
 from HNL.Samples.sampleManager import SampleManager
-file_list = 'fulllist_'+args.era+args.year+'_mconly' if args.customList is None else args.customList
+# file_list = 'fulllist_'+args.era+args.year+'_mconly' if args.customList is None else args.customList
+file_list = 'Skimmer/skimlist_{0}{1}'.format(args.era, args.year)
 gen_name = 'Reco' if not args.genSkim else 'Gen'
 if args.region is None and not args.reprocess:
     sample_manager = SampleManager(args.era, args.year, 'noskim', file_list, need_skim_samples=True)
@@ -58,6 +59,7 @@ else:
 #
 # Subjobs
 #
+tot_jobs = 0
 if not args.isTest:
     jobs = []
     for sample_name in sample_manager.sample_names:
@@ -68,6 +70,7 @@ if not args.isTest:
             continue
         for njob in xrange(sample.returnSplitJobs()):
             jobs += [(sample.name, str(njob))]
+        tot_jobs += sample.returnSplitJobs()
 
 if not args.checkLogs:
     from HNL.Tools.logger import getLogger, closeLogger
@@ -126,7 +129,7 @@ if not args.checkLogs:
     from HNL.Tools.helpers import isValidRootFile, makeDirIfNeeded
     if sample.is_data:
         output_file_name = 'Data'
-    elif chain.is_signal or args.region is not None or args.reprocess: 
+    elif args.region is not None or args.reprocess: 
         output_file_name = sample.path.split('/')[-1].rsplit('.', 1)[0]
     else:
         output_file_name = sample.path.split('/')[-2]
@@ -216,7 +219,7 @@ if not args.checkLogs:
 
     for entry in event_range:
         chain.GetEntry(entry)
-        progress(entry - event_range[0], len(event_range))
+        if args.isTest: progress(entry - event_range[0], len(event_range))
     
         cutter.cut(True, 'Total')
 

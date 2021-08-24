@@ -142,8 +142,8 @@ class SkimSample(Sample):
 
     def __init__(self, name, path, output, split_jobs, xsec, max_filesize = 1200):  
         super(SkimSample, self).__init__(name, path, output, split_jobs, xsec, max_filesize)
-        self.list_of_subjobclusters = self.createSubjobClusters()
-        self.split_jobs = len(self.list_of_subjobclusters)
+        self.list_of_subjobclusters     = self.createSubjobClusters()
+        self.split_jobs                 = len(self.list_of_subjobclusters)
 
     def createSubjobClusters(self):
         list_of_subjobclusters = []
@@ -160,6 +160,8 @@ class SkimSample(Sample):
                 if len(tmp_arr) > 0: list_of_subjobclusters.append([x for x in tmp_arr])
                 tmp_arr = [f]
                 tot_size = file_size
+            
+        #Append last array to list of subjob cluster
         if len(tmp_arr) > 0:
             list_of_subjobclusters.append([x for x in tmp_arr])
         return list_of_subjobclusters

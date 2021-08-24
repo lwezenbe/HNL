@@ -41,7 +41,7 @@ def compareHist(path, name, withinerrors=False):
             return "Different number of bins"
 
         for xb in xrange(1, x_bins+1):
-            if withinerrors:
+            if not withinerrors:
                 if hist_prev.getHist().GetBinContent(xb) != hist_latest.getHist().GetBinContent(xb):
                     we = compareHist(path, name, withinerrors=True)
                     if we is None:

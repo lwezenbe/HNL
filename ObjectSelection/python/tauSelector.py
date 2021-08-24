@@ -391,3 +391,30 @@ def matchGenToReco(chain, l):
 #
 def tauConeCorrection(chain, index, algo = None):
     return 1.
+
+#
+# Function to obtain the algorithmic working points used for a specific type of selection
+#
+def getTauAlgoWP(chain, selection = None, general_wp = None):
+    general_wp = checkTauWP(chain, general_wp)
+    selection = checkTauAlgorithm(chain, selection)
+
+
+    print general_wp
+    if selection == 'HNL':
+        if general_wp in ['loose', 'FO']:
+            return 'deeptauVSjets', ('vvvloose', 'loose', 'loose')
+        elif general_wp == 'tight':
+            return 'deeptauVSjets', ('medium', 'loose', 'loose')
+        else:
+            return None
+    elif selection == 'ewkino':
+        if general_wp in ['loose', 'FO']:
+            return 'MVA2017v2', ('loose', 'loose', 'loose')
+        elif general_wp == 'tight':
+            return 'MVA2017v2', ('tight', 'loose', 'loose')
+        else:
+            return None  
+    else:
+        raise RuntimeError("Unknown tau selection")      
+

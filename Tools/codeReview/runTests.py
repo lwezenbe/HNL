@@ -104,14 +104,15 @@ if args.allCombinations:
         makeDirIfNeeded(out_name_base+'/x')
         combinations = createCommandList(code)
         for comb in combinations:
-            out_name = str(job_number)+'.txt'
+            out_name = str(job_number)
             log_name = os.path.join(out_name_base, out_name)
-            if args.batchSystem == 'HTCondor' and not args.rerun: log_name += '.err'
+            if args.batchSystem == 'Cream02': log_name += '.txt'
+            elif args.batchSystem == 'HTCondor' and args.checkLogs: log_name += '.err'
             if args.checkLogs and not successfullJob(log_name): 
                 if not args.rerun:
                     failed_jobs.append([log_name, comb])
                 else:
-                    submitJob(os.path.join(base_path, comb), log_name, i=job_number, jobLabel='test')
+                    submitJob(os.path.join(base_path, comb), log_name.split('.err')[0], i=job_number, jobLabel='test')
             if not args.checkLogs: submitJob(os.path.join(base_path, comb), log_name, i=job_number, jobLabel='test')
             job_number += 1
     if args.checkLogs:

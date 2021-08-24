@@ -165,7 +165,11 @@ class Histogram:
         else:
             split_path = path.split('/')
             index_to_use = split_path.index('testArea')+1
-            path_to_use = os.path.expandvars("$HOME/Testing/Latest/"+'/'.join(split_path[index_to_use:-1])+'/'+is_test+'/'+split_path[-1])
+            #
+            # Have to hardcode because $HOME doesnt work on t2b condor
+            #
+            # path_to_use = os.path.expandvars("$HOME/Testing/Latest/"+'/'.join(split_path[index_to_use:-1])+'/'+is_test+'/'+split_path[-1])
+            path_to_use = os.path.expandvars("/storage_mnt/storage/user/lwezenbe/Testing/Latest/"+'/'.join(split_path[index_to_use:-1])+'/'+is_test+'/'+split_path[-1])
 
         makeDirIfNeeded(path_to_use)
         output_file = ROOT.TFile(path_to_use, append_string)
@@ -264,7 +268,11 @@ class HistogramCollection(object):
         else:
             split_path = self.path.split('/')
             index_to_use = split_path.index('testArea')+1
-            path_to_use = os.path.expandvars("$HOME/Testing/Latest/"+'/'.join(split_path[index_to_use:]))
+            #
+            # Have to hardcode because $HOME doesnt work on t2b condor
+            #
+            # path_to_use = os.path.expandvars("$HOME/Testing/Latest/"+'/'.join(split_path[index_to_use:]))
+            path_to_use = os.path.expandvars("/storage_mnt/storage/user/lwezenbe/Testing/Latest/"+'/'.join(split_path[index_to_use:]))
 
         makeDirIfNeeded(path_to_use)
         output_file = ROOT.TFile(path_to_use, append_string)
