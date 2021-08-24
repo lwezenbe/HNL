@@ -14,15 +14,15 @@ TAU_METHOD = 'WeightedMix'
 
 def returnTauFR(tau_method, chain):
     if tau_method == 'TauFakesDY':
-        return FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_tau_path('DY', str(chain.year), chain.selection), subdirs = ['total'])
+        return FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_tau_path('DY', chain.era+'-'+chain.year, chain.selection), subdirs = ['total'])
     elif tau_method == 'TauFakesTT':
-        return FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_tau_path('TT', str(chain.year), chain.selection), subdirs = ['total'])
+        return FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_tau_path('TT', chain.era+'-'+chain.year, chain.selection), subdirs = ['total'])
     elif tau_method == 'WeightedMix':
         from HNL.BackgroundEstimation.getTauFakeContributions import getWeights
-        return SingleFlavorFakeRateCollection([default_tau_path('DY', str(chain.year), chain.selection), default_tau_path('TT', str(chain.year), chain.selection)], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], 
-                                            frac_weights = getWeights(str(chain.year), chain.selection, chain.region), frac_names = ['DY', 'TT'])   
+        return SingleFlavorFakeRateCollection([default_tau_path('DY', chain.era+'-'+chain.year, chain.selection), default_tau_path('TT', chain.era+'-'+chain.year, chain.selection)], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], 
+                                            frac_weights = getWeights(chain.era+'-'+chain.year, chain.selection, chain.region), frac_names = ['DY', 'TT'])   
     elif tau_method == 'OSSFsplitMix':
-        return SingleFlavorFakeRateCollection([default_tau_path('DY', str(chain.year), chain.selection), default_tau_path('TT', str(chain.year), chain.selection)], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], method = 'OSSFsplitMix',
+        return SingleFlavorFakeRateCollection([default_tau_path('DY', chain.era+'-'+chain.year, chain.selection), default_tau_path('TT', chain.era+'-'+chain.year, chain.selection)], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], method = 'OSSFsplitMix',
                                             ossf_map = {True : 'DY', False : 'TT'})  
     else:
         raise RuntimeError('Unknown method "{}"in fakeRateWeights.py'.format(tau_method))

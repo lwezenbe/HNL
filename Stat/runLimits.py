@@ -4,7 +4,8 @@
 import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
-submission_parser.add_argument('--year',     nargs='*',      default=[],   help='Select year', choices=['2016', '2017', '2018'])
+submission_parser.add_argument('--year',     action='store', nargs='*',       default=None,   help='Select year', required=True)
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
 submission_parser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
 submission_parser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
 submission_parser.add_argument('--asymptotic',   action='store_true', default=False,  help='Use the -M AsymptoticLimits option in Combine')
@@ -17,19 +18,19 @@ submission_parser.add_argument('--compareToCards',   type=str, nargs='*',  help=
 submission_parser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
 args = argParser.parse_args()
 
-datacards_base = lambda year : os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/dataCards/'+year+'/'+args.strategy+'-'+args.selection+'/'+args.flavor)
+datacards_base = lambda era, year : os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/dataCards/'+era+year+'/'+args.strategy+'-'+args.selection+'/'+args.flavor)
 import glob
 from HNL.Stat.combineTools import runCombineCommand, extractScaledLimitsPromptHNL, makeGraphs
 from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped, getObjFromFile
 from HNL.Analysis.analysisTypes import signal_couplingsquared
 from numpy import sqrt
 
-def getDataCard(mass, cardname, year):
-    datacard_massbase = os.path.join(datacards_base(year), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
+def getDataCard(mass, cardname, era, year):
+    datacard_massbase = os.path.join(datacards_base(era, year), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
     return datacard_massbase+ '/'+cardname+'.txt'
 
-def combineSets(mass, year):
-    datacard_massbase = os.path.join(datacards_base(year), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
+def combineSets(mass, era, year):
+    datacard_massbase = os.path.join(datacards_base(era, year), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
     #Combined
     categories = [el for el in glob.glob(datacard_massbase+'/*') if not 'Total' in el and not 'Combined' in el and not 'TauCombined' in el and not 'TauFinalStates' in el]
     runCombineCommand('combineCards.py '+' '.join(categories)+' > '+datacard_massbase+'/Combined.txt')
@@ -37,28 +38,28 @@ def combineSets(mass, year):
     categories = [el for el in glob.glob(datacard_massbase+'/*') if not 'Total' in el and not 'Combined' in el and not 'TauCombined' in el and not 'NoTau' in el and not 'TauFinalStates' in el]
     runCombineCommand('combineCards.py '+' '.join(categories)+' > '+datacard_massbase+'/TauCombined.txt')
 
-def combineYears(mass, cardname):
+def combineYears(mass, cardname, era):
     if len(args.year) == 1:
         return
     else:
-        datacard_massbase = os.path.join(datacards_base('-'.join(args.year)), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
-        datacard_path = lambda year : os.path.join(datacards_base(year), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', cardname+'.txt')
-        categories = [datacard_path(y) for y in args.year if os.path.isfile(datacard_path(year))]
+        datacard_massbase = os.path.join(datacards_base(era, '-'.join(args.year)), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
+        datacard_path = lambda era, year : os.path.join(datacards_base(era, year), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', cardname+'.txt')
+        categories = [datacard_path(era, y) for y in args.year if os.path.isfile(datacard_path(era, year))]
         makeDirIfNeeded(datacard_massbase+'/'+cardname+'.txt')
         runCombineCommand('combineCards.py '+' '.join(categories)+' > '+datacard_massbase+'/'+cardname+'.txt')
 
 
-def runAsymptoticLimit(mass, cardname, year):
+def runAsymptoticLimit(mass, cardname, era, year):
     if '-' in year:
         split_year = year.split('-')
     else:
         split_year = [year]
 
     for y in split_year:
-        datacard = getDataCard(mass, cardname, y)
+        datacard = getDataCard(mass, cardname, era, y)
         combineSets(mass, y)
-    combineYears(mass, cardname)
-    datacard = getDataCard(mass, cardname, year)
+    combineYears(mass, cardname, era)
+    datacard = getDataCard(mass, cardname, era, year)
 
     output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname
     print 'Running Combine for mass', str(mass), 'GeV'
@@ -85,7 +86,7 @@ cards_to_read = [args.datacard] if args.datacard != '' else ['Combined', 'Ditau'
 all_signal = {}
 masses_py = {}
 for year in args.year:
-    all_signal[year] = glob.glob(datacards_base(year)+'/*')
+    all_signal[year] = glob.glob(datacards_base(args.era, year)+'/*')
     masses_py[year] = [int(signal.split('/')[-1].split('-m')[-1]) for signal in all_signal[year]]
 masses = []
 # for year in args.year:
@@ -182,5 +183,5 @@ for card in cards_to_read:
 
     year = args.year[0] if len(args.year) == 1 else 'all'
     # p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=False, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', year = year)
-    p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', year = year)
+    p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', year = year, era = args.era)
     p.drawBrazilian(output_dir = destination)

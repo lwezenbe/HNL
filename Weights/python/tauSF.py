@@ -5,9 +5,14 @@
 from TauPOG.TauIDSFs.TauIDSFTool import TauIDSFTool
 from HNL.ObjectSelection.tauSelector import getCorrespondingLightLepDiscr
 
-YEARLIB = {2016 : '2016Legacy',
-            2017: '2017ReReco',
-            2018: '2018ReReco'}
+YEARLIB = {'prelegacy2016' : '2016Legacy',
+            'prelegacy2017': '2017ReReco',
+            'prelegacy2018': '2018ReReco',
+            'UL2016pre' : '2016Legacy',
+            'UL2016post' : '2016Legacy',
+            'UL2017': '2017ReReco',
+            'UL2018': '2018ReReco',
+            }
 
 ISOLIB = {'deeptauVSjets' : 'DeepTau2017v2p1VSjet', 'MVA2017v2': 'MVAoldDM2017v2'}
 ELIB = {'deeptauVSe' : 'DeepTau2017v2p1VSe', 'againstElectron': 'antiEleMVA6'}
@@ -25,10 +30,10 @@ WPLIB = {'vvvloose': 'VVVLoose',
 
 class TauSF:
     
-    def __init__(self, year, algorithm, wp_iso, wp_e, wp_mu):
-        self.sftool_iso = TauIDSFTool(YEARLIB[year], ISOLIB[algorithm], WPLIB[wp_iso])
-        self.sftool_e = TauIDSFTool(YEARLIB[year], ELIB[getCorrespondingLightLepDiscr(algorithm)[0]],  WPLIB[wp_e])
-        self.sftool_mu = TauIDSFTool(YEARLIB[year], MULIB[getCorrespondingLightLepDiscr(algorithm)[1]],  WPLIB[wp_mu])
+    def __init__(self, era, year, algorithm, wp_iso, wp_e, wp_mu):
+        self.sftool_iso = TauIDSFTool(YEARLIB[era+year], ISOLIB[algorithm], WPLIB[wp_iso])
+        self.sftool_e = TauIDSFTool(YEARLIB[era+year], ELIB[getCorrespondingLightLepDiscr(algorithm)[0]],  WPLIB[wp_e])
+        self.sftool_mu = TauIDSFTool(YEARLIB[era+year], MULIB[getCorrespondingLightLepDiscr(algorithm)[1]],  WPLIB[wp_mu])
 
     def getSF(self, chain, index):
         if chain._tauGenStatus[index] == 1 or chain._tauGenStatus[index] == 3:
@@ -40,7 +45,11 @@ class TauSF:
         else:
             return 1.
 
-
+    def getTotalSF(self, chain):
+        total_sf = 1.
+        for l in chain.l_indices:
+            if chain._lFlavor[l] == 2: total_sf *= self.getSF(chain, l)
+        return total_sf
 
 
 
@@ -67,7 +76,7 @@ if __name__ == "__main__":
     # out_file_tex.write("\hline \n")
 
     for iso in iso_wp:
-        tausftool = TauSF(2016, 'deeptauVSjets', iso, ele_wp[0], mu_wp[0])
+        tausftool = TauSF('UL', '2017', 'deeptauVSjets', iso, ele_wp[0], mu_wp[0])
         # out_file_tex.write(iso)
         for pt in pt_range:
             sf = tausftool.sftool_iso.getSFvsPT(pt)
@@ -94,7 +103,7 @@ if __name__ == "__main__":
     # out_file_tex.write("\hline \n")
 
     for ele in ele_wp:
-        tausftool = TauSF(2016, 'deeptauVSjets', iso_wp[0], ele, mu_wp[0])
+        tausftool = TauSF('UL', '2017', 'deeptauVSjets', iso_wp[0], ele, mu_wp[0])
         # out_file_tex.write(ele)
         for eta in eta_range:
             sf = tausftool.sftool_e.getSFvsEta(eta, 1)
@@ -120,7 +129,7 @@ if __name__ == "__main__":
     # out_file_tex.write("\hline \n")
 
     for mu in mu_wp:
-        tausftool = TauSF(2016, 'deeptauVSjets', iso_wp[0], ele_wp[0], mu)
+        tausftool = TauSF('UL', '2017', 'deeptauVSjets', iso_wp[0], ele_wp[0], mu)
         # out_file_tex.write(mu)
         for eta in eta_range:
             sf = tausftool.sftool_mu.getSFvsEta(eta, 2)

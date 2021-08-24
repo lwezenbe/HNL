@@ -7,7 +7,8 @@ import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true',       default=False,  help='mark as subjob, will never submit subjobs by itself')
-submission_parser.add_argument('--year',     action='store', nargs='*',    default=None,   help='Select year', choices=['2016', '2017', '2018'], required=True)
+submission_parser.add_argument('--year',     action='store', nargs='*',    default=None,   help='Select year', required=True)
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
 submission_parser.add_argument('--sample',   action='store',            default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',            default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true',       default=False,  help='Run a small test')
@@ -41,6 +42,7 @@ if args.isTest:
     if args.sample is None: args.sample = 'HNL-tau-m40'
     if args.subJob is None: args.subJob = '0'
     if args.year is None: args.year = ['2016']
+    if args.era is None: args.era = 'UL'
     from HNL.Tools.helpers import generateArgString
     arg_string =  generateArgString(argParser)
 else:
@@ -59,9 +61,9 @@ log = getLogger(args.logLevel)
 from HNL.Samples.sampleManager import SampleManager
 def getSampleManager(year):
     if not args.noskim:
-        return SampleManager(year, 'Reco', 'Triggers/triggerlist_'+str(year))
+        return SampleManager(args.era, year, 'Reco', 'Triggers/triggerlist_'+args.era+str(year))
     else:
-        return SampleManager(year, 'noskim', 'Triggers/triggerlist_'+str(year))
+        return SampleManager(args.era, year, 'noskim', 'Triggers/triggerlist_'+args.era+str(year))
 
 
 #
@@ -92,10 +94,10 @@ def getOutputBase(year, sample_name):
 
     if not args.isTest:
         output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Triggers', 'data', __file__.split('.')[0].rsplit('/')[-1], 
-                                    year, sep_trig_name, '-'.join([args.selection, args.analysis, ref_name]), sample_name)
+                                    args.era+year, sep_trig_name, '-'.join([args.selection, args.analysis, ref_name]), sample_name)
     else:
         output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Triggers', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], 
-                                    year, sep_trig_name, '-'.join([args.selection, args.analysis, ref_name]), sample_name)
+                                    args.era+year, sep_trig_name, '-'.join([args.selection, args.analysis, ref_name]), sample_name)
     return output_string
 
 
@@ -147,7 +149,9 @@ if not args.makePlots:
     sample = sample_manager.getSample(args.sample)
     chain = sample.initTree(needhcount = False)
     chain.HNLmass = sample.getMass()
-    chain.year = int(year)
+    chain.year = year
+    chain.era = args.era
+    chain.region = 'trilepton'
     chain.analysis = args.analysis
 
     #

@@ -3,7 +3,8 @@
 #
 import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
-argParser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+argParser.add_argument('--year',     action='store',      default=None,   help='Select year')
+argParser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 argParser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 argParser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 argParser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -32,7 +33,7 @@ list_of_numbers = {'total' : 0,
 # Load in the sample list 
 #
 from HNL.Samples.sample import createSampleList, getSampleFromList
-list_location = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/sampleList_'+str(args.year)+'_noskim.conf')
+list_location = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/sampleList_'+args.era+args.year+'_noskim.conf')
 sample_list = createSampleList(list_location)
 sample = getSampleFromList(sample_list, args.sample)
 
@@ -53,7 +54,8 @@ else:
     event_range = xrange(chain.GetEntries())
 
 chain.HNLmass = float(sample.name.rsplit('-', 1)[1]) if is_signal else None
-chain.year = int(args.year)
+chain.year = args.year
+chain.era = args.era
 #
 # Loop over all events
 #

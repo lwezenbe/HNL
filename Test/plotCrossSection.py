@@ -3,7 +3,8 @@
 #
 import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
-argParser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+argParser.add_argument('--year',     action='store',      default=None,   help='Select year')
+argParser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 argParser.add_argument('--isTest',     action='store_true',      default=False,   help='Is this a test?')
 argParser.add_argument('--flavor', action='store', default=None,  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
 args = argParser.parse_args()
@@ -18,7 +19,7 @@ if args.isTest:
 # Load in the sample list 
 #
 from HNL.Samples.sampleManager import SampleManager
-sample_manager = SampleManager(args.year, 'noskim', 'allsignal_'+str(args.year))
+sample_manager = SampleManager(args.era, args.year, 'noskim', 'allsignal_'+args.era+args.year)
 print sample_manager.sample_names
 
 
@@ -49,7 +50,8 @@ for sample in sample_manager.sample_list:
     chain = sample.initTree()
 
     chain.HNLmass = sample.getMass()
-    chain.year = int(args.year)
+    chain.year = args.year
+    chain.era = args.era
     hist.fill(chain, sample.xsec)
 
 from HNL.Plotting.plot import Plot

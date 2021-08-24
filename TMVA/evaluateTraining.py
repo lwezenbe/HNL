@@ -5,7 +5,8 @@ from HNL.Plotting.plottingTools import extraTextFormat
 
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
-argParser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018', 'all'])
+argParser.add_argument('--year',     action='store',      default=None,   help='Select year')
+argParser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
 argParser.add_argument('--gui',     action='store_true',      default=False,   help='Open GUI at the end')
 argParser.add_argument('--plots',     action='store_true',      default=False,   help='Store plots')
 argParser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', 
@@ -16,7 +17,7 @@ args = argParser.parse_args()
 ROOT.gROOT.SetBatch(True)
 
 from HNL.TMVA.inputHandler import InputHandler
-ih = InputHandler(args.year, args.region, args.selection)
+ih = InputHandler(args.era, args.year, args.region, args.selection)
 
 import uproot
 from HNL.Plotting.plot import Plot

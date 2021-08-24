@@ -3,7 +3,7 @@ from HNL.Tools.helpers import makeDirIfNeeded
 import glob
 import os
 
-list_of_samplelists = glob.glob(os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/*noskim*conf'))
+list_of_samplelists = glob.glob(os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/*UL*noskim*conf'))
 
 for sl in list_of_samplelists:
     name = sl.split('/')[-1].split('.')[0]

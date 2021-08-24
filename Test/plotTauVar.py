@@ -17,7 +17,8 @@ import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
-submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -58,7 +59,7 @@ from HNL.EventSelection.eventCategorization import EventCategory
 # Loop over samples and events
 #
 from HNL.Samples.sampleManager import SampleManager
-sample_manager = SampleManager(args.year, 'noskim', 'ObjectSelection/compareTauIdList_'+str(args.year))
+sample_manager = SampleManager(args.era, args.year, 'noskim', 'ObjectSelection/compareTauIdList_'+args.era+args.year)
 jobs = []
 for sample_name in sample_manager.sample_names:
     sample = sample_manager.getSample(sample_name)
@@ -146,7 +147,7 @@ if not args.makePlots:
         if args.isTest:  continue
         
         subjobAppendix = '_subJob' + args.subJob if args.subJob else ''
-        output_name = os.path.join(os.getcwd(), 'data', 'plotTau', reco_or_gen_str, sample.output)
+        output_name = os.path.join(os.getcwd(), 'data', 'plotTau', args.era+args.year, reco_or_gen_str, sample.output)
         
         if args.isChild:
             output_name += '/tmp_'+sample.output+ '/'+sample.name+'_'

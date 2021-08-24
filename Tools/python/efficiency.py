@@ -31,7 +31,6 @@ class Efficiency(object):
             if subdirs is not None:
                 for d in subdirs:
                     obj_name += d+'/'
-            print obj_name+self.name+'_num'
             self.efficiency_num = Histogram(getObjFromFile(self.path, obj_name+self.name+'_num'))
             self.efficiency_denom = Histogram(getObjFromFile(self.path, obj_name+self.name+'_denom'))
      
@@ -145,7 +144,11 @@ class Efficiency(object):
         else:
             split_path = self.path.split('/')
             index_to_use = split_path.index('testArea')+1
-            path_to_use = os.path.expandvars("$HOME/Testing/Latest/"+'/'.join(split_path[index_to_use:-1])+'/'+is_test+'/'+split_path[-1])
+            #
+            # Have to hardcode because $HOME doesnt work on t2b condor
+            #
+            # path_to_use = os.path.expandvars("$HOME/Testing/Latest/"+'/'.join(split_path[index_to_use:-1])+'/'+is_test+'/'+split_path[-1])
+            path_to_use = os.path.expandvars("/storage_mnt/storage/user/lwezenbe/Testing/Latest/"+'/'.join(split_path[index_to_use:-1])+'/'+is_test+'/'+split_path[-1])
 
         makeDirIfNeeded(path_to_use)
         output_file = ROOT.TFile(path_to_use, append_string)

@@ -1,12 +1,13 @@
-INPUT_BASE = lambda year : '/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/TMVA/'+str(year)
+INPUT_BASE = lambda era, year : '/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/TMVA/'+era+year
 import os
 import ROOT
 
 class InputHandler:
 
-    def __init__(self, year, region, selection):
-        self.in_file = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'InputLists', year+'-'+region+'.conf'))
+    def __init__(self, era, year, region, selection):
+        self.in_file = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'InputLists', era+year+'-'+region+'.conf'))
         self.year = year
+        self.era = era
         self.region = region
         self.selection = selection
         self.numbers = None
@@ -55,25 +56,26 @@ class InputHandler:
         background_paths = {}
         for bkgr in self.background_names:
             background_paths[bkgr] = []
-        for y in ['2016', '2017', '2018']:
+        from HNL.Sample.sampleManager import ERA_DICT
+        for y in ERA_DICT[self.era]:
             if self.year == 'all': pass
             else:
                 if self.year != y: continue
 
             for signal in self.signal_names:
                 if self.background_names is None:
-                    signal_paths[signal].append(os.path.join(INPUT_BASE(y), self.region+'-'+self.selection, 'Combined/SingleTree', signal+'.root'))
+                    signal_paths[signal].append(os.path.join(INPUT_BASE(self.era, y), self.region+'-'+self.selection, 'Combined/SingleTree', signal+'.root'))
                 else:
-                    signal_paths[signal].append(os.path.join(INPUT_BASE(y), self.region+'-'+self.selection, 'Signal', signal+'.root'))
+                    signal_paths[signal].append(os.path.join(INPUT_BASE(self.era, y), self.region+'-'+self.selection, 'Signal', signal+'.root'))
             
             if self.background_names is None:
                 background_paths = None
             else:
                 for bkgr in self.background_names:
                     if bkgr == 'nonprompt':
-                        background_paths[bkgr].append(os.path.join(INPUT_BASE(y), self.region+'-'+self.selection, 'Background', 'Combined', 'all_bkgr.root'))
+                        background_paths[bkgr].append(os.path.join(INPUT_BASE(self.era, y), self.region+'-'+self.selection, 'Background', 'Combined', 'all_bkgr.root'))
                     else:
-                        background_paths[bkgr].append(os.path.join(INPUT_BASE(y), self.region+'-'+self.selection, 'Background', bkgr+'.root'))
+                        background_paths[bkgr].append(os.path.join(INPUT_BASE(self.era, y), self.region+'-'+self.selection, 'Background', bkgr+'.root'))
 
         self.signal_paths = signal_paths
         self.background_paths = background_paths
@@ -111,7 +113,7 @@ class InputHandler:
         if self.numbers_not_in_file:
             self.numbers = [int(nsignal*0.6), int(nbkgr*0.6), int(nsignal*0.4), int(nbkgr*0.4)]
 
-        loader = ROOT.TMVA.DataLoader('data/training/'+str(self.year)+'/'+self.region+'-'+self.selection+'/'+signal+'/kBDT')
+        loader = ROOT.TMVA.DataLoader('data/training/'+self.era+self.year+'/'+self.region+'-'+self.selection+'/'+signal+'/kBDT')
         cuts = ROOT.TCut("is_signal")
         cutb = ROOT.TCut("!is_signal")
         loader.SetInputTrees(in_tree, cuts, cutb)

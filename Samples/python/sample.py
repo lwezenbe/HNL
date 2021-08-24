@@ -142,8 +142,8 @@ class SkimSample(Sample):
 
     def __init__(self, name, path, output, split_jobs, xsec, max_filesize = 1200):  
         super(SkimSample, self).__init__(name, path, output, split_jobs, xsec, max_filesize)
-        self.list_of_subjobclusters = self.createSubjobClusters()
-        self.split_jobs = len(self.list_of_subjobclusters)
+        self.list_of_subjobclusters     = self.createSubjobClusters()
+        self.split_jobs                 = len(self.list_of_subjobclusters)
 
     def createSubjobClusters(self):
         list_of_subjobclusters = []
@@ -160,6 +160,8 @@ class SkimSample(Sample):
                 if len(tmp_arr) > 0: list_of_subjobclusters.append([x for x in tmp_arr])
                 tmp_arr = [f]
                 tot_size = file_size
+            
+        #Append last array to list of subjob cluster
         if len(tmp_arr) > 0:
             list_of_subjobclusters.append([x for x in tmp_arr])
         return list_of_subjobclusters
@@ -295,7 +297,7 @@ if __name__ == "__main__":
     from HNL.Tools.logger import getLogger, closeLogger
     log = getLogger('INFO')
 
-    in_file_path = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Samples', 'InputFiles', 'samples_for_testing.conf'))
+    in_file_path = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Samples', 'InputFiles', 'sampleList_UL2017_Reco.conf'))
     sample_list = createSampleList(in_file_path)
     sample = getSampleFromList(sample_list, 'DYJetsToLL-M-10to50')
     chain = sample.initTree(needhcount = True)

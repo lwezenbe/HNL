@@ -12,7 +12,8 @@ import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
-submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'], required = True)
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -27,7 +28,9 @@ submission_parser.add_argument('--removeOverlap',  action='store_true',      def
 submission_parser.add_argument('--skimSelection',  action='store',      default='default',               help='Selection for the skim.', choices=['top', 'TTT', 'Luka', 'AN2017014', 'LukaFR', 'default'])
 submission_parser.add_argument('--region',   action='store', default=None,  help='Choose the selection region', 
     choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
+submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino'])
 submission_parser.add_argument('--strategy',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
+submission_parser.add_argument('--reprocess',  action='store_true',      default=False,               help='Reprocess already skimmed files')
 argParser.add_argument('--checkLogs',  action='store_true',      default=False,               help='Check if all files completed successfully')
 
 args = argParser.parse_args()
@@ -45,16 +48,18 @@ if args.isTest:
 #Load in samples
 #
 from HNL.Samples.sampleManager import SampleManager
-file_list = 'fulllist_'+str(args.year)+'_mconly' if args.customList is None else args.customList
+# file_list = 'fulllist_'+args.era+args.year+'_mconly' if args.customList is None else args.customList
+file_list = 'Skimmer/skimlist_{0}{1}'.format(args.era, args.year)
 gen_name = 'Reco' if not args.genSkim else 'Gen'
-if args.region is None:
-    sample_manager = SampleManager(args.year, 'noskim', file_list, need_skim_samples=True)
+if args.region is None and not args.reprocess:
+    sample_manager = SampleManager(args.era, args.year, 'noskim', file_list, need_skim_samples=True)
 else:
-    sample_manager = SampleManager(args.year, gen_name, file_list, need_skim_samples=False)
+    sample_manager = SampleManager(args.era, args.year, gen_name, file_list, need_skim_samples=True)
 
 #
 # Subjobs
 #
+tot_jobs = 0
 if not args.isTest:
     jobs = []
     for sample_name in sample_manager.sample_names:
@@ -65,6 +70,7 @@ if not args.isTest:
             continue
         for njob in xrange(sample.returnSplitJobs()):
             jobs += [(sample.name, str(njob))]
+        tot_jobs += sample.returnSplitJobs()
 
 if not args.checkLogs:
     from HNL.Tools.logger import getLogger, closeLogger
@@ -81,7 +87,7 @@ if not args.checkLogs:
         
         if args.summaryFile:
             gen_name = 'Gen' if args.genSkim else 'Reco'
-            f = open(os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL', args.skimSelection, str(args.year), gen_name, 'summary.txt')), 'w')
+            f = open(os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL', args.skimSelection, args.era+args.year, gen_name, 'summary.txt')), 'w')
             for arg in vars(args):
                 if not getattr(args, arg): continue
                 f.write(arg + '    ' + str(getattr(args, arg)) +  '\n')
@@ -100,8 +106,9 @@ if not args.checkLogs:
     # print sample.list_of_subjobclusters
 
 
-    print 'year'
-    chain.year = int(args.year)
+    chain.year = args.year
+    chain.era = args.era
+    chain.analysis = args.analysis
     chain.is_signal = 'HNL' in sample.name
 
     #
@@ -114,7 +121,7 @@ if not args.checkLogs:
     # Get lumiweight
     #
     from HNL.Weights.lumiweight import LumiWeight
-    lw = LumiWeight(sample, sample_manager)
+    lw = LumiWeight(sample, sample_manager, recalculate = args.reprocess)
 
     #
     # Create new reduced tree (except if it already exists and overwrite option is not used)
@@ -122,7 +129,7 @@ if not args.checkLogs:
     from HNL.Tools.helpers import isValidRootFile, makeDirIfNeeded
     if sample.is_data:
         output_file_name = 'Data'
-    elif chain.is_signal or args.region is not None: 
+    elif args.region is not None or args.reprocess: 
         output_file_name = sample.path.split('/')[-1].rsplit('.', 1)[0]
     else:
         output_file_name = sample.path.split('/')[-2]
@@ -134,7 +141,7 @@ if not args.checkLogs:
     else:
         output_base = os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL', skim_selection_string)) if not args.isTest else os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'SkimTuples', 'data', 'testArea', skim_selection_string))
     
-    output_name = os.path.join(output_base, str(args.year), gen_name, 'tmp_'+output_file_name, sample.name + '_' + str(args.subJob) + '.root')
+    output_name = os.path.join(output_base, args.era+args.year, gen_name, 'tmp_'+output_file_name, sample.name + '_' + str(args.subJob) + '.root')
 
     makeDirIfNeeded(output_name)
 
@@ -190,16 +197,16 @@ if not args.checkLogs:
         event_range = sample.getEventRange(args.subJob)   
         
     #prepare object  and event selection
-    from HNL.ObjectSelection.objectSelection import objectSelectionCollection
+    from HNL.ObjectSelection.objectSelection import objectSelectionCollection, getObjectSelection
     if args.region is None:
         if args.skimSelection == 'Old':
-            chain.obj_sel = objectSelectionCollection('HNL', 'cutbased', 'loose', 'loose', 'loose', True, analysis='HNL')
+            chain.obj_sel = objectSelectionCollection('HNL', 'cutbased', 'loose', 'loose', 'loose', True, analysis=args.analysis)
         elif args.skimSelection in ['Luka', 'LukaFR']:
-            chain.obj_sel = objectSelectionCollection('HNL', 'Luka', 'loose', 'loose', 'loose', False, analysis='HNL')
+            chain.obj_sel = objectSelectionCollection('HNL', 'Luka', 'loose', 'loose', 'loose', False, analysis=args.analysis)
         elif args.skimSelection == 'TTT':
-            chain.obj_sel = objectSelectionCollection('HNL', 'TTT', 'loose', 'loose', 'loose', False, analysis='HNL')
+            chain.obj_sel = objectSelectionCollection('HNL', 'TTT', 'loose', 'loose', 'loose', False, analysis=args.analysis)
         else:
-            chain.obj_sel = objectSelectionCollection('HNL', 'HNL', 'loose', 'loose', 'loose', False, analysis='HNL')
+            chain.obj_sel = objectSelectionCollection('HNL', 'HNL', 'loose', 'loose', 'loose', False, analysis=args.analysis)
 
     from HNL.Tools.helpers import progress
     from HNL.EventSelection.eventSelectionTools import selectLeptonsGeneral, selectGenLeptonsGeneral
@@ -212,7 +219,7 @@ if not args.checkLogs:
 
     for entry in event_range:
         chain.GetEntry(entry)
-        progress(entry - event_range[0], len(event_range))
+        if args.isTest: progress(entry - event_range[0], len(event_range))
     
         cutter.cut(True, 'Total')
 

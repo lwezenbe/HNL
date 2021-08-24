@@ -18,7 +18,8 @@ import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
-submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018', 'all'], required=True)
+submission_parser.add_argument('--year',     action='store', nargs='*',       default=None,   help='Select year', required=True)
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -29,6 +30,7 @@ submission_parser.add_argument('--coupling', type = float, action='store', defau
 submission_parser.add_argument('--noskim', action='store_true', default=False,  help='Use no skim sample list')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
+submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino'])
 submission_parser.add_argument('--region',   action='store', default='baseline',  help='Choose the selection region')
 submission_parser.add_argument('--includeData',   action='store_true', default=False,  help='Also run over data samples')
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
@@ -84,16 +86,16 @@ from HNL.Samples.sampleManager import SampleManager
 def getSampleManager(y):
     if args.noskim or args.selection != 'default':
         skim_str = 'noskim'
-    elif args.region in ['highMassSR', 'lowMassSR']:
-        skim_str = 'RecoGeneral'
+    # elif args.region in ['highMassSR', 'lowMassSR']:
+    #     skim_str = 'RecoGeneral'
     else:
         skim_str = 'Reco'
-    file_list = 'fulllist_'+str(y)+'_mconly' if args.customList is None else args.customList
+    file_list = 'fulllist_'+args.era+str(y)+'_mconly' if args.customList is None else args.customList
 
     if skim_str == 'RecoGeneral':
-        sm = SampleManager(y, skim_str, file_list, skim_selection=args.selection, region=args.region)
+        sm = SampleManager(args.era, y, skim_str, file_list, skim_selection=args.selection, region=args.region)
     else:
-        sm = SampleManager(y, skim_str, file_list)
+        sm = SampleManager(args.era, y, skim_str, file_list)
     return sm
 
 #
@@ -124,18 +126,18 @@ else:
     regions.append(args.region)
     srm[args.region] = SearchRegionManager(args.region)
 
-def getOutputBase(sample_name, prompt_string):
+def getOutputBase(sample_name, prompt_string, era, year):
     tag_string = args.tag if args.tag is not None else 'General'
     if not args.isTest:
         output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', __file__.split('.')[0].rsplit('/')[-1], 
-                                    args.year, '-'.join([args.strategy, args.selection, args.region, tag_string]), sample_name, prompt_string)
+                                    era+'-'+year, '-'.join([args.strategy, args.selection, args.region, tag_string]), sample_name, prompt_string)
     else:
         output_string = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', 
-                        __file__.split('.')[0].rsplit('/')[-1], args.year, '-'.join([args.strategy, args.selection, args.region]), sample_name, prompt_string)
+                        __file__.split('.')[0].rsplit('/')[-1], era+'-'+year, '-'.join([args.strategy, args.selection, args.region]), sample_name, prompt_string)
     return output_string
 
-def getOutputName(sample, prompt_string):
-    output_string = getOutputBase(sample.output, prompt_string)
+def getOutputName(sample, prompt_string, era, year):
+    output_string = getOutputBase(sample.output, prompt_string, args.era, year)
     if args.isChild:
         output_string += '/tmp_'+sample.output
 
@@ -148,9 +150,7 @@ def getOutputName(sample, prompt_string):
 # Prepare jobs
 #
 jobs = {}
-for year in ['2016', '2017', '2018']:
-    if args.year != 'all' and year != args.year: 
-        continue
+for year in args.year:
     jobs[year] = []
     
     sample_manager = getSampleManager(year)
@@ -160,7 +160,7 @@ for year in ['2016', '2017', '2018']:
         if not args.includeData and sample_name == 'Data': continue
         sample = sample_manager.getSample(sample_name)
         for njob in xrange(sample.returnSplitJobs()):
-            jobs[year] += [(sample.name, str(njob), year)]
+            jobs[year] += [(sample.name, str(njob))]
 
 #
 #   Code to process events
@@ -173,10 +173,13 @@ if not args.makePlots and args.makeDataCards is None:
         from HNL.Tools.jobSubmitter import submitJobs
         print 'submitting'
         for year in jobs.keys():
-            submitJobs(__file__, ('sample', 'subJob', 'year'), jobs[year], argParser, jobLabel = 'calcYields', additionalArgs=[('year', year)])
+            submitJobs(__file__, ('sample', 'subJob'), jobs[year], argParser, jobLabel = 'calcYields', additionalArgs=[('year', year)])
         exit(0)
 
-    sample_manager = getSampleManager(args.year)
+    if len(args.year) != 1:
+        raise RuntimeError("At this point a single year should have been selected")
+    year = args.year[0]
+    sample_manager = getSampleManager(year)
 
     #
     # Load in sample and chain
@@ -209,15 +212,18 @@ if not args.makePlots and args.makeDataCards is None:
             event_range = xrange(chain.GetEntries())   
 
         chain.HNLmass = sample.getMass()
-        chain.year = int(args.year)
+        chain.year = year
+        chain.era = args.era
         chain.selection = args.selection
+        chain.region = args.region
         chain.strategy = args.strategy
+        chain.analysis = args.analysis
 
         #
         # Get luminosity weight
         #
-        from HNL.Weights.lumiweight import LumiWeight
-        lw = LumiWeight(sample, sample_manager)
+        from HNL.Weights.reweighter import Reweighter
+        lw = Reweighter(sample, sample_manager)
 
         #
         # Object ID param
@@ -278,18 +284,18 @@ if not args.makePlots and args.makeDataCards is None:
                 event_category = max(CATEGORIES)
 
             chain.search_region = srm[args.region].getSearchRegion(chain)
-            list_of_numbers[event_category][prompt_str].fill(chain, lw.getLumiWeight())
-            list_of_numbers[event_category]['total'].fill(chain, lw.getLumiWeight())
+            list_of_numbers[event_category][prompt_str].fill(chain, lw.getTotalWeight())
+            list_of_numbers[event_category]['total'].fill(chain, lw.getTotalWeight())
 
         for prompt_str in ['prompt', 'nonprompt', 'total']:
             for i, c_h in enumerate(list_of_numbers.keys()):
-                output_name = getOutputName(sample, prompt_str)
+                output_name = getOutputName(sample, prompt_str, chain.era, chain.year)
                 if i == 0:
                     list_of_numbers[c_h][prompt_str].write(output_name, is_test=arg_string)
                 else:
                     list_of_numbers[c_h][prompt_str].write(output_name, append=True, is_test=arg_string)
 
-        cutter.saveCutFlow(getOutputName(sample, 'total'))
+        cutter.saveCutFlow(getOutputName(sample, 'total', chain.era, chain.year))
     
     closeLogger(log)
 
@@ -307,12 +313,12 @@ else:
     from HNL.Tools.helpers import getObjFromFile, tab, isValidRootFile
     from HNL.Analysis.analysisTypes import signal_couplingsquared
 
-    for year in ['2016', '2017', '2018']:
+    for year in args.year:
         if args.year != 'all' and year != args.year: continue
         #
         # Check status of the jobs and merge
         #
-        base_path = getOutputBase('dummy', 'dummy').rsplit('/', 2)[0]
+        base_path = getOutputBase('dummy', 'dummy', args.era, year).rsplit('/', 2)[0]
 
         in_files = glob.glob(os.path.join(base_path, '*', '*'))
         merge(in_files, __file__, jobs[year], ('sample', 'subJob', 'year'), argParser, istest=args.isTest, additionalArgs= [('year', year)])

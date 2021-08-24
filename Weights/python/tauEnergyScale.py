@@ -5,18 +5,23 @@
 from TauPOG.TauIDSFs.TauIDSFTool import TauESTool
 from TauPOG.TauIDSFs.TauIDSFTool import TauFESTool
 
-YEARLIB = {2016 : '2016Legacy',
-            2017: '2017ReReco',
-            2018: '2018ReReco'}
+YEARLIB = {'prelegacy2016' : '2016Legacy',
+            'prelegacy2017': '2017ReReco',
+            'prelegacy2018': '2018ReReco',
+            
+            'UL2016pre' : '2016Legacy',
+            'UL2016post' : '2016Legacy',
+            'UL2017': '2017ReReco',
+            'UL2018': '2018ReReco'}
 
 ALGOLIB = {'HNL' : 'DeepTau2017v2p1VSjet',
             'ewkino'  :  'MVAoldDM2017v2' }
 
 class TauEnergyScale:
     
-    def __init__(self, year, algorithm):
-        self.testool = TauESTool(YEARLIB[year], ALGOLIB[algorithm])
-        self.tfestool = TauFESTool(YEARLIB[year])
+    def __init__(self, era, year, algorithm):
+        self.testool = TauESTool(YEARLIB[era+year], ALGOLIB[algorithm])
+        self.tfestool = TauFESTool(YEARLIB[era+year])
 
     #tlv is four vector to correct
     def applyES(self, tlv, dm, genmatch):
@@ -51,8 +56,9 @@ if __name__ == "__main__":
     test_vec = ROOT.TLorentzVector()
     test_vec.SetPtEtaPhiE(1., 1., 1., 1.)
 
-    tes = TauEnergyScale(2016, 'HNL')
-    tes = TauEnergyScale(2017, 'HNL')
-    tes = TauEnergyScale(2018, 'HNL')
+    tes = TauEnergyScale('UL', '2016pre', 'HNL')
+    tes = TauEnergyScale('UL', '2016post', 'HNL')
+    tes = TauEnergyScale('UL', '2017', 'HNL')
+    tes = TauEnergyScale('UL', '2018', 'HNL')
 
     closeLogger(log)

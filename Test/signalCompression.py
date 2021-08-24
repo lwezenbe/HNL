@@ -15,7 +15,8 @@ submission_parser.add_argument('--isTest',   action='store_true', default=False,
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-submission_parser.add_argument('--year',     action='store',            default=None,   help='Select year', choices=['2016', '2017', '2018'], required=True)
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 
 argParser.add_argument('--plotSoftTau',   action='store_true', default=False,  help='Extra overlay of softest tau in the process')
 argParser.add_argument('--makePlots',   action='store_true', default=False,  help='Use existing root files to make the plots')
@@ -25,7 +26,7 @@ print 'Loading in samples'
 
 #Load in samples and get the specific sample for this job
 from HNL.Samples.sampleManager import SampleManager
-sample_manager = SampleManager(args.year, 'noskim', 'allsignal_'+str(args.year))
+sample_manager = SampleManager(args.era, args.year, 'noskim', 'allsignal_'+args.era+args.year)
 
 #
 # Change some settings if this is a test
@@ -55,7 +56,8 @@ print 'Initializing chain'
 sample = sample_manager.getSample(args.sample)
 chain = sample.initTree()
 chain.HNLmass = sample.getMass()
-chain.year = int(args.year)
+chain.year = args.year
+chain.era = args.era
 print 'Chain initialized'
 
 #Set output dir

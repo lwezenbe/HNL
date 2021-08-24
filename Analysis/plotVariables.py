@@ -15,7 +15,8 @@ import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true',       default=False,  help='mark as subjob, will never submit subjobs by itself')
-submission_parser.add_argument('--year',     action='store',            default=None,   help='Select year', choices=['2016', '2017', '2018', 'all'], required=True)
+submission_parser.add_argument('--year',     action='store', nargs='*',       default=None,   help='Select year', required=True)
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
 submission_parser.add_argument('--sample',   action='store',            default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',            default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true',       default=False,  help='Run a small test')
@@ -85,16 +86,16 @@ def getSampleManager(y):
         skim_str = 'noskim'
     elif args.selection != 'default':
         skim_str = 'noskim'
-    elif args.region in ['highMassSR', 'lowMassSR']:
-        skim_str = 'RecoGeneral'
+    # elif args.region in ['highMassSR', 'lowMassSR']:
+    #     skim_str = 'RecoGeneral'
     else:
         skim_str = 'Reco'
-    file_list = 'fulllist_'+str(y) if args.customList is None else args.customList
+    file_list = 'fulllist_'+args.era+str(y) if args.customList is None else args.customList
 
     if skim_str == 'RecoGeneral':
-        sm = SampleManager(y, skim_str, file_list, skim_selection=args.selection, region=args.region)
+        sm = SampleManager(args.era, y, skim_str, file_list, skim_selection=args.selection, region=args.region)
     else:
-        sm = SampleManager(y, skim_str, file_list)
+        sm = SampleManager(args.era, y, skim_str, file_list)
     return sm
 
 if args.isTest:
@@ -111,9 +112,7 @@ else:
 # Prepare jobs
 #
 jobs = {}
-for year in ['2016', '2017', '2018']:
-    if args.year != 'all' and year != args.year: 
-        continue
+for year in args.year:
     jobs[year] = []
     sample_manager = getSampleManager(year)
 
@@ -173,9 +172,9 @@ reco_or_gen_str = 'reco' if not args.genLevel else 'gen'
 
 def getOutputName(st, y):
     if not args.isTest:
-        return os.path.join(os.getcwd(), 'data', 'plotVariables', '-'.join([args.strategy, args.selection, args.region, reco_or_gen_str]), y, st)
+        return os.path.join(os.getcwd(), 'data', 'plotVariables', '-'.join([args.strategy, args.selection, args.region, reco_or_gen_str]), args.era+'-'+y, st)
     else:
-        return os.path.join(os.getcwd(), 'data', 'testArea', 'plotVariables', '-'.join([args.strategy, args.selection, args.region, reco_or_gen_str]), y, st)
+        return os.path.join(os.getcwd(), 'data', 'testArea', 'plotVariables', '-'.join([args.strategy, args.selection, args.region, reco_or_gen_str]), args.era+'-'+y, st)
 
 #
 # Load in the sample list 
@@ -189,7 +188,11 @@ from HNL.Triggers.triggerSelection import passTriggers
 #
 if not args.makePlots and not args.makeDataCards:
 
-    sample_manager = getSampleManager(args.year)
+    if len(args.year) != 1:
+        raise RuntimeError("At this point a single year should have been selected")
+    year = args.year[0]
+
+    sample_manager = getSampleManager(year)
 
     #Start a loop over samples
     sample_names = []
@@ -235,9 +238,10 @@ if not args.makePlots and not args.makeDataCards:
         # Some basic variables about the sample to store in the chain
         #
         chain.HNLmass = sample.getMass()
-        chain.year = int(args.year)
         chain.region = args.region
         chain.analysis = args.analysis
+        chain.year = year
+        chain.era = args.era
 
         #
         # Skip HNL masses that were not defined
@@ -344,8 +348,8 @@ if not args.makePlots and not args.makeDataCards:
             sample_output_name = sample.output
 
 
-        if args.signalOnly and args.genLevel:       output_name_full = os.path.join(getOutputName(signal_str, args.year), 'signalOrdering', sample_output_name)
-        else:      output_name_full = os.path.join(getOutputName(signal_str, args.year), sample_output_name) 
+        if args.signalOnly and args.genLevel:       output_name_full = os.path.join(getOutputName(signal_str, year), 'signalOrdering', sample_output_name)
+        else:      output_name_full = os.path.join(getOutputName(signal_str, year), sample_output_name) 
 
 
         if args.isChild:
@@ -373,9 +377,8 @@ else:
     import glob
     from HNL.Analysis.analysisTypes import signal_couplingsquared
 
-    for year in ['2016', '2017', '2018']:
+    for year in arg.year:
         print 'Processing ', year
-        if args.year != 'all' and year != args.year: continue
 
         sample_manager = getSampleManager(year)
         # Collect signal file locations

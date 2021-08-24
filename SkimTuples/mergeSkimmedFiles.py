@@ -9,9 +9,8 @@ from HNL.Tools.jobSubmitter import submitJobs
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
-submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'], required = True)
-submission_parser.add_argument('--overwrite', action='store_true', default=False,                help='overwrite if valid output file already exists')
-submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
 submission_parser.add_argument('--skimSelection',  action='store',      default='default',               help='Name of the selection.')
 submission_parser.add_argument('--skimName',  action='store',      default='Reco',               help='Name of the skim.')
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
@@ -79,15 +78,15 @@ def mergeLargeFile(merge_file):
         os.system('rm -rf '+path+'/'+name)
 
 skim_selection_string = args.skimSelection if args.region is None else args.skimSelection+'/'+args.region 
-pnfs_base = os.path.join('/pnfs/iihe/cms/store/user', os.path.expandvars('$USER'), 'skimmedTuples/HNL', skim_selection_string, args.year, args.skimName)
-pnfs_backup_base = os.path.join('/pnfs/iihe/cms/store/user', os.path.expandvars('$USER'), 'skimmedTuples/HNL/Backup', skim_selection_string, args.year, args.skimName)
+pnfs_base = os.path.join('/pnfs/iihe/cms/store/user', os.path.expandvars('$USER'), 'skimmedTuples/HNL', skim_selection_string, args.era+args.year, args.skimName)
+pnfs_backup_base = os.path.join('/pnfs/iihe/cms/store/user', os.path.expandvars('$USER'), 'skimmedTuples/HNL/Backup', skim_selection_string, args.era+args.year, args.skimName)
 if not args.batchSystem == 'HTCondor':
     pnfs_base = 'srm://maite.iihe.ac.be:8443'+pnfs_base
     pnfs_backup_base = 'srm://maite.iihe.ac.be:8443'+pnfs_backup_base
 
 #Merges subfiles if needed
 if args.batchSystem != 'HTCondor':
-    merge_files = glob.glob('/storage_mnt/storage/user/'+os.path.expandvars('$USER')+'/public/ntuples/HNL/'+skim_selection_string+'/'+args.year+'/'+args.skimName+'/tmp*')
+    merge_files = glob.glob('/storage_mnt/storage/user/'+os.path.expandvars('$USER')+'/public/ntuples/HNL/'+skim_selection_string+'/'+args.era+args.year+'/'+args.skimName+'/tmp*')
 else:
     merge_files = glob.glob(pnfs_base+'/tmp*')
 merge_files = sorted(merge_files)

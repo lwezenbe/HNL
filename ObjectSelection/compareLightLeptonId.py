@@ -15,7 +15,8 @@ import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
-submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -37,7 +38,7 @@ log = getLogger(args.logLevel)
 #
 if args.isTest:
     args.isChild = True
-    if args.sample is None: args.sample = 'DYJetsToLL-M-50-ext1'
+    if args.sample is None: args.sample = 'DYJetsToLL-M-50'
     if args.subJob is None: args.subJob = '0'
     if args.year is None: args.year = '2016'
     from HNL.Tools.helpers import generateArgString
@@ -57,7 +58,7 @@ algos = {'cutbased': ['loose', 'FO', 'tight'],
 # Load in the sample list 
 #
 from HNL.Samples.sampleManager import SampleManager
-sample_manager = SampleManager(args.year, 'noskim', 'ObjectSelection/compareTauIdList_'+str(args.year))
+sample_manager = SampleManager(args.era, args.year, 'noskim', 'ObjectSelection/compareTauIdList_'+args.era+str(args.year))
 
 #
 # Submit Jobs
@@ -81,6 +82,7 @@ if not args.isChild:
 sample = sample_manager.getSample(args.sample)
 chain = sample.initTree(False)
 chain.year = int(args.year)
+chain.era = args.era
 isBkgr = not 'HNL' in sample.name
 
 #
@@ -88,9 +90,9 @@ isBkgr = not 'HNL' in sample.name
 #
 from HNL.Tools.helpers import makeDirIfNeeded
 if args.isTest:
-    output_name = os.path.join(os.getcwd(), 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.year)
+    output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'ObjectSelection', 'data', 'testArea', __file__.split('.')[0].rsplit('/')[-1], args.era+args.year)
 else:
-    output_name = os.path.join(os.getcwd(), 'data', __file__.split('.')[0].rsplit('/')[-1], args.year)
+    output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'ObjectSelection', 'data', __file__.split('.')[0].rsplit('/')[-1], args.era+args.year)
 if args.includeReco: output_name = os.path.join(output_name, 'includeReco')
 if args.onlyReco: output_name = os.path.join(output_name, 'onlyReco')
 output_name = os.path.join(output_name, sample.output)

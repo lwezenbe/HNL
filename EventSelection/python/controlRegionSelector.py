@@ -197,7 +197,6 @@ class ClosureTestMC(FilterObject):
         is_tight_lep = []
         is_fake_lep = []
         translated_flavors_of_interest = [self.flavor_dict[i] for i in self.flavors_of_interest]
-        # print translated_flavors_of_interest
 
         #Make input more readable
         for l in xrange(len(self.new_chain.l_pt)):

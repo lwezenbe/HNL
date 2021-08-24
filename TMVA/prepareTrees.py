@@ -9,7 +9,8 @@ import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
-submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year', choices=['2016', '2017', '2018'])
+submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -24,6 +25,7 @@ submission_parser.add_argument('--selection',   action='store', default='default
 submission_parser.add_argument('--strategy',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
 submission_parser.add_argument('--region',   action='store', default='baseline', 
     help='apply the cuts of high or low mass regions, use "all" to run both simultaniously', choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZ', 'WZ', 'Conversion'])
+submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino'])
 
 argParser.add_argument('--merge',   action='store_true', default=False,  help='merge existing subjob output')
 
@@ -54,9 +56,9 @@ if args.isTest:
 #Load in samples
 #
 from HNL.Samples.sampleManager import SampleManager
-file_list = 'TMVA/fulllist_'+str(args.year)+'_mconly' if args.customList is None else args.customList
+file_list = 'TMVA/fulllist_'+args.era+args.year+'_mconly' if args.customList is None else args.customList
 skim_str = 'noskim' if args.noskim else 'Reco'
-sample_manager = SampleManager(args.year, skim_str, file_list)
+sample_manager = SampleManager(args.era, args.year, skim_str, file_list)
 jobs = []
 for sample_name in sample_manager.sample_names:
     if sample_name == 'Data': continue
@@ -86,10 +88,12 @@ if not args.merge:
     #
     sample = sample_manager.getSample(args.sample)
     chain = sample.initTree(needhcount=False)
-    chain.year = int(args.year)
+    chain.year = args.year
+    chain.era = args.era
     chain.is_signal = 'HNL' in sample.name
     chain.selection = args.selection
     chain.strategy = args.strategy
+    chain.analysis = args.analysis
 
     reweighter = Reweighter(sample, sample_manager)
 
@@ -104,7 +108,7 @@ if not args.merge:
     output_base = os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL')) if not args.isTest else os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'testArea'))
 
     signal_str = 'Signal' if chain.is_signal else 'Background'
-    output_name = os.path.join(output_base, 'TMVA', str(args.year), args.region + '-'+args.selection, signal_str, 
+    output_name = os.path.join(output_base, 'TMVA', args.era+args.year, args.region + '-'+args.selection, signal_str, 
                                 'tmp_'+sample.output, sample.name + '_' +sample.output+'_'+ str(args.subJob) + '.root')
     makeDirIfNeeded(output_name)
 
@@ -252,24 +256,24 @@ else:
 
     merge_base = '/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/' if not args.isTest else '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/TMVA/data/testArea/'
 
-    signal_mergefiles = merge_base+'TMVA/'+str(args.year)+'/'+args.region+'-'+args.selection+'/Signal'
-    background_mergefiles = merge_base+'TMVA/'+str(args.year)+'/'+args.region+'-'+args.selection+'/Background'
+    signal_mergefiles = merge_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Signal'
+    background_mergefiles = merge_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Background'
     merge([signal_mergefiles, background_mergefiles], __file__, jobs, ('sample', 'subJob'), argParser)
 
-    combined_dir = lambda sd : merge_base+'TMVA/'+str(args.year)+'/'+args.region+'-'+args.selection+'/Combined/'+sd
+    combined_dir = lambda sd : merge_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Combined/'+sd
     makeDirIfNeeded(combined_dir('SingleTree')+'/test')
     makeDirIfNeeded(combined_dir('TwoTrees')+'/test')
 
     import glob
-    all_signal_files = glob.glob(merge_base+'TMVA/'+str(args.year)+'/'+args.region+'-'+args.selection+'/Signal/*root')
+    all_signal_files = glob.glob(merge_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Signal/*root')
     low_mass = [10, 20, 40, 50, 60, 70, 80]
     high_mass = [90, 100, 120, 130, 150, 200, 300, 400, 500, 600, 800]
-    tau = lambda mass : merge_base+'TMVA/'+str(args.year)+'/'+args.region+'-'+args.selection+'/Signal/HNL-tau-m'+str(mass)+'.root'
-    ele = lambda mass : merge_base+'TMVA/'+str(args.year)+'/'+args.region+'-'+args.selection+'/Signal/HNL-e-m'+str(mass)+'.root'
-    mu = lambda mass : merge_base+'TMVA/'+str(args.year)+'/'+args.region+'-'+args.selection+'/Signal/HNL-mu-m'+str(mass)+'.root'
+    tau = lambda mass : merge_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Signal/HNL-tau-m'+str(mass)+'.root'
+    ele = lambda mass : merge_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Signal/HNL-e-m'+str(mass)+'.root'
+    mu = lambda mass : merge_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Signal/HNL-mu-m'+str(mass)+'.root'
 
 
-    all_bkgr_files = merge_base+'TMVA/'+str(args.year)+'/'+args.region+'-'+args.selection+'/Background/*root'
+    all_bkgr_files = merge_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Background/*root'
 
     #Low mass
     low_mass_tau = []
