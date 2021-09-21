@@ -95,8 +95,6 @@ def getSampleManager(y):
         skim_str = 'Reco'
     file_list = 'fulllist_'+args.era+str(y)+'_mconly' if args.customList is None else args.customList
 
-
-    print skim_str
     if skim_str == 'RecoGeneral':
         sm = SampleManager(args.era, y, skim_str, file_list, skim_selection=args.selection, region=args.region)
     else:
@@ -271,7 +269,6 @@ if not args.makePlots and args.makeDataCards is None:
                 if not event.passedFilter(cutter, sample.output, inverted_cut = True, sideband = [2] if args.tag == 'TauFakes' else None): continue
             else:
                 if not event.passedFilter(cutter, sample.output, sideband = [2] if args.tag == 'TauFakes' else None): continue
-            print "passed"
 
             nprompt = 0
             for i, index in enumerate(chain.l_indices):

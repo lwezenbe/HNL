@@ -18,7 +18,6 @@ class Event(object):
         self.chain.obj_sel = getObjectSelection(self.chain.selection)
 
         self.event_category = EventCategory(self.chain)
-        print self.chain.strategy, self.chain.region, self.chain.selection
         self.event_selector = EventSelector(self.chain.region, self.chain, self.new_chain, is_reco_level=is_reco_level, event_categorization=self.event_category, additional_options=self.additional_options)
 
     def initEvent(self):
@@ -32,7 +31,6 @@ class Event(object):
         self.processMuons()
         self.processElectrons()
         self.processTaus()
-        # print self.chain.is_tight_lepton
 
     def processMuons(self):
         for l in xrange(self.chain._nEle, self.chain._nLight):
