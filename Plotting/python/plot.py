@@ -330,7 +330,7 @@ class Plot:
 
         return ratios
 
-    def drawRatio(self, ratios, custom_labels = None, just_errors = False):
+    def drawRatio(self, ratios, custom_labels = None, just_errors = False, ref_line = 1.):
         self.ratio_pad.cd()        
 
         for r in ratios:
@@ -405,7 +405,7 @@ class Plot:
         elif len(self.b) > 0:
             x_val = [self.b[0].GetXaxis().GetXmin(), self.b[0].GetXaxis().GetXmax()]
 
-        self.line = ROOT.TLine(x_val[0], 1, x_val[1], 1)
+        self.line = ROOT.TLine(x_val[0], ref_line, x_val[1], ref_line)
         self.line.SetLineColor(ROOT.kBlack)
         self.line.SetLineWidth(1)
         self.line.SetLineStyle(3)
@@ -579,7 +579,7 @@ class Plot:
 
 
     def drawHist(self, output_dir = None, normalize_signal = False, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None, 
-        custom_labels = None, draw_lines = None, message = None, min_cutoff = None):
+        custom_labels = None, draw_lines = None, message = None, min_cutoff = None, ref_line = 1.):
 
         #
         # Some default settings
@@ -830,15 +830,20 @@ class Plot:
             just_errors = self.draw_ratio == 'errorsOnly'
             if self.b is None:                 raise RuntimeError("Cannot ask ratio or significance if no background is given")
             ratios = self.calculateRatio()
-            self.drawRatio(ratios, custom_labels, just_errors)
+            self.drawRatio(ratios, custom_labels, just_errors, ref_line = ref_line)
             self.ratio_pad.Update()
-        if self.draw_significance:
-            if self.b is None:                 raise RuntimeError("Cannot ask ratio or significance if no background is given")
+        if self.draw_significance is not False:
+            existing_significances = isinstance(self.draw_significance, list)
+            if not existing_significances and self.b is None:                 raise RuntimeError("Cannot ask ratio or significance if no background is given")
             significance_lines = []
             for s in self.s:
                 significance_lines.append(ROOT.TLine(s.GetBinLowEdge(1), 0, s.GetBinLowEdge(self.s[0].GetNbinsX()+1), 0))
-            significances = self.calculateSignificance(cumulative=True)
-            self.drawSignificance(significances, custom_labels, significance_lines)
+            
+            if not existing_significances: significances = self.calculateSignificance(cumulative=True)
+            else: significances = self.draw_significance
+
+            # self.drawSignificance(significances, custom_labels, significance_lines)
+            self.drawSignificance(significances, custom_labels)
             self.sig_pad.Update()
 
         ROOT.gPad.Update() 

@@ -57,7 +57,7 @@ def runAsymptoticLimit(mass, cardname, era, year):
 
     for y in split_year:
         datacard = getDataCard(mass, cardname, era, y)
-        combineSets(mass, y)
+        combineSets(mass, era, y)
     combineYears(mass, cardname, era)
     datacard = getDataCard(mass, cardname, era, year)
 
@@ -89,9 +89,8 @@ for year in args.year:
     all_signal[year] = glob.glob(datacards_base(args.era, year)+'/*')
     masses_py[year] = [int(signal.split('/')[-1].split('-m')[-1]) for signal in all_signal[year]]
 masses = []
-# for year in args.year:
-#     masses += (list(set(masses_py[year])-set(masses)))
-masses = masses_py['2016']
+for year in args.year:
+    masses += (list(set(masses_py[year])-set(masses)))
 masses = sorted(masses)
 
 if not args.useExistingLimits:
@@ -101,12 +100,13 @@ if not args.useExistingLimits:
             if mass not in args.masses: continue
             print '\x1b[6;30;42m', 'Processing mN =', str(mass), 'GeV', '\x1b[0m'
 
-            if args.asymptotic: runAsymptoticLimit(mass, card, year_to_read)
+            if args.asymptotic: runAsymptoticLimit(mass, card, args.era, year_to_read)
             else:
                 print 'To be implemented'
                 exit(0)
 
 compare_dict = {
+    'cutbased-AN2017014': 'Replicated AN2017014 selection',
     'cutbased-default': 'Search regions',
     'MVA-default': 'BDT'
 }
@@ -119,10 +119,12 @@ for card in cards_to_read:
     for mass in masses:
         if mass not in args.masses: continue
         asymptotic_str = 'asymptotic' if args.asymptotic else ''
-        input_folder = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', str(year_to_read), args.strategy +'-'+ args.selection, args.flavor, 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', asymptotic_str, card)
+        input_folder = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.era+str(year_to_read), args.strategy +'-'+ args.selection, args.flavor, 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', asymptotic_str, card)
         tmp_coupling = sqrt(signal_couplingsquared[args.flavor][mass])
 
+        print tmp_coupling
         tmp_limit = extractScaledLimitsPromptHNL(input_folder + '/higgsCombineTest.AsymptoticLimits.mH120.root', tmp_coupling)
+        print tmp_limit
         if tmp_limit is not None and len(tmp_limit) > 4 and mass != 5: 
             passed_masses.append(mass)
             passed_couplings.append(tmp_coupling)
@@ -141,7 +143,7 @@ for card in cards_to_read:
 
             file_list = []
             for m in passed_masses:
-                file_name  = glob.glob(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', str(year_to_read), sname, args.flavor, 
+                file_name  = glob.glob(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.era+str(year_to_read), sname, args.flavor, 
                                         'HNL-'+args.flavor+'-m'+str(m), 'shapes', asymptotic_str+'/'+cname+'/*'))
                 if len(file_name) == 0:
                     file_list.append(None)
@@ -165,7 +167,7 @@ for card in cards_to_read:
 
     coupling_dict = {'tau':'#tau', 'mu':'#mu', 'e':'e', '2l':'l'}
     from HNL.Plotting.plot import Plot
-    destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/Results/runAsymptoticLimits/'+args.strategy+'-'+args.selection+'/'+args.flavor+'/'+card+'/'+ year_to_read))
+    destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/Results/runAsymptoticLimits/'+args.strategy+'-'+args.selection+'/'+args.flavor+'/'+card+'/'+ args.era+year_to_read))
     if observed_AN is None and expected_AN is None:
         bkgr_hist = None
     else:

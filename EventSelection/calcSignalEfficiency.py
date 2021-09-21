@@ -36,7 +36,7 @@ submission_parser.add_argument('--genLevel',   action='store_true', default=Fals
 submission_parser.add_argument('--compareTriggerCuts', action='store', default=None,  
     help='Look at each trigger separately for each category. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', 
     choices=['single', 'cumulative', 'full'])
-submission_parser.add_argument('--flavor', action='store', default=None,  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
+submission_parser.add_argument('--flavor', action='store', default=None,  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', 'tauhad', 'taulep'])
 submission_parser.add_argument('--logLevel',  action='store', default='INFO', help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 argParser.add_argument('--makePlots', action='store_true', default=False,  help='make plots')
 argParser.add_argument('--stackBaselineCuts', action='store', type=str, nargs='*', default=None, help='Add baselinecuts to put in comparison', choices = ['FObase', 'threeLeptonGenFilter'
@@ -56,10 +56,10 @@ if args.compareTriggerCuts is not None and args.divideByCategory != 'gen':
 #
 if args.isTest: 
     args.isChild = True
-    if args.sample is None: args.sample = 'HNL-tau-m200'
+    if args.sample is None: args.sample = 'HNL-e-m250'
     if args.subJob is None: args.subJob = '0'
     if args.year is None: args.year = '2016'
-    if args.flavor is None: args.flavor = 'tau'
+    if args.flavor is None: args.flavor = 'e'
     from HNL.Tools.helpers import generateArgString
     arg_string =  generateArgString(argParser)
 else:
@@ -69,18 +69,18 @@ else:
 # Load in the sample list 
 #
 from HNL.Samples.sampleManager import SampleManager
-sample_manager = SampleManager(args.era, args.year, 'noskim', 'allsignal_'+str(args.year))
+sample_manager = SampleManager(args.era, args.year, 'noskim', 'allsignal_'+args.era+str(args.year))
 
 subjobAppendix = 'subJob' + args.subJob if args.subJob is not None else ''
 category_split_str = 'allCategories' if args.divideByCategory is None else 'divideByCategory-'+args.divideByCategory
 trigger_str = args.compareTriggerCuts if args.compareTriggerCuts is not None else 'regularRun'
 
 jobs = {}
-flavors = ['tau', 'e', 'mu', '2l'] if args.flavor is None else [args.flavor]
+flavors = ['tau', 'e', 'mu'] if args.flavor is None else [args.flavor]
 for flavor in flavors:
     jobs[flavor] = []
     for sample_name in sample_manager.sample_names:
-        if not '-'+flavor+'-' in sample_name: continue
+        if not '-'+flavor in sample_name: continue
         sample = sample_manager.getSample(sample_name)
         for njob in xrange(sample.returnSplitJobs()): 
             jobs[flavor] += [(sample.name, str(njob))]
@@ -142,7 +142,7 @@ if not args.makePlots:
     #
     if not args.isChild:
         from HNL.Tools.jobSubmitter import submitJobs
-        flavors = ['tau', 'e', 'mu', '2l'] if args.flavor is None else [args.flavor]
+        flavors = ['tau', 'e', 'mu'] if args.flavor is None else [args.flavor]
         for flavor in flavors:
             submitJobs(__file__, ('sample', 'subJob'), jobs[flavor], argParser, jobLabel = 'calcSignalEfficiency', additionalArgs= [('flavor', flavor)])
         exit(0)
@@ -171,7 +171,7 @@ if not args.makePlots:
     # This function looks at the names of all samples and returns an array with all values right the middle of those
     # It assumes the samples are ordered by mass in the input list
     #
-    mass_range = getMassRange([sample_name for sample_name in sample_manager.sample_names if '-'+args.flavor+'-' in sample_name])
+    mass_range = getMassRange([sample_name for sample_name in sample_manager.sample_names if '-'+args.flavor in sample_name])
 
     from HNL.EventSelection.eventCategorization import EventCategory
     ec = EventCategory(chain)
@@ -218,11 +218,6 @@ if not args.makePlots:
     from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
     from HNL.ObjectSelection.leptonSelector import isGoodLepton
 
-    def passedPtCutsByCategory(in_chain, cat):
-        cuts_collection = returnCategoryPtCuts(cat)
-        passes_cuts = [passedCustomPtCuts(in_chain, cut) for cut in cuts_collection]
-        return any(passes_cuts)
-
     #
     # Object Selection
     #
@@ -268,13 +263,12 @@ if not args.makePlots:
             if len(tmp_tau) < 1 or len(tmp_light) < 1: passed_baseline_cut = False
 
         if args.baselineCut is not None and 'Inverted' in args.baselineCut: passed_baseline_cut = not passed_baseline_cut   #Invert selection if needed
+
         if not args.divideByCategory == 'gendenom' and not passed_baseline_cut: continue
     
         event.initEvent()
         if not args.genLevel:
-            passed = event.passedFilter(cutter, sample.output)
-        elif args.divideByCategory == 'gendenom':
-            passed = passed_baseline_cut
+            passed = event.passedFilter(cutter, sample.output, ignoreSignalOverlapRemoval = args.flavor == 'taulep')
         else:
             passed = True
             
@@ -333,6 +327,7 @@ else:
 
     efficiency = {}
     efficiency[cut_str] = createEfficiencies(in_file, CATEGORIES, {'HNLmass': (None, None, None)})
+
 
     if args.stackBaselineCuts is not None:
         for cut in args.stackBaselineCuts:

@@ -110,8 +110,22 @@ class EventSelector:
         if sample_name == 'ZG' and self.leptonFromMEExternalConversion(): return False
         return True
 
+    def removeOverlapInTauSignal(self, sample_name):
+        if 'taulep' in sample_name:
+            nlight = 0.
+            ntau = 0.
+            for l in xrange(chain._gen_nL):
+                if chain._gen_lFlavor[l] == 2 and chain._gen_lVisPt[l] > 18.: ntau += 1.
+                if chain._gen_lFlavor[l] != 2 and chain._gen_lPt[l] > 15. and chain._gen_lEta[l] < 3.: nlight += 1.
+            return ntau < 1 or nlight < 1
+        else:
+            return True
+
     def passedFilter(self, cutter, sample_name, kwargs={}):
         if not self.removeOverlapDYandZG(sample_name): return False
+
+        ignoreSignalOverlapRemoval = kwargs.get('ignoreSignalOverlapRemoval', False)
+        if not ignoreSignalOverlapRemoval and not self.removeOverlapInTauSignal(sample_name): return False
         if self.name != 'NoSelection':
             passed = self.selector.passedFilter(cutter, kwargs)
             if not passed: return False

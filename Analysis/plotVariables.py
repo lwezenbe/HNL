@@ -84,10 +84,10 @@ from HNL.EventSelection.event import Event
 def getSampleManager(y):
     if args.genLevel:
         skim_str = 'noskim'
-    elif args.selection != 'default':
+    elif args.selection not in ['default', 'AN2017014']:
         skim_str = 'noskim'
-    # elif args.region in ['highMassSR', 'lowMassSR']:
-    #     skim_str = 'RecoGeneral'
+    elif args.region in ['highMassSR', 'lowMassSR']:
+        skim_str = 'Reco'
     else:
         skim_str = 'Reco'
     file_list = 'fulllist_'+args.era+str(y) if args.customList is None else args.customList
@@ -377,7 +377,7 @@ else:
     import glob
     from HNL.Analysis.analysisTypes import signal_couplingsquared
 
-    for year in arg.year:
+    for year in args.year:
         print 'Processing ', year
 
         sample_manager = getSampleManager(year)

@@ -8,33 +8,35 @@ import os
 # No need to include the extensions in the sublists, it will handle that
 #
 
-ALLOWED_SKIMS = ['noskim', 'Reco', 'RecoGeneral', 'TTT', 'tZqNewFR', 'Gen']
+ALLOWED_SKIMS = ['noskim', 'Reco', 'RecoGeneral', 'TTT', 'tZqNewFR', 'Gen', 'RecoAN2017014']
 BASE_PATH = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Samples', 'InputFiles')
-# SAMPLE_GROUPS = {
-#     # 'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],
-#     'TT-T+X': ['ttX', 'TTG', 'TG', 'TTTT', 'ST', 'TT'],
-#     'triboson': ['triboson'],
-#     'WZ': ['WZ'],
-#     # 'diboson': ('ZZ', 'WW', 'WZ'),
-#     'ZZ-H': ['ZZ', 'Higgs'],
-#     'XG': ['DY', 'ZG', 'WG'],
-#     'other':['WJets', 'WW', 'QCD']
-# }
 SAMPLE_GROUPS = {
-    'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],
-    'TT-T+X': ['ttX', 'TTG', 'TG', 'TTTT'],
+    # 'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],
+    'TT-T+X': ['ttX', 'TTG', 'TG', 'TTTT', 'ST', 'TT'],
     'triboson': ['triboson'],
     'WZ': ['WZ'],
+    # 'diboson': ('ZZ', 'WW', 'WZ'),
     'ZZ-H': ['ZZ', 'Higgs'],
-    'XG': ['ZG', 'WG'],
-    'QCD':['QCD']
+    'XG': ['DY', 'ZG', 'WG'],
+    'other':['WJets', 'WW', 'QCD']
 }
+# SAMPLE_GROUPS = {
+#     'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],
+#     'TT-T+X': ['ttX', 'TTG', 'TG', 'TTTT'],
+#     'triboson': ['triboson'],
+#     'WZ': ['WZ'],
+#     'ZZ-H': ['ZZ', 'Higgs'],
+#     'XG': ['ZG', 'WG'],
+#     'QCD':['QCD']
+# }
 
 ERA_DICT = {
     'prelegacy': ['2016', '2017', '2018'],
     'UL': ['2016pre', '2016post', '2017', '2018']
 }
 
+allowed_reco_general_skimselections = ['default', 'AN2017014']
+allowed_reco_general_regions = ['lowMassSR', 'highMassSR']
 
 class SampleManager:
 
@@ -46,8 +48,12 @@ class SampleManager:
             raise RuntimeError("skim "+skim+" not allowed in the sample manager")
         if skim_selection is not None and region is not None and not 'General' in skim:
             raise RuntimeError("Defined param skim_selection and region for input files that do not support them")
-        if 'General' in skim and (skim_selection is None or region is None):
-            raise RuntimeError('Param skim_selection and region should be defined for this skim')
+        if 'General' in skim and (skim_selection is None or region is None or skim_selection not in allowed_reco_general_skimselections or region not in allowed_reco_general_regions):
+            # raise RuntimeError('Param skim_selection and region should be defined for this skim')
+            print 'Warning: No region or skim-selection defined so using skim_string "Reco" in SampleManager'
+            skim = 'Reco'
+            skim_selection = None
+            region = None  
 
         self.era = era
         self.year = year

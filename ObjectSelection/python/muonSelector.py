@@ -5,18 +5,18 @@ def isGoodGenMuon(chain, index):
 
 def isBaseMuon(chain, index):
     if abs(chain._lEta[index]) >= 2.4:          return False
-    if chain._lPt[index] <= 5:                   return False
+    if chain._lPtCorr[index] <= 5:                   return False
     return True
 
 def slidingCutMuon(chain, index, lowpt, lowptwp, highpt, highptwp):
     
     slope = (highptwp - lowptwp)/(highpt-lowpt)
-    if chain._lPt[index] < lowpt:
+    if chain._lPtCorr[index] < lowpt:
         return lowptwp
-    elif chain._lPt[index] > highpt:
+    elif chain._lPtCorr[index] > highpt:
         return highptwp
     else:
-        return lowptwp + slope*(chain._lPt[index]-lowpt)
+        return lowptwp + slope*(chain._lPtCorr[index]-lowpt)
 
 #
 # Cut-based selection
@@ -55,7 +55,7 @@ def isLooseMuonEwkino(chain, index):
     if chain._lFlavor[index] != 1: return False
     if(abs(chain._dxy[index])>= 0.05 or abs(chain._dz[index])>= 0.1 or chain._3dIPSig[index] >= 8): return False    
     if chain._miniIso[index] >= 0.4:    return False
-    if chain._lPt[index] <= 5 or abs(chain._lEta[index]) >= 2.4:       return False
+    if chain._lPtCorr[index] <= 5 or abs(chain._lEta[index]) >= 2.4:       return False
     if not chain._lPOGLoose[index]: return False
     return True #isLooseMuon From heavyNeutrino already included in basic muon cuts
 
@@ -64,7 +64,7 @@ def isFOMuonEwkino(chain, index):
         if not chain.is_loose_lepton[index][0]: return False
     else:
         if not isLooseMuonEwkino(chain, index):       return False
-    if chain._lPt[index] <= 10:       return False
+    if chain._lPtCorr[index] <= 10:       return False
     if not chain._lPOGMedium[index]: return False
     if chain._leptonMvaTTH[index] <= 0.4:
         if chain._ptRatio[index] < 0.35:        return False
@@ -81,7 +81,7 @@ def isTightMuonEwkino(chain, index):
         if not chain.is_loose_lepton[index][0]: return False
     else:
         if not isLooseMuonEwkino(chain, index):       return False
-    if chain._lPt[index] <= 10:       return False
+    if chain._lPtCorr[index] <= 10:       return False
     if not chain._lPOGMedium[index]: return False
     if chain._leptonMvaTTH[index] <= 0.4: return False
     return True
@@ -103,7 +103,7 @@ def isFOMuonttH(chain, index):
         if not chain.is_loose_lepton[index][0]: return False
     else:
         if not isLooseMuonttH(chain, index):        return False
-    if chain._lPt[index] < 10:                  return False
+    if chain._lPtCorr[index] < 10:                  return False
     # if chain._leptonMvaTTH[index] <= 0.85:      
     #     if chain._ptRatio[index] <= 0.65: return False
     # if chain._closestJetDeepFlavor[index] >= slidingDeepFlavorThreshold(chain.year, chain._lPt[index]):
@@ -156,7 +156,7 @@ def isTightMuontZq(chain, index):
 #
 def topPreselection(chain, index):
     if not isBaseMuon(chain, index):            return False
-    if chain._lPt[index] < 10:                  return False
+    if chain._lPtCorr[index] < 10:                  return False
     if abs(chain._dxy[index]) >= 0.05:          return False
     if abs(chain._dz[index]) >= 0.1:            return False
     if chain._3dIPSig[index] >= 8:              return False
@@ -172,8 +172,8 @@ def isLooseMuonTop(chain, index):
 
 # Taken from Luka
 # https://github.com/wverbeke/ewkino/blob/tZq_new/objectSelection/MuonSelector.cc
-muon_top_FO_dfdict = { 2016 : 0.015, 2017 : 0.02, 2018 : 0.02}
-muon_top_FO_ptratiodict = { 2016 : 0.5, 2017 : 0.6, 2018 : 0.6}
+muon_top_FO_dfdict = { '2016' : 0.015, '2016pre' : 0.015, '2016post' : 0.015, '2017' : 0.02, '2018' : 0.02}
+muon_top_FO_ptratiodict = { '2016' : 0.5, '2016pre' : 0.5, '2016post' : 0.5, '2017' : 0.6, '2018' : 0.6}
 
 def isFOMuonTop(chain, index):
     if getattr(chain, 'is_loose_lepton', None) is not None and chain.is_loose_lepton[index] is not None and chain.is_loose_lepton[index][1] == 'leptonMVAtop':
@@ -198,7 +198,7 @@ def isTightMuonTop(chain, index):
 #
 def isLooseMuonTTT(chain, index):
     if chain._lFlavor[index] != 1:              return False
-    if chain._lPt[index] < 5: return False
+    if chain._lPtCorr[index] < 5: return False
     if abs(chain._lEta[index]) > 2.4:           return False
     if abs(chain._dxy[index]) >= 0.05:          return False
     if abs(chain._dz[index]) >= 0.1:            return False
@@ -212,7 +212,7 @@ def isFOMuonTTT(chain, index):
         if not chain.is_loose_lepton[index][0]: return False
     else:
         if not isLooseMuonTTT(chain, index):        return False
-    if chain._lPt[index] < 10: return False
+    if chain._lPtCorr[index] < 10: return False
     if chain._leptonMvaTOP[index] <= 0.4:
         if chain._ptRatio[index] < 0.45:        return False
         if chain.year == 2016:
@@ -226,7 +226,7 @@ def isTightMuonTTT(chain, index):
         if not chain.is_FO_lepton[index][0]: return False
     else:
         if not isLooseMuonTTT(chain, index):        return False
-    if chain._lPt[index] < 10: return False
+    if chain._lPtCorr[index] < 10: return False
     if chain._leptonMvaTOP[index] <= 0.4:   return False 
     return True
 
@@ -236,7 +236,7 @@ def isTightMuonTTT(chain, index):
 
 def isLooseMuonLuka(chain, index):
     if chain._lFlavor[index] != 1:              return False
-    if chain._lPt[index] <= 5:                  return False
+    if chain._lPtCorr[index] <= 5:                  return False
     if abs(chain._lEta[index]) >= 2.4:          return False
     if abs(chain._dxy[index]) >= 0.05:          return False
     if abs(chain._dz[index]) >= 0.1:            return False
@@ -250,7 +250,7 @@ def isFOMuonLuka(chain, index):
         if not chain.is_loose_lepton[index][0]: return False
     else:
         if not isLooseMuonLuka(chain, index):        return False
-    if chain._lPt[index] <= 10: return False
+    if chain._lPtCorr[index] <= 10: return False
     if chain._leptonMvaTOP[index] <= 0.4:
         if chain._ptRatio[index] < 0.45:        return False
         if chain.year == 2016:
@@ -264,7 +264,7 @@ def isTightMuonLuka(chain, index):
         if not chain.is_FO_lepton[index][0]: return False
     else:
         if not isFOMuonLuka(chain, index):        return False
-    if chain._lPt[index] <= 10: return False
+    if chain._lPtCorr[index] <= 10: return False
     if chain._leptonMvaTOP[index] <= 0.4:   return False 
     return True
 

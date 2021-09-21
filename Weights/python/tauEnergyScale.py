@@ -5,14 +5,25 @@
 from TauPOG.TauIDSFs.TauIDSFTool import TauESTool
 from TauPOG.TauIDSFs.TauIDSFTool import TauFESTool
 
-YEARLIB = {'prelegacy2016' : '2016Legacy',
+YEARLIB_TES = {'prelegacy2016' : '2016Legacy',
+            'prelegacy2017': '2017ReReco',
+            'prelegacy2018': '2018ReReco',
+            
+            'UL2016pre' : 'UL2016_preVFP',
+            'UL2016post' : 'UL2016_postVFP',
+            'UL2017': 'UL2017',
+            'UL2018': 'UL2018'
+        }
+
+YEARLIB_FES = {'prelegacy2016' : '2016Legacy',
             'prelegacy2017': '2017ReReco',
             'prelegacy2018': '2018ReReco',
             
             'UL2016pre' : '2016Legacy',
             'UL2016post' : '2016Legacy',
             'UL2017': '2017ReReco',
-            'UL2018': '2018ReReco'}
+            'UL2018': '2017ReReco'
+        }
 
 ALGOLIB = {'HNL' : 'DeepTau2017v2p1VSjet',
             'ewkino'  :  'MVAoldDM2017v2' }
@@ -20,8 +31,8 @@ ALGOLIB = {'HNL' : 'DeepTau2017v2p1VSjet',
 class TauEnergyScale:
     
     def __init__(self, era, year, algorithm):
-        self.testool = TauESTool(YEARLIB[era+year], ALGOLIB[algorithm])
-        self.tfestool = TauFESTool(YEARLIB[era+year])
+        self.testool = TauESTool(YEARLIB_TES[era+year], ALGOLIB[algorithm])
+        self.tfestool = TauFESTool(YEARLIB_FES[era+year])
 
     #tlv is four vector to correct
     def applyES(self, tlv, dm, genmatch):

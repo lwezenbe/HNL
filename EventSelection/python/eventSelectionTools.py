@@ -68,6 +68,8 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         if isGoodLepton(chain, l):
             chain.leptons.append((pt_to_use, l)) 
 
+    # print chain.leptons
+
     if len(chain.leptons) != nL:  return False
 
     tes = TauEnergyScale(chain.era, chain.year, chain.obj_sel['tau_algo'])

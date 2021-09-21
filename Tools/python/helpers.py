@@ -239,7 +239,7 @@ def getMinWithErr(hist, zero_not_allowed=False):
 
 
 def getMassRange(list_of_names):
-    all_masses = sorted([float(name.rsplit('-m', 1)[-1]) for name in list_of_names if 'HNL' in name])
+    all_masses = sorted([k for k in {float(name.rsplit('-m', 1)[-1]) for name in list_of_names if 'HNL' in name}])
     m_range = []
     if len(all_masses) == 1:
         m_range = [all_masses[0]/2, all_masses[0]*1.5]
@@ -287,3 +287,18 @@ def generateArgString(arg_parser):
     from HNL.Tools.jobSubmitter import getSubmitArgs, getArgsStr
     submit_args = getSubmitArgs(arg_parser, args)
     return getArgsStr(submit_args, ['isTest'])
+
+   
+def calculateSignificance(hist1, hist2, cumulative=False):
+    if cumulative:
+        raise RuntimeError("Not yet implemented")
+
+    num = hist1.Clone('significance')
+    nbins = num.GetNbinsX()
+    from  HNL.Tools.histogram import returnSqrt
+    tot = hist1.Clone('tot')
+    tot.Add(hist2)
+    sqrtTot = returnSqrt(tot)
+    num.Divide(sqrtTot)
+
+    return num

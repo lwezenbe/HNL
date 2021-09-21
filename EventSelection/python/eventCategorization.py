@@ -85,6 +85,7 @@ SUPER_CATEGORIES = {
     'Total': [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16], 
     'TauFinalStates': [1, 2, 3, 4, 5, 6, 7, 8, 9]
     }
+
 ANALYSIS_CATEGORIES = {
     'Ditau': [1, 2, 3, 4], 
     'SingleTau-OS': [6, 8], 
@@ -233,6 +234,12 @@ class EventCategory():
         cat = self.returnCategory()
         for k in ANALYSIS_CATEGORIES.keys():
             if cat in ANALYSIS_CATEGORIES[k]: return k
+        return None
+
+    def returnSuperCategory(self):
+        cat = self.returnCategory()
+        for k in mutual_exclusive_supercategories:
+            if cat in SUPER_CATEGORIES[k]: return k
         return None
 
     def returnSignalTruthCategory(self):
