@@ -51,11 +51,10 @@ from HNL.Samples.sampleManager import SampleManager
 # file_list = 'fulllist_'+args.era+args.year+'_mconly' if args.customList is None else args.customList
 file_list = 'Skimmer/skimlist_{0}{1}'.format(args.era, args.year)
 gen_name = 'Reco' if not args.genSkim else 'Gen'
-if args.skimSelection == 'AN2017014' and (args.region is not None or args.reprocess): gen_name += 'AN2017014'
 if args.region is None and not args.reprocess:
     sample_manager = SampleManager(args.era, args.year, 'noskim', file_list, need_skim_samples=True)
 else:
-    sample_manager = SampleManager(args.era, args.year, gen_name, file_list, need_skim_samples=False)
+    sample_manager = SampleManager(args.era, args.year, gen_name, file_list, need_skim_samples=False, skim_selection=args.skimSelection)
 
 #
 # Subjobs

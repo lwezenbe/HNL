@@ -15,8 +15,8 @@ import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true',       default=False,  help='mark as subjob, will never submit subjobs by itself')
-submission_parser.add_argument('--year',     action='store', nargs='*',       default=None,   help='Select year', required=True)
-submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
+submission_parser.add_argument('--year',     action='store', nargs='*',       default=None,   help='Select year')
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--sample',   action='store',            default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',            default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true',       default=False,  help='Run a small test')
@@ -84,18 +84,11 @@ from HNL.EventSelection.event import Event
 def getSampleManager(y):
     if args.genLevel:
         skim_str = 'noskim'
-    elif args.selection not in ['default', 'AN2017014']:
-        skim_str = 'noskim'
-    elif args.region in ['highMassSR', 'lowMassSR']:
-        skim_str = 'Reco'
     else:
-        skim_str = 'Reco'
+        skim_str = 'auto'
     file_list = 'fulllist_'+args.era+str(y) if args.customList is None else args.customList
 
-    if skim_str == 'RecoGeneral':
-        sm = SampleManager(args.era, y, skim_str, file_list, skim_selection=args.selection, region=args.region)
-    else:
-        sm = SampleManager(args.era, y, skim_str, file_list)
+    sm = SampleManager(args.era, y, skim_str, file_list, skim_selection=args.selection, region=args.region)
     return sm
 
 if args.isTest:

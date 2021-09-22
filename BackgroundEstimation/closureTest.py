@@ -84,14 +84,14 @@ from HNL.Samples.sampleManager import SampleManager
 if args.noskim:
     skim_str = 'noskim'
 else:
-    skim_str = 'noskim' if args.selection == 'AN2017014' else 'Reco'
+    skim_str = 'Reco'
 
 if not args.inData:
     # sublist = 'BackgroundEstimation/ClosureTests'
     sublist = 'fulllist_'+args.era+args.year+'_nosignal_mconly'
 else:
     sublist = 'fulllist_'+args.era+args.year+'_nosignal'
-sample_manager = SampleManager(args.era, args.year, skim_str, sublist)
+sample_manager = SampleManager(args.era, args.year, skim_str, sublist, skim_selection=args.selection)
 
 this_file_name = __file__.split('.')[0].rsplit('/', 1)[-1]
 

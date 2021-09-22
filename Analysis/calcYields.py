@@ -87,18 +87,10 @@ else:
 #
 from HNL.Samples.sampleManager import SampleManager
 def getSampleManager(y):
-    if args.noskim or args.selection not in ['default', 'AN2017014']:
-        skim_str = 'noskim'
-    # elif args.region in ['highMassSR', 'lowMassSR']:
-    #     skim_str = 'RecoGeneral'
-    else:
-        skim_str = 'Reco'
+    skim_str = 'auto'
     file_list = 'fulllist_'+args.era+str(y)+'_mconly' if args.customList is None else args.customList
 
-    if skim_str == 'RecoGeneral':
-        sm = SampleManager(args.era, y, skim_str, file_list, skim_selection=args.selection, region=args.region)
-    else:
-        sm = SampleManager(args.era, y, skim_str, file_list)
+    sm = SampleManager(args.era, y, skim_str, file_list, skim_selection=args.selection, region=args.region)
     return sm
 
 #
