@@ -48,7 +48,6 @@ from HNL.Tools.histogram import Histogram
 if not isValidRootFile(in_base_eff(args.first_selection, 'e')) or not isValidRootFile(in_base_eff(args.second_selection, 'mu')):
     raise RuntimeWarning("This code uses output from plotVariables. Please run: python ObjectSelection/compareLeptonId.py --year {0} --era {1}".format(args.year, args.era))
 if not isValidRootFile(in_base_misid(args.first_selection)):
-    print in_base_misid(args.first_selection)
     raise RuntimeWarning("This code uses output from EventSelection. Please run: python calcExpectedObjectEfficiency.py --selection {2} --region {3} --year {0} --era {1}".format(args.year, args.era, args.first_selection, args.region))
 if not isValidRootFile(in_base_misid(args.second_selection)):
     raise RuntimeWarning("This code uses output from EventSelection. Please run: python calcExpectedObjectEfficiency.py --selection {2} --region {3} --year {0} --era {1}".format(args.year, args.era, args.second_selection, args.region))
@@ -59,7 +58,6 @@ for sel in [args.first_selection, args.second_selection]:
     for flavor in ['e', 'mu']:
         efficiencies[sel][flavor] = ROC(getObjectSelection(sel)['light_algo'], in_base_eff(sel, flavor)).getEfficiency().GetBinContent(3)
 
-print efficiencies
 tot_eff = {}
 tot_mis = {}
 for sel in [args.first_selection, args.second_selection]:
@@ -75,7 +73,6 @@ for sel in [args.first_selection, args.second_selection]:
         'EMuMu' : getObjFromFile(in_base_misid(sel), 'EMuMu').GetMean(),
         'MuMuMu' : getObjFromFile(in_base_misid(sel), 'MuMuMu').GetMean()
     }
-print tot_mis
 
 list_of_hist_1 = {}
 list_of_hist_2 = {}
@@ -97,10 +94,8 @@ for sample in sm.sample_outputs:
     else:
         if not '-e' in sample and not '-mu' in sample: continue
     if not isValidRootFile(in_base_var(args.first_selection, sample)+'/variables.root'):
-        print in_base_var(args.first_selection, sample)
         raise RuntimeWarning("This code uses output from plotVariables. Please run: python Analysis/plotVariables.py --year {0} --era {1} --selection {2} --customList allsignal_{1}{0} --region {3}".format(args.year, args.era, args.first_selection, args.region))
     if not isValidRootFile(in_base_var(args.second_selection, sample)+'/variables.root'):
-        print in_base_var(args.second_selection, sample)
         raise RuntimeWarning("This code uses output from plotVariables. Please run: python Analysis/plotVariables.py --year {0} --era {1} --selection {2} --customList allsignal_{1}{0} --region {3}".format(args.year, args.era, args.second_selection, args.region))
         
     var_dist = {}
@@ -150,7 +145,6 @@ for sample in samples_to_use:
             SF = tot_eff[args.first_selection][ac]/tot_eff[args.second_selection][ac]
         else:
             SF = tot_mis[args.first_selection][ac]/tot_mis[args.second_selection][ac]
-            print ac, tot_mis[args.first_selection][ac], tot_mis[args.second_selection][ac], SF
         from HNL.Plotting.plot import Plot
         from HNL.Plotting.plottingTools import extraTextFormat
         extra_text = [extraTextFormat(str(SF))]  #Text to display event type in plot
