@@ -48,6 +48,8 @@ if args.isTest:
 else:
     arg_string = None
 
+print args.flavor
+
 #
 # All ID's and WP we want to test
 # If you want to add a new algorithm, add a line below

@@ -166,7 +166,7 @@ def topPreselection(chain, index):
 
 def isLooseMuonTop(chain, index):
     if not topPreselection(chain, index):       return False
-    if chain._leptonMvaTOP[index] <= 0.05:       return False
+    if chain._leptonMvaTOP[index] <= -0.45:       return False
 
     return True
 
@@ -182,6 +182,7 @@ def isFOMuonTop(chain, index):
         if not isLooseMuonTop(chain, index):        return False
     # if chain._ptRatio[index] < muon_top_FO_ptratiodict[chain.year]: return False
     # if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) > muon_top_FO_dfdict[chain.year]: return False
+    if chain._leptonMvaTOP[index] <= 0.05:       return False          #Tight leptonMVA
     return True
 
 def isTightMuonTop(chain, index):
@@ -189,8 +190,8 @@ def isTightMuonTop(chain, index):
         if not chain.is_FO_lepton[index][0]: return False
     else:
         if not isFOMuonTop(chain, index):           return False
-    if chain._leptonMvaTOP[index] <= 0.9:       return False          #Tight leptonMVA
-    # if chain._leptonMvaTOP[index] <= 0.65:       return False           #Medium leptonMVA
+    # if chain._leptonMvaTOP[index] <= 0.9:       return False          #Tight leptonMVA
+    if chain._leptonMvaTOP[index] <= 0.65:       return False           #Medium leptonMVA
     return True
 
 #

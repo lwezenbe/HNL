@@ -12,7 +12,8 @@ from HNL.EventSelection.eventSelectionTools import select3TightLeptons
 import ROOT
 
 from HNL.EventSelection.eventCategorization import CATEGORIES, SUPER_CATEGORIES, ANALYSIS_CATEGORIES
-grouped_categories = ANALYSIS_CATEGORIES
+# grouped_categories = ANALYSIS_CATEGORIES
+grouped_categories = SUPER_CATEGORIES
 
 #
 # Argument parser and logging

@@ -16,6 +16,7 @@ submission_parser.add_argument('--strategy',   action='store', default='cutbased
 submission_parser.add_argument('--datacard', action='store', default='', type=str,  help='What type of analysis do you want to run?', choices=['Combined', 'Ditau', 'NoTau', 'SingleTau', 'TauFinalStates'])
 submission_parser.add_argument('--compareToCards',   type=str, nargs='*',  help='Compare to a specific card if it exists. If you want different selection use "selection/card" otherwise just "card"')
 submission_parser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
+argParser.add_argument('--dryplot', action='store_true', default=False,  help='Add a file with a message in the plotting folder')
 args = argParser.parse_args()
 
 datacards_base = lambda era, year : os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/dataCards/'+era+year+'/'+args.strategy+'-'+args.selection+'/'+args.flavor)
@@ -108,6 +109,7 @@ if not args.useExistingLimits:
 compare_dict = {
     'cutbased-AN2017014': 'Replicated AN2017014 selection',
     'cutbased-default': 'Search regions',
+    'cutbased-leptonMVAtop': 'top lepton MVA',
     'MVA-default': 'BDT'
 }
 
@@ -122,9 +124,7 @@ for card in cards_to_read:
         input_folder = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.era+str(year_to_read), args.strategy +'-'+ args.selection, args.flavor, 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', asymptotic_str, card)
         tmp_coupling = sqrt(signal_couplingsquared[args.flavor][mass])
 
-        print tmp_coupling
         tmp_limit = extractScaledLimitsPromptHNL(input_folder + '/higgsCombineTest.AsymptoticLimits.mH120.root', tmp_coupling)
-        print tmp_limit
         if tmp_limit is not None and len(tmp_limit) > 4 and mass != 5: 
             passed_masses.append(mass)
             passed_couplings.append(tmp_coupling)
@@ -168,7 +168,7 @@ for card in cards_to_read:
     coupling_dict = {'tau':'#tau', 'mu':'#mu', 'e':'e', '2l':'l'}
     from HNL.Plotting.plot import Plot
     destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/Results/runAsymptoticLimits/'+args.strategy+'-'+args.selection+'/'+args.flavor+'/'+card+'/'+ args.era+year_to_read))
-    if observed_AN is None and expected_AN is None:
+    if (observed_AN is None and expected_AN is None) or args.dryplot:
         bkgr_hist = None
     else:
         bkgr_hist = [observed_AN, expected_AN]
@@ -186,4 +186,4 @@ for card in cards_to_read:
     year = args.year[0] if len(args.year) == 1 else 'all'
     # p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=False, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', year = year)
     p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', year = year, era = args.era)
-    p.drawBrazilian(output_dir = destination)
+    p.drawBrazilian(output_dir = destination, ignore_bands = args.dryplot)

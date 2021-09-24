@@ -77,6 +77,7 @@ class LeptonIDplotter:
             for wps in algos.values():
                 for wp in wps:
                     all_wp.add(wp)
+            all_wp = [x for x in all_wp]
             
             for eff_name in efficiencies.keys():
                 for v in var:
@@ -89,9 +90,12 @@ class LeptonIDplotter:
                                     if wp not in algos[algo]:   continue
                                     all_hist.append(efficiencies[eff_name][year][era][algo][wp][v].getEfficiency())
                                     all_names.append(algo +' ('+era+ ' ' +year+')')
+                    
+                        denom_hist = efficiencies[eff_name][list_of_years[0]][list_of_eras[0]][list_of_algos[0]][wp][v].getDenominator()
+                        denom_hist.Scale(all_hist[0].GetSumOfWeights()/denom_hist.GetSumOfWeights())
+                        p = Plot(all_hist, all_names + ['Baseline spectrum'],  wp+'_'+eff_name+'_'+self.flavor+'_'+v, bkgr_hist = denom_hist)
+                        p.drawHist(output_dir = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'ObjectSelection', 'data', 'Results', 'compareLeptonId', eff_name, self.signal+'-'+self.background)), draw_option = 'EHist', bkgr_draw_option='EHistFilled')
 
-                        p = Plot(all_hist, all_names,  wp+'_'+eff_name+'_'+self.flavor+'_'+v)
-                        p.drawHist(output_dir = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'ObjectSelection', 'data', 'Results', 'compareLeptonId', eff_name, self.signal+'-'+self.background)), draw_option = 'Hist')
         else:
             for eff_name in efficiencies.keys():
                 for v in var:
@@ -100,12 +104,12 @@ class LeptonIDplotter:
                     for year in list_of_years:
                         for era in list_of_eras:
                             for algo in list_of_algos:
-                                for wp in algos[algo]:  
+                                for wp in list_of_workingpoints:  
                                     all_hist.append(efficiencies[eff_name][year][era][algo][wp][v].getEfficiency())
                                     all_names.append(wp + ' ' + algo +' ('+era+ ' ' +year+')')
 
-                p = Plot(all_hist, all_names,  eff_name+'_'+self.flavor+'_'+v)
-                p.drawHist(output_dir = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'ObjectSelection', 'data', 'Results', 'compareLeptonId', eff_name, self.signal+'-'+self.background)), draw_option = 'Hist')
+                    p = Plot(all_hist, all_names,  eff_name+'_'+self.flavor+'_'+v)
+                    p.drawHist(output_dir = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'ObjectSelection', 'data', 'Results', 'compareLeptonId', eff_name, self.signal+'-'+self.background)), draw_option = 'EHist')
 
 
 

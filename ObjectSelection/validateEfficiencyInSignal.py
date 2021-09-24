@@ -32,7 +32,7 @@ else:
 
 in_base_eff = lambda sel, flavor: os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'ObjectSelection', 'data', 'compareLeptonId', args.era+args.year, flavor, 'DY', getObjectSelection(sel)['light_algo']+'-ROC-'+flavor+'.root')
 # in_base_misid = lambda sel: os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'EventSelection', 'data', 'calcExpectedObjectEfficiency', '-'.join([args.strategy, args.region, sel]), args.era+'-'+args.year, 'averageObjectSelection.root')
-in_base_misid = lambda sel: os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'EventSelection', 'data', 'calcExpectedObjectEfficiency', '-'.join([args.strategy, 'baseline', sel]), 'UL-'+args.year, 'averageObjectSelection.root')
+in_base_misid = lambda sel: os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'EventSelection', 'data', 'calcExpectedObjectEfficiency', '-'.join([args.strategy, 'baseline', sel]), args.era+'-'+args.year, 'averageObjectSelection.root')
 out_dir = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'ObjectSelection', 'data', 'Results', 'validateSignalEfficiency', args.era+args.year, args.first_selection+'-'+args.second_selection)
 
 from HNL.Samples.sampleManager import SampleManager
@@ -40,7 +40,8 @@ from HNL.Tools.helpers import isValidRootFile, getObjFromFile
 if not args.inBackground:
     sm = SampleManager(args.era, args.year, 'noskim', 'allsignal_'+args.era+args.year)
 else:
-    sm = SampleManager(args.era, args.year, 'noskim', 'fulllist_'+args.era+args.year)
+    # sm = SampleManager(args.era, args.year, 'noskim', 'fulllist_'+args.era+args.year)
+    sm = SampleManager(args.era, args.year, 'noskim', 'EventSelection/fulllist_'+args.era+args.year)
 
 from HNL.Tools.ROC import ROC
 from HNL.Tools.histogram import Histogram
@@ -96,8 +97,10 @@ for sample in sm.sample_outputs:
     else:
         if not '-e' in sample and not '-mu' in sample: continue
     if not isValidRootFile(in_base_var(args.first_selection, sample)+'/variables.root'):
+        print in_base_var(args.first_selection, sample)
         raise RuntimeWarning("This code uses output from plotVariables. Please run: python Analysis/plotVariables.py --year {0} --era {1} --selection {2} --customList allsignal_{1}{0} --region {3}".format(args.year, args.era, args.first_selection, args.region))
     if not isValidRootFile(in_base_var(args.second_selection, sample)+'/variables.root'):
+        print in_base_var(args.second_selection, sample)
         raise RuntimeWarning("This code uses output from plotVariables. Please run: python Analysis/plotVariables.py --year {0} --era {1} --selection {2} --customList allsignal_{1}{0} --region {3}".format(args.year, args.era, args.second_selection, args.region))
         
     var_dist = {}
@@ -107,7 +110,7 @@ for sample in sm.sample_outputs:
             var_dist[sel][typ]= {}
 
             for c in CATEGORIES_TO_USE: 
-                var_dist[sel][typ][c] = Histogram(getObjFromFile(in_base_var(sel, sample)+'/variables.root', 'mt3/'+str(c)+'-mt3-'+sample+'-'+typ)) 
+                var_dist[sel][typ][c] = Histogram(getObjFromFile(in_base_var(sel, sample)+'/variables.root', 'l3eta/'+str(c)+'-l3eta-'+sample+'-'+typ)) 
 
             for ac in tot_eff[sel].keys():
                 var_dist[sel][typ][ac] = var_dist[sel][typ][ANALYSIS_CATEGORIES[ac][0]].clone(ac)
@@ -143,10 +146,11 @@ for sample in sm.sample_outputs:
 
 for sample in samples_to_use:
     for ac in tot_eff[args.first_selection].keys():
-        if ac != 'non-prompt':
+        if sample != 'non-prompt':
             SF = tot_eff[args.first_selection][ac]/tot_eff[args.second_selection][ac]
         else:
             SF = tot_mis[args.first_selection][ac]/tot_mis[args.second_selection][ac]
+            print ac, tot_mis[args.first_selection][ac], tot_mis[args.second_selection][ac], SF
         from HNL.Plotting.plot import Plot
         from HNL.Plotting.plottingTools import extraTextFormat
         extra_text = [extraTextFormat(str(SF))]  #Text to display event type in plot

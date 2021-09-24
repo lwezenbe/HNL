@@ -48,7 +48,7 @@ from HNL.Plotting.style import setDefault, setDefault2D
 class Plot:
     
     def __init__(self, signal_hist = None, tex_names = None, name = None, x_name = None, y_name = None, bkgr_hist = None, observed_hist = None, syst_hist = None, extra_text = None, 
-        x_log = None, y_log = None, draw_ratio = None, draw_significance = False, color_palette = 'Didar', color_palette_bkgr = 'StackTauPOGbyName', year = '2016', era = 'prelegacy'):
+        x_log = None, y_log = None, draw_ratio = None, draw_significance = None, color_palette = 'Didar', color_palette_bkgr = 'StackTauPOGbyName', year = '2016', era = 'prelegacy'):
 
         self.s = makeList(getHistList(signal_hist)) if signal_hist is not None else []
         try:
@@ -167,7 +167,8 @@ class Plot:
                     else:
                         to_check_max += [k for k in self.b]
 
-            self.overall_max = max([pt.getOverallMaximum(to_check_max), 1])
+            # self.overall_max = max([pt.getOverallMaximum(to_check_max), 1])
+            self.overall_max = max([pt.getOverallMaximum(to_check_max)])
             self.overall_min = pt.getOverallMinimum(to_check_min, zero_not_allowed=True)
 
             if self.x_log:
@@ -213,11 +214,11 @@ class Plot:
                 self.b[0].SetMinimum(self.min_to_set)
                 self.b[0].SetMaximum(self.max_to_set)
                 # self.b[0].GetXaxis().SetRangeUser(15., 900.)
-                self.b[0].GetXaxis().SetTitleSize(.06)
-                self.b[0].GetYaxis().SetTitleSize(.06)
-                self.b[0].GetXaxis().SetLabelSize(.06)
-                self.b[0].GetYaxis().SetLabelSize(.06)
-                self.b[0].GetYaxis().SetTitleOffset(1)
+                # self.b[0].GetXaxis().SetTitleSize(.06)
+                # self.b[0].GetYaxis().SetTitleSize(.06)
+                # self.b[0].GetXaxis().SetLabelSize(.06)
+                # self.b[0].GetYaxis().SetLabelSize(.06)
+                # self.b[0].GetYaxis().SetTitleOffset(1)
 
             self.plotpad.Update()
 
@@ -470,7 +471,7 @@ class Plot:
         #Set axis: if significance is also drawn, no x-axis
         significances[0].SetTitle(';'+ self.x_name+'; S/#sqrt{S+B}')
         significances[0].SetMinimum(0.)
-        significances[0].SetMaximum(1.3*pt.getOverallMaximum(significances))
+        significances[0].SetMaximum(1.3*pt.getOverallMaximum(significances, include_error=False))
         significances[0].GetXaxis().SetTitleSize(.12)
         significances[0].GetYaxis().SetTitleSize(.12)
         significances[0].GetXaxis().SetTitleOffset(1.0)
@@ -651,8 +652,12 @@ class Plot:
             # Generic settings
             for i, (h, n) in enumerate(zip(self.b, self.b_tex_names)):
                 color_index = ps.getPaletteIndex(self.color_palette_bkgr, i, n)
-                h.SetLineColor(ps.getColor(self.color_palette_bkgr, color_index))
-                h.SetLineWidth(3)
+                if 'Filled' in bkgr_draw_option: 
+                    h.SetLineColorAlpha(ps.getColor(self.color_palette_bkgr, color_index), 0.35)
+                    h.SetFillColorAlpha(ps.getColor(self.color_palette_bkgr, color_index), 0.35)
+                else:
+                    h.SetLineWidth(3)
+                    h.SetLineColor(ps.getColor(self.color_palette_bkgr, color_index))
                 if i != 0:      self.total_b.Add(h)
             
             # Prepare for stacking (Can not conflict with signal stacks due to runtimeError raise at the beginning)
@@ -689,7 +694,8 @@ class Plot:
         #
         # Draw background first
         #
-        tmp_bkgr_draw_option = bkgr_draw_option.split('E')[-1]
+
+        tmp_bkgr_draw_option = bkgr_draw_option.split('E')[-1].replace('Filled', '')
         if len(self.b) > 0:
             if bkgr_draw_option == 'Stack':
                 self.hs.Draw("Hist")                                     #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
@@ -699,7 +705,7 @@ class Plot:
                 for i, b in enumerate(self.b):
                     if i == 0:
                         b.Draw(tmp_bkgr_draw_option)
-                        if self.draw_ratio is not None or self.draw_significance: 
+                        if self.draw_ratio is not None or self.draw_significance is not None: 
                             b.GetXaxis().SetLabelOffset(9999999)
                     else:
                         b.Draw(tmp_bkgr_draw_option + 'Same')
@@ -812,7 +818,8 @@ class Plot:
         self.canvas.cd()
         #Create Legend
         legend = ROOT.TLegend(0.4, .7, .9, .9)
-        legend.SetNColumns(2)
+        legend.SetNColumns(1)
+        # legend.SetNColumns(2)
         legend.SetTextSize(.03)
        
         loop_obj = [item for item in self.s]
@@ -832,7 +839,7 @@ class Plot:
             ratios = self.calculateRatio()
             self.drawRatio(ratios, custom_labels, just_errors, ref_line = ref_line)
             self.ratio_pad.Update()
-        if self.draw_significance is not False:
+        if self.draw_significance is not None:
             existing_significances = isinstance(self.draw_significance, list)
             if not existing_significances and self.b is None:                 raise RuntimeError("Cannot ask ratio or significance if no background is given")
             significance_lines = []
@@ -840,7 +847,8 @@ class Plot:
                 significance_lines.append(ROOT.TLine(s.GetBinLowEdge(1), 0, s.GetBinLowEdge(self.s[0].GetNbinsX()+1), 0))
             
             if not existing_significances: significances = self.calculateSignificance(cumulative=True)
-            else: significances = self.draw_significance
+            else: 
+                significances = self.draw_significance
 
             # self.drawSignificance(significances, custom_labels, significance_lines)
             self.drawSignificance(significances, custom_labels)
@@ -1070,7 +1078,7 @@ class Plot:
     # or a list of length 4 also containing the observed
     # If you want to add observed and expected from prevous analysis to compare to, add those to background
     #
-    def drawBrazilian(self, output_dir):
+    def drawBrazilian(self, output_dir, ignore_bands = False):
         setDefault()
         
         #Create Canvas
@@ -1089,7 +1097,6 @@ class Plot:
             observed = None
 
         val_to_check = [v for v in yellow.GetY()]
-        print self.b
         if self.b is not None:
             for b in self.b:
                 val_to_check.extend([v for v in b.GetY()])
@@ -1109,12 +1116,12 @@ class Plot:
         yellow.SetFillColor(ROOT.kOrange)
         yellow.SetLineColor(ROOT.kOrange)
         yellow.SetFillStyle(1001)
-        yellow.Draw('F')
+        if not ignore_bands: yellow.Draw('F')
     
         green.SetFillColor(ROOT.kGreen+1)
         green.SetLineColor(ROOT.kGreen+1)
         green.SetFillStyle(1001)
-        green.Draw('Fsame')
+        if not ignore_bands: green.Draw('Fsame')
     
         median.SetLineColor(1)
         median.SetLineWidth(2)

@@ -22,8 +22,8 @@ args = argParser.parse_args()
 
 from HNL.ObjectSelection.objectSelection import getObjectSelection
 
-# in_base_var = lambda sel, sample_name, flavor: os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([args.strategy, sel, args.region]), args.era+args.year, flavor, sample_name, 'NoTau.shapes.root')
-in_base_var = lambda sel, sample_name, flavor: os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([args.strategy, sel, args.region]), args.era+args.year, flavor, sample_name, 'EMuMu.shapes.root')
+in_base_var = lambda sel, sample_name, flavor: os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([args.strategy, sel, args.region]), args.era+args.year, flavor, sample_name, 'NoTau.shapes.root')
+# in_base_var = lambda sel, sample_name, flavor: os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([args.strategy, sel, args.region]), args.era+args.year, flavor, sample_name, 'EMuMu.shapes.root')
 
 out_dir = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'Results', 'compareShapes', args.era+args.year, args.first_selection+'-'+args.second_selection)
 
@@ -50,6 +50,9 @@ for sample in sm.sample_outputs:
     tot_bkgr_shape1 = None
     tot_bkgr_shape2 = None
     for ibkgr, bkgr in enumerate(bkgr_samples):
+        if bkgr == 'other': 
+            if ibkgr == 0: print "WARNING: FAULT IN INDICES"
+            continue
         bkgr_shape1 = getObjFromFile(in_base_var(args.first_selection, sample, flavor), bkgr)
         bkgr_shape2 = getObjFromFile(in_base_var(args.second_selection, sample, flavor), bkgr)
         if ibkgr == 0:  
@@ -64,8 +67,9 @@ for sample in sm.sample_outputs:
         scaled_signal_1 = signal_shape1.Clone('scaled_'+sample)
         scaled_signal_2 = signal_shape2.Clone('scaled_'+sample)
 
-        # scaled_signal_1.Scale(1000.)
-        # scaled_signal_2.Scale(1000.)
+        scale_to_use = bkgr_shape1.GetSumOfWeights()/scaled_signal_1.GetSumOfWeights()
+        scaled_signal_1.Scale(scale_to_use)
+        scaled_signal_2.Scale(scale_to_use)
 
         from HNL.Tools.helpers import calculateSignificance
         significances = [calculateSignificance(signal_shape1, bkgr_shape1), calculateSignificance(signal_shape2, bkgr_shape2)]
@@ -73,18 +77,20 @@ for sample in sm.sample_outputs:
         significances[0].SetLineColor(getHistDidar(0))
         significances[1].SetLineColor(getHistDidar(1))
         p = Plot([scaled_signal_1, scaled_signal_2], tex_names=['S '+args.first_selection, 'S '+args.second_selection, 'B '+args.first_selection, 'B '+args.second_selection], name=bkgr, bkgr_hist = [bkgr_shape1, bkgr_shape2], year = args.year, era = args.era, draw_significance=significances, color_palette_bkgr = 'shoop')
-        p.drawHist(output_dir = out_dir+'/'+sample, bkgr_draw_option = 'EP')
+        p.drawHist(output_dir = out_dir+'/'+sample, bkgr_draw_option = 'EHistFilled')
+        # p.drawHist(output_dir = out_dir+'/'+sample, bkgr_draw_option = 'EP')
     
     scaled_signal_1 = signal_shape1.Clone('scaled_'+sample)
     scaled_signal_2 = signal_shape2.Clone('scaled_'+sample)
 
-    # scaled_signal_1.Scale(10.)
-    # scaled_signal_2.Scale(10.)
+    scale_to_use = tot_bkgr_shape1.GetSumOfWeights()/scaled_signal_1.GetSumOfWeights()
+    scaled_signal_1.Scale(scale_to_use)
+    scaled_signal_2.Scale(scale_to_use)
 
     significances = [calculateSignificance(signal_shape1, tot_bkgr_shape1), calculateSignificance(signal_shape2, tot_bkgr_shape2)]
     from HNL.Plotting.style import getHistDidar
     significances[0].SetLineColor(getHistDidar(0))
     significances[1].SetLineColor(getHistDidar(1))
     p = Plot([scaled_signal_1, scaled_signal_2], tex_names=['S '+args.first_selection, 'S '+args.second_selection, 'B '+args.first_selection, 'B '+args.second_selection], name='total', bkgr_hist = [tot_bkgr_shape1, tot_bkgr_shape2], year = args.year, era = args.era, draw_significance=significances, color_palette_bkgr = 'shoop')
-    p.drawHist(output_dir = out_dir+'/'+sample, bkgr_draw_option = 'EP')
+    p.drawHist(output_dir = out_dir+'/'+sample, bkgr_draw_option = 'EHistFilled')
 
