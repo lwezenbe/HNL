@@ -8,33 +8,36 @@ import os
 # No need to include the extensions in the sublists, it will handle that
 #
 
-ALLOWED_SKIMS = ['noskim', 'Reco', 'RecoGeneral', 'TTT', 'tZqNewFR', 'Gen']
+ALLOWED_SKIMS = ['noskim', 'Reco', 'RecoGeneral', 'auto']
 BASE_PATH = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Samples', 'InputFiles')
-# SAMPLE_GROUPS = {
-#     # 'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],
-#     'TT-T+X': ['ttX', 'TTG', 'TG', 'TTTT', 'ST', 'TT'],
-#     'triboson': ['triboson'],
-#     'WZ': ['WZ'],
-#     # 'diboson': ('ZZ', 'WW', 'WZ'),
-#     'ZZ-H': ['ZZ', 'Higgs'],
-#     'XG': ['DY', 'ZG', 'WG'],
-#     'other':['WJets', 'WW', 'QCD']
-# }
+LAMBDA_PATH = lambda era, year, skim : os.path.join(BASE_PATH, '_'.join(['sampleList', era + year, skim+'.conf']))
 SAMPLE_GROUPS = {
-    'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],
-    'TT-T+X': ['ttX', 'TTG', 'TG', 'TTTT'],
+    # 'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],
+    'TT-T+X': ['ttX', 'TTG', 'TG', 'TTTT', 'ST', 'TT'],
     'triboson': ['triboson'],
     'WZ': ['WZ'],
+    # 'diboson': ('ZZ', 'WW', 'WZ'),
     'ZZ-H': ['ZZ', 'Higgs'],
-    'XG': ['ZG', 'WG'],
-    'QCD':['QCD']
+    'XG': ['DY', 'ZG', 'WG'],
+    'other':['WJets', 'WW', 'QCD']
 }
+# SAMPLE_GROUPS = {
+#     'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],
+#     'TT-T+X': ['ttX', 'TTG', 'TG', 'TTTT'],
+#     'triboson': ['triboson'],
+#     'WZ': ['WZ'],
+#     'ZZ-H': ['ZZ', 'Higgs'],
+#     'XG': ['ZG', 'WG'],
+#     'QCD':['QCD']
+# }
 
 ERA_DICT = {
     'prelegacy': ['2016', '2017', '2018'],
     'UL': ['2016pre', '2016post', '2017', '2018']
 }
 
+allowed_reco_general_skimselections = ['default', 'AN2017014']
+allowed_reco_general_regions = ['lowMassSR', 'highMassSR']
 
 class SampleManager:
 
@@ -44,18 +47,21 @@ class SampleManager:
             raise RuntimeError('year {0} not allowed for era {1}'.format(year, era))
         if not skim in ALLOWED_SKIMS:
             raise RuntimeError("skim "+skim+" not allowed in the sample manager")
-        if skim_selection is not None and region is not None and not 'General' in skim:
-            raise RuntimeError("Defined param skim_selection and region for input files that do not support them")
-        if 'General' in skim and (skim_selection is None or region is None):
-            raise RuntimeError('Param skim_selection and region should be defined for this skim')
-
-        self.era = era
-        self.year = year
-        self.skim = skim
-        self.path = os.path.join(BASE_PATH, '_'.join(['sampleList', self.era + self.year, skim+'.conf']))
 
         self.skim_selection = skim_selection
         self.region = region
+        self.era = era
+        self.year = year
+
+        if skim_selection is None:
+            self.skim = 'noskim'
+        elif skim == 'auto':
+            self.skim = self.findInFileToUse()
+        else:
+            self.skim = skim
+        
+        print "Using {0} skim".format(self.skim)
+        self.path = LAMBDA_PATH(self.era, self.year, self.skim)
 
         self.sample_names_file_full = os.path.join(BASE_PATH, 'Sublists', sample_names_file+'.conf')
         self.sample_dict = self.getSampleDict(self.sample_names_file_full)
@@ -67,6 +73,23 @@ class SampleManager:
         self.sample_outputs = self.getOutputs()
 
         self.lumi_clusters = {}
+
+    def getTestPath(self, in_file_name):
+        sample_infos = [line.split('%')[0].strip() for line in open(in_file_name)]                     # Strip % comments and \n charachters
+        sample_infos = [line.split() for line in sample_infos if line] 
+
+        sample = sample_infos[0]
+        print sample[1].rsplit('/', 1)[0].replace('$SKIMSELECTION$', self.skim_selection).replace('$REGION$', self.region)
+        return os.path.isdir(sample[1].rsplit('/', 1)[0].replace('$SKIMSELECTION$', self.skim_selection).replace('$REGION$', self.region))
+
+    def findInFileToUse(self):
+        if self.getTestPath(LAMBDA_PATH(self.era, self.year, 'RecoGeneral')):
+            return 'RecoGeneral'
+        elif self.getTestPath(LAMBDA_PATH(self.era, self.year, 'Reco')):
+            return 'Reco'
+        else:
+            return 'noskim'
+
 
     def getSampleDict(self, in_file_name):
         sample_infos = [line.split('%')[0].strip() for line in open(in_file_name)]                     # Strip % comments and \n charachters
@@ -130,8 +153,10 @@ class SampleManager:
             except:
                 continue
 
-            if self.skim_selection is not None and self.region is not None:
-                path = path.replace('$SKIMSELECTION$', self.skim_selection).replace('$REGION$', self.region)
+            if self.skim_selection is not None:
+                path = path.replace('$SKIMSELECTION$', self.skim_selection)
+            if self.region is not None:
+                path.replace('$REGION$', self.region)
 
             if name in self.sample_names:
                 split_jobs += '*' + str(self.sample_dict[name])

@@ -90,7 +90,7 @@ from HNL.Samples.sampleManager import SampleManager
 if args.noskim:
     skim_str = 'noskim'
 else:
-    skim_str = 'Old' if args.selection == 'AN2017014' else 'Reco'
+    skim_str = 'Reco'
 
 sublist = None
 if args.inData:
@@ -102,7 +102,7 @@ elif args.flavor == 'mu':
 elif args.flavor == 'e':
     sublist = 'BackgroundEstimation/ElectronFakes'
 
-sample_manager = SampleManager(args.era, args.year, skim_str, sublist)
+sample_manager = SampleManager(args.era, args.year, skim_str, sublist, skim_selection=args.selection)
 
 #
 # Define job list

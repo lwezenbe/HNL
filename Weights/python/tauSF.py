@@ -8,10 +8,10 @@ from HNL.ObjectSelection.tauSelector import getCorrespondingLightLepDiscr
 YEARLIB = {'prelegacy2016' : '2016Legacy',
             'prelegacy2017': '2017ReReco',
             'prelegacy2018': '2018ReReco',
-            'UL2016pre' : '2016Legacy',
-            'UL2016post' : '2016Legacy',
-            'UL2017': '2017ReReco',
-            'UL2018': '2018ReReco',
+            'UL2016pre' : 'UL2016_preVFP',
+            'UL2016post' : 'UL2016_postVFP',
+            'UL2017': 'UL2017',
+            'UL2018': 'UL2018',
             }
 
 ISOLIB = {'deeptauVSjets' : 'DeepTau2017v2p1VSjet', 'MVA2017v2': 'MVAoldDM2017v2'}
@@ -33,7 +33,8 @@ class TauSF:
     def __init__(self, era, year, algorithm, wp_iso, wp_e, wp_mu):
         self.sftool_iso = TauIDSFTool(YEARLIB[era+year], ISOLIB[algorithm], WPLIB[wp_iso])
         self.sftool_e = TauIDSFTool(YEARLIB[era+year], ELIB[getCorrespondingLightLepDiscr(algorithm)[0]],  WPLIB[wp_e])
-        self.sftool_mu = TauIDSFTool(YEARLIB[era+year], MULIB[getCorrespondingLightLepDiscr(algorithm)[1]],  WPLIB[wp_mu])
+        # self.sftool_mu = TauIDSFTool(YEARLIB[era+year], MULIB[getCorrespondingLightLepDiscr(algorithm)[1]],  WPLIB[wp_mu])
+        self.sftool_mu = TauIDSFTool(YEARLIB['prelegacy'+year.split('p')[0]], MULIB[getCorrespondingLightLepDiscr(algorithm)[1]],  WPLIB[wp_mu]) #For now use the prelegacy as adviced by TauPOG
 
     def getSF(self, chain, index):
         if chain._tauGenStatus[index] == 1 or chain._tauGenStatus[index] == 3:
@@ -48,6 +49,7 @@ class TauSF:
     def getTotalSF(self, chain):
         total_sf = 1.
         for l in chain.l_indices:
+            print l
             if chain._lFlavor[l] == 2: total_sf *= self.getSF(chain, l)
         return total_sf
 

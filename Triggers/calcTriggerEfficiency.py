@@ -61,7 +61,7 @@ log = getLogger(args.logLevel)
 from HNL.Samples.sampleManager import SampleManager
 def getSampleManager(year):
     if not args.noskim:
-        return SampleManager(args.era, year, 'Reco', 'Triggers/triggerlist_'+args.era+str(year))
+        return SampleManager(args.era, year, 'auto', 'Triggers/triggerlist_'+args.era+str(year), skim_selection=args.selection)
     else:
         return SampleManager(args.era, year, 'noskim', 'Triggers/triggerlist_'+args.era+str(year))
 

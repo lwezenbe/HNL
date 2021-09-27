@@ -20,7 +20,6 @@ if args.isTest:
 #
 from HNL.Samples.sampleManager import SampleManager
 sample_manager = SampleManager(args.era, args.year, 'noskim', 'allsignal_'+args.era+args.year)
-print sample_manager.sample_names
 
 
 #

@@ -14,7 +14,7 @@ def isGoodGenElectron(chain, index):
 # Basic kinematic cuts
 #
 def isBaseElectron(chain, index):
-    if chain._lPt[index] <= 10:                  return False
+    if chain._lPtCorr[index] <= 5.:                  return False
     if abs(chain._lEta[index]) >= 2.5:          return False
     return True 
 
@@ -32,13 +32,13 @@ def isCleanFromMuons(chain, index):
 
 def slidingCutElectron(chain, index, lowpt, lowptwp, highpt, highptwp):
     
-    if chain._lPt[index] < lowpt:
+    if chain._lPtCorr[index] < lowpt:
         return lowptwp
-    elif chain._lPt[index] > highpt:
+    elif chain._lPtCorr[index] > highpt:
         return highptwp
     else:
         slope = (highptwp - lowptwp)/(highpt-lowpt)
-        return lowptwp + slope*(chain._lPt[index]-lowpt)
+        return lowptwp + slope*(chain._lPtCorr[index]-lowpt)
 
 #
 # WP as defined in AN 2017/014
@@ -72,6 +72,7 @@ def isLooseElectronCutBased(chain, index):
    
     if not isBaseElectron(chain, index):        return False 
     if not isCleanFromMuons(chain, index):      return False
+    if chain._lPtCorr[index] <= 10.:            return False
     if abs(chain._dxy[index]) >= 0.05:          return False
     if abs(chain._dz[index]) >= 0.1:            return False
     if chain._relIso[index] >= 0.6:             return False
@@ -84,9 +85,19 @@ def isFOElectronCutBased(chain, index):
         if not chain.is_loose_lepton[index][0]: return False
     else:
         if not isLooseElectronCutBased(chain, index):       return False
-    if chain._3dIPSig[index] >= 4:              return False
-    if cutBasedMVA(chain, index, 'FO', chain._lPt[index]) >= chain._lElectronSummer16MvaGP[index]: return False
-    if not chain._lElectronPassEmu[index]:      return False   #sigma_ietaieta, H/E, deltaEta_in, deltaPhi_in, 1/E-1/p
+    if chain._3dIPSig[index] >= 4.:              return False
+    if cutBasedMVA(chain, index, 'FO', chain._lPtCorr[index]) >= chain._lElectronSummer16MvaGP[index]: return False
+    # if not chain._lElectronPassEmu[index]:      return False   #sigma_ietaieta, H/E, deltaEta_in, deltaPhi_in, 1/E-1/p
+    if abs(chain._lEta[index]) < 1.479 and chain._lElectronSigmaIetaIeta[index] > 0.011: return False
+    if 1.479 < abs(chain._lEta[index]) and chain._lElectronSigmaIetaIeta[index] > 0.033: return False
+    if abs(chain._lEta[index]) < 1.479 and chain._lElectronHOverE[index] > 0.1: return False
+    if 1.479 < abs(chain._lEta[index]) and chain._lElectronHOverE[index] > 0.07: return False
+    if abs(chain._lEta[index]) < 1.479 and chain._lElectronDeltaEtaSuperClusterTrack[index] > 0.01: return False
+    if 1.479 < abs(chain._lEta[index]) and chain._lElectronDeltaEtaSuperClusterTrack[index] > 0.008: return False
+    if abs(chain._lEta[index]) < 1.479 and chain._lElectronDeltaPhiSuperClusterTrack[index] > 0.04: return False
+    if 1.479 < abs(chain._lEta[index]) and chain._lElectronDeltaPhiSuperClusterTrack[index] > 0.07: return False
+    if abs(chain._lEta[index]) < 1.479 and (chain._lElectronEInvMinusPInv[index] > 0.01 or chain._lElectronEInvMinusPInv[index] < -0.05): return False
+    if 1.479 < abs(chain._lEta[index]) and (chain._lElectronEInvMinusPInv[index] > 0.005 or chain._lElectronEInvMinusPInv[index] < -0.05): return False
     if chain._lElectronMissingHits[index] != 0: return False
     return True
 
@@ -96,7 +107,7 @@ def isTightElectronCutBased(chain, index):
     else:
         if not isFOElectronCutBased(chain, index):          return False
     if chain._relIso[index] >= 0.1:                    return False
-    if cutBasedMVA(chain, index, 'tight', chain._lPt[index]) >= chain._lElectronSummer16MvaGP[index]: return False
+    if cutBasedMVA(chain, index, 'tight', chain._lPtCorr[index]) >= chain._lElectronSummer16MvaGP[index]: return False
     return True
 
 #
@@ -106,7 +117,7 @@ def isLooseElectronEwkino(chain, index):
     if chain._lFlavor[index] != 0: return False
     if(abs(chain._dxy[index])>= 0.05 or abs(chain._dz[index])>= 0.1 or chain._3dIPSig[index] >= 8): return False    
     if chain._miniIso[index] >= 0.4:    return False
-    if chain._lPt[index] <= 7 or abs(chain._lEta[index]) >= 2.5:       return False
+    if chain._lPtCorr[index] <= 7 or abs(chain._lEta[index]) >= 2.5:       return False
     if chain._lElectronMissingHits[index] > 1: return False
     if not isCleanFromMuons(chain, index, 'ewkino'):      return False
     return True #isLooseMuon From heavyNeutrino already included in basic muon cuts
@@ -116,7 +127,7 @@ def isFOElectronEwkino(chain, index):
         if not chain.is_loose_lepton[index][0]: return False
     else:
         if not isLooseElectronEwkino(chain, index):       return False
-    if chain._lPt[index] <= 10:       return False
+    if chain._lPtCorr[index] <= 10:       return False
     if chain._lElectronMissingHits[index] != 0: return False
     if abs(chain._lEta[index]) < 1.479 and chain._lElectronSigmaIetaIeta[index] > 0.011: return False
     if 1.479 < abs(chain._lEta[index]) and chain._lElectronSigmaIetaIeta[index] > 0.033: return False
@@ -139,7 +150,7 @@ def isTightElectronEwkino(chain, index):
         if not chain.is_loose_lepton[index][0]: return False
     else:
         if not isLooseElectronEwkino(chain, index):       return False
-    if chain._lPt[index] <= 10:       return False
+    if chain._lPtCorr[index] <= 10:       return False
     if chain._lElectronMissingHits[index] != 0: return False
     if abs(chain._lEta[index]) < 1.479 and chain._lElectronSigmaIetaIeta[index] > 0.011: return False
     if 1.479 < abs(chain._lEta[index]) and chain._lElectronSigmaIetaIeta[index] > 0.033: return False
@@ -160,7 +171,7 @@ def rawElectronMVA(mva):
 
 def electronMVAcategory(chain, index):
     abs_etaSC = abs(chain._lEtaSC[index])
-    if chain._lPt[index] < 10:
+    if chain._lPtCorr[index] < 10:
         if(abs_etaSC < .8):             return 0
         elif(abs_etaSC < 1.479):        return 1
         else:                           return 2
@@ -181,21 +192,21 @@ def looseMVAcut(chain, index):
 
 def wp80MVACut(chain, index):
     category = electronMVAcategory(chain, index)
-    if category == 0:  return 3.53495358797 - math.exp( -chain._lPt[index] / 3.07272325141 ) * 9.94262764352
-    elif category == 1:  return 3.06015605623 - math.exp( -chain._lPt[index] / 1.95572234114 ) * 14.3091184421
-    elif category == 2:  return 3.02052519639 - math.exp( -chain._lPt[index] / 1.59784164742 ) * 28.719380105
-    elif category == 3:  return 7.35752275071 - math.exp( -chain._lPt[index] / 15.87907864 ) * 7.61288809226
-    elif category == 4:  return 6.41811074032 - math.exp( -chain._lPt[index] / 14.730562874 ) * 6.96387331587
-    else: return 5.64936312428 - math.exp( -chain._lPt[index] / 16.3664949747 ) * 7.19607610311
+    if category == 0:  return 3.53495358797 - math.exp( -chain._lPtCorr[index] / 3.07272325141 ) * 9.94262764352
+    elif category == 1:  return 3.06015605623 - math.exp( -chain._lPtCorr[index] / 1.95572234114 ) * 14.3091184421
+    elif category == 2:  return 3.02052519639 - math.exp( -chain._lPtCorr[index] / 1.59784164742 ) * 28.719380105
+    elif category == 3:  return 7.35752275071 - math.exp( -chain._lPtCorr[index] / 15.87907864 ) * 7.61288809226
+    elif category == 4:  return 6.41811074032 - math.exp( -chain._lPtCorr[index] / 14.730562874 ) * 6.96387331587
+    else: return 5.64936312428 - math.exp( -chain._lPtCorr[index] / 16.3664949747 ) * 7.19607610311
 
 def wp90MVACut(chain, index):
     category = electronMVAcategory(chain, index)
-    if category == 0: return 2.84704783417 - math.exp( -chain._lPt[index] / 3.32529515837 ) * 9.38050947827
-    elif category == 1: return 2.03833922005 - math.exp( -chain._lPt[index] / 1.93288758682 ) * 15.364588247
-    elif category == 2: return 1.82704158461 - math.exp( -chain._lPt[index] / 1.89796754399 ) * 19.1236071158
-    elif category == 3: return 6.12931925263 - math.exp( -chain._lPt[index] / 13.281753835 ) * 8.71138432196
-    elif category == 4: return 5.26289004857 - math.exp( -chain._lPt[index] / 13.2154971491 ) * 8.0997882835
-    else: return 4.37338792902 - math.exp( -chain._lPt[index] / 14.0776094696 ) * 8.48513324496
+    if category == 0: return 2.84704783417 - math.exp( -chain._lPtCorr[index] / 3.32529515837 ) * 9.38050947827
+    elif category == 1: return 2.03833922005 - math.exp( -chain._lPtCorr[index] / 1.93288758682 ) * 15.364588247
+    elif category == 2: return 1.82704158461 - math.exp( -chain._lPtCorr[index] / 1.89796754399 ) * 19.1236071158
+    elif category == 3: return 6.12931925263 - math.exp( -chain._lPtCorr[index] / 13.281753835 ) * 8.71138432196
+    elif category == 4: return 5.26289004857 - math.exp( -chain._lPtCorr[index] / 13.2154971491 ) * 8.0997882835
+    else: return 4.37338792902 - math.exp( -chain._lPtCorr[index] / 14.0776094696 ) * 8.48513324496
 
 def passMVAloose(chain, index):
     rawMVA = rawElectronMVA(chain._lElectronMvaFall17NoIso[index])
@@ -212,7 +223,7 @@ def passMVAWP90(chain, index):
 def isLooseElectronttH(chain, index):
     
     if abs(chain._lEta[index]) >= 2.5:          return False
-    if chain._lPt[index] < 7:                  return False
+    if chain._lPtCorr[index] < 7:                  return False
     if not isCleanFromMuons(chain, index):      return False
     if abs(chain._dxy[index]) >= 0.05:          return False
     if abs(chain._dz[index]) >= 0.1:            return False
@@ -227,7 +238,7 @@ def isFOElectronttH(chain, index):
         if not chain.is_loose_lepton[index][0]: return False
     else:
         if not isLooseElectronttH(chain, index):    return False
-    if chain._lPt[index] < 10:                  return False
+    if chain._lPtCorr[index] < 10:                  return False
     # if chain._lElectronMissingHits[index] != 0: return False
     # if not chain._lElectronPassEmu[index]:      return False
     # if chain._closestJetDeepFlavor[index] >= getBTagWP(chain.year, 'medium', 'Deep'): return False
@@ -253,7 +264,7 @@ def isTightElectronttH(chain, index):
 def isLooseElectrontZq(chain, index):
     
     if abs(chain._lEta[index]) >= 2.5:          return False
-    if chain._lPt[index] < 7:                  return False
+    if chain._lPtCorr[index] < 7:                  return False
     if not isCleanFromMuons(chain, index):      return False
     if abs(chain._dxy[index]) >= 0.05:          return False
     if abs(chain._dz[index]) >= 0.1:            return False
@@ -268,7 +279,7 @@ def isFOElectrontZq(chain, index):
         if not chain.is_loose_lepton[index][0]: return False
     else:
         if not isLooseElectrontZq(chain, index):    return False
-    if chain._lPt[index] < 10:                  return False
+    if chain._lPtCorr[index] < 10:                  return False
     # if chain._lElectronMissingHits[index] != 0: return False
     # if not chain._lElectronPassEmu[index]:      return False
     # if chain._closestJetDeepFlavor[index] >= getBTagWP(chain.year, 'medium', 'Deep'): return False
@@ -293,6 +304,7 @@ def isTightElectrontZq(chain, index):
 #
 def topPreselection(chain, index):
     if not isBaseElectron(chain, index):        return False
+    if chain._lPtCorr[index] <= 10.:            return False
     if not isCleanFromMuons(chain, index):      return False
     if abs(chain._dxy[index]) >= 0.05:          return False
     if abs(chain._dz[index]) >= 0.1:            return False
@@ -316,19 +328,24 @@ def isFOElectronTop(chain, index):
     else:
         if not isLooseElectronTop(chain, index):       return False
     if not chain._lElectronPassConvVeto[index]: return False
-    if chain._lElectronHOverE[index] > 0.10:    return False
-    if chain._lElectronEInvMinusPInv[index] < -0.04:    return False
-    #Barrel
-    if abs(chain._lEta[index]) < 1.479:
-        if chain._lElectronSigmaIetaIeta[index] > 0.011:    return False
-    #endcap
-    else:
-        if chain._lElectronSigmaIetaIeta[index] < 0.03:    return False
-    if chain._leptonMvaTOP[index] <= 0.6:
-        if not passMVAloose(chain, index):  return False
-        if chain._ptRatio[index] < 0.5:     return False
-        if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutElectron(chain, index, 25., 0.1, 50., 0.05): 
-            return False        
+    if chain._leptonMvaTOP[index] <= 0.6:       return False
+
+
+
+
+    # if chain._lElectronHOverE[index] > 0.10:    return False
+    # if chain._lElectronEInvMinusPInv[index] < -0.04:    return False
+    # #Barrel
+    # if abs(chain._lEta[index]) < 1.479:
+    #     if chain._lElectronSigmaIetaIeta[index] > 0.011:    return False
+    # #endcap
+    # else:
+    #     if chain._lElectronSigmaIetaIeta[index] < 0.03:    return False
+    # if chain._leptonMvaTOP[index] <= 0.6:
+    #     if not passMVAloose(chain, index):  return False
+    #     if chain._ptRatio[index] < 0.5:     return False
+    #     if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutElectron(chain, index, 25., 0.1, 50., 0.05): 
+    #         return False        
 
     return True
 
@@ -337,8 +354,8 @@ def isTightElectronTop(chain, index):
         if not chain.is_FO_lepton[index][0]: return False
     else:
         if not isFOElectronTop(chain, index):       return False
-    # if chain._leptonMvaTOP[index] <= 0.9:       return False  #Tight leptonMVA wp  
-    if chain._leptonMvaTOP[index] <= 0.6:       return False    #Medium leptonMVA wp
+    if chain._leptonMvaTOP[index] <= 0.9:       return False  #Tight leptonMVA wp  
+    # if chain._leptonMvaTOP[index] <= 0.6:       return False    #Medium leptonMVA wp
     return True
 
 #
@@ -347,7 +364,7 @@ def isTightElectronTop(chain, index):
 def isLooseElectronTTT(chain, index):
     if chain._lFlavor[index] != 0:              return False
     if not isCleanFromMuons(chain, index):      return False
-    if chain._lPt[index] < 5: return False
+    if chain._lPtCorr[index] < 5: return False
     if abs(chain._lEta[index]) > 2.5: return False
     if abs(chain._dxy[index]) >= 0.05:          return False
     if abs(chain._dz[index]) >= 0.1:            return False
@@ -361,7 +378,7 @@ def isFOElectronTTT(chain, index):
         if not chain.is_loose_lepton[index][0]: return False
     else:
         if not isLooseElectronTTT(chain, index):      return False
-    if chain._lPt[index] < 10: return False
+    if chain._lPtCorr[index] < 10: return False
     if chain._lElectronHOverE[index] >= 0.10:    return False
     if chain._lElectronEInvMinusPInv[index] <= -0.04:    return False
     if not chain._lElectronPassConvVeto[index]: return False

@@ -23,6 +23,7 @@ class SignalRegionSelector(FilterObject):
     # @classmethod
     def passedStandaloneFilter(self, cutter, region, kwargs):
         for_training = kwargs.get('for_training')
+        if not passBaseCuts(self.chain, self.new_chain, cutter): return False
         if region == 'lowMassSR':
             return passLowMassSelection(self.chain, self.new_chain, self.is_reco_level, cutter, for_training=for_training)
         elif region == 'highMassSR':

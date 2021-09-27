@@ -15,7 +15,7 @@ def isCleanFromLeptons(chain, index, wp):
 def isGoodJetAN2017014(chain, index, cleaned = 'loose'):
     if chain._jetPt[index] < 25:        return False
     if abs(chain._jetEta[index]) > 2.4: return False
-    if chain.year != 2018:
+    if chain.year != '2018':
         if not chain._jetIsLoose[index]:    return False
     else:
         if not chain._jetIsTight[index]:    return False

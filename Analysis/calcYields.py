@@ -11,6 +11,10 @@ from HNL.Tools.helpers import makeDirIfNeeded
 from HNL.EventSelection.eventSelectionTools import select3TightLeptons
 import ROOT
 
+from HNL.EventSelection.eventCategorization import CATEGORIES, SUPER_CATEGORIES, ANALYSIS_CATEGORIES
+# grouped_categories = ANALYSIS_CATEGORIES
+grouped_categories = SUPER_CATEGORIES
+
 #
 # Argument parser and logging
 #
@@ -18,8 +22,8 @@ import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
-submission_parser.add_argument('--year',     action='store', nargs='*',       default=None,   help='Select year', required=True)
-submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
+submission_parser.add_argument('--year',     action='store', nargs='*',       default=None,   help='Select year')
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -84,24 +88,18 @@ else:
 #
 from HNL.Samples.sampleManager import SampleManager
 def getSampleManager(y):
-    if args.noskim or args.selection != 'default':
-        skim_str = 'noskim'
-    # elif args.region in ['highMassSR', 'lowMassSR']:
-    #     skim_str = 'RecoGeneral'
-    else:
+    if args.tag is not None:
         skim_str = 'Reco'
+    else:
+        skim_str = 'auto'
     file_list = 'fulllist_'+args.era+str(y)+'_mconly' if args.customList is None else args.customList
 
-    if skim_str == 'RecoGeneral':
-        sm = SampleManager(args.era, y, skim_str, file_list, skim_selection=args.selection, region=args.region)
-    else:
-        sm = SampleManager(args.era, y, skim_str, file_list)
+    sm = SampleManager(args.era, y, skim_str, file_list, skim_selection=args.selection, region=args.region)
     return sm
 
 #
 # function to have consistent categories in running and plotting
 #
-from HNL.EventSelection.eventCategorization import CATEGORIES, SUPER_CATEGORIES
 from HNL.EventSelection.eventCategorization import CATEGORY_TEX_NAMES
 def listOfCategories(region):
     # if region in ['baseline', 'highMassSR', 'lowMassSR']:
@@ -314,7 +312,6 @@ else:
     from HNL.Analysis.analysisTypes import signal_couplingsquared
 
     for year in args.year:
-        if args.year != 'all' and year != args.year: continue
         #
         # Check status of the jobs and merge
         #
@@ -384,7 +381,7 @@ else:
         #Loading in background
 
         if args.groupSamples:
-            background_collection = sample_manager.sample_groups.keys() if not args.signalOnly else []
+            background_collection = sample_manager.sample_groups.keys() + ['non-prompt'] if not args.signalOnly else []
         else:
             background_collection = [b for b in bkgr_names]
 
@@ -418,9 +415,6 @@ else:
                             list_of_errors['bkgr']['XG'][c][sr] = np.sqrt(list_of_errors['bkgr'][sg][c][sr] ** 2 + tmp_hist_prompt.GetBinError(sr) ** 2)
                             list_of_values['bkgr']['non-prompt'][c][sr] += tmp_hist_nonprompt.GetBinContent(sr) 
                             list_of_errors['bkgr']['non-prompt'][c][sr] = np.sqrt(list_of_errors['bkgr']['non-prompt'][c][sr] ** 2 + tmp_hist_nonprompt.GetBinError(sr) ** 2)   
-                        elif sg == 'non-prompt':
-                            list_of_values['bkgr'][sg][c][sr] += tmp_hist_nonprompt.GetBinContent(sr) 
-                            list_of_errors['bkgr'][sg][c][sr] = np.sqrt(list_of_errors['bkgr'][sg][c][sr] ** 2 + tmp_hist_nonprompt.GetBinError(sr) ** 2)
                         else:
                             list_of_values['bkgr'][sg][c][sr] += tmp_hist_prompt.GetBinContent(sr) 
                             list_of_errors['bkgr'][sg][c][sr] = np.sqrt(list_of_errors['bkgr'][sg][c][sr] ** 2 + tmp_hist_prompt.GetBinError(sr) ** 2)
@@ -450,13 +444,13 @@ else:
         for sn in signal_names + background_collection:
             is_signal_str = 'signal' if sn in signal_names else 'bkgr'
             category_keys = [c for c in CATEGORIES]
-            for ac in SUPER_CATEGORIES.keys():
+            for ac in grouped_categories.keys():
                 category_keys.append(ac)
                 list_of_values[is_signal_str][sn][ac] = {}
                 list_of_errors[is_signal_str][sn][ac] = {}
                 for sr in list_of_values[is_signal_str][sn][1].keys():
-                    values_to_merge = [list_of_values[is_signal_str][sn][v][sr] for v in SUPER_CATEGORIES[ac]]
-                    errors_to_merge = [list_of_errors[is_signal_str][sn][v][sr] for v in SUPER_CATEGORIES[ac]]
+                    values_to_merge = [list_of_values[is_signal_str][sn][v][sr] for v in grouped_categories[ac]]
+                    errors_to_merge = [list_of_errors[is_signal_str][sn][v][sr] for v in grouped_categories[ac]]
                     list_of_values[is_signal_str][sn][ac][sr], list_of_errors[is_signal_str][sn][ac][sr] = mergeValues(values_to_merge, errors_to_merge)
             
 
@@ -475,10 +469,10 @@ else:
 
         if args.isTest:
             destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Analysis/data/testArea/Results/calcYields/'+'-'.join([args.strategy, args.selection, args.region])
-                                                +'/'+year+'/'+args.flavor))
+                                                +'/'+args.era+year+'/'+args.flavor))
         else:
             destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Analysis/data/Results/calcYields/'+'-'.join([args.strategy, args.selection, args.region])
-                                                +'/'+year+'/'+args.flavor))
+                                                +'/'+args.era+year+'/'+args.flavor))
 
         def protectHist(hist):    
             if hist.Integral() < 0.00001:
@@ -493,19 +487,19 @@ else:
             # If we just want cut and count without shapes, simply write datacards for everything you have
             #
             if args.makeDataCards == 'cutAndCount':
-                for ac in ['total']+SUPER_CATEGORIES.keys():
+                for ac in ['total']+grouped_categories.keys():
                     for sr in search_region_keys:
                         for s in list_of_values['signal'].keys():
                             sig_yield = list_of_values['signal'][s][ac][sr]
                             bkgr_yields = [list_of_values['bkgr'][b][ac][sr] for b in sorted(list_of_values['bkgr'].keys())]
                             bkgr_names = [b for b in sorted(list_of_values['bkgr'].keys())]
                             coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][int(s.split('-m')[-1])]
-                            makeDataCard(str(ac)+'-'+str(sr), args.flavor, year, 0, s, bkgr_names, args.selection, sig_yield, bkgr_yields, coupling_sq = coupling_squared)
+                            makeDataCard(str(ac)+'-'+str(sr), args.flavor, args.era+year, 0, s, bkgr_names, args.selection, sig_yield, bkgr_yields, coupling_sq = coupling_squared)
             #
             # If we want to use shapes, first make shape histograms, then make datacards
             #
             elif args.makeDataCards == 'shapes':
-                for ac in ['total']+SUPER_CATEGORIES.keys():
+                for ac in ['total']+grouped_categories.keys():
                     shape_hist = {}
                     n_search_regions = srm[args.region].getNumberOfSearchRegions()
 
@@ -514,7 +508,7 @@ else:
                     shape_hist['data_obs'].SetBinContent(1, 1.)
 
                     # Background
-                    for sample_name in sample_manager.sample_groups.keys():
+                    for sample_name in list_of_values['bkgr'].keys():
                         shape_hist[sample_name] = ROOT.TH1D(sample_name, sample_name, n_search_regions, 0.5, n_search_regions+0.5)
                         for sr in xrange(1, n_search_regions+1):
                             shape_hist[sample_name].SetBinContent(sr, list_of_values['bkgr'][sample_name][ac][sr])
@@ -524,7 +518,7 @@ else:
                     # Signal 
                     for sample_name in list_of_values['signal'].keys():
                         out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', 
-                                                args.strategy+'-'+args.selection+'-'+args.region, str(year), args.flavor, sample_name, ac+'.shapes.root')
+                                                args.strategy+'-'+args.selection+'-'+args.region, args.era+str(year), args.flavor, sample_name, ac+'.shapes.root')
                         makeDirIfNeeded(out_path)
                         out_shape_file = ROOT.TFile(out_path, 'recreate')
                         n_search_regions = srm[args.region].getNumberOfSearchRegions()
@@ -540,7 +534,7 @@ else:
                             shape_hist[bkgr_sample_name].Write(bkgr_sample_name)
                         out_shape_file.Close()
                         coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][int(sample_name.split('-m')[-1])]
-                        makeDataCard(str(ac), args.flavor, year, 0, sample_name, bkgr_names, args.selection, args.strategy, args.region, shapes=True, coupling_sq = coupling_squared)
+                        makeDataCard(str(ac), args.flavor, args.era+year, 0, sample_name, bkgr_names, args.selection, args.strategy, args.region, shapes=True, coupling_sq = coupling_squared)
 
         if args.makePlots:
 
@@ -607,7 +601,7 @@ else:
             #
             if not args.noBarCharts:
 
-                for supercat in SUPER_CATEGORIES.keys():
+                for supercat in grouped_categories.keys():
                     #
                     # Bkgr
                     #
@@ -615,11 +609,11 @@ else:
                         hist_to_plot = {}
                         for sample_name in background_collection:
                             # hist_to_plot[sample_name] = ROOT.TH1D(sample_name, sample_name, len(list_of_values['bkgr'][sample_name]), 0, len(list_of_values['bkgr'][sample_name]))
-                            hist_to_plot[sample_name] = ROOT.TH1D(sample_name+supercat, sample_name+supercat, len(SUPER_CATEGORIES[supercat]), 0, len(SUPER_CATEGORIES[supercat]))
-                            for i, c in enumerate(SUPER_CATEGORIES[supercat]):
+                            hist_to_plot[sample_name] = ROOT.TH1D(sample_name+supercat, sample_name+supercat, len(grouped_categories[supercat]), 0, len(grouped_categories[supercat]))
+                            for i, c in enumerate(grouped_categories[supercat]):
                                 # hist_to_plot[sample_name].SetBinContent(i+1, list_of_values['bkgr'][sample_name][c]['total'].getHist().GetSumOfWeights()) 
                                 hist_to_plot[sample_name].SetBinContent(i+1, list_of_values['bkgr'][sample_name][c]['total']) 
-                        x_names = [CATEGORY_TEX_NAMES[n] for n in SUPER_CATEGORIES[supercat]]
+                        x_names = [CATEGORY_TEX_NAMES[n] for n in grouped_categories[supercat]]
                         p = Plot(hist_to_plot.values(), hist_to_plot.keys(), name = 'Events-bar-bkgr-'+supercat, x_name = x_names, y_name = 'Events', y_log='SingleTau' in supercat)            
                         p.drawBarChart(output_dir = destination+'/BarCharts', message = args.message)
                     
@@ -631,12 +625,12 @@ else:
                         hist_names = []
                         for sn, sample_name in enumerate(sorted(list_of_values['signal'].keys(), key=lambda k: int(k.split('-m')[-1]))):
                             # hist_to_plot.append(ROOT.TH1D(sample_name, sample_name, len(list_of_values['signal'][sample_name]), 0, len(list_of_values['signal'][sample_name])))
-                            hist_to_plot.append(ROOT.TH1D(sample_name, sample_name, len(SUPER_CATEGORIES[supercat]), 0, len(SUPER_CATEGORIES[supercat])))
+                            hist_to_plot.append(ROOT.TH1D(sample_name, sample_name, len(grouped_categories[supercat]), 0, len(grouped_categories[supercat])))
                             hist_names.append(sample_name)
-                            for i, c in enumerate(SUPER_CATEGORIES[supercat]):
+                            for i, c in enumerate(grouped_categories[supercat]):
                                 # hist_to_plot[sn].SetBinContent(i+1, list_of_values['signal'][sample_name][c]['total'].getHist().GetSumOfWeights()) 
                                 hist_to_plot[sn].SetBinContent(i+1, list_of_values['signal'][sample_name][c]['total']) 
-                        x_names = [CATEGORY_TEX_NAMES[n] for n in SUPER_CATEGORIES[supercat]]
+                        x_names = [CATEGORY_TEX_NAMES[n] for n in grouped_categories[supercat]]
                         p = Plot(hist_to_plot, hist_names, name = 'Events-bar-signal-'+supercat+'-'+args.flavor, x_name = x_names, y_name = 'Events', y_log=True)
                         p.drawBarChart(output_dir = destination+'/BarCharts', parallel_bins=True, message = args.message)
             
@@ -724,18 +718,18 @@ else:
 
                 #Now add histograms together that belong to same analysis super category
                 list_of_ac_hist = {}
-                for ac in SUPER_CATEGORIES.keys():
+                for ac in grouped_categories.keys():
                     list_of_ac_hist[ac] = {'signal':[], 'bkgr':[]}
 
                     signal_names = []
                     for i_name, sample_name in enumerate(list_of_values['signal'].keys()):
                         signal_names.append(sample_name)
-                        list_of_ac_hist[ac]['signal'].append(mergeCategories(SUPER_CATEGORIES[ac], 'signal', sample_name))
+                        list_of_ac_hist[ac]['signal'].append(mergeCategories(grouped_categories[ac], 'signal', sample_name))
                     
                     bkgr_names = []
                     for i_name, sample_name in enumerate(background_collection):
                         bkgr_names.append(sample_name)
-                        list_of_ac_hist[ac]['bkgr'].append(mergeCategories(SUPER_CATEGORIES[ac], 'bkgr', sample_name))
+                        list_of_ac_hist[ac]['bkgr'].append(mergeCategories(grouped_categories[ac], 'bkgr', sample_name))
 
                     extra_text = [extraTextFormat(ac, ypos = 0.82)]
                     if args.flavor: extra_text.append(extraTextFormat('|V_{'+args.flavor+'N}|^{2} = '+'%.0E' % Decimal(str(args.coupling**2)), textsize = 0.7))

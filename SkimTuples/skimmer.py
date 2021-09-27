@@ -25,7 +25,7 @@ submission_parser.add_argument('--summaryFile', action='store_true', default=Fal
 submission_parser.add_argument('--genSkim',  action='store_true',      default=False,               help='skim on generator level leptons')
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
 submission_parser.add_argument('--removeOverlap',  action='store_true',      default=False,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
-submission_parser.add_argument('--skimSelection',  action='store',      default='default',               help='Selection for the skim.', choices=['top', 'TTT', 'Luka', 'AN2017014', 'LukaFR', 'default'])
+submission_parser.add_argument('--skimSelection',  action='store',      default='default',               help='Selection for the skim.', choices=['leptonMVAtop', 'TTT', 'Luka', 'AN2017014', 'LukaFR', 'default'])
 submission_parser.add_argument('--region',   action='store', default=None,  help='Choose the selection region', 
     choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
 submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino'])
@@ -48,13 +48,13 @@ if args.isTest:
 #Load in samples
 #
 from HNL.Samples.sampleManager import SampleManager
-# file_list = 'fulllist_'+args.era+args.year+'_mconly' if args.customList is None else args.customList
-file_list = 'Skimmer/skimlist_{0}{1}'.format(args.era, args.year)
+file_list = 'Skimmer/skimlist_{0}{1}'.format(args.era, args.year) if args.customList is None else args.customList
+if args.isTest: file_list = 'fulllist_{0}{1}'.format(args.era, args.year)
 gen_name = 'Reco' if not args.genSkim else 'Gen'
 if args.region is None and not args.reprocess:
     sample_manager = SampleManager(args.era, args.year, 'noskim', file_list, need_skim_samples=True)
 else:
-    sample_manager = SampleManager(args.era, args.year, gen_name, file_list, need_skim_samples=True)
+    sample_manager = SampleManager(args.era, args.year, gen_name, file_list, need_skim_samples=False, skim_selection=args.skimSelection)
 
 #
 # Subjobs

@@ -40,11 +40,11 @@ def baseFilterMVA(chain, new_chain, cutter):
 
 def passBaseCuts(chain, new_chain, cutter):
     if chain.selection == 'AN2017014':
-        return baseFilterAN2017(cutter)
+        return baseFilterAN2017(chain, new_chain, cutter)
     elif chain.strategy == 'MVA':
-        return baseFilterMVA(cutter)
+        return baseFilterMVA(chain, new_chain, cutter)
     else:
-        return baseFilterCutBased(cutter)
+        return baseFilterCutBased(chain, new_chain, cutter)
 
 
 #Low mass selection

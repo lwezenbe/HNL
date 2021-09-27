@@ -105,7 +105,7 @@ tau_id_WP_UL = {('MVA2017v2', None) : lambda c : np.ones(c._nL, dtype=bool),
 
 tau_eleDiscr_WP_UL = {('againstElectron', None) : lambda c : np.ones(c._nL, dtype=bool),
                 ('againstElectron', 'vloose') : lambda c : c._tauEleVetoMVAVLoose,
-                # ('againstElectron', 'loose') : lambda c : c._tauEleVetoMVALoose,
+                ('againstElectron', 'loose') : lambda c : c._tauEleVetoMVAVLoose,  #TODO: Make this Loose again, it was not available before
                 ('againstElectron', 'medium') : lambda c : c._tauEleVetoMVAMedium,
                 ('againstElectron', 'tight') : lambda c : c._tauEleVetoMVATight,
                 ('againstElectron', 'vtight') : lambda c : c._tauEleVetoMVAVTight,

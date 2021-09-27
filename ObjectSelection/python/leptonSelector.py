@@ -50,11 +50,22 @@ def isGoodLightLeptonGeneral(chain, index, workingpoint = None, algo = None):
     else:
         return False
 
+def isGoodLeptonGeneral(chain, index, workingpoint = None, algo = None):
+    if chain._lFlavor[index] == 0:
+        return isGoodElectron(chain, index, workingpoint=workingpoint, algo=algo)
+    elif chain._lFlavor[index] == 1:
+        return isGoodMuon(chain, index, workingpoint=workingpoint, algo=algo)
+    elif chain._lFlavor[index] == 2:
+        return isGoodTau(chain, index, workingpoint=workingpoint, algo=algo)
+    else:
+        return False
 
-from HNL.ObjectSelection.tauSelector import isJetFakingTau
-from HNL.ObjectSelection.electronSelector import isFakeElectron
-from HNL.ObjectSelection.muonSelector import isFakeMuon
+
 def isFakeLepton(chain, index):
+    from HNL.ObjectSelection.tauSelector import isJetFakingTau
+    from HNL.ObjectSelection.electronSelector import isFakeElectron
+    from HNL.ObjectSelection.muonSelector import isFakeMuon
+
     if chain._lFlavor[index] == 0: return isFakeElectron(chain, index)
     if chain._lFlavor[index] == 1: return isFakeMuon(chain, index)
     if chain._lFlavor[index] == 2: return isJetFakingTau(chain, index)
@@ -70,3 +81,19 @@ def coneCorrection(chain, index, algo = None):
     if chain._lFlavor[index] == 0: return electronConeCorrection(chain, index, algo)
     if chain._lFlavor[index] == 1: return muonConeCorrection(chain, index, algo)
     if chain._lFlavor[index] == 2: return tauConeCorrection(chain, index, algo)
+
+
+FLAVOR_DICT = {
+    'e'     :   0,
+    'mu'    :   1,
+    'tau'   :   2
+}
+
+def isBaseLepton(chain, index):
+    from HNL.ObjectSelection.tauSelector import isBaseTau
+    from HNL.ObjectSelection.electronSelector import isBaseElectron
+    from HNL.ObjectSelection.muonSelector import isBaseMuon
+
+    if chain._lFlavor[index] == 0: return isBaseElectron(chain, index)
+    if chain._lFlavor[index] == 1: return isBaseMuon(chain, index)
+    if chain._lFlavor[index] == 2: return isBaseTau(chain, index)    

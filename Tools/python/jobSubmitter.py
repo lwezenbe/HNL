@@ -197,8 +197,9 @@ def submitJobs(script, subjob_args, subjob_list, argparser, **kwargs):
         if resubmission:
             os.system('rm '+logfile)
 
-        try:    os.makedirs(logdir)
-        except: pass
+        if not args.dryRun:
+            try:    os.makedirs(logdir)
+            except: pass
 
         if args.dryRun:     log.info('Dry-run: ' + command)
         elif args.batchSystem == 'local': runLocal(command, logfile)
