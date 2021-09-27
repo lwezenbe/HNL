@@ -11,8 +11,8 @@ argParser.add_argument('--isTest',   action='store_true', default=False,  help='
 args = argParser.parse_args()
 
 if args.isTest:
-    if args.year is None: args.year = '2016'
-    if args.sample is None: args.sample = 'DYJetsToLL-M-10to50' 
+    if args.year is None: args.year = '2017'
+    if args.sample is None: args.sample = 'DYJetsToLL-M-50' 
     if args.subJob is None: args.subJob = 0
 
     from HNL.Tools.logger import getLogger, closeLogger
@@ -36,6 +36,7 @@ from HNL.Samples.sample import createSampleList, getSampleFromList
 list_location = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/sampleList_'+args.era+args.year+'_noskim.conf')
 sample_list = createSampleList(list_location)
 sample = getSampleFromList(sample_list, args.sample)
+print sample.path
 
 #
 # Load in sample and chain

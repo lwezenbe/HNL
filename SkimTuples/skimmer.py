@@ -48,8 +48,8 @@ if args.isTest:
 #Load in samples
 #
 from HNL.Samples.sampleManager import SampleManager
-# file_list = 'fulllist_'+args.era+args.year+'_mconly' if args.customList is None else args.customList
-file_list = 'Skimmer/skimlist_{0}{1}'.format(args.era, args.year)
+file_list = 'Skimmer/skimlist_{0}{1}'.format(args.era, args.year) if args.customList is None else args.customList
+if args.isTest: file_list = 'fulllist_{0}{1}'.format(args.era, args.year)
 gen_name = 'Reco' if not args.genSkim else 'Gen'
 if args.region is None and not args.reprocess:
     sample_manager = SampleManager(args.era, args.year, 'noskim', file_list, need_skim_samples=True)

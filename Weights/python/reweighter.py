@@ -47,19 +47,19 @@ class Reweighter:
             return self.fakerate_collection.getFakeWeight()
 
     def getBTagWeight(self):
-        if not self.sample.is_data:
+        if not self.sample.is_data and self.sample.chain.is_reco_level:
             return self.btagReweighting(self.sample.chain)
         else:
             return 1.
 
     def getElectronRecoSF(self):
-        if not self.sample.is_data:
+        if not self.sample.is_data and self.sample.chain.is_reco_level:
             return self.electronSF.getTotalRecoSF(self.sample.chain)
         else:
             return 1.        
 
     def getTauSF(self):
-        if not self.sample.is_data:
+        if not self.sample.is_data and self.sample.chain.is_reco_level:
             return self.tauSF.getTotalSF(self.sample.chain)
         else:
             return 1.        
@@ -97,6 +97,7 @@ if __name__ == '__main__':
     chain.year = '2017'
     chain.era = era
     chain.selection = 'default'
+    chain.is_reco_level = True
     chain.obj_sel = getObjectSelection('default')
     reweighter = Reweighter(s, sm)
 

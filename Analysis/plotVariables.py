@@ -82,8 +82,10 @@ from HNL.Samples.sampleManager import SampleManager
 from HNL.EventSelection.event import Event
 
 def getSampleManager(y):
-    if args.genLevel:
+    if args.genLevel or ():
         skim_str = 'noskim'
+    elif args.includeData is not None and 'sideband' in args.includeData:
+        skim_str = 'Reco'
     else:
         skim_str = 'auto'
     file_list = 'fulllist_'+args.era+str(y) if args.customList is None else args.customList
@@ -165,9 +167,9 @@ reco_or_gen_str = 'reco' if not args.genLevel else 'gen'
 
 def getOutputName(st, y):
     if not args.isTest:
-        return os.path.join(os.getcwd(), 'data', 'plotVariables', '-'.join([args.strategy, args.selection, args.region, reco_or_gen_str]), args.era+'-'+y, st)
+        return os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'plotVariables', '-'.join([args.strategy, args.selection, args.region, reco_or_gen_str]), args.era+'-'+y, st)
     else:
-        return os.path.join(os.getcwd(), 'data', 'testArea', 'plotVariables', '-'.join([args.strategy, args.selection, args.region, reco_or_gen_str]), args.era+'-'+y, st)
+        return os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', 'plotVariables', '-'.join([args.strategy, args.selection, args.region, reco_or_gen_str]), args.era+'-'+y, st)
 
 #
 # Load in the sample list 

@@ -35,7 +35,7 @@ if args.isTest:
     from HNL.Tools.logger import getLogger, closeLogger
     log = getLogger('INFO')
     args.isChild = True
-    if args.sample is None: args.sample = 'HNL-tau-m20'
+    if args.sample is None: args.sample = 'HNL-e-m20'
     if args.subJob is None: args.subJob = '0'
 
 if not args.isChild:
@@ -58,6 +58,7 @@ chain = sample.initTree()
 chain.HNLmass = sample.getMass()
 chain.year = args.year
 chain.era = args.era
+chain.analysis = 'HNL'
 print 'Chain initialized'
 
 #Set output dir
@@ -65,9 +66,9 @@ print 'Chain initialized'
 #If this changes, this needs to be changed as well
 from HNL.Tools.helpers import makeDirIfNeeded
 if not args.isTest:
-    output_name = os.path.join(os.getcwd(), 'data', os.path.basename(__file__).split('.')[0], sample.output)
+    output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Test', 'data', os.path.basename(__file__).split('.')[0], sample.output)
 else:
-    output_name = os.path.join(os.getcwd(), 'data', 'testArea', os.path.basename(__file__).split('.')[0], sample.output)
+    output_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Test', 'data', 'testArea', os.path.basename(__file__).split('.')[0], sample.output)
 output_name += '/'+ sample.name + '.root'
 makeDirIfNeeded(output_name)
 

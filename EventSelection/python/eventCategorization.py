@@ -85,6 +85,7 @@ SUPER_CATEGORIES = {
     'Total': [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16], 
     'TauFinalStates': [1, 2, 3, 4, 5, 6, 7, 8, 9]
     }
+mutual_exclusive_supercategories = ['Ditau', 'SingleTau', 'NoTau']
 
 ANALYSIS_CATEGORIES = {
     'Ditau': [1, 2, 3, 4], 

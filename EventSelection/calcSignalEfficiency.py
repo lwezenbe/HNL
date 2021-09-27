@@ -17,7 +17,7 @@ argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
 submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
-submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -56,9 +56,9 @@ if args.compareTriggerCuts is not None and args.divideByCategory != 'gen':
 #
 if args.isTest: 
     args.isChild = True
-    if args.sample is None: args.sample = 'HNL-e-m250'
+    if args.sample is None: args.sample = 'HNL-e-m200'
     if args.subJob is None: args.subJob = '0'
-    if args.year is None: args.year = '2016'
+    if args.year is None: args.year = '2017'
     if args.flavor is None: args.flavor = 'e'
     from HNL.Tools.helpers import generateArgString
     arg_string =  generateArgString(argParser)

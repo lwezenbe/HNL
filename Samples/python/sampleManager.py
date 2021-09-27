@@ -53,7 +53,7 @@ class SampleManager:
         self.era = era
         self.year = year
 
-        if skim_selection is None or region is None:
+        if skim_selection is None:
             self.skim = 'noskim'
         elif skim == 'auto':
             self.skim = self.findInFileToUse()
@@ -153,8 +153,10 @@ class SampleManager:
             except:
                 continue
 
-            if self.skim_selection is not None or self.region is not None:
-                path = path.replace('$SKIMSELECTION$', self.skim_selection).replace('$REGION$', self.region)
+            if self.skim_selection is not None:
+                path = path.replace('$SKIMSELECTION$', self.skim_selection)
+            if self.region is not None:
+                path.replace('$REGION$', self.region)
 
             if name in self.sample_names:
                 split_jobs += '*' + str(self.sample_dict[name])

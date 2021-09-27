@@ -14,6 +14,7 @@ class Event(object):
         self.chain.region = kwargs.get('region')
         self.chain.selection = kwargs.get('selection')
         self.additional_options = kwargs.get('additional_options', None)
+        self.chain.is_reco_level = is_reco_level
 
         self.chain.obj_sel = getObjectSelection(self.chain.selection)
 

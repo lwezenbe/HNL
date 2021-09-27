@@ -297,7 +297,7 @@ if __name__ == "__main__":
     from HNL.Tools.logger import getLogger, closeLogger
     log = getLogger('INFO')
 
-    in_file_path = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Samples', 'InputFiles', 'sampleList_UL2017_Reco.conf'))
+    in_file_path = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Samples', 'InputFiles', 'sampleList_UL2017_noskim.conf'))
     sample_list = createSampleList(in_file_path)
     sample = getSampleFromList(sample_list, 'DYJetsToLL-M-10to50')
     chain = sample.initTree(needhcount = True)
