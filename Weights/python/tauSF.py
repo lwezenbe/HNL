@@ -49,7 +49,6 @@ class TauSF:
     def getTotalSF(self, chain):
         total_sf = 1.
         for l in chain.l_indices:
-            print l
             if chain._lFlavor[l] == 2: total_sf *= self.getSF(chain, l)
         return total_sf
 
