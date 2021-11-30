@@ -30,7 +30,6 @@ submission_parser.add_argument('--isTest',   action='store_true', default=False,
 submission_parser.add_argument('--runInTerminal', action='store_true', default=False,  help='Quickly run in the terminal')
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
-submission_parser.add_argument('--coupling', type = float, action='store', default=0.01,  help='Coupling of the sample')
 submission_parser.add_argument('--noskim', action='store_true', default=False,  help='Use no skim sample list')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
@@ -309,7 +308,7 @@ else:
     from HNL.Tools.helpers import makePathTimeStamped
     from HNL.Plotting.plottingTools import extraTextFormat
     from HNL.Tools.helpers import getObjFromFile, tab, isValidRootFile
-    from HNL.Analysis.analysisTypes import signal_couplingsquared
+    from HNL.Analysis.analysisTypes import signal_couplingsquared, signal_couplingsquaredinsample
 
     for year in args.year:
         #
@@ -372,7 +371,7 @@ else:
                 
                 #Rescale if requested
                 new_coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][signal_mass]
-                tmp_hist.Scale(new_coupling_squared/(args.coupling**2))
+                tmp_hist.Scale(new_coupling_squared/signal_couplingsquaredinsample[args.flavor][signal_mass])
 
                 for sr in xrange(1, srm[args.region].getNumberOfSearchRegions()+1):
                     list_of_values['signal'][signal][c][sr] = tmp_hist.GetBinContent(sr)
@@ -534,7 +533,7 @@ else:
                             shape_hist[bkgr_sample_name].Write(bkgr_sample_name)
                         out_shape_file.Close()
                         coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][int(sample_name.split('-m')[-1])]
-                        makeDataCard(str(ac), args.flavor, args.era+year, 0, sample_name, bkgr_names, args.selection, args.strategy, args.region, shapes=True, coupling_sq = coupling_squared)
+                        makeDataCard(str(ac), args.flavor, args.era, year, 0, sample_name, bkgr_names, args.selection, args.strategy, args.region, shapes=True, coupling_sq = coupling_squared)
 
         if args.makePlots:
 
@@ -601,6 +600,7 @@ else:
             #
             if not args.noBarCharts:
 
+                print "Making Bar Charts"
                 for supercat in grouped_categories.keys():
                     #
                     # Bkgr
@@ -635,6 +635,7 @@ else:
                         p.drawBarChart(output_dir = destination+'/BarCharts', parallel_bins=True, message = args.message)
             
             if not args.noPieCharts and not args.signalOnly:
+                print "making Pie Charts"
                 example_sample = background_collection[0]
                 for i, c in enumerate(sorted(list_of_values['bkgr'][example_sample].keys())):
 
@@ -660,6 +661,7 @@ else:
                     p.drawPieChart(output_dir = destination+'/PieCharts', draw_percent=True, message = args.message)
 
             if not args.noCutFlow:
+                print "plotting cutflow"
                 for sample_name in sample_manager.sample_names:
                     sample = sample_manager.getSample(sample_name)
                     in_file = [os.path.join(base_path, sample.output, 'total/events.root')]
@@ -732,9 +734,13 @@ else:
                         list_of_ac_hist[ac]['bkgr'].append(mergeCategories(grouped_categories[ac], 'bkgr', sample_name))
 
                     extra_text = [extraTextFormat(ac, ypos = 0.82)]
-                    if args.flavor: extra_text.append(extraTextFormat('|V_{'+args.flavor+'N}|^{2} = '+'%.0E' % Decimal(str(args.coupling**2)), textsize = 0.7))
+                    if args.flavor: 
+                        extra_text.append(extraTextFormat('|V_{'+args.flavor+'N}|^{2} = '+'%.0E' % Decimal(str(0.01**2)), textsize = 0.7))
                     if args.rescaleSignal is not None:
                         extra_text.append(extraTextFormat('rescaled to |V_{'+args.flavor+'N}|^{2} = '+'%.0E' % Decimal(str(args.rescaleSignal)), textsize = 0.7))
+                    # else:
+                    #     signal_names = [s + ' V^{2}=' + str(signal_couplingsquared[s.split('-')[1]][int(s.split('-m')[-1])])  for s in signal_names]
+                        
                     if args.region == 'lowMassSR':
                         plotLowMassRegions(list_of_ac_hist[ac]['signal'], list_of_ac_hist[ac]['bkgr'], signal_names+bkgr_names, 
                             out_path = destination+'/SearchRegions/'+ac, extra_text = extra_text, sample_groups = args.groupSamples)
