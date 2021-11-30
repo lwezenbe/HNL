@@ -27,7 +27,13 @@ class SignalRegionSelector(FilterObject):
         if region == 'lowMassSR':
             return passLowMassSelection(self.chain, self.new_chain, self.is_reco_level, cutter, for_training=for_training)
         elif region == 'highMassSR':
-            return passHighMassSelection(self.chain, self.new_chain, self.is_reco_level, cutter)
+            return passHighMassSelection(self.chain, self.new_chain, self.is_reco_level, cutter, for_training=for_training)
+        elif region == 'lowMassSRForTraining':
+            return passLowMassSelection(self.chain, self.new_chain, self.is_reco_level, cutter, for_training=True)
+        elif region == 'highMassSRForTraining':
+            return passHighMassSelection(self.chain, self.new_chain, self.is_reco_level, cutter, for_training=True)
+        elif region == 'lowMassTrainingEmulation':
+            return passLowMassSelection(self.chain, self.new_chain, self.is_reco_level, cutter, for_training=True) and self.new_chain.M3l < 80
         elif region == 'baseline':
             return True
         else:

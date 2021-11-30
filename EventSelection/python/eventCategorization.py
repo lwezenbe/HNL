@@ -128,8 +128,9 @@ CATEGORIES_SIGNALTRUTH = [c for c in xrange(1, len(CATEGORY_NAMES)+2, 1)]
 #
 class EventCategory():
     
-    def __init__(self, chain):
+    def __init__(self, chain, new_chain):
         self.chain = chain
+        self.new_chain = new_chain
         self.n_mu = 0
         self.n_ele = 0
         self.n_tau = 0
@@ -145,7 +146,7 @@ class EventCategory():
         self.n_ele = 0
         self.n_tau = 0
         
-        for f in self.chain.l_flavor:
+        for f in self.new_chain.l_flavor:
             self.n_l  += 1
             if f == 0:  self.n_ele += 1
             elif f == 1:  self.n_mu += 1
@@ -157,23 +158,23 @@ class EventCategory():
 
     def hasOSSFpair(self, flavor):
         for first_lepton in [l1, l2]:
-            if self.chain.l_flavor[first_lepton] != flavor: continue
+            if self.new_chain.l_flavor[first_lepton] != flavor: continue
             for second_lepton in [l2, l3]:
-                if self.chain.l_flavor[second_lepton] != flavor: continue
+                if self.new_chain.l_flavor[second_lepton] != flavor: continue
                 if first_lepton == second_lepton: continue
 
-                if self.chain.l_charge[first_lepton] != self.chain.l_charge[second_lepton]: return True
+                if self.new_chain.l_charge[first_lepton] != self.new_chain.l_charge[second_lepton]: return True
 
         return False
 
     def hasSSSFpair(self, flavor):
         for first_lepton in [l1, l2]:
-            if self.chain.l_flavor[first_lepton] != flavor: continue
+            if self.new_chain.l_flavor[first_lepton] != flavor: continue
             for second_lepton in [l2, l3]:
-                if self.chain.l_flavor[second_lepton] != flavor: continue
+                if self.new_chain.l_flavor[second_lepton] != flavor: continue
                 if first_lepton == second_lepton: continue
 
-                if self.chain.l_charge[first_lepton] == self.chain.l_charge[second_lepton]: return True
+                if self.new_chain.l_charge[first_lepton] == self.new_chain.l_charge[second_lepton]: return True
 
         return False
             
@@ -246,17 +247,17 @@ class EventCategory():
     def returnSignalTruthCategory(self):
         self.flavorContent()
         #Category 1 and 2:
-        if self.chain.l_flavor[l1] == 2 and self.chain.l_flavor[l2] == 2:
-            if self.chain.l_flavor[l3] == 0:
+        if self.new_chain.l_flavor[l1] == 2 and self.new_chain.l_flavor[l2] == 2:
+            if self.new_chain.l_flavor[l3] == 0:
                 #Category 1:
-                if self.chain.l_charge[l1] == self.chain.l_charge[l2]:
+                if self.new_chain.l_charge[l1] == self.new_chain.l_charge[l2]:
                     self.category = 1
                 #Category 2:
                 else:
                     self.category = 2
-            elif self.chain.l_flavor[l3] == 1:
+            elif self.new_chain.l_flavor[l3] == 1:
                 #Category 1:
-                if self.chain.l_charge[l1] == self.chain.l_charge[l2]:
+                if self.new_chain.l_charge[l1] == self.new_chain.l_charge[l2]:
                     self.category = 3
                 #Category 2:
                 else:
@@ -264,20 +265,20 @@ class EventCategory():
             else:
                 self.category = CATEGORY_FROM_NAME['Other']
 
-        elif self.chain.l_flavor[l1] == 2:
-            if self.chain.l_charge[l2] != self.chain.l_charge[l3]:
-                if self.chain.l_flavor[l2] == 0 and self.chain.l_flavor[l3] == 0: self.category = 6 
-                elif self.chain.l_flavor[l2] == 1 and self.chain.l_flavor[l3] == 1: self.category = 8
+        elif self.new_chain.l_flavor[l1] == 2:
+            if self.new_chain.l_charge[l2] != self.new_chain.l_charge[l3]:
+                if self.new_chain.l_flavor[l2] == 0 and self.new_chain.l_flavor[l3] == 0: self.category = 6 
+                elif self.new_chain.l_flavor[l2] == 1 and self.new_chain.l_flavor[l3] == 1: self.category = 8
                 else:
                     self.category = CATEGORY_FROM_NAME['Other'] 
-        elif self.chain.l_flavor[l2] == 2:
-            if self.chain.l_charge[l2] == self.chain.l_charge[l3]:
-                if self.chain.l_flavor[l1] == 0 and self.chain.l_flavor[l3] == 0: self.category = 5 
-                elif self.chain.l_flavor[l1] == 1 and self.chain.l_flavor[l3] == 1: self.category = 7
+        elif self.new_chain.l_flavor[l2] == 2:
+            if self.new_chain.l_charge[l2] == self.new_chain.l_charge[l3]:
+                if self.new_chain.l_flavor[l1] == 0 and self.new_chain.l_flavor[l3] == 0: self.category = 5 
+                elif self.new_chain.l_flavor[l1] == 1 and self.new_chain.l_flavor[l3] == 1: self.category = 7
                 else:
                     self.category = CATEGORY_FROM_NAME['Other']  
-            if self.chain.l_flavor[l1] == 0 and self.chain.l_flavor[l3] == 1: self.category = 9 
-            if self.chain.l_flavor[l1] == 1 and self.chain.l_flavor[l3] == 0: self.category = 10 
+            if self.new_chain.l_flavor[l1] == 0 and self.new_chain.l_flavor[l3] == 1: self.category = 9 
+            if self.new_chain.l_flavor[l1] == 1 and self.new_chain.l_flavor[l3] == 0: self.category = 10 
 
         #All light lepton categories
         elif self.n_tau == 0:
