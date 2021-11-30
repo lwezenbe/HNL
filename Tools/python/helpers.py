@@ -174,7 +174,9 @@ def rootFileContent(d, basepath="/", getNested=False, starting_dir=None):
     if starting_dir is not None: d = d.Get(starting_dir)
     for key in d.GetListOfKeys():
         kname = key.GetName()
-        if key.IsFolder() and getNested:
+        # print d.Get(kname)
+        # if key.IsFolder() and getNested:
+        if type(d.Get(kname)) == ROOT.TFile or type(d.Get(kname)) == ROOT.TDirectoryFile and getNested:
     #    if key.IsFolder():
             # TODO: -> "yield from" in Py3
             for i in rootFileContent(d.Get(kname), basepath+kname+"/", getNested):

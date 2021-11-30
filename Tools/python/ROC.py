@@ -90,10 +90,13 @@ class ROC:
         return eff
 
     @staticmethod
-    def bincontentToArray(h):
+    def bincontentToArray(h, subtract_from_one=False):
         arr = np.array([])
         for b in xrange(h.GetXaxis().GetNbins()):
-            arr = np.append(arr, h.GetBinContent(b+1))
+            if not subtract_from_one:
+                arr = np.append(arr, h.GetBinContent(b+1))
+            else:
+                arr = np.append(arr, max(0., 1. - h.GetBinContent(b+1)))
         return arr
         
     @staticmethod
@@ -103,17 +106,31 @@ class ROC:
             arr = np.append(arr, h.GetBinError(b+1))
         return arr
 
-    def returnGraph(self):
+    def returnGraph(self, no_error_bars = False):
         eff = self.getEfficiency()
         fr = self.getMisid()
         
-        xval = self.bincontentToArray(eff).flatten('C')
-        yval = self.bincontentToArray(fr).flatten('C')
-        xerr = self.binerrorToArray(eff).flatten('C')
-        yerr = self.binerrorToArray(fr).flatten('C')
+        yval = self.bincontentToArray(eff).flatten('C')
+        xval = self.bincontentToArray(fr, subtract_from_one=True).flatten('C')
+        yerr = self.binerrorToArray(eff).flatten('C')
+        xerr = self.binerrorToArray(fr).flatten('C')
 
-        graph = TGraphErrors(len(xval), xval, yval, xerr, yerr)
+        if not no_error_bars:
+            graph = TGraphErrors(len(xval), xval, yval, xerr, yerr)
+        else:
+            graph = TGraphErrors(len(xval), xval, yval)
         return graph
+
+    def getAUC(self):
+        eff = self.getEfficiency()
+        fr = self.getMisid()
+        
+        # yval = self.bincontentToArray(eff).flatten('C')[::-1]
+        # xval = self.bincontentToArray(fr, subtract_from_one=True).flatten('C')[::-1]
+        yval = self.bincontentToArray(eff).flatten('C')
+        xval = self.bincontentToArray(fr, subtract_from_one=True).flatten('C')
+
+        return np.trapz(yval, x=xval)
 
 if __name__ == '__main__':
     roc = ROC('x', ['x', 'y', 'z'])
