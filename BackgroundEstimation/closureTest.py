@@ -26,7 +26,7 @@ submission_parser.add_argument('--noskim', action='store_true', default=False,  
 submission_parser.add_argument('--isCheck', action='store_true', default=False,  help='Check the setup by using the exact same region as the ttl measurement')
 submission_parser.add_argument('--splitInCategories', action='store_true', default=False,  help='Split into different categories')
 submission_parser.add_argument('--inData',   action='store_true', default=False,  help='Run in data')
-submission_parser.add_argument('--region', action='store', default=None, type=str,  help='What region was the tau fake rate you want to use measured in?')
+submission_parser.add_argument('--region', action='store', default=None, type=str,  help='What region was the tau fake closure test you want to use measured in?')
 submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino'])
 submission_parser.add_argument('--application', action='store', default=None, type=str,  help='What region was the tau fake rate you want to use applied for?', 
     choices=['TauFakesDY', 'TauFakesDYnomet', 'TauFakesTT', 'WeightedMix', 'OSSFsplitMix'])
