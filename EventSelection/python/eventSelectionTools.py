@@ -227,18 +227,18 @@ def calculateGeneralVariables(chain, new_chain, is_reco_level = True):
     if is_reco_level:
         #ptCone
         # new_chain.pt_cone = []
-        # new_chain.dr_closestJet = [0.0]*20
-        # for il, l in enumerate(new_chain.l_indices):
-        #     if new_chain.l_flavor[il] < 2:
-        #         new_chain.pt_cone.append(chain._lPtCorr[l]*coneCorrection(chain, l))
-        #     else:
-        #         new_chain.pt_cone.append(chain._lPt[l]*coneCorrection(chain, l))
+        new_chain.dr_closestJet = [0.0]*20
+        for il, l in enumerate(new_chain.l_indices):
+            # if new_chain.l_flavor[il] < 2:
+            #     new_chain.pt_cone.append(chain._lPtCorr[l]*coneCorrection(chain, l))
+            # else:
+            #     new_chain.pt_cone.append(chain._lPt[l]*coneCorrection(chain, l))
 
-        #     closest_jet = findClosestJet(chain, new_chain, il)
-        #     if closest_jet is None:
-        #         new_chain.dr_closestJet.append(-1.)
-        #     else:
-        #         new_chain.dr_closestJet.append(deltaR(chain.l_eta[il], chain._jetEta[closest_jet], chain.l_phi[il], chain._jetPhi[closest_jet]))
+            closest_jet = findClosestJet(chain, new_chain, il)
+            if closest_jet is None:
+                new_chain.dr_closestJet.append(-1.)
+            else:
+                new_chain.dr_closestJet.append(deltaR(new_chain.l_eta[il], chain._jetEta[closest_jet], new_chain.l_phi[il], chain._jetPhi[closest_jet]))
 
         #calculate #jets and #bjets
         new_chain.njets = len(selectJets(chain))

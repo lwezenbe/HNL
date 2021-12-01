@@ -76,7 +76,7 @@ var_reco_3l = {
         'maxdrl2':      (lambda c : c.maxdr_l2,       np.arange(0., 5.5, .25),       ('max(#Delta R(l2ln))', 'Events')),
         'mindrl3':      (lambda c : c.mindr_l3,       np.arange(0., 5.5, .25),       ('min(#Delta R(l3ln))', 'Events')),
         'maxdrl3':      (lambda c : c.maxdr_l3,       np.arange(0., 5.5, .25),       ('max(#Delta R(l3ln))', 'Events')),
-        'ptConeLeading':   (lambda c : c.pt_cone[0],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(leading) [GeV]', 'Events')),
+        # 'ptConeLeading':   (lambda c : c.pt_cone[0],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(leading) [GeV]', 'Events')),
         # 'ptConeSubLeading':   (lambda c : c.pt_cone[1],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(subleading) [GeV]', 'Events')),
         # 'ptConeTrailing':   (lambda c : c.pt_cone[2],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(trailing) [GeV]', 'Events')),
         'mt3':   (lambda c : c.mt3,      np.arange(0., 315., 15.),         ('M_{T}(3l) [GeV]', 'Events')),
@@ -102,7 +102,7 @@ var_reco_4l = {
         'NbJet':      (lambda c : c.nbjets,       np.arange(0., 12., 1.),       ('#B Jets', 'Events')),
         'MllZ1':       (lambda c : c.Mll_Z1,      np.arange(0., 157.5, 7.5),         ('M_{ll}(Z_{1}) [GeV]', 'Events')), 
         'MllZ2':       (lambda c : c.Mll_Z2,      np.arange(0., 153.75, 3.75),         ('M_{ll}(Z_{2}) [GeV]', 'Events')),
-        'ptConeLeading':   (lambda c : c.pt_cone[0],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(leading) [GeV]', 'Events'))
+        # 'ptConeLeading':   (lambda c : c.pt_cone[0],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(leading) [GeV]', 'Events'))
     }
 
 from HNL.TMVA.reader import MVA_of_choice

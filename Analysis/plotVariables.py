@@ -88,7 +88,8 @@ def getSampleManager(y):
     elif args.includeData is not None and 'sideband' in args.includeData:
         skim_str = 'Reco'
     else:
-        skim_str = args.skimLevel
+        # skim_str = args.skimLevel
+        skim_str = 'Reco'
     file_list = 'fulllist_'+args.era+str(y) if args.customList is None else args.customList
 
     sm = SampleManager(args.era, y, skim_str, file_list, skim_selection=args.selection, region=args.region)
@@ -297,7 +298,7 @@ if not args.makePlots and not args.makeDataCards:
             need_sideband = [0, 1, 2] if chain.is_data and 'sideband' in args.includeData else None
             if not event.passedFilter(cutter, sample.output, sideband = need_sideband, for_training = 'ForTraining' in args.region): continue
             from HNL.Triggers.triggerSelection import passOfflineThresholds
-            if not cutter.cut(passOfflineThresholds(chain, analysis=args.analysis), 'pass_offline_thresholds'): continue
+            if not cutter.cut(passOfflineThresholds(chain, chain, analysis=args.analysis), 'pass_offline_thresholds'): continue
 
             prompt_str = None
             if args.region != 'NoSelection':

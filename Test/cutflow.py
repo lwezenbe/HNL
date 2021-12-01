@@ -36,7 +36,6 @@ from HNL.Samples.sample import createSampleList, getSampleFromList
 list_location = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/sampleList_'+args.era+args.year+'_noskim.conf')
 sample_list = createSampleList(list_location)
 sample = getSampleFromList(sample_list, args.sample)
-print sample.path
 
 #
 # Load in sample and chain
@@ -66,7 +65,7 @@ from HNL.EventSelection.eventCategorization import EventCategory
 from HNL.ObjectSelection.tauSelector import isGoodTau
 from HNL.ObjectSelection.leptonSelector import isGoodLepton
 
-ec = EventCategory(chain)
+ec = EventCategory(chain, chain)
 for entry in event_range:
     
     chain.GetEntry(entry)
