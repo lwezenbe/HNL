@@ -66,8 +66,7 @@ if not args.isTest:
         print "LOADING THIS SAMPLE NOW:", sample_name
         sample = sample_manager.getSample(sample_name)
         if sample is None:
-            print sample_name, "not found. Will skip this sample"
-            continue
+            raise RuntimeError(sample_name, "not found.")
         for njob in xrange(sample.returnSplitJobs()):
             jobs += [(sample.name, str(njob))]
         tot_jobs += sample.returnSplitJobs()
@@ -82,7 +81,7 @@ if not args.checkLogs:
     if not args.isChild and not args.isTest:
         from HNL.Tools.jobSubmitter import submitJobs
         print 'submitjobs'
-        submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'skim')
+        submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'skim-'+args.year+str(args.region))
         print 'endsubmit'
         
         if args.summaryFile:
@@ -160,6 +159,7 @@ if not args.checkLogs:
     if args.region is None:
         delete_branches = ['lhe', 'Lhe', 'ttg', '_ph']
         delete_branches = ['ttg', '_ph']
+        if args.reprocess: delete_branches += ['lumiweight']
         #delete_branches.extend(['HLT']) #TODO: For now using pass_trigger, this may need to change
         delete_branches.extend(['tauPOG*2015', 'tau*MvaNew']) #Outdated tau
         delete_branches.extend(['lMuon', 'prefire'])
@@ -168,23 +168,36 @@ if not args.checkLogs:
         for i in delete_branches:        chain.SetBranchStatus("*"+i+"*", 0)
         #chain.SetBranchStatus('_met', 1)  #Reactivate met
         #chain.SetBranchStatus('_metPhi', 1)  #Reactivate met
+            
     output_tree = chain.CloneTree(0)
 
     #
     # Make new branches
     #
+    new_branches = []
     if args.region is None:
-        new_branches = []
-        # new_branches.extend(['M3l/F', 'minMos/F', 'pt_cone[20]/F', 'mtOther/F'])
-        # new_branches.extend(['M3l/F', 'minMos/F', 'mtOther/F'])
-        # new_branches.extend(['l1/I', 'l2/I', 'l3/I', 'index_other/I'])
-        # new_branches.extend(['l_pt[3]/F', 'l_eta[3]/F', 'l_phi[3]/F', 'l_e[3]/F', 'l_charge[3]/F', 'l_flavor[3]/I', 'l_indices[3]/I', 'l_istight[3]/O'])
         new_branches.extend(['lumiweight/F'])
-        # new_branches.extend(['event_category/I'])
-        # new_branches.extend(['njets/I', 'nbjets/I'])
 
-        from HNL.Tools.makeBranches import makeBranches
-        new_vars = makeBranches(output_tree, new_branches)
+    else:
+        new_branches.extend(['M3l/F', 'mt3/F', 'mtOther/F', 'MZossf/F'])
+        new_branches.extend(['minMss/F', 'minMos/F', 'maxMss/F', 'maxMos/F', 'minMossf/F', 'maxMossf/F'])
+        new_branches.extend(['mtl1/F', 'mtl2/F'])
+        new_branches.extend(['Ml1l2/F', 'Ml1l3/F', 'Ml2l3/F'])
+        new_branches.extend(['HT/F', 'LT/F'])
+        new_branches.extend(['dRl1l2/F', 'dRl1l3/F', 'dRl2l3/F', 'dRminl1/F', 'dRminl2/F', 'dRminl3/F', 'dRmaxl1/F', 'dRmaxl2/F', 'dRmaxl3/F'])
+        new_branches.extend(['dRminMos/F', 'dRmaxMos/F', 'dRminMss/F', 'dRmaxMss/F', 'dRminMossf/F', 'dRmaxMossf/F'])
+        # new_branches.extend(['l1/I', 'l2/I', 'l3/I', 'index_other/I'])
+        new_branches.extend(['l_pt[3]/F', 'l_eta[3]/F', 'l_phi[3]/F', 'l_e[3]/F', 'l_charge[3]/F', 'l_flavor[3]/I', 'l_indices[3]/I', 'l_isFO[3]/O', 'l_istight[3]/O', 'l_isfake[3]/O'])
+        new_branches.extend(['j_pt[2]/F', 'j_eta[2]/F', 'j_phi[2]/F', 'j_e[2]/F', 'j_indices[2]/I', 'j_btag[2]/F'])
+        new_branches.extend(['l1_pt/F', 'l2_pt/F', 'l3_pt/F'])
+        new_branches.extend(['l1_eta/F', 'l2_eta/F', 'l3_eta/F'])
+        new_branches.extend(['l1_phi/F', 'l2_phi/F', 'l3_phi/F'])
+        new_branches.extend(['l1_charge/F', 'l2_charge/F', 'l3_charge/F'])
+        new_branches.extend(['event_category/I'])
+        new_branches.extend(['njets/I', 'nbjets/I'])
+
+    from HNL.Tools.makeBranches import makeBranches
+    new_vars = makeBranches(output_tree, new_branches)
 
     #
     # Start event loop
@@ -209,10 +222,10 @@ if not args.checkLogs:
             chain.obj_sel = objectSelectionCollection('HNL', 'HNL', 'loose', 'loose', 'loose', False, analysis=args.analysis)
 
     from HNL.Tools.helpers import progress
-    from HNL.EventSelection.eventSelectionTools import selectLeptonsGeneral, selectGenLeptonsGeneral
+    from HNL.EventSelection.eventSelectionTools import selectLeptonsGeneral, selectGenLeptonsGeneral, translateForTraining
     from HNL.EventSelection.event import Event
     if args.region is not None:
-        event = Event(chain, chain, is_reco_level=not args.genSkim, selection=args.skimSelection, strategy=args.strategy, region=args.region)
+        event = Event(chain, new_vars, is_reco_level=not args.genSkim, selection=args.skimSelection, strategy=args.strategy, region=args.region)
         chain.selection = args.skimSelection
         chain.region = args.region
         chain.strategy = 'MVA' if args.region != 'AN2017014' else 'cutbased'
@@ -234,25 +247,26 @@ if not args.checkLogs:
                 selectLeptonsGeneral(chain, chain, 3, cutter = cutter)
 
             if args.skimSelection != 'LukaFR':
-                if len(chain.leptons) < 3:       continue
+                if not cutter.cut(len(chain.leptons) >= 3, 'three leptons'):       continue
             else:
                 if len(chain.leptons) < 1:       continue
 
-
             new_vars.lumiweight = lw.getLumiWeight()
+
         else:
             event.initEvent()
             if not event.passedFilter(cutter, sample.output): continue
+            translateForTraining(new_vars)
 
+        output_tree.lumiweight
         output_tree.Fill()
 
-    # print output_name.split('.')[-1]+'_cutflow.root'
-    cutter.saveCutFlow(output_name.split('.')[-1]+'_cutflow.root')
+    # cutter.saveCutFlow(output_name.split('.')[0]+'_cutflow.root')
 
     output_tree.AutoSave()
 
     if not sample.is_data:
-        if args.region is None:
+        if args.region is None and not args.reprocess:
             hcounter = sample.getSubHist(args.subJob, 'hCounter')
         else:
             hcounter = sample.getHist('hCounter')
@@ -275,3 +289,8 @@ else:
         else:
             pass    
         exit(0)
+    else:
+        remove_logs = raw_input("Would you like to remove log files? (y/n) \n")
+        if remove_logs in ['y', 'Y']:
+            from HNL.Tools.jobSubmitter import cleanJobFiles
+            cleanJobFiles(argParser, __file__)

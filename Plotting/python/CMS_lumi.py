@@ -27,7 +27,7 @@ extraOverCmsTextSize  = 0.76
 lumi_13TeV = {'prelegacy2016': "35.9 fb^{-1}", 'UL2016pre' : "35.9 fb^{-1}", 'UL2016post' : "35.9 fb^{-1}",
                 'prelegacy2017': "41.5 fb^{-1}", 'UL2017': "41.5 fb^{-1}",
                 'prelegacy2018': "59.7 fb^{-1}", 'UL2018': "59.7 fb^{-1}", 
-                'all': "137.1 fb^{-1}"}
+                'prelegacyall': "137.1 fb^{-1}", 'ULall': "137.1 fb^{-1}"}
 # lumi_8TeV  = "19.7 fb^{-1}" 
 # lumi_7TeV  = "5.1 fb^{-1}"
 # lumi_sqrtS = ""

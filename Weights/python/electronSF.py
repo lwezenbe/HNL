@@ -32,7 +32,7 @@ class ElectronRecoSF:
 
         from HNL.Tools.helpers import getObjFromFile
         if era == 'UL':
-            self.root_file_location = lambda pt_str : os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Weights', 'data', 'RecoSF', 'Electron', 'egammaEffi_{0}.txt_EGM2D_{1}.root'.format(pt_str,era+year)))
+            self.root_file_location = lambda pt_str : os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Weights', 'data', 'RecoSF', 'Electron', 'egammaEffi_{0}.txt_EGM2D_{1}.root'.format(pt_str,self.NAME_DICT[era+year])))
         else:
             self.root_file_location = lambda pt_str : os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Weights', 'data', 'RecoSF', 'Electron', prelegacy_dict[(year, pt_str)]))
         

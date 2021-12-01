@@ -18,7 +18,7 @@ class Event(object):
 
         self.chain.obj_sel = getObjectSelection(self.chain.selection)
 
-        self.event_category = EventCategory(self.chain)
+        self.event_category = EventCategory(self.chain, self.new_chain)
         self.event_selector = EventSelector(self.chain.region, self.chain, self.new_chain, is_reco_level=is_reco_level, event_categorization=self.event_category, additional_options=self.additional_options)
 
     def initEvent(self):
@@ -58,6 +58,9 @@ class Event(object):
             return True
         return False
 
+    def resetObjSelection(self):
+        self.chain.obj_sel = getObjectSelection(self.chain.selection)
+
 class ClosureTestEvent(Event):
     flavor_dict = {'tau' : 2, 'ele' : 0, 'mu' : 1}
 
@@ -82,7 +85,6 @@ class ClosureTestEvent(Event):
         self.loose_leptons_of_interest = []
         is_tight_lep = []
         is_fake_lep = []
-        # print translated_flavors_of_interest
 
         #Make input more readable
         for l in xrange(len(self.new_chain.l_pt)):

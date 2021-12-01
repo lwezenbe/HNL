@@ -35,6 +35,8 @@ def getColor(palette, index):
         return getBlackColor()
     elif palette == 'AN2017':
         return getAN2017Colors(index)
+    elif palette == 'Large':
+        return getLargeArrayColors(index)
     else:
         return getHistColor(index)
 
@@ -66,6 +68,7 @@ def getStackColorTauPOG(index):
     if index == 10:      return TColor.GetColor("#F7C59F")
     if index == 11:      return TColor.GetColor("#9F4A54")
     if index == 12:      return TColor.GetColor("#51A3A3")
+    else:               return ROOT.kBlack
 
 def getStackColorTauPOGbyName(name):
     if 'triboson' in name:           return TColor.GetColor("#87F1FF")
@@ -163,7 +166,36 @@ def getAN2017Colors(name):
     elif '-m20' in name: return TColor.GetColor("#00ff00")
     elif '-m40' in name: return TColor.GetColor("#ffff00")
     elif '-m60' in name: return TColor.GetColor("#ff00ff")
-    else:               return TColor.GetColor("#ff66ff")
+    else:               return TColor.GetColor("#012A36")
+
+def getLargeArrayColors(index):
+    if index == 0:           return TColor.GetColor("#87F1FF")
+    if index == 1:            return TColor.GetColor("#18252a")
+    if index == 2:          return TColor.GetColor("#de5a6a")
+    if index == 3:          return TColor.GetColor("#AAFAC8")
+    if index == 4:          return TColor.GetColor("#514B23")
+    if index == 5:          return TColor.GetColor("#9999cc")
+    if index == 6:       return TColor.GetColor("#4496c8")
+    if index == 7:         return TColor.GetColor("#e5b7e5")
+    if index == 8:          return TColor.GetColor("#ffcc66")
+    if index == 9:         return TColor.GetColor("#6B717E") 
+    if index == 10:          return TColor.GetColor("#360568")
+    if index == 11:          return TColor.GetColor("#77BFA3")
+    
+    if index == 12:   return TColor.GetColor("#F7C59F")
+    if index == 13:   return TColor.GetColor("#A8C256")
+    if index == 14:   return TColor.GetColor("#9F4A54")
+    if index == 15:   return TColor.GetColor("#51A3A3")
+    if index == 16:   return TColor.GetColor("#D1D1D1")
+    if index == 17:   return TColor.GetColor("#EAD94C")
+    if index == 18:   return TColor.GetColor("#3B3561")
+    if index == 19:   return TColor.GetColor("#DD7373")
+    if index == 20:   return TColor.GetColor("#3454D1")
+    if index == 21:   return TColor.GetColor("#9368B7")
+    if index == 22:   return TColor.GetColor("#610F7F")
+    if index == 23:   return TColor.GetColor("#613DC1")
+#    elif 'H' in name:           return "#87F1FF"
+    else:                       return ROOT.kGreen
 
 def getLineColor(index):
     if index == 3:      return TColor.GetColor("#000000")

@@ -26,10 +26,12 @@ SAMPLE_GROUPS = {
 #     'TT-T+X': ['ttX', 'TTG', 'TG', 'TTTT'],
 #     'triboson': ['triboson'],
 #     'WZ': ['WZ'],
+#     # 'diboson': ('ZZ', 'WW', 'WZ'),
 #     'ZZ-H': ['ZZ', 'Higgs'],
 #     'XG': ['ZG', 'WG'],
-#     'QCD':['QCD']
+#     'other':['QCD']
 # }
+
 
 ERA_DICT = {
     'prelegacy': ['2016', '2017', '2018'],
@@ -38,6 +40,11 @@ ERA_DICT = {
 
 allowed_reco_general_skimselections = ['default', 'AN2017014']
 allowed_reco_general_regions = ['lowMassSR', 'highMassSR']
+
+low_mass_range_lightlep = [10, 20, 30, 40, 50, 60, 70, 75]
+low_mass_range_tau = [20, 30, 40, 50, 60, 70, 75]
+high_mass_range_lightlep = [85, 100, 125, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800, 900, 1000, 1200, 1500]
+high_mass_range_tau = [85, 100, 125, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800, 900, 1000]
 
 class SampleManager:
 
@@ -79,7 +86,6 @@ class SampleManager:
         sample_infos = [line.split() for line in sample_infos if line] 
 
         sample = sample_infos[0]
-        print sample[1].rsplit('/', 1)[0].replace('$SKIMSELECTION$', self.skim_selection).replace('$REGION$', self.region)
         return os.path.isdir(sample[1].rsplit('/', 1)[0].replace('$SKIMSELECTION$', self.skim_selection).replace('$REGION$', self.region))
 
     def findInFileToUse(self):
@@ -130,7 +136,13 @@ class SampleManager:
         sample_infos = [line.split('%')[0].strip() for line in open(self.path)]                     # Strip % comments and \n charachters
         sample_infos = [line.split() for line in sample_infos if line]                              # Get lines into tuples
         for sample in sample_infos:
-            if sample[0] == name: return sample[1]
+            if sample[0] == name:
+                path = sample[1]
+                if self.skim_selection is not None:
+                    path = path.replace('$SKIMSELECTION$', self.skim_selection)
+                if self.region is not None:
+                    path = path.replace("$REGION$", self.region)
+                return path
         return None      
 
     def getOutputs(self):  
@@ -156,7 +168,7 @@ class SampleManager:
             if self.skim_selection is not None:
                 path = path.replace('$SKIMSELECTION$', self.skim_selection)
             if self.region is not None:
-                path.replace('$REGION$', self.region)
+                path = path.replace("$REGION$", self.region)
 
             if name in self.sample_names:
                 split_jobs += '*' + str(self.sample_dict[name])

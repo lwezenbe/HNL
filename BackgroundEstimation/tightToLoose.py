@@ -43,12 +43,13 @@ if args.isTest:
     if args.flavor == 'tau' and args.tauRegion is None: args.tauRegion = 'TauFakesDYttl'
     if args.sample is None: 
         if args.era != 'UL':
-            if args.inData: args.sample = 'Data-'+args.year
+            if args.inData: args.sample = 'Data-'+args.era+args.year
             elif args.flavor == 'e': args.sample = 'QCDEMEnriched-80to120'
             elif args.flavor == 'mu': args.sample = 'QCDmuEnriched-80to120'
             else:   args.sample = 'DYJetsToLL-M-50'
         else:
-            if args.inData: args.sample = 'Data-'+args.year
+            if args.inData: args.sample = 'Data-'+args.era+args.year
+            elif args.flavor in ['e', 'mu']: args.sample = 'QCD-80to120'
             else:   args.sample = 'DYJetsToLL-M-50'
     from HNL.Tools.helpers import generateArgString
     arg_string =  generateArgString(argParser)
@@ -94,13 +95,13 @@ else:
 
 sublist = None
 if args.inData:
-    sublist = 'fulllist_'+args.year+'_nosignal'
+    sublist = 'fulllist_'+args.era+args.year+'_nosignal'
 elif args.flavor == 'tau':
-    sublist = 'BackgroundEstimation/TauFakes'
+    sublist = 'BackgroundEstimation/TauFakes-'+args.era+args.year
 elif args.flavor == 'mu':
-    sublist = 'BackgroundEstimation/MuonFakes'
+    sublist = 'BackgroundEstimation/MuonFakes-'+args.era+args.year
 elif args.flavor == 'e':
-    sublist = 'BackgroundEstimation/ElectronFakes'
+    sublist = 'BackgroundEstimation/ElectronFakes-'+args.era+args.year
 
 sample_manager = SampleManager(args.era, args.year, skim_str, sublist, skim_selection=args.selection)
 
@@ -251,6 +252,7 @@ if not args.makePlots:
         if args.inData and not chain.is_data:
             if not chain._lIsPrompt[chain.l_indices[fake_index]]: continue
             passed = True #Always fill both denom and enum for this case (subtraction of prompt contribution)
+            print reweighter.getLumiWeight()
             weight = -1.*reweighter.getLumiWeight()
         else:
             if not chain.is_data and not cutter.cut(chain.l_isfake[fake_index], 'fake lepton'): continue
@@ -307,5 +309,5 @@ else:
         for fr in fakerates.bin_collection:
             ttl = fakerates.getFakeRate(fr).getEfficiency()
 
-            p = Plot(signal_hist = ttl, name = 'ttl_'+fr, year = args.year, era = args.era)
+            p = Plot(signal_hist = ttl, name = 'ttl_'+fr, year = args.year, era = args.era, x_name="p_{T} [GeV]", y_name = "|#eta|")
             p.draw2D(output_dir = output_dir, names = ['ttl_'+fr])

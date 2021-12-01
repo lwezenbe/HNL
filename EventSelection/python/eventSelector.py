@@ -22,6 +22,7 @@ class FilterObject(object):
         else:
             if not cutter.cut(selectGenLeptonsGeneral(self.chain, self.new_chain, nL, cutter=cutter), 'select leptons'): return False
 
+        #If sideband, only select events where not all 3 leptons are tight
         if sideband is not None:
             nfail = 0
             for i, l in enumerate(self.chain.l_indices):
@@ -47,7 +48,7 @@ class EventSelector:
         self.chain = chain
         self.new_chain = new_chain
         self.is_reco_level = is_reco_level
-        if self.name in ['baseline', 'lowMassSR', 'highMassSR']:
+        if self.name in ['baseline', 'lowMassSR', 'highMassSR', 'lowMassSRForTraining', 'highMassSRForTraining', 'lowMassTrainingEmulation']:
             self.selector = SignalRegionSelector(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'trilepton':
             self.selector = GeneralTrileptonFilter(name, chain, new_chain, is_reco_level=is_reco_level)
@@ -132,7 +133,7 @@ class EventSelector:
 
             from HNL.Triggers.triggerSelection import passOfflineThresholds
             offline_thresholds = kwargs.get('offline_thresholds', True)
-            if offline_thresholds and not cutter.cut(passOfflineThresholds(self.chain, self.chain.analysis), "Pass offline thresholds"): 
+            if offline_thresholds and not cutter.cut(passOfflineThresholds(self.chain, self.new_chain, self.chain.analysis), "Pass offline thresholds"): 
                 return False
             return True
         else:

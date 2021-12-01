@@ -157,7 +157,7 @@ class Plot:
             # Calculate range
             #
             to_check_min = [j for j in self.s] if len(self.s) > 0 else [j for j in self.b]
-            if stacked and self.b is None and self.total_s is not None:
+            if stacked and (self.b is None or len(self.b) == 0) and self.total_s is not None:
                 to_check_max = [self.total_s]
             else:
                 to_check_max = [j for j in self.s]
@@ -818,8 +818,8 @@ class Plot:
         self.canvas.cd()
         #Create Legend
         legend = ROOT.TLegend(0.4, .7, .9, .9)
-        legend.SetNColumns(1)
-        # legend.SetNColumns(2)
+        # legend.SetNColumns(1)
+        legend.SetNColumns(2)
         legend.SetTextSize(.03)
        
         loop_obj = [item for item in self.s]
@@ -1069,7 +1069,7 @@ class Plot:
 
         #Save everything
         self.savePlot(output_dir +'/'+ self.name, message)
-        ROOT.SetOwnership(self.canvas, self.era+self.year)
+        ROOT.SetOwnership(self.canvas, False)
         return
 
 

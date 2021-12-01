@@ -1,3 +1,40 @@
+mass_ranges = {
+    'lowestmass' : [10, 20, 30, 40],
+    'lowmass' : [50, 60, 70, 75],
+    # 'mediummass85100' : [85, 100],
+    # 'mediummass150200' : [150, 200],
+    # 'mediummass250400' : [250, 300, 400],
+    # 'mediummass250300' : [350, 400],
+    # 'highmass' : [150, 250, 300, 350, 400],
+    # 'highmass' : [85, 100, 125, 150, 200, 250, 300],
+    # 'highestmass' : [400, 600, 800, 1000],
+}
+
+mass_ranges_for_validation= {
+    'lowestmass' : [10, 20, 30, 40],
+    'lowmass' : [50, 60, 70, 75],
+    'mediummass85100' : [85, 100],
+    'mediummass150200' : [125, 150, 200],
+    'mediummass250400' : [250, 300, 350, 400],
+    # 'mediummass' : [85, 100, 125, 150, 200],
+    # 'highmass' : [250, 300, 350, 400],
+    # 'highmass' : [85, 100, 125, 150, 200, 250, 300],
+    'highestmass' : [450, 500, 600, 700, 800, 900, 1000, 1200, 1500],
+}
+
+all_masses = [10, 20, 30, 40, 50, 60, 70, 75, 85, 100, 125, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800, 900, 1000, 1200, 1500]
+
+def getNameFromMass(mass):
+    for k in mass_ranges:
+        if mass in mass_ranges_for_validation[k]:
+            return k
+    return None
+
+region_dict = {
+    'lowMassSR' : ['lowmass', 'lowestmass'],
+    'highMassSR' : ['mediummass', 'highmass', 'highestmass', 'mediummass85100', 'mediummass150200', 'mediummass250400'],
+}
+
 input_variables = {
     'M3l' : {'type' : 'F', 'var' : lambda c : c.M3l},
     'MT3l' : {'type' : 'F', 'var' : lambda c : c.mt3},
@@ -57,6 +94,8 @@ input_variables = {
     'Ml1l2' : {'type' : 'F', 'var' : lambda c : c.Ml12},
     'Ml1l3' : {'type' : 'F', 'var' : lambda c : c.Ml13},
     'Ml2l3' : {'type' : 'F', 'var' : lambda c : c.Ml23},
+    'rawNlight' : {'type' : 'I', 'var' : lambda c : c._nLight},
+    'rawNl' : {'type' : 'I', 'var' : lambda c : c._nL},
 }
 
 var_lists = {
@@ -81,16 +120,29 @@ var_lists = {
     'other': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 'maxMossf', 
                 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
                 'dRl1l2', 'dRl1l3', 'dRl2l3', 'dRjl1', 'dRjl2', 'dRjl3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', 'dRmaxMossf'],
+    'lowmass-e': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
+                'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l',
+                'dRl1l2', 'dRl1l3', 'dRl2l3', 'dRjl1', 'dRjl2', 'dRjl3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
+    'lowmass-mu': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
+                'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
+                'dRl1l2', 'dRl1l3', 'dRl2l3', 'dRjl1', 'dRjl2', 'dRjl3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
+    'lowmass-tau': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
+                'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
+                'dRl1l2', 'dRl1l3', 'dRl2l3', 'dRjl1', 'dRjl2', 'dRjl3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
+    'lowestmass-e': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
+                'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
+                'dRl1l2', 'dRl1l3', 'dRl2l3', 'dRjl1', 'dRjl2', 'dRjl3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
+    'lowestmass-mu': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
+                'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
+                'dRl1l2', 'dRl1l3', 'dRl2l3', 'dRjl1', 'dRjl2', 'dRjl3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
+    'lowestmass-taulep': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
+                'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
+                'dRl1l2', 'dRl1l3', 'dRl2l3', 'dRjl1', 'dRjl2', 'dRjl3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
+    'lowestmass-tauhad': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
+                'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
+                'dRl1l2', 'dRl1l3', 'dRl2l3', 'dRjl1', 'dRjl2', 'dRjl3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
 }
 
-# var_lists = {
-#     'low_e': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 'maxMossf', 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi'],
-#     'high_e': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 'maxMossf', 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi'],
-#     'low_mu': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 'maxMossf', 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi'],
-#     'high_mu': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 'maxMossf', 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi'],
-#     'low_tau': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 'maxMossf', 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi'],
-#     'high_tau': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 'maxMossf', 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi'],
-# }
 def getVariableValue(name):
     return input_variables[name]['var']
 
@@ -120,4 +172,3 @@ def getAllVariableList():
 
 if __name__ == '__main__':
     var_list = getVariableList('low-e')
-    # print var_list

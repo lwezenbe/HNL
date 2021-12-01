@@ -21,7 +21,7 @@ args = argParser.parse_args()
 
 datacards_base = lambda era, year : os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/dataCards/'+era+year+'/'+args.strategy+'-'+args.selection+'/'+args.flavor)
 import glob
-from HNL.Stat.combineTools import runCombineCommand, extractScaledLimitsPromptHNL, makeGraphs
+from HNL.Stat.combineTools import runCombineCommand, extractScaledLimitsPromptHNL, makeGraphs, saveGraphs
 from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped, getObjFromFile
 from HNL.Analysis.analysisTypes import signal_couplingsquared
 from numpy import sqrt
@@ -33,7 +33,7 @@ def getDataCard(mass, cardname, era, year):
 def combineSets(mass, era, year):
     datacard_massbase = os.path.join(datacards_base(era, year), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
     #Combined
-    categories = [el for el in glob.glob(datacard_massbase+'/*') if not 'Total' in el and not 'Combined' in el and not 'TauCombined' in el and not 'TauFinalStates' in el]
+    categories = [el for el in glob.glob(datacard_massbase+'/*') if not 'Total' in el and not 'Combined' in el and not 'TauCombined' in el and not 'TauFinalStates' in el and not 'Ditau' in el]
     runCombineCommand('combineCards.py '+' '.join(categories)+' > '+datacard_massbase+'/Combined.txt')
     #TauCombined
     categories = [el for el in glob.glob(datacard_massbase+'/*') if not 'Total' in el and not 'Combined' in el and not 'TauCombined' in el and not 'NoTau' in el and not 'TauFinalStates' in el]
@@ -113,6 +113,7 @@ compare_dict = {
     'MVA-default': 'BDT'
 }
 
+print 'here'
 for card in cards_to_read:
 
     passed_masses = []
@@ -131,25 +132,32 @@ for card in cards_to_read:
             limits[mass] = tmp_limit
             
     graphs = makeGraphs(passed_masses, couplings = passed_couplings, limits=limits)
-    compare_graphs = {}
 
+    out_path_base = lambda sample, era, sname, cname : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', era, sname, args.flavor, 
+                                        sample, 'shapes', asymptotic_str+'/'+cname)
+    saveGraphs(graphs, out_path_base('Combined', args.era+year_to_read, args.strategy +'-'+ args.selection, card)+"/limits.root")
+
+    compare_graphs = {}
     if args.compareToCards is not None:
         for cc in args.compareToCards:
             if '/' in cc:
-                sname, cname = cc.split('/')
+                era, sname, cname = cc.split('/')
             else:
                 sname = cc
                 cname = card
+                era = args.era
 
             file_list = []
-            for m in passed_masses:
-                file_name  = glob.glob(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.era+str(year_to_read), sname, args.flavor, 
-                                        'HNL-'+args.flavor+'-m'+str(m), 'shapes', asymptotic_str+'/'+cname+'/*'))
-                if len(file_name) == 0:
-                    file_list.append(None)
-                else:
-                    file_list.append(file_name[0])
-            compare_graphs[sname + ' ' +cname] = makeGraphs(passed_masses, couplings = passed_couplings, limits=None, input_paths = file_list)
+            # for m in passed_masses:
+            #     file_name  = glob.glob(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.era+str(year_to_read), sname, args.flavor, 
+            #                             'HNL-'+args.flavor+'-m'+str(m), 'shapes', asymptotic_str+'/'+cname+'/*'))
+            #     if len(file_name) == 0:
+            #         file_list.append(None)
+            #     else:
+            #         file_list.append(file_name[0])
+            file_name  = out_path_base('Combined', era, sname, cname) +'/limits.root'       
+            print file_name    
+            compare_graphs[sname + ' ' +cname+ ' ' + era] = getObjFromFile(file_name, 'expected_central')
 
     if args.flavor == 'e':
         observed_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsElectronMixing.root'), 'observed_promptDecays')
@@ -159,11 +167,11 @@ for card in cards_to_read:
         observed_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsMuonMixing.root'), 'observed_promptDecays')
         expected_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsMuonMixing.root'), 'expected_central')
         tex_names = ['observed (EXO-17-012)', 'expected (EXO-17-012)']
-
     else:
         observed_AN = None
         expected_AN = None
         tex_names = None
+
 
     coupling_dict = {'tau':'#tau', 'mu':'#mu', 'e':'e', '2l':'l'}
     from HNL.Plotting.plot import Plot
@@ -175,13 +183,13 @@ for card in cards_to_read:
 
     if args.compareToCards is not None:
         for compare_key in compare_graphs.keys():
-            compare_sel, compare_reg = compare_key.split(' ')
+            compare_sel, compare_reg, compare_era = compare_key.split(' ')
             if bkgr_hist is None:
-                bkgr_hist = [compare_graphs[compare_key][0]]
-                tex_names = [compare_dict[compare_sel] + ' ' +compare_reg]
+                bkgr_hist = [compare_graphs[compare_key]]
+                tex_names = [compare_era+ ' ' +compare_dict[compare_sel] + ' ' +compare_reg]
             else:
-                bkgr_hist.append(compare_graphs[compare_key][0])
-                tex_names.append(compare_dict[compare_sel] + ' ' +compare_reg)
+                bkgr_hist.append(compare_graphs[compare_key])
+                tex_names.append(compare_era+ ' ' +compare_dict[compare_sel] + ' ' +compare_reg)
 
     year = args.year[0] if len(args.year) == 1 else 'all'
     # p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=False, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', year = year)

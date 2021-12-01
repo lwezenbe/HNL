@@ -131,6 +131,7 @@ def getArgsStr(arg_list, to_ignore):
             args_str += '_' + str(arg) + '-' + '-'.join([str(x).replace('/', '-') for x in sorted(arg_list[arg])])
         else:
             args_str += '_' + str(arg) + '-' + str(arg_list[arg]).replace('/', '-')
+    args_str = "".join(i for i in args_str if i not in " &\/:*?<>|")
     return args_str 
 
 def submitJobs(script, subjob_args, subjob_list, argparser, **kwargs):
@@ -185,7 +186,9 @@ def submitJobs(script, subjob_args, subjob_list, argparser, **kwargs):
             if value == False:
                 continue
             elif isinstance(value, list):
-                args_str_for_command += ' ' + '--' + arg + '=' + ' '.join([str(x) for x in sorted(value)])
+                args_str_for_command += ' ' + '--' + arg + ' ' + ' '.join([str(x) for x in sorted(value)])
+            elif arg == 'cutString':
+                args_str_for_command += ' ' + '--' + arg + '="' + str(value) +'"'            
             else:
                 args_str_for_command += ' ' + '--' + arg + '=' + str(value)
 
@@ -196,6 +199,7 @@ def submitJobs(script, subjob_args, subjob_list, argparser, **kwargs):
         logfile = os.path.join(logdir, str(subJob[-1]) + ".log")
         if resubmission:
             os.system('rm '+logfile)
+            if not 'resubmission' in job_label: job_label += '-resubmission'
 
         if not args.dryRun:
             try:    os.makedirs(logdir)
@@ -207,7 +211,7 @@ def submitJobs(script, subjob_args, subjob_list, argparser, **kwargs):
             arguments = (os.getcwd(), command)
             launchOnCondor(logfile, arguments, i, job_label=job_label)
         
-        else:               launchCream02(command, logfile, checkQueue=(i%100==0), wallTimeInHours=wall_time, queue=queue, cores=cores, jobLabel=job_label)
+        else:               launchCream02(command, logfile, checkQueue=(i%100==0), wallTimeInHours=wall_time, queue=queue, cores=cores, jobLabel=job_label+'-'+submit_args['sample'])
 
     print len(subjob_list), 'jobs submitted'
 
@@ -231,6 +235,7 @@ def checkCompletedJobs(script, subJobList, argparser, subLog = None, additionalA
         for l in failed_jobs:
             print ' '.join(str(s) for s in l)
         
+        print "=> {0} out of {1} jobs failed: {2}".format(len(failed_jobs), len(subJobList), float(len(failed_jobs))/float(len(subJobList)))
         return failed_jobs
     else:
         print "All jobs completed successfully!"
