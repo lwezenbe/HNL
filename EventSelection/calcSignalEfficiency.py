@@ -174,7 +174,7 @@ if not args.makePlots:
     mass_range = getMassRange([sample_name for sample_name in sample_manager.sample_names if '-'+args.flavor in sample_name])
 
     from HNL.EventSelection.eventCategorization import EventCategory
-    ec = EventCategory(chain)
+    ec = EventCategory(chain, chain)
 
     #
     # Define the variables and axis name of the variable to fill and create efficiency objects

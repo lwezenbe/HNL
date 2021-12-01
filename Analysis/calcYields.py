@@ -89,8 +89,11 @@ from HNL.Samples.sampleManager import SampleManager
 def getSampleManager(y):
     if args.tag is not None:
         skim_str = 'Reco'
+    if args.noskim:
+        skim_str = 'noskim'
     else:
-        skim_str = 'auto'
+        # skim_str = 'auto'
+        skim_str = 'Reco'
     file_list = 'fulllist_'+args.era+str(y)+'_mconly' if args.customList is None else args.customList
 
     sm = SampleManager(args.era, y, skim_str, file_list, skim_selection=args.selection, region=args.region)

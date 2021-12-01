@@ -47,7 +47,7 @@ input_variables = {
     'mtOther' : {'type' : 'F', 'var' : lambda c : c.mtOther},
     'mtl1' : {'type' : 'F', 'var' : lambda c : c.mtl1},
     'mtl2' : {'type' : 'F', 'var' : lambda c : c.mtl2},
-    'ptConeLeading' : {'type' : 'F', 'var' : lambda c : c.pt_cone[0]},
+    # 'ptConeLeading' : {'type' : 'F', 'var' : lambda c : c.pt_cone[0]},
     'met' : {'type' : 'F', 'var' : lambda c : c._met},
     'metPhi' : {'type' : 'F', 'var' : lambda c : c._metPhi},
     'njets' : {'type' : 'F', 'var' : lambda c : c.njets},

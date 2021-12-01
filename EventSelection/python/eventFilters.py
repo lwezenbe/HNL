@@ -56,7 +56,7 @@ def passLowMassSelection(chain, new_chain, is_reco_level, cutter, for_training=F
             if not cutter.cut(chain._met < 75, 'MET < 75'):             return False
         else:
             if not cutter.cut(chain._gen_met < 75, 'MET < 75'):             return False
-        if not cutter.cut(not containsOSSF(chain), 'no OSSF'):      return False
+        if not cutter.cut(not containsOSSF(new_chain), 'no OSSF'):      return False
     return True 
 
 #High mass selection
@@ -64,8 +64,8 @@ def passHighMassSelection(chain, new_chain, is_reco_level, cutter, for_training=
     if not cutter.cut(new_chain.l_pt[l1] > 55, 'l1pt>55'):        return False
     if not cutter.cut(new_chain.l_pt[l2] > 15, 'l2pt>15'):        return False
     if not cutter.cut(new_chain.l_pt[l3] > 10, 'l3pt>10'):        return False
-    if containsOSSF(chain):
-        if not cutter.cut(abs(chain.MZossf-MZ) > 15, 'M2l_OSSF_Z_veto'):        return False
+    if containsOSSF(new_chain):
+        if not cutter.cut(abs(new_chain.MZossf-MZ) > 15, 'M2l_OSSF_Z_veto'):        return False
         if not for_training and not cutter.cut(abs(new_chain.M3l-MZ) > 15, 'M3l_Z_veto'):        return False 
         if not cutter.cut(new_chain.minMossf > 5, 'minMossf'): return False
     return True 
