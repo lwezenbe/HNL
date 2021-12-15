@@ -4,6 +4,10 @@
 # Code to calculate trigger efficiency
 #
 
+#
+# TODO: SUPER OUTDATED
+#
+
 import ROOT
 
 #

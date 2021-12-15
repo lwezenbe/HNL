@@ -33,6 +33,36 @@ CATEGORY_NAMES = {1: 'SS-TauTauEle',
                     16: 'OS-EMuMu',
                     17: 'Other'}
 
+DETAILED_CATEGORY_NAMES = {1: 'SS-TauTauEle', 
+                2: 'OS-TauTauEle', 
+                3: 'SS-TauTauMu', 
+                4: 'OS-TauTauMu', 
+                5: 'SS-TauEleEle', 
+                6: 'SS-EleTauEle', 
+                7: 'SS-EleEleTau', 
+                8: 'OS-TauEleEle', 
+                9: 'OS-EleTauEle', 
+                10: 'OS-EleEleTau', 
+                11: 'SS-TauMuMu', 
+                12: 'SS-MuTauMu', 
+                13: 'SS-MuMuTau', 
+                14: 'OS-TauMuMu', 
+                15: 'OS-MuTauMu', 
+                16: 'OS-MuMuTau', 
+                17: 'EleMuTau', 
+                18: 'MuEleTau', 
+                19: 'EleTauMu', 
+                20: 'MuTauEle', 
+                21: 'TauEleMu', 
+                22: 'TauMuEle', 
+                23: 'EEE', 
+                24: 'MuMuMu', 
+                25: 'SS-EEMu', 
+                26: 'OS-EEMu', 
+                27: 'SS-EMuMu',
+                28: 'OS-EMuMu',
+                29: 'Other'}
+
 CATEGORY_FROM_NAME = {'SS-TauTauEle' : 1, 
                     'OS-TauTauEle' : 2, 
                     'SS-TauTauMu' : 3, 
@@ -50,6 +80,37 @@ CATEGORY_FROM_NAME = {'SS-TauTauEle' : 1,
                     'SS-EMuMu':15,
                     'OS-EMuMu':16,
                     'Other':17}
+
+
+DETAILED_CATEGORY_NAMES = {'SS-TauTauEle' : 1, 
+                'OS-TauTauEle' : 2, 
+                'SS-TauTauMu' : 3, 
+                'OS-TauTauMu' : 4, 
+                'SS-TauEleEle' : 5, 
+                'SS-EleTauEle' : 6, 
+                'SS-EleEleTau' : 7, 
+                'OS-TauEleEle' : 8, 
+                'OS-EleTauEle' : 9, 
+                'OS-EleEleTau' : 10, 
+                'SS-TauMuMu' : 11, 
+                'SS-MuTauMu' : 12, 
+                'SS-MuMuTau' : 13, 
+                'OS-TauMuMu' : 14, 
+                'OS-MuTauMu' : 15, 
+                'OS-MuMuTau' : 16, 
+                'EleMuTau' : 17, 
+                'MuEleTau' : 18, 
+                'EleTauMu' : 19, 
+                'MuTauEle' : 20, 
+                'TauEleMu' : 21, 
+                'TauMuEle' : 22, 
+                'EEE' : 23, 
+                'MuMuMu' : 24, 
+                'SS-EEMu': 25, 
+                'OS-EEMu' : 26, 
+                'SS-EMuMu' : 27,
+                'OS-EMuMu' : 28,
+                'Other': 29}
 
 CATEGORY_TEX_NAMES = {
                         1: '#tau^{#pm}#tau^{#pm}e',
@@ -72,7 +133,9 @@ CATEGORY_TEX_NAMES = {
 }
 
 CATEGORIES = sorted(CATEGORY_NAMES.keys())
+DETAILED_CATEGORIES = sorted(DETAILED_CATEGORY_NAMES.keys())
 CATEGORIES_TO_USE = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+DETAILED_CATEGORIES_TO_USE = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28]
                 
 #
 # Super categories are a super collection of categories
@@ -110,6 +173,27 @@ TRIGGER_CATEGORIES = {
     'MuMuMu': [12], 
     'EEMu': [13, 14], 
     'EMuMu': [15, 16]
+    } 
+
+DETAILED_TRIGGER_CATEGORIES = {
+    # 'TauTauE': [1, 2], 
+    # 'TauTauMu': [3, 4], 
+    'TauEE': [5, 8], 
+    'ETauE': [6, 9], 
+    'EETau': [7, 10], 
+    'TauMuMu': [11, 14], 
+    'MuTauMu': [12, 15], 
+    'MuMuTau': [13, 16], 
+    'EleMuTau' : [17], 
+    'MuEleTau' : [18], 
+    'EleTauMu' : [19], 
+    'MuTauEle' : [20], 
+    'TauEleMu' : [21], 
+    'TauMuEle' : [22], 
+    'EEE': [23], 
+    'MuMuMu': [24], 
+    'EEMu': [25, 26], 
+    'EMuMu': [27, 28]
     } 
 
 def filterSuperCategory(super_category_name, category):
@@ -203,7 +287,8 @@ class EventCategory():
         elif self.n_tau == 1:
             if self.n_ele == 2:
                 if self.hasSSSFpair(0): return 5
-                elif self.hasOSSFpair(0): return 6
+                elif self.hasOSSFpair(0): 
+                    return 6
             elif self.n_mu == 2:
                 if self.hasSSSFpair(1): return 7
                 elif self.hasOSSFpair(1): return 8
@@ -224,6 +309,76 @@ class EventCategory():
             elif self.n_ele == 1 and self.n_mu == 2:
                 if self.hasSSSFpair(1): return 15
                 elif self.hasOSSFpair(1): return 16
+            else:
+                return CATEGORY_FROM_NAME['Other']
+
+        else:
+            return CATEGORY_FROM_NAME['Other']
+        
+        return self.category
+
+    def returnDetailedCategory(self):
+        self.flavorContent()
+
+        if self.n_l != 3: 
+            return CATEGORY_FROM_NAME['Other']
+
+        if self.n_tau > 2:
+            return CATEGORY_FROM_NAME['Other']
+
+        #Category 1, 2, 3, 4:
+        if self.n_tau == 2: 
+            if self.n_ele == 1:
+                if self.hasSSSFpair(2): return 1
+                elif self.hasOSSFpair(2): return 2
+            elif self.n_mu == 1:
+                if self.hasSSSFpair(2): return 3
+                elif self.hasOSSFpair(2): return 4
+            else:
+                return CATEGORY_FROM_NAME['Other']
+
+        #Category 5, 6, 7, 8, 9:
+        elif self.n_tau == 1:
+            if self.n_ele == 2:
+                if self.hasSSSFpair(0): 
+                    if self.new_chain.l_flavor[0] == 2: return 5
+                    if self.new_chain.l_flavor[1] == 2: return 6
+                    if self.new_chain.l_flavor[2] == 2: return 7
+                elif self.hasOSSFpair(0):
+                    if self.new_chain.l_flavor[0] == 2: return 8
+                    if self.new_chain.l_flavor[1] == 2: return 9
+                    if self.new_chain.l_flavor[2] == 2: return 10
+            elif self.n_mu == 2:
+                if self.hasSSSFpair(1): 
+                    if self.new_chain.l_flavor[0] == 2: return 11
+                    if self.new_chain.l_flavor[1] == 2: return 12
+                    if self.new_chain.l_flavor[2] == 2: return 13
+                elif self.hasOSSFpair(1): 
+                    if self.new_chain.l_flavor[0] == 2: return 14
+                    if self.new_chain.l_flavor[1] == 2: return 15
+                    if self.new_chain.l_flavor[2] == 2: return 16
+            elif self.n_mu == 1 and self.n_ele == 1:
+                if self.new_chain.l_flavor[0] == 0 and self.new_chain.l_flavor[1] == 1: return 17
+                if self.new_chain.l_flavor[0] == 1 and self.new_chain.l_flavor[1] == 0: return 18
+                if self.new_chain.l_flavor[0] == 0 and self.new_chain.l_flavor[1] == 2: return 19
+                if self.new_chain.l_flavor[0] == 1 and self.new_chain.l_flavor[1] == 2: return 20
+                if self.new_chain.l_flavor[0] == 2 and self.new_chain.l_flavor[1] == 0: return 21
+                if self.new_chain.l_flavor[0] == 2 and self.new_chain.l_flavor[1] == 1: return 22
+            else:
+                return CATEGORY_FROM_NAME['Other']
+
+        #All light lepton categories
+        elif self.n_tau == 0:
+            if self.n_ele == 3:
+                return 23
+            elif self.n_ele == 0 and self.n_mu == 3:
+                return 24
+            elif self.n_ele == 2 and self.n_mu == 1:
+                if self.hasSSSFpair(0): return 25
+                elif self.hasOSSFpair(0): return 26            
+            elif self.n_ele == 1 and self.n_mu == 2:
+                if self.hasSSSFpair(1): return 27
+                elif self.hasOSSFpair(1): return 28
             else:
                 return CATEGORY_FROM_NAME['Other']
 

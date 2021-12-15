@@ -12,26 +12,37 @@ submission_parser.add_argument('--asymptotic',   action='store_true', default=Fa
 submission_parser.add_argument('--blind',   action='store_true', default=False,  help='activate --blind option of combine')
 submission_parser.add_argument('--useExistingLimits',   action='store_true', default=False,  help='Dont run combine, just plot')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
-submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
+submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA', 'combined'])
 submission_parser.add_argument('--datacard', action='store', default='', type=str,  help='What type of analysis do you want to run?', choices=['Combined', 'Ditau', 'NoTau', 'SingleTau', 'TauFinalStates'])
 submission_parser.add_argument('--compareToCards',   type=str, nargs='*',  help='Compare to a specific card if it exists. If you want different selection use "selection/card" otherwise just "card"')
 submission_parser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
 argParser.add_argument('--dryplot', action='store_true', default=False,  help='Add a file with a message in the plotting folder')
 args = argParser.parse_args()
 
-datacards_base = lambda era, year : os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/dataCards/'+era+year+'/'+args.strategy+'-'+args.selection+'/'+args.flavor)
+if args.strategy == 'combined' and not args.useExistingLimits: 
+    raise RuntimeError("combined strategy not yet implemented for running limits, run 2 strategies separately for now and make final plots with the combined strategy")
+
+datacards_base = lambda era, year, strategy : os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/dataCards/'+era+year+'/'+strategy+'-'+args.selection+'/'+args.flavor)
 import glob
 from HNL.Stat.combineTools import runCombineCommand, extractScaledLimitsPromptHNL, makeGraphs, saveGraphs
 from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped, getObjFromFile
 from HNL.Analysis.analysisTypes import signal_couplingsquared
 from numpy import sqrt
 
+def getStrategy(mass):
+    if args.strategy != 'combined':
+        return args.strategy
+    elif int(mass) <= 400:
+        return 'MVA'
+    else:
+        return 'cutbased'
+
 def getDataCard(mass, cardname, era, year):
-    datacard_massbase = os.path.join(datacards_base(era, year), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
+    datacard_massbase = os.path.join(datacards_base(era, year, getStrategy(mass)), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
     return datacard_massbase+ '/'+cardname+'.txt'
 
 def combineSets(mass, era, year):
-    datacard_massbase = os.path.join(datacards_base(era, year), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
+    datacard_massbase = os.path.join(datacards_base(era, year, getStrategy(mass)), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
     #Combined
     categories = [el for el in glob.glob(datacard_massbase+'/*') if not 'Total' in el and not 'Combined' in el and not 'TauCombined' in el and not 'TauFinalStates' in el and not 'Ditau' in el]
     runCombineCommand('combineCards.py '+' '.join(categories)+' > '+datacard_massbase+'/Combined.txt')
@@ -43,8 +54,8 @@ def combineYears(mass, cardname, era):
     if len(args.year) == 1:
         return
     else:
-        datacard_massbase = os.path.join(datacards_base(era, '-'.join(args.year)), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
-        datacard_path = lambda era, year : os.path.join(datacards_base(era, year), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', cardname+'.txt')
+        datacard_massbase = os.path.join(datacards_base(era, '-'.join(args.year), getStrategy(mass)), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
+        datacard_path = lambda era, year : os.path.join(datacards_base(era, year, getStrategy(mass)), 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', cardname+'.txt')
         categories = [datacard_path(era, y) for y in args.year if os.path.isfile(datacard_path(era, year))]
         makeDirIfNeeded(datacard_massbase+'/'+cardname+'.txt')
         runCombineCommand('combineCards.py '+' '.join(categories)+' > '+datacard_massbase+'/'+cardname+'.txt')
@@ -87,7 +98,7 @@ cards_to_read = [args.datacard] if args.datacard != '' else ['Combined', 'Ditau'
 all_signal = {}
 masses_py = {}
 for year in args.year:
-    all_signal[year] = glob.glob(datacards_base(args.era, year)+'/*')
+    all_signal[year] = glob.glob(datacards_base(args.era, year, '*' if args.strategy == 'combined' else args.strategy)+'/*')
     masses_py[year] = [int(signal.split('/')[-1].split('-m')[-1]) for signal in all_signal[year]]
 masses = []
 for year in args.year:
@@ -113,7 +124,8 @@ compare_dict = {
     'MVA-default': 'BDT'
 }
 
-print 'here'
+asymptotic_str = 'asymptotic' if args.asymptotic else ''
+
 for card in cards_to_read:
 
     passed_masses = []
@@ -121,8 +133,7 @@ for card in cards_to_read:
     limits = {}
     for mass in masses:
         if mass not in args.masses: continue
-        asymptotic_str = 'asymptotic' if args.asymptotic else ''
-        input_folder = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.era+str(year_to_read), args.strategy +'-'+ args.selection, args.flavor, 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', asymptotic_str, card)
+        input_folder = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.era+str(year_to_read), getStrategy(mass) +'-'+ args.selection, args.flavor, 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', asymptotic_str, card)
         tmp_coupling = sqrt(signal_couplingsquared[args.flavor][mass])
 
         tmp_limit = extractScaledLimitsPromptHNL(input_folder + '/higgsCombineTest.AsymptoticLimits.mH120.root', tmp_coupling)

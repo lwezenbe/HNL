@@ -10,7 +10,7 @@ argParser = argparse.ArgumentParser(description = "Argument parser")
 
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
-submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--skimSelection',  action='store',      default='default',               help='Name of the selection.')
 submission_parser.add_argument('--skimName',  action='store',      default='Reco',               help='Name of the skim.')
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])

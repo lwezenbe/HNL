@@ -78,7 +78,7 @@ from HNL.Tools.mergeFiles import merge
 from HNL.Tools.helpers import getObjFromFile, progress, makeDirIfNeeded
 from HNL.EventSelection.cutter import Cutter
 from HNL.Weights.reweighter import Reweighter
-from HNL.TMVA.reader import Reader, listAvailableMVAs
+from HNL.TMVA.reader import ReaderArray
 from HNL.Samples.sampleManager import SampleManager
 from HNL.EventSelection.event import Event
 
@@ -89,7 +89,8 @@ def getSampleManager(y):
         skim_str = 'Reco'
     else:
         # skim_str = args.skimLevel
-        skim_str = 'Reco'
+        # skim_str = 'Reco'
+        skim_str = 'noskim'
     file_list = 'fulllist_'+args.era+str(y) if args.customList is None else args.customList
 
     sm = SampleManager(args.era, y, skim_str, file_list, skim_selection=args.selection, region=args.region)
@@ -130,8 +131,8 @@ for year in args.year:
 #
 if not args.isChild and not args.makePlots and not args.makeDataCards:
     from HNL.Tools.jobSubmitter import submitJobs, checkShouldMerge
-    if checkShouldMerge(__file__, argParser):
-        raise RuntimeError("Already existing files available. You would be overwriting")
+    # if not args.dryRun and checkShouldMerge(__file__, argParser):
+    #     raise RuntimeError("Already existing files available. You would be overwriting")
     for year in jobs.keys():
         submitJobs(__file__, ('sample', 'subJob', 'includeData'), jobs[year], argParser, jobLabel = 'plotVar', additionalArgs= [('year', year)])
     exit(0)
@@ -150,17 +151,14 @@ nl = 3 if args.region != 'ZZCR' else 4
 #
 # Create histograms
 #
-if args.strategy == 'MVA':
-    cut_string = "M3l<80" if args.region == 'lowMassSR' else None
-    era_for_mva = 'UL-prelegacy' if args.region == 'lowMassSR' else args.era
 
 import HNL.Analysis.analysisTypes as at
 if args.makeDataCards and not args.makePlots:
-    var = at.var_mva
+    var = at.returnVariables(nl, not args.genLevel, args.region)
 elif args.region == 'NoSelection':
     var = at.var_noselection
 elif args.strategy == 'MVA':
-    var = at.returnVariables(nl, not args.genLevel, listAvailableMVAs(cut_string))
+    var = at.returnVariables(nl, not args.genLevel, args.region)
 else:
     var = at.returnVariables(nl, not args.genLevel)
 
@@ -223,7 +221,7 @@ if not args.makePlots and not args.makeDataCards:
         #
 
         sample_names.append(sample.name)
-        event = Event(chain, chain, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region)
+        event = Event(chain, chain, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = year, era = args.era)
 
 
         #
@@ -237,15 +235,6 @@ if not args.makePlots and not args.makeDataCards:
                 event_range = xrange(up_limit)
         else:
             event_range = sample.getEventRange(args.subJob)
-
-        #
-        # Some basic variables about the sample to store in the chain
-        #
-        chain.HNLmass = sample.getMass()
-        chain.region = args.region
-        chain.analysis = args.analysis
-        chain.year = year
-        chain.era = args.era
 
         #
         # Skip HNL masses that were not defined
@@ -266,13 +255,7 @@ if not args.makePlots and not args.makeDataCards:
         # Load in MVA reader if needed
         #
         if args.strategy == 'MVA':
-            tmva = {}
-
-            for n in listAvailableMVAs(cut_string):
-                try:
-                    tmva[n] = Reader(chain, 'kBDT', n, args.region, era_for_mva, cut_string = cut_string)
-                except:
-                    print 'Error when trying to load in BDT with name {0}'.format(n)
+            tmva = ReaderArray(chain, 'kBDT', args.region, args.era)
 
         #
         # Loop over all events
@@ -297,8 +280,8 @@ if not args.makePlots and not args.makeDataCards:
 
             need_sideband = [0, 1, 2] if chain.is_data and 'sideband' in args.includeData else None
             if not event.passedFilter(cutter, sample.output, sideband = need_sideband, for_training = 'ForTraining' in args.region): continue
-            from HNL.Triggers.triggerSelection import passOfflineThresholds
-            if not cutter.cut(passOfflineThresholds(chain, chain, analysis=args.analysis), 'pass_offline_thresholds'): continue
+
+            if not cutter.cut(2 not in chain.l_flavor, 'No Taus'): continue
 
             prompt_str = None
             if args.region != 'NoSelection':
@@ -316,13 +299,13 @@ if not args.makePlots and not args.makeDataCards:
                 chain.category = 17
 
             if args.strategy == 'MVA':
-                for mva in tmva:
-                    tmva[mva].predictAndWriteToChain(chain)
+                tmva.predictAndWriteAll(chain)
 
             #
             # Fill the histograms
             #
             weight = reweighter.getTotalWeight()
+            # print weight, reweighter.getLumiWeight()
             for v in var.keys():
                 if prompt_str is not None: list_of_hist[chain.category][v][prompt_str].fill(chain, reweighter.getTotalWeight(sideband='sideband' in args.includeData))  
                 list_of_hist[chain.category][v]['total'].fill(chain, reweighter.getTotalWeight(sideband='sideband' in args.includeData))  
@@ -619,9 +602,9 @@ else:
             # Set output directory, taking into account the different options
             #
             if not args.isTest:
-                output_dir = os.path.join(os.getcwd(), 'data', 'Results', 'plotVariables', '-'.join([args.strategy, args.selection, args.region]), str(year))
+                output_dir = os.path.join(os.getcwd(), 'data', 'Results', 'plotVariables', '-'.join([args.strategy, args.selection, args.region]), args.era+str(year))
             else:
-                output_dir = os.path.join(os.getcwd(), 'data', 'testArea', 'Results', 'plotVariables', '-'.join([args.strategy, args.selection, args.region]), str(year))
+                output_dir = os.path.join(os.getcwd(), 'data', 'testArea', 'Results', 'plotVariables', '-'.join([args.strategy, args.selection, args.region]), args.era+str(year))
 
 
 
@@ -699,6 +682,7 @@ else:
                     # Create plot object (if signal and background are displayed, also show the ratio)
 
                     draw_ratio = None if args.signalOnly or args.bkgrOnly else True
+                    if 'signalregion' in args.includeData: draw_ratio = True
                     if args.groupSamples:
                         p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
                                 color_palette = 'Didar', color_palette_bkgr = 'AN2017')

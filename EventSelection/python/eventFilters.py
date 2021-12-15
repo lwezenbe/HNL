@@ -32,17 +32,17 @@ def baseFilterCutBased(chain, new_chain, cutter):
     return True
 
 # Basic cuts every event has to pass
-def baseFilterMVA(chain, new_chain, cutter):
+def baseFilterMVA(chain, new_chain, cutter, for_training=False):
     if not cutter.cut(not fourthFOVeto(chain, new_chain, no_tau=chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
     if not cutter.cut(not threeSameSignVeto(new_chain), 'No three same sign'):        return False
-    if not cutter.cut(not bVeto(chain), 'b-veto'):              return False
+    if not for_training and not cutter.cut(not bVeto(chain), 'b-veto'):              return False
     return True
 
-def passBaseCuts(chain, new_chain, cutter):
+def passBaseCuts(chain, new_chain, cutter, for_training=False):
     if chain.selection == 'AN2017014':
         return baseFilterAN2017(chain, new_chain, cutter)
     elif chain.strategy == 'MVA':
-        return baseFilterMVA(chain, new_chain, cutter)
+        return baseFilterMVA(chain, new_chain, cutter, for_training=for_training)
     else:
         return baseFilterCutBased(chain, new_chain, cutter)
 
@@ -104,7 +104,9 @@ def passedFilterZZCR(chain, new_chain, cutter):
     return True
 
 def passedFilterWZCR(chain, new_chain, is_reco_level, cutter):
-    if not cutter.cut(not passesZcuts(chain, new_chain, same_flavor=True), 'On Z OSSF'):              return False
+    if not cutter.cut(abs(new_chain.MZossf-MZ) < 15, 'On Z OSSF'):              return False
+    # if not cutter.cut(not passesZcuts(chain, new_chain, same_flavor=True), 'On Z OSSF'):              return False
+    if not cutter.cut(not bVeto(chain), 'b-veto'):                 return False
     if not cutter.cut(new_chain.l_pt[l1] > 25, 'l1pt>25'):          return False
     if not cutter.cut(new_chain.l_pt[l2] > 15, 'l2pt>15'):          return False
     if not cutter.cut(new_chain.l_pt[l3] > 10, 'l3pt>10'):          return False

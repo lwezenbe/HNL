@@ -56,6 +56,21 @@ def compareHist(path, name, withinerrors=False):
 
     return None
 
+def plotComparison(path, name):
+    if getObjFromFile(path.replace("Previous", "Latest"), name) is None: return
+    hist_prev = Histogram(getObjFromFile(path, name))
+    if not hist_prev.isTH2:
+        try:
+            hist_latest = Histogram(getObjFromFile(path.replace("Previous", "Latest"), name))
+        except:
+            return
+
+
+        from HNL.Plotting.plot import Plot
+        p = Plot(hist_prev, ['Previous', 'Latest'], name, bkgr_hist=hist_latest, draw_ratio = True, year = '2016', era='prelegacy',
+                                    color_palette = 'Didar', color_palette_bkgr = 'Lines')
+        p.drawHist(path.replace("Previous", "Plots").rsplit('/', 1)[0], bkgr_draw_option = "EHist")
+
 # def compareHistUproot(path, name, withinerrors=False):
 #     test_hist_prev = Histogram(getObjFromFile(path, name))
 
@@ -112,6 +127,7 @@ def compareFiles(f, withinerrors=False):
     makeDirIfNeeded(out_file_name)
     out_file = open(out_file_name, 'w')
     everything_clear = True
+    faulty_hn = []
     for hn in list_of_hist_names:
         test_result = compareHist(f, hn)
         if test_result is not None:
@@ -119,15 +135,17 @@ def compareFiles(f, withinerrors=False):
                 continue
             everything_clear = False
             out_file.write(hn+': '+test_result+'\n')
+            faulty_hn.append('\t ' +hn+': '+test_result+'\n')
+            plotComparison(f, hn)
 
     if everything_clear:
         out_file.write("EVERYTHING CLEAR")
         out_file.close()
     else:
         out_file.close()
-        return False
+        return faulty_hn
     
-    return True
+    return None
 
 def checkSubdirOutput(subdir, withinerrors=False):
     list_of_files_to_test = []
@@ -135,9 +153,10 @@ def checkSubdirOutput(subdir, withinerrors=False):
         if len(files) > 0: 
             for f in files:
                 list_of_files_to_test.append(root+'/'+f)
-    faulty_files = []
+    faulty_files = {}
     for ft in list_of_files_to_test:
-        if not compareFiles(ft, withinerrors): faulty_files.append(ft)
+        cf = compareFiles(ft, withinerrors)
+        if compareFiles(ft, withinerrors) is not None: faulty_files[ft] = [x for x in cf]
 
     return faulty_files
 
@@ -148,18 +167,19 @@ def checkAllOutput(withinerrors=False):
 
     faulty_sd = []
     for sd in subdir_list:
-        # if sd != 'closureTest': continue
         print "Checking", sd
         makeDirIfNeeded(BASE_FOLDER+'LOG/'+sd+'/x')
         faulty_files = checkSubdirOutput(sd, withinerrors)
         out_file = open(BASE_FOLDER+'LOG/'+sd+'/FULLREPORT.txt', 'w')
-        if len(faulty_files) == 0:
+        if len(faulty_files.keys()) == 0:
             out_file.write("EVERYTHING CLEAR")
         else:
             faulty_sd.append(sd)
             out_file.write("Problems in the following files: \n")
-            for f in faulty_files:
+            for f in faulty_files.keys():
                 out_file.write(f+' \n')
+                for cf in faulty_files[f]:
+                    out_file.write(cf)
         out_file.close()
 
     tot_file = open(BASE_FOLDER+'totalreport.txt', 'w')

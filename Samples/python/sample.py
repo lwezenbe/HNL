@@ -140,7 +140,7 @@ class Sample(object):
 
 class SkimSample(Sample):
 
-    def __init__(self, name, path, output, split_jobs, xsec, max_filesize = 1200):  
+    def __init__(self, name, path, output, split_jobs, xsec, max_filesize = 6000):  
         super(SkimSample, self).__init__(name, path, output, split_jobs, xsec, max_filesize)
         self.list_of_subjobclusters     = self.createSubjobClusters()
         self.split_jobs                 = len(self.list_of_subjobclusters)

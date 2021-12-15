@@ -3,6 +3,8 @@ from HNL.ObjectSelection.leptonSelector import isGoodLepton, isFakeLepton
 from HNL.EventSelection.eventSelectionTools import applyConeCorrection
 from HNL.EventSelection.eventSelector import EventSelector
 from HNL.EventSelection.eventCategorization import EventCategory
+from HNL.Weights.tauEnergyScale import TauEnergyScale
+
 
 class Event(object):
 
@@ -13,6 +15,9 @@ class Event(object):
         self.chain.strategy = kwargs.get('strategy')
         self.chain.region = kwargs.get('region')
         self.chain.selection = kwargs.get('selection')
+        self.chain.analysis = kwargs.get('analysis')
+        self.chain.year = kwargs.get('year')
+        self.chain.era = kwargs.get('era')
         self.additional_options = kwargs.get('additional_options', None)
         self.chain.is_reco_level = is_reco_level
 
@@ -20,6 +25,8 @@ class Event(object):
 
         self.event_category = EventCategory(self.chain, self.new_chain)
         self.event_selector = EventSelector(self.chain.region, self.chain, self.new_chain, is_reco_level=is_reco_level, event_categorization=self.event_category, additional_options=self.additional_options)
+
+        self.chain.tau_energy_scale = TauEnergyScale(chain.era, chain.year, chain.obj_sel['tau_algo'])
 
     def initEvent(self):
         self.chain.is_loose_lepton = [None]*self.chain._nL
@@ -52,9 +59,10 @@ class Event(object):
             self.chain.is_tight_lepton[l] = (isGoodLepton(self.chain, l, 'tight'), self.chain.obj_sel['tau_algo'])
 
     def passedFilter(self, cutter, sample_name, **kwargs):
-        passed =  self.event_selector.passedFilter(cutter, sample_name, kwargs)
+        passed =  self.event_selector.passedFilter(cutter, sample_name, self.event_category, kwargs)
         if passed:
             self.chain.category = self.event_category.returnCategory()
+            self.chain.detailed_category = self.event_category.returnDetailedCategory()
             return True
         return False
 
@@ -64,8 +72,8 @@ class Event(object):
 class ClosureTestEvent(Event):
     flavor_dict = {'tau' : 2, 'ele' : 0, 'mu' : 1}
 
-    def __init__(self, chain, new_chain, strategy, region, selection, flavors_of_interest, in_data, is_reco_level = True):
-        super(ClosureTestEvent, self).__init__(chain, new_chain, is_reco_level, strategy=strategy, region=region, selection=selection)
+    def __init__(self, chain, new_chain, strategy, region, selection, flavors_of_interest, in_data, analysis, year, era, is_reco_level = True):
+        super(ClosureTestEvent, self).__init__(chain, new_chain, is_reco_level, strategy=strategy, region=region, selection=selection, analysis=analysis, year=year, era=era)
         self.flavors_of_interest = flavors_of_interest
         self.in_data = in_data
         if self.flavors_of_interest is None: 
@@ -121,7 +129,7 @@ class ClosureTestEvent(Event):
                 return True
 
     def passedFilter(self, cutter, sample_name, **kwargs):
-        passed =  self.event_selector.passedFilter(cutter, sample_name, kwargs)
+        passed =  self.event_selector.passedFilter(cutter, sample_name, self.event_category, kwargs)
         if not passed: return False
         applyConeCorrection(self.chain, self.new_chain)
 

@@ -231,7 +231,7 @@ if not args.makePlots and args.makeDataCards is None:
         from HNL.ObjectSelection.objectSelection import getObjectSelection
         chain.obj_sel = getObjectSelection(args.selection)
 
-        event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region)
+        event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = year, era = args.era)
 
         list_of_numbers = {}
         for c in listOfCategories(args.region):
@@ -249,6 +249,7 @@ if not args.makePlots and args.makeDataCards is None:
         print 'tot_range', len(event_range)
         for entry in event_range:
             
+
             chain.GetEntry(entry)
             if args.isTest: progress(entry - event_range[0], len(event_range))
 
@@ -282,6 +283,8 @@ if not args.makePlots and args.makeDataCards is None:
                 event_category = event.event_category.returnCategory()
             else:
                 event_category = max(CATEGORIES)
+
+            print entry, event_category
 
             chain.search_region = srm[args.region].getSearchRegion(chain)
             list_of_numbers[event_category][prompt_str].fill(chain, lw.getTotalWeight())

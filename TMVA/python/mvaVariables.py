@@ -1,9 +1,9 @@
 mass_ranges = {
     'lowestmass' : [10, 20, 30, 40],
     'lowmass' : [50, 60, 70, 75],
-    # 'mediummass85100' : [85, 100],
-    # 'mediummass150200' : [150, 200],
-    # 'mediummass250400' : [250, 300, 400],
+    'mediummass85100' : [85, 100],
+    'mediummass150200' : [150, 200],
+    'mediummass250400' : [250, 300, 400],
     # 'mediummass250300' : [350, 400],
     # 'highmass' : [150, 250, 300, 350, 400],
     # 'highmass' : [85, 100, 125, 150, 200, 250, 300],
@@ -30,11 +30,6 @@ def getNameFromMass(mass):
             return k
     return None
 
-region_dict = {
-    'lowMassSR' : ['lowmass', 'lowestmass'],
-    'highMassSR' : ['mediummass', 'highmass', 'highestmass', 'mediummass85100', 'mediummass150200', 'mediummass250400'],
-}
-
 input_variables = {
     'M3l' : {'type' : 'F', 'var' : lambda c : c.M3l},
     'MT3l' : {'type' : 'F', 'var' : lambda c : c.mt3},
@@ -51,6 +46,7 @@ input_variables = {
     'met' : {'type' : 'F', 'var' : lambda c : c._met},
     'metPhi' : {'type' : 'F', 'var' : lambda c : c._metPhi},
     'njets' : {'type' : 'F', 'var' : lambda c : c.njets},
+    'nbjets' : {'type' : 'F', 'var' : lambda c : c.nbjets},
     'l1_charge' : {'type' : 'F', 'var' : lambda c : c.l_charge[0]},
     'l2_charge' : {'type' : 'F', 'var' : lambda c : c.l_charge[1]},
     'l3_charge' : {'type' : 'F', 'var' : lambda c : c.l_charge[2]},
@@ -122,13 +118,16 @@ var_lists = {
                 'dRl1l2', 'dRl1l3', 'dRl2l3', 'dRjl1', 'dRjl2', 'dRjl3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', 'dRmaxMossf'],
     'lowmass-e': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
                 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l',
-                'dRl1l2', 'dRl1l3', 'dRl2l3', 'dRjl1', 'dRjl2', 'dRjl3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
+                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
     'lowmass-mu': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
                 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
-                'dRl1l2', 'dRl1l3', 'dRl2l3', 'dRjl1', 'dRjl2', 'dRjl3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
-    'lowmass-tau': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
+                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
+    'lowmass-taulep': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
+                'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l',
+                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
+    'lowmass-tauhad': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
                 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
-                'dRl1l2', 'dRl1l3', 'dRl2l3', 'dRjl1', 'dRjl2', 'dRjl3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
+                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
     'lowestmass-e': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
                 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
                 'dRl1l2', 'dRl1l3', 'dRl2l3', 'dRjl1', 'dRjl2', 'dRjl3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],

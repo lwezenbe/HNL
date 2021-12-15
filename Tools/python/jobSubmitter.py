@@ -160,7 +160,7 @@ def submitJobs(script, subjob_args, subjob_list, argparser, **kwargs):
     #Do not include isChild in arg_string
 
     logbase = os.path.join('log', 'Latest', os.path.basename(script).split('.')[0]+(('-'+sub_log) if sub_log else ''), arg_string)
-    if not resubmission: makeDirIfNeeded(logbase+'/x')
+    if not resubmission and not args.dryRun: makeDirIfNeeded(logbase+'/x')
     script = os.path.realpath(script)
 
     merge_check_pass = logbase.replace('Latest', 'Merge')
@@ -170,7 +170,7 @@ def submitJobs(script, subjob_args, subjob_list, argparser, **kwargs):
         filetowrite.write('True')
 
     # save arguments for later checks
-    if not resubmission:
+    if not resubmission and not args.dryRun:
         with open(logbase+'/args.txt', 'w') as f:
             json.dump(args.__dict__, f, indent = 2)
 

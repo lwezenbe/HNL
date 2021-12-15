@@ -1,6 +1,7 @@
 import ROOT
 from HNL.TMVA.mvaVariables import getVariableNames, getVariableValue
 from array import array
+import numpy as np
 import os
 
 ctypes = {
@@ -20,82 +21,20 @@ ctypes = {
 #     # 'HNL-e-m200' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=3-shrinkage=0.1',
 # }
 
-MVA_of_choice_None = {
-    # 'highmass-e' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3',
-    'highestmass-e' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3',
-    # 'highmass-mu' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=3-shrinkage=0.3',
-    'highestmass-mu' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3',
-    # 'highmass-tau' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3',
-    'highestmass-tau' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3',
-    # 'mediummass-e' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3',
-    # 'mediummass-mu' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3',
-    # 'mediummass-tau' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3',
-    'mediummass85100-e' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3',
-    'mediummass85100-mu' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3',
-    # 'mediummass-tau' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3',
-    'mediummass150200-e' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3',
-    'mediummass150200-mu' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3',
-    # 'mediummass-tau' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3',
-    'mediummass250400-e' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3',
-    'mediummass250400-mu' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3',
-    # 'mediummass-tau' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3',
-    # 'lowmass-e' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.1',
-    # 'lowmass-mu' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=3-shrinkage=0.1',
-    # 'lowmass-tau' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3',
-    # 'lowestmass-e' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3',
-    # 'lowestmass-mu' : 'kBDT-boostType=AdaBoost-ntrees=200-maxdepth=3-shrinkage=1',
-    # 'lowestmass-tau' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=4-shrinkage=0.1',
-}
+DEFAULT_PATH_TO_WEIGHTS = lambda era, region, signalname: os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'FinalTrainings', era, region, signalname+'.xml')
 
-MVA_of_choice_M3l80 = {
-    'lowmass-e' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=4-shrinkage=0.1',
-    'lowmass-mu' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=2-shrinkage=0.1',
-    'lowmass-tau' : 'kBDT-boostType=Grad-ntrees=100-maxdepth=3-shrinkage=0.1',
-    'lowestmass-e' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=3-shrinkage=0.1',
-    'lowestmass-mu' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.1',
-    # 'lowestmass-taulep' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=3-shrinkage=0.1', 
-    'lowestmass-taulep' : 'kBDT-boostType=AdaBoost-ntrees=100-maxdepth=2-shrinkage=0.1', 
-    'lowestmass-tauhad' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=4-shrinkage=0.1', 
-}
-MVA_of_choice_l1pt55 = {
-    'lowmass-e' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=3-shrinkage=0.1',
-    'lowmass-mu' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=2-shrinkage=0.1',
-    'lowmass-tau' : 'kBDT-boostType=Grad-ntrees=100-maxdepth=3-shrinkage=0.1',
-    'lowestmass-e' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=3-shrinkage=0.1',
-    'lowestmass-mu' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.1',
-    'lowestmass-tau' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=3-shrinkage=0.1', 
-}
-MVA_of_choice_M3l80l1pt50 = {
-    # 'lowmass-e' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=2-shrinkage=0.1',
-    'lowmass-e' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=3-shrinkage=0.1',
-    'lowmass-mu' : 'kBDT-boostType=Grad-ntrees=100-maxdepth=4-shrinkage=0.1',
-    # 'lowmass-tau' : 'kBDT-boostType=Grad-ntrees=300-maxdepth=2-shrinkage=0.3',
-    'lowestmass-e' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=2-shrinkage=0.1',
-    'lowestmass-mu' : 'kBDT-boostType=AdaBoost-ntrees=200-maxdepth=3-shrinkage=1',
-    # 'lowestmass-tau' : 'kBDT-boostType=AdaBoost-ntrees=300-maxdepth=3-shrinkage=1', 
-}
-
-MVA_of_choice = {
-    None : MVA_of_choice_None,
-    "M3l<80" : MVA_of_choice_M3l80,
-    "l1_pt<55" : MVA_of_choice_l1pt55,
-    "M3l<80&&l1_pt<55" : MVA_of_choice_M3l80l1pt50,
-    "M3l<80&&l1_pt<55&&met<75" : MVA_of_choice_M3l80l1pt50,
-    "met<75" : MVA_of_choice_M3l80l1pt50,
-    "dRmaxMossf<0" : MVA_of_choice_M3l80l1pt50,
-
-}
 
 class Reader:
 
-    def __init__(self, chain, method_name, name_to_book, region, era, model_name = None, cut_string = None):
+    def __init__(self, chain, method_name, name_to_book, region, era, path_to_weights = None):
         self.reader = ROOT.TMVA.Reader("Silent")
         self.chain = chain
         self.method_name = method_name
-        self.model_name = model_name if model_name is not None else MVA_of_choice[cut_string][name_to_book]
         self.region = region
-        self.cut_string = cut_string
         self.name_to_book = name_to_book
+        self.path_to_weights = path_to_weights if path_to_weights is not None else DEFAULT_PATH_TO_WEIGHTS(era, region, name_to_book)
+        if not os.path.isfile(self.path_to_weights):
+            raise RuntimeError("Invalid path to weights: {0}".format(self.path_to_weights))
         self.variables = getVariableNames(name_to_book)
         self.variable_array = self.initializeArrays()
         self.initializeVariables(name_to_book)
@@ -111,16 +50,8 @@ class Reader:
         for v in getVariableNames(name):
             self.reader.AddVariable(v, self.variable_array[v])
 
-    def bookMethod(self, era, training_name):
-        if self.cut_string is None:
-            path_to_weights = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'training', 
-                                        era+'all', self.region+'-'+self.chain.selection, training_name, self.method_name, 
-                                        'weights', 'factory_'+self.model_name+'.weights.xml')
-        else:
-            path_to_weights = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'training', 
-                            era+'all', self.region+'-'+self.chain.selection, "".join(i for i in self.cut_string if i not in "\/:*?<>|& "),
-                            training_name, self.method_name, 'weights', 'factory_'+self.model_name+'.weights.xml')  
-        self.reader.BookMVA(training_name, path_to_weights)
+    def bookMethod(self, era, training_name): 
+        self.reader.BookMVA(training_name, self.path_to_weights)
 
     def predict(self, trainingnames=False):
         for v in self.variables:
@@ -135,9 +66,23 @@ class Reader:
         setattr(chain, "".join(i for i in self.name_to_book if i not in "-"), self.predict(trainingnames=trainingnames))
         return 
 
-def listAvailableMVAs(cut_string = None):
-    return MVA_of_choice[cut_string].keys()
+from HNL.TMVA.mvaDefinitions import listAvailableMVAs
+class ReaderArray:
 
+    def __init__(self, chain, method_name, region, era, names_to_book = None):
+        self.names_to_book = listAvailableMVAs(region) if names_to_book is None else names_to_book
+        self.readers = {}
+        for name in self.names_to_book:
+            self.readers[name] = Reader(chain, method_name, name, region, era)
+
+    def predictAndWriteAll(self, chain, trainingnames=False):
+        for reader in self.readers:
+            print reader
+            self.readers[reader].predictAndWriteToChain(chain, trainingnames)
+
+#
+# Testing code
+#
 
 cut_string_dict = {
     None : lambda c:True,
@@ -151,7 +96,7 @@ cut_string_dict = {
     'l1pt' : lambda c: c.l1_pt < 55,
 }
 
-def getNonPromptMVAhist(input_handler, channel, region, era, cut_string = None):
+def getNonPromptMVAhist(input_handler, channel, region, era):
     from HNL.Tools.histogram import Histogram
     from HNL.Tools.helpers import progress
     from HNL.Analysis.analysisTypes import var_mva
@@ -168,7 +113,7 @@ def getNonPromptMVAhist(input_handler, channel, region, era, cut_string = None):
         for mva in input_handler.signal_names:
             print "     ->", mva
             list_of_hist[sample_name][mva] = Histogram(mva+'-nonprompt', var_mva[mva][0], var_mva[mva][2], var_mva[mva][1])
-            reader = Reader(sample_tree, 'kBDT', mva, region, era, cut_string = cut_string)
+            reader = Reader(sample_tree, 'kBDT', mva, region, era)
             nentries = sample_tree.GetEntries()
             for entry in xrange(nentries):
                 progress(entry, nentries)
@@ -182,7 +127,7 @@ def getNonPromptMVAhist(input_handler, channel, region, era, cut_string = None):
 def getAllMVAhist(input_handler, channel, region, era, cut_string = None):
     from HNL.Tools.histogram import Histogram
     from HNL.Tools.helpers import progress
-    from HNL.Analysis.analysisTypes import var_mva
+    from HNL.TMVA.mvaDefinitions import MVA_dict
     from ROOT import TChain
     list_of_hist = {}
     for sample_name in input_handler.background_paths:
@@ -197,8 +142,16 @@ def getAllMVAhist(input_handler, channel, region, era, cut_string = None):
         list_of_hist[sample_name] = {}
         for mva in input_handler.signal_names:
             print "     ->", mva
-            list_of_hist[sample_name][mva] = Histogram(mva+'-'+sample_name, var_mva[mva][0], var_mva[mva][2], var_mva[mva][1])
-            reader = Reader(sample_tree, 'kBDT', mva, region, era, cut_string = cut_string)
+            if cut_string is None:
+                path_to_use = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'training', 
+                                                eras+'all', region+'-'+sample_tree.selection, mva, 'kBDT', 
+                                                'weights', 'factory_'+MVA_dict[mva][0]+'.weights.xml ')
+            else:
+                path_to_use = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'training', 
+                                era+'all', region+'-'+sample_tree.selection, "".join(i for i in cut_string if i not in "\/:*?<>|& "),
+                                mva, 'kBDT', 'weights', 'factory_'+MVA_dict[mva][0]+'.weights.xml')
+            reader = Reader(sample_tree, 'kBDT', mva, region, era, path_to_weights=path_to_use)
+            list_of_hist[sample_name][mva] = Histogram(mva+'-'+sample_name, MVA_dict[mva][2], ('MVA score', 'Events'),  np.arange(-1., 1.1, 0.1))
             nentries = sample_tree.GetEntries()
             # nentries = 20
             for entry in xrange(nentries):

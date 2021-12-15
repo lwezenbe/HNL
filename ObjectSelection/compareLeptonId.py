@@ -228,12 +228,16 @@ if not args.makePlots:
 
         for lepton in xrange(chain._nL):
             if chain._lFlavor[lepton] != FLAVOR_DICT[args.flavor]:  continue
-            if not isBaseLepton(chain, lepton):                     continue
+            if chain._lFlavor[lepton] != FLAVOR_DICT['tau'] and not isBaseLepton(chain, lepton):                     continue
 
             chain.l_pt = chain._lPt[lepton]
             chain.l_eta = chain._lEta[lepton]   
 
             for i, algo in enumerate(algos): 
+                if chain._lFlavor[lepton] == FLAVOR_DICT['tau']:
+                    from HNL.Weights.tauEnergyScale import TauEnergyScale
+                    chain.tau_energy_scale = TauEnergyScale(chain.era, chain.year, algo)
+                    if not isBaseLepton(chain, lepton): continue
 
                 if chain._lIsPrompt[lepton]:
                     passed_tot = []

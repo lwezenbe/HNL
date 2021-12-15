@@ -122,7 +122,7 @@ class EventSelector:
         else:
             return True
 
-    def passedFilter(self, cutter, sample_name, kwargs={}):
+    def passedFilter(self, cutter, sample_name, event_category, kwargs={}):
         if not self.removeOverlapDYandZG(sample_name): return False
 
         ignoreSignalOverlapRemoval = kwargs.get('ignoreSignalOverlapRemoval', False)
@@ -130,6 +130,10 @@ class EventSelector:
         if self.name != 'NoSelection':
             passed = self.selector.passedFilter(cutter, kwargs)
             if not passed: return False
+
+            # This info is needed for offline thresholds
+            self.chain.category = event_category.returnCategory()
+            self.chain.detailed_category = event_category.returnDetailedCategory()
 
             from HNL.Triggers.triggerSelection import passOfflineThresholds
             offline_thresholds = kwargs.get('offline_thresholds', True)

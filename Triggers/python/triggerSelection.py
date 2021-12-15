@@ -147,9 +147,31 @@ def offlineThresholds2016(chain, new_chain):
 
     from HNL.EventSelection.eventCategorization import TRIGGER_CATEGORIES
     if chain.category in TRIGGER_CATEGORIES['EEE']:
-        return (enw_chain.l_pt[l1] > 19 and enw_chain.l_pt[l2] > 15) or enw_chain.l_pt[l1] > 30
+        return (new_chain.l_pt[l1] > 19 and new_chain.l_pt[l2] > 15) or new_chain.l_pt[l1] > 30
     elif chain.category in TRIGGER_CATEGORIES['EEMu']:
-        return new_chain.l_pt[l1] > 23 or new_chain.l_pt[l2] > 15
+        if new_chain.l_flavor[l3] == 0 and new_chain.l_pt[l3] < 15:
+            return new_chain.l_pt[l1] > 23
+        elif new_chain.l_flavor[l3] == 1:
+            return new_chain.l_pt[l1] > 23 or new_chain.l_pt[l2] > 15
+
+    elif chain.category in TRIGGER_CATEGORIES['TauEE']:
+        if new_chain.l_flavor[l3] == 2:
+            return new_chain.l_pt[l1] > 23
+        elif new_chain.l_flavor[l2] == 2:
+            return (new_chain.l_pt[l1] > 25 and new_chain.l_pt[l3] > 15) or new_chain.l_pt[l1] > 30
+        else:
+            return (new_chain.l_pt[l2] > 25 and new_chain.l_pt[l3] > 15) or new_chain.l_pt[l2] > 30  
+    elif chain.category in TRIGGER_CATEGORIES['TauMuMu']:
+        if new_chain.l_flavor[l1] == 2:
+            return new_chain.l_pt[l2] > 20 
+    elif chain.category in TRIGGER_CATEGORIES['TauEMu']:
+        if new_chain.l_flavor[l1] == 2:
+            if new_chain.l_flavor[l2] == 0:
+                return new_chain.l_pt[l2] > 25
+            else:
+                return new_chain.l_pt[l2] > 23
+        else:
+           return new_chain.l_pt[l1] > 23          
     
     return True
 
@@ -161,36 +183,34 @@ def offlineThresholds2017(chain, new_chain):
 
     from HNL.EventSelection.eventCategorization import TRIGGER_CATEGORIES
     if chain.category in TRIGGER_CATEGORIES['EEE']:
-        return (new_chain.l_pt[l1] > 19 and new_chain.l_pt[l2] > 15) or new_chain.l_pt[l1] > 38
+        return (new_chain.l_pt[l1] > 19 and new_chain.l_pt[l2] > 15) or new_chain.l_pt[l1] > 35
     elif chain.category in TRIGGER_CATEGORIES['EEMu']:
-        if new_chain.l_flavor[l3] == 1:
-            return new_chain.l_pt[l2] > 15 or new_chain.l_pt[l1] > 25
-        elif new_chain.l_flavor[l3] == 0:
-            if new_chain.l_flavor[l1] == 0:
-                return new_chain.l_pt[l3] > 15 or (new_chain.l_pt[l1] > 23 and new_chain.l_pt[l2] > 15) or new_chain.l_pt[l1] > 38
-            else:
-                return new_chain.l_pt[l3] > 15 or (new_chain.l_pt[l1] > 23 and new_chain.l_pt[l2] > 15) or new_chain.l_pt[l1] > 30
+        if new_chain.l_flavor[l3] == 0 and new_chain.l_pt[l3] < 15:
+            return new_chain.l_pt[l1] > 25
+        elif new_chain.l_flavor[l3] == 1:
+            return new_chain.l_pt[l1] > 23 or new_chain.l_pt[l2] > 15
+
+    elif chain.category in TRIGGER_CATEGORIES['TauEE']:
+        if new_chain.l_flavor[l3] == 2:
+            return new_chain.l_pt[l1] > 23
+        elif new_chain.l_flavor[l2] == 2:
+            return (new_chain.l_pt[l1] > 25 and new_chain.l_pt[l3] > 15) or new_chain.l_pt[l1] > 35
+        else:
+            return (new_chain.l_pt[l2] > 25 and new_chain.l_pt[l3] > 15) or new_chain.l_pt[l2] > 35  
+    elif chain.category in TRIGGER_CATEGORIES['TauMuMu']:
+        if new_chain.l_flavor[l1] == 2:
+            return new_chain.l_pt[l2] > 20 
+    elif chain.category in TRIGGER_CATEGORIES['TauEMu']:
+        if new_chain.l_flavor[l1] == 2:
+            return new_chain.l_pt[l2] > 25
+        else:
+           return new_chain.l_pt[l1] > 25 
     
     return True
 
 def offlineThresholds2018(chain, new_chain):
-    if new_chain.l_pt[l1] < 15: return False
-    if new_chain.l_pt[l2] < 10: return False
-    if new_chain.l_pt[l3] < 10: return False
-
-    from HNL.EventSelection.eventCategorization import TRIGGER_CATEGORIES
-    if chain.category in TRIGGER_CATEGORIES['EEE']:
-        return (new_chain.l_pt[l1] > 19 and new_chain.l_pt[l2] > 15) or new_chain.l_pt[l1] > 35
-    elif chain.category in TRIGGER_CATEGORIES['EEMu']:
-        if new_chain.l_flavor[l3] == 1:
-            return new_chain.l_pt[l2] > 15 or new_chain.l_pt[l1] > 25
-        elif new_chain.l_flavor[l3] == 0:
-            if new_chain.l_flavor[l1] == 0:
-                return new_chain.l_pt[l3] > 15 or (new_chain.l_pt[l1] > 23 and new_chain.l_pt[l2] > 15) or new_chain.l_pt[l1] > 35
-            else:
-                return new_chain.l_pt[l3] > 15 or (new_chain.l_pt[l1] > 23 and new_chain.l_pt[l2] > 15) or new_chain.l_pt[l1] > 27
-
-    return True
+    #Same as 2017
+    return offlineThresholds2017(chain, new_chain)
 
 def passOfflineThresholds(chain, new_chain, analysis):
     if analysis == 'AN2017014':

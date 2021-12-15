@@ -7,14 +7,15 @@ import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true',       default=False,  help='mark as subjob, will never submit subjobs by itself')
-submission_parser.add_argument('--year',     action='store', nargs='*',    default=None,   help='Select year', required=True)
-submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
+submission_parser.add_argument('--year',     action='store', nargs='*',    default=None,   help='Select year')
+submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--sample',   action='store',            default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',            default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true',       default=False,  help='Run a small test')
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 submission_parser.add_argument('--dryRun',   action='store_true',       default=False,  help='do not launch subjobs, only show them')
 submission_parser.add_argument('--genLevel',   action='store_true',     default=False,  help='Use gen level variables')
+submission_parser.add_argument('--region',   action='store', default='trilepton',  help='Select the type of selection for objects', choices=['trilepton', 'baseline'])
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the analysis which triggers to use', choices=['AN2017014', 'HNL' ])
 submission_parser.add_argument('--logLevel',  action='store', default='INFO',  help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
@@ -33,15 +34,16 @@ import numpy as np
 import os
 from HNL.Tools.efficiency import Efficiency
 from HNL.EventSelection.eventCategorization import CATEGORIES_TO_USE as CATEGORIES
+# from HNL.EventSelection.eventCategorization import DETAILED_CATEGORIES_TO_USE as CATEGORIES
 
 #
 # Change some settings if this is a test
 #
 if args.isTest: 
     args.isChild = True
-    if args.sample is None: args.sample = 'HNL-tau-m40'
+    if args.sample is None and not args.makePlots: args.sample = 'HNL-tau-m40'
     if args.subJob is None: args.subJob = '0'
-    if args.year is None: args.year = ['2016']
+    if args.year is None: args.year = ['2017']
     if args.era is None: args.era = 'UL'
     from HNL.Tools.helpers import generateArgString
     arg_string =  generateArgString(argParser)
@@ -109,21 +111,23 @@ def getOutputName(year, sample_name):
 #
 # Define variables
 #
-leading_lep_split = [5., 10., 15., 30., 55., 1000.]
+leading_lep_split = [15., 30., 55., 1000.]
 
 leading_lep_cat = [str(leading_lep_split[i])+'to'+str(leading_lep_split[i+1]) for i in xrange(len(leading_lep_split)-1)]
 
-var = {'l1pt' : (lambda c : c.l_pt[0],                          np.arange(0., 100., 15.),                 ('p_{T}(l1) [GeV]', 'Efficiency')),
-        'l2pt' : (lambda c : c.l_pt[1],                          np.arange(5., 40., 5.),                  ('p_{T}(l2) [GeV]', 'Efficiency')),
-        'l3pt' : (lambda c : c.l_pt[2],                          np.arange(5., 40., 5.),                  ('p_{T}(l3) [GeV]', 'Efficiency')),
-        'l1eta' : (lambda c : abs(c.l_eta[0]),                          np.arange(0., 3., .5),                  ('|#eta|(l1) [GeV]', 'Efficiency')),
-        'l2eta' : (lambda c : abs(c.l_eta[1]),                          np.arange(0., 3., .5),                  ('|#eta|(l2) [GeV]', 'Efficiency')),
-        'l3eta' : (lambda c : abs(c.l_eta[2]),                          np.arange(0., 3., .5),                  ('|#eta|(l3) [GeV]', 'Efficiency')),
-        'l1-2D' : (lambda c : (c.l_pt[0], abs(c.l_eta[0])),      (np.arange(0., 100., 15.), np.arange(0., 3., .5)), ('p_{T}(l1) [GeV]', '|#eta|(l1)')),
-        'l2-2D' : (lambda c : (c.l_pt[1], abs(c.l_eta[1])),      (np.arange(5., 40., 5.), np.arange(0., 3., .5)), ('p_{T}(l2) [GeV]', '|#eta|(subleading)')),
-        'l3-2D' : (lambda c : (c.l_pt[2], abs(c.l_eta[2])),      (np.arange(5., 40., 5.), np.arange(0., 3., .5)), ('p_{T}(l3) [GeV]', '|#eta|(subleading)')),
-        'l2l3-2D' : (lambda c : (c.l_pt[2], c.l_pt[1]),      (np.arange(5., 40., 5.), np.arange(5., 40., 5.)), ('p_{T}(l3) [GeV]', 'p_{T}(l2) [GeV]')),
-        'l-3D' : (lambda c : (c.l_pt[2], c.l_pt[1], c.l_pt[0]),      (np.arange(5., 40., 5.), np.arange(5., 40., 5.), np.array([0., 15., 20., 25., 30., 40., 55., 100., 1000.])), ('p_{T}(l3) [GeV]', 'p_{T}(l2) [GeV]', 'p_{T}(l1) [GeV]'))}
+var = {
+    'l1pt' : (lambda c : c.l_pt[0],                          np.arange(0., 100., 15.),                 ('p_{T}(l1) [GeV]', 'Efficiency')),
+    'l2pt' : (lambda c : c.l_pt[1],                          np.arange(5., 40., 5.),                  ('p_{T}(l2) [GeV]', 'Efficiency')),
+    'l3pt' : (lambda c : c.l_pt[2],                          np.arange(5., 40., 5.),                  ('p_{T}(l3) [GeV]', 'Efficiency')),
+    'l1eta' : (lambda c : abs(c.l_eta[0]),                          np.arange(0., 3., .5),                  ('|#eta|(l1) [GeV]', 'Efficiency')),
+    'l2eta' : (lambda c : abs(c.l_eta[1]),                          np.arange(0., 3., .5),                  ('|#eta|(l2) [GeV]', 'Efficiency')),
+    'l3eta' : (lambda c : abs(c.l_eta[2]),                          np.arange(0., 3., .5),                  ('|#eta|(l3) [GeV]', 'Efficiency')),
+    'l1-2D' : (lambda c : (c.l_pt[0], abs(c.l_eta[0])),      (np.arange(0., 100., 15.), np.arange(0., 3., .5)), ('p_{T}(l1) [GeV]', '|#eta|(l1)')),
+    'l2-2D' : (lambda c : (c.l_pt[1], abs(c.l_eta[1])),      (np.arange(5., 40., 5.), np.arange(0., 3., .5)), ('p_{T}(l2) [GeV]', '|#eta|(subleading)')),
+    'l3-2D' : (lambda c : (c.l_pt[2], abs(c.l_eta[2])),      (np.arange(5., 40., 5.), np.arange(0., 3., .5)), ('p_{T}(l3) [GeV]', '|#eta|(subleading)')),
+    'l2l3-2D' : (lambda c : (c.l_pt[2], c.l_pt[1]),      (np.arange(5., 40., 5.), np.arange(5., 40., 5.)), ('p_{T}(l3) [GeV]', 'p_{T}(l2) [GeV]')),
+    # 'l-3D' : (lambda c : (c.l_pt[2], c.l_pt[1], c.l_pt[0]),      (np.arange(5., 40., 5.), np.arange(5., 40., 5.), np.array([0., 15., 20., 25., 30., 40., 55., 100., 1000.])), ('p_{T}(l3) [GeV]', 'p_{T}(l2) [GeV]', 'p_{T}(l1) [GeV]'))
+    }
 
 
 if not args.makePlots:
@@ -151,7 +155,7 @@ if not args.makePlots:
     chain.HNLmass = sample.getMass()
     chain.year = year
     chain.era = args.era
-    chain.region = 'trilepton'
+    chain.region = args.region
     chain.analysis = args.analysis
 
     #
@@ -190,7 +194,7 @@ if not args.makePlots:
     # Define event selection
     #
     from HNL.EventSelection.event import Event
-    event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region='trilepton')    
+    event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.region, analysis=args.analysis, year = year, era = args.era)    
 
     #
     # Loop over all events
@@ -206,6 +210,7 @@ if not args.makePlots:
 
         event.initEvent()
         if not event.passedFilter(cutter, sample.output, offline_thresholds = True): continue
+        if chain.category not in CATEGORIES: continue
 
         from HNL.Triggers.triggerSelection import passTriggers
         passed = passTriggers(chain, args.analysis)
@@ -224,6 +229,8 @@ if not args.makePlots:
             for illc, llc in enumerate(efficiencies[v][c].keys()):
                 efficiencies[v][c][llc].write(append = iv > 0 or ic > 0 or illc > 0, is_test=arg_string)
 
+    cutter.saveCutFlow(getOutputName(year, sample.output))
+
     closeLogger(log)
 
 else:
@@ -241,10 +248,12 @@ else:
         sample_manager = getSampleManager(year)  
         samples_to_plot = sample_manager.getOutputs()
 
+        overall_efficiencies = {}
         for sample_output in samples_to_plot:
             if args.sample and sample_output != args.sample: continue
 
             #Gather all the information
+            # from HNL.EventSelection.eventCategorization import DETAILED_TRIGGER_CATEGORIES as TRIGGER_CATEGORIES
             from HNL.EventSelection.eventCategorization import TRIGGER_CATEGORIES
             efficiencies = {}
             for v in var:
@@ -256,26 +265,51 @@ else:
                 for llc in leading_cat:
                     efficiencies[v][llc] = {}
                     for c in CATEGORIES:
-                        print v, llc, c
                         for tc in TRIGGER_CATEGORIES:
                             if not c in TRIGGER_CATEGORIES[tc]: continue
                             if tc in efficiencies[v][llc].keys():
-                                efficiencies[v][llc][tc].add(Efficiency(v+'-'+str(c)+'-'+llc, var[v][0], var[v][2], getOutputName(year, sample.output).rsplit('/', 2)[0]+'/efficiency.root', None, subdirs = [str(c), v, llc]))
+                                efficiencies[v][llc][tc].add(Efficiency(v+'-'+str(c)+'-'+llc, var[v][0], var[v][2], getOutputName(year, sample_output).rsplit('/', 2)[0]+'/efficiency.root', None, subdirs = [str(c), v, llc]))
                             else:
-                                efficiencies[v][llc][tc] = Efficiency(v+'-'+str(c)+'-'+llc, var[v][0], var[v][2], getOutputName(year, sample.output).rsplit('/', 2)[0]+'/efficiency.root', None, subdirs = [str(c), v, llc]).clone(out_name = v+'-'+tc)
+                                efficiencies[v][llc][tc] = Efficiency(v+'-'+str(c)+'-'+llc, var[v][0], var[v][2], getOutputName(year, sample_output).rsplit('/', 2)[0]+'/efficiency.root', None, subdirs = [str(c), v, llc]).clone(out_name = v+'-'+tc)
 
                 for tc in TRIGGER_CATEGORIES:
                     output_string = getOutputBase(year, sample_output).replace('Triggers/data/', 'Triggers/data/Results/')
                     if '3D' in v:
                         sliced_eff = efficiencies[v]['3D'][tc].getEfficiency(hist_object=True).slice3DalongZ()
-                        p = Plot([sliced_eff[x] for x in sliced_eff], 'efficiency', tc, year = int(year))
+                        p = Plot([sliced_eff[x] for x in sliced_eff], 'efficiency', tc, year = year, era = args.era)
                         p.draw2D(output_dir=output_string, names = [tc+'/3D/'+x for x in sliced_eff])
 
                     elif '2D' in v:
                         for llc in leading_cat:
-                            p = Plot(efficiencies[v][llc][tc].getEfficiency(), 'efficiency', tc+'/'+v+'/'+llc, year = int(year))
-                            p.draw2D(output_dir=output_string, names = [tc+'/'+v+'/'+llc])
+                            p = Plot(efficiencies[v][llc][tc].getEfficiency(), 'efficiency', tc+'/'+v+'/'+llc, year = year, era = args.era)
+                            p.draw2D(output_dir=output_string, names = [tc+'/'+v+'/'+llc.replace('.0', '')])
                     else:
                         for llc in leading_cat:
-                            p = Plot(efficiencies[v][llc][tc].getEfficiency(), 'efficiency', tc+'/'+v+'/'+llc, year = int(year))
-                            p.drawHist(output_string)
+                            p = Plot(efficiencies[v][llc][tc].getEfficiency(), 'efficiency', tc+'/'+v+'/'+llc, year = year, era = args.era)
+                #             p.drawHist(output_string)
+
+            overall_efficiencies[sample_output] = efficiencies.copy()
+        
+        # Make comparative 1D plots with multiple processes in the plot
+        if 'MET' in overall_efficiencies.keys() and 'WZ' in overall_efficiencies.keys():
+            signal_dict = {
+                'EEE' : 'HNL-e-m50',
+                'EEMu' : 'HNL-e-m50',
+                'EMuMu' : 'HNL-mu-m50',
+                'MuMuMu' : 'HNL-mu-m50',
+                'TauEE' : 'HNL-tauhad-m50',
+                'TauEMu' : 'HNL-tauhad-m50',
+                'TauMuMu' : 'HNL-tauhad-m50',
+            }
+
+            for v in var:
+                if '3D' in v  or '2D' in v: continue
+                for tc in TRIGGER_CATEGORIES:
+                    if not signal_dict[tc] in overall_efficiencies.keys(): continue
+                    output_string = getOutputBase(year, 'Combined').replace('Triggers/data/', 'Triggers/data/Results/')
+                    for llc in leading_cat:
+                        p = Plot([overall_efficiencies['WZ'][v][llc][tc].getEfficiency(), overall_efficiencies[signal_dict[tc]][v][llc][tc].getEfficiency()], ['WZ (MC)', 'HNL(m_{N}=50 GeV)', 'MET (data)'], 
+                                    tc+'/'+v+'/'+llc, year = year, era = args.era, bkgr_hist = overall_efficiencies['MET'][v][llc][tc].getEfficiency(), draw_ratio = True, color_palette='StackTauPOGbyName', color_palette_bkgr='Didar')
+                        p.setLegend(x1=0.33, x2=0.96, y1=0.82, y2=.92, ncolumns=3)
+                        p.drawHist(output_string, draw_option='EP', bkgr_draw_option='EP', max_cutoff=1.1)
+        
