@@ -248,7 +248,6 @@ if not args.makePlots and args.makeDataCards is None:
 
         print 'tot_range', len(event_range)
         for entry in event_range:
-            
 
             chain.GetEntry(entry)
             if args.isTest: progress(entry - event_range[0], len(event_range))
@@ -283,8 +282,6 @@ if not args.makePlots and args.makeDataCards is None:
                 event_category = event.event_category.returnCategory()
             else:
                 event_category = max(CATEGORIES)
-
-            print entry, event_category
 
             chain.search_region = srm[args.region].getSearchRegion(chain)
             list_of_numbers[event_category][prompt_str].fill(chain, lw.getTotalWeight())

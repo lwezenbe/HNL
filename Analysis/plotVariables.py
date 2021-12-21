@@ -89,8 +89,8 @@ def getSampleManager(y):
         skim_str = 'Reco'
     else:
         # skim_str = args.skimLevel
-        # skim_str = 'Reco'
-        skim_str = 'noskim'
+        skim_str = 'Reco'
+        # skim_str = 'noskim'
     file_list = 'fulllist_'+args.era+str(y) if args.customList is None else args.customList
 
     sm = SampleManager(args.era, y, skim_str, file_list, skim_selection=args.selection, region=args.region)
