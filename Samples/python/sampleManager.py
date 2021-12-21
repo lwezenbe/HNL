@@ -13,11 +13,11 @@ BASE_PATH = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Sampl
 LAMBDA_PATH = lambda era, year, skim : os.path.join(BASE_PATH, '_'.join(['sampleList', era + year, skim+'.conf']))
 SAMPLE_GROUPS = {
     # 'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],
-    'TT-T+X': ['ttX', 'TTG', 'TG', 'TTTT', 'ST', 'TT'],
+    'TT-T+X': ['ttX', 'TTG', 'TG', 'TTTT', 'ST', 'TT', 'tX'],
     'triboson': ['triboson'],
     'WZ': ['WZ'],
     # 'diboson': ('ZZ', 'WW', 'WZ'),
-    'ZZ-H': ['ZZ', 'Higgs'],
+    'ZZ-H': ['ZZ', 'Higgs', 'GluGlu'],
     'XG': ['DY', 'ZG', 'WG'],
     'other':['WJets', 'WW', 'QCD']
 }

@@ -27,17 +27,17 @@ var_gen_3l = {'minMos':        (lambda c : c.minMos,   np.arange(0., 120., 12.),
 
 var_reco_3l = {
         'minMos':        (lambda c : c.minMos,   np.arange(0., 160., 10.),         ('min(M_{OS}) [GeV]', 'Events')),
-        'maxMos':        (lambda c : c.maxMos,   np.arange(0., 240., 12.),         ('max(M_{OS}) [GeV]', 'Events')),
-        'minMss':        (lambda c : c.minMss,   np.arange(0., 240., 12.),         ('min(M_{SS}) [GeV]', 'Events')),
-        'maxMss':        (lambda c : c.maxMss,   np.arange(0., 240., 12.),         ('max(M_{SS}) [GeV]', 'Events')),
-        'minMossf':        (lambda c : c.minMossf,   np.arange(0., 240., 12.),         ('min(M_{OSSF}) [GeV]', 'Events')),
-        'maxMossf':        (lambda c : c.maxMossf,   np.arange(0., 240., 12.),         ('max(M_{OSSF}) [GeV]', 'Events')),
-        'minMsssf':        (lambda c : c.minMsssf,   np.arange(0., 240., 12.),         ('min(M_{SSSF}) [GeV]', 'Events')),
-        'maxMsssf':        (lambda c : c.maxMsssf,   np.arange(0., 240., 12.),         ('max(M_{SSSF}) [GeV]', 'Events')),
+        # 'maxMos':        (lambda c : c.maxMos,   np.arange(0., 240., 12.),         ('max(M_{OS}) [GeV]', 'Events')),
+        # 'minMss':        (lambda c : c.minMss,   np.arange(0., 240., 12.),         ('min(M_{SS}) [GeV]', 'Events')),
+        # 'maxMss':        (lambda c : c.maxMss,   np.arange(0., 240., 12.),         ('max(M_{SS}) [GeV]', 'Events')),
+        # 'minMossf':        (lambda c : c.minMossf,   np.arange(0., 240., 12.),         ('min(M_{OSSF}) [GeV]', 'Events')),
+        # 'maxMossf':        (lambda c : c.maxMossf,   np.arange(0., 240., 12.),         ('max(M_{OSSF}) [GeV]', 'Events')),
+        # 'minMsssf':        (lambda c : c.minMsssf,   np.arange(0., 240., 12.),         ('min(M_{SSSF}) [GeV]', 'Events')),
+        # 'maxMsssf':        (lambda c : c.maxMsssf,   np.arange(0., 240., 12.),         ('max(M_{SSSF}) [GeV]', 'Events')),
         'm3l':          (lambda c : c.M3l,      np.arange(0., 240., 15.),         ('M_{3l} [GeV]', 'Events')),
-        'ml12':          (lambda c : c.Ml12,      np.arange(0., 240., 5.),         ('M_{l1l2} [GeV]', 'Events')),
-        'ml23':          (lambda c : c.Ml23,      np.arange(0., 240., 5.),         ('M_{l2l3} [GeV]', 'Events')),
-        'ml13':          (lambda c : c.Ml13,      np.arange(0., 240., 5.),         ('M_{l1l3} [GeV]', 'Events')),
+        # 'ml12':          (lambda c : c.Ml12,      np.arange(0., 240., 5.),         ('M_{l1l2} [GeV]', 'Events')),
+        # 'ml23':          (lambda c : c.Ml23,      np.arange(0., 240., 5.),         ('M_{l2l3} [GeV]', 'Events')),
+        # 'ml13':          (lambda c : c.Ml13,      np.arange(0., 240., 5.),         ('M_{l1l3} [GeV]', 'Events')),
         'met':          (lambda c : c._met,     np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
         'mtOther':      (lambda c : c.mtOther,  np.arange(0., 300., 15.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
         'mtl1':      (lambda c : c.mtl2,  np.arange(0., 300., 15.),       ('M_{T} (l1) [GeV])', 'Events')),
@@ -59,23 +59,23 @@ var_reco_3l = {
         'j2phi':      (lambda c : c.j_phi[1],       np.arange(-2.5, 3.0, 0.5),       ('#phi (j2)', 'Events')),
         'NJet':      (lambda c : c.njets,       np.arange(0., 12., 1.),       ('#Jets', 'Events')),
         'NbJet':      (lambda c : c.nbjets,       np.arange(0., 12., 1.),       ('#B Jets', 'Events')),
-        'drl1l2':      (lambda c : c.dr_l1l2,       np.arange(0., 5.5, .25),       ('#Delta R(l1, l2)', 'Events')),
-        'drl1l3':      (lambda c : c.dr_l1l3,       np.arange(0., 5.5, .25),       ('#Delta R(l1, l3)', 'Events')),
-        'drl2l3':      (lambda c : c.dr_l2l3,       np.arange(0., 5.5, .25),       ('#Delta R(l2, l3)', 'Events')),
+        # 'drl1l2':      (lambda c : c.dr_l1l2,       np.arange(0., 5.5, .25),       ('#Delta R(l1, l2)', 'Events')),
+        # 'drl1l3':      (lambda c : c.dr_l1l3,       np.arange(0., 5.5, .25),       ('#Delta R(l1, l3)', 'Events')),
+        # 'drl2l3':      (lambda c : c.dr_l2l3,       np.arange(0., 5.5, .25),       ('#Delta R(l2, l3)', 'Events')),
         'drminOS':      (lambda c : c.dr_minOS,       np.arange(0., 5.5, .25),       ('#Delta R(min(OS))', 'Events')),
-        'drmaxOS':      (lambda c : c.dr_maxOS,       np.arange(0., 5.5, .25),       ('#Delta R(max(OS))', 'Events')),
-        'drminSS':      (lambda c : c.dr_minSS,       np.arange(0., 5.5, .25),       ('#Delta R(min(SS))', 'Events')),
-        'drmaxSS':      (lambda c : c.dr_maxSS,       np.arange(0., 5.5, .25),       ('#Delta R(max(SS))', 'Events')),
-        'drminOSSF':      (lambda c : c.dr_minOSSF,       np.arange(0., 5.5, .25),       ('#Delta R(min(OSSF))', 'Events')),
-        'drmaxOSSF':      (lambda c : c.dr_maxOSSF,       np.arange(0., 5.5, .25),       ('#Delta R(max(OSSF))', 'Events')),
-        'drminSSSF':      (lambda c : c.dr_minSSSF,       np.arange(0., 5.5, .25),       ('#Delta R(min(SSSF))', 'Events')),
-        'drmaxSSSF':      (lambda c : c.dr_maxSSSF,       np.arange(0., 5.5, .25),       ('#Delta R(max(SSSF))', 'Events')),
-        'mindrl1':      (lambda c : c.mindr_l1,       np.arange(0., 5.5, .25),       ('min(#Delta R(l1ln))', 'Events')),
-        'maxdrl1':      (lambda c : c.maxdr_l1,       np.arange(0., 5.5, .25),       ('max(#Delta R(l1ln))', 'Events')),
-        'mindrl2':      (lambda c : c.mindr_l2,       np.arange(0., 5.5, .25),       ('min(#Delta R(l2ln))', 'Events')),
-        'maxdrl2':      (lambda c : c.maxdr_l2,       np.arange(0., 5.5, .25),       ('max(#Delta R(l2ln))', 'Events')),
-        'mindrl3':      (lambda c : c.mindr_l3,       np.arange(0., 5.5, .25),       ('min(#Delta R(l3ln))', 'Events')),
-        'maxdrl3':      (lambda c : c.maxdr_l3,       np.arange(0., 5.5, .25),       ('max(#Delta R(l3ln))', 'Events')),
+        # 'drmaxOS':      (lambda c : c.dr_maxOS,       np.arange(0., 5.5, .25),       ('#Delta R(max(OS))', 'Events')),
+        # 'drminSS':      (lambda c : c.dr_minSS,       np.arange(0., 5.5, .25),       ('#Delta R(min(SS))', 'Events')),
+        # 'drmaxSS':      (lambda c : c.dr_maxSS,       np.arange(0., 5.5, .25),       ('#Delta R(max(SS))', 'Events')),
+        # 'drminOSSF':      (lambda c : c.dr_minOSSF,       np.arange(0., 5.5, .25),       ('#Delta R(min(OSSF))', 'Events')),
+        # 'drmaxOSSF':      (lambda c : c.dr_maxOSSF,       np.arange(0., 5.5, .25),       ('#Delta R(max(OSSF))', 'Events')),
+        # 'drminSSSF':      (lambda c : c.dr_minSSSF,       np.arange(0., 5.5, .25),       ('#Delta R(min(SSSF))', 'Events')),
+        # 'drmaxSSSF':      (lambda c : c.dr_maxSSSF,       np.arange(0., 5.5, .25),       ('#Delta R(max(SSSF))', 'Events')),
+        # 'mindrl1':      (lambda c : c.mindr_l1,       np.arange(0., 5.5, .25),       ('min(#Delta R(l1ln))', 'Events')),
+        # 'maxdrl1':      (lambda c : c.maxdr_l1,       np.arange(0., 5.5, .25),       ('max(#Delta R(l1ln))', 'Events')),
+        # 'mindrl2':      (lambda c : c.mindr_l2,       np.arange(0., 5.5, .25),       ('min(#Delta R(l2ln))', 'Events')),
+        # 'maxdrl2':      (lambda c : c.maxdr_l2,       np.arange(0., 5.5, .25),       ('max(#Delta R(l2ln))', 'Events')),
+        # 'mindrl3':      (lambda c : c.mindr_l3,       np.arange(0., 5.5, .25),       ('min(#Delta R(l3ln))', 'Events')),
+        # 'maxdrl3':      (lambda c : c.maxdr_l3,       np.arange(0., 5.5, .25),       ('max(#Delta R(l3ln))', 'Events')),
         # 'ptConeLeading':   (lambda c : c.pt_cone[0],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(leading) [GeV]', 'Events')),
         # 'ptConeSubLeading':   (lambda c : c.pt_cone[1],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(subleading) [GeV]', 'Events')),
         # 'ptConeTrailing':   (lambda c : c.pt_cone[2],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(trailing) [GeV]', 'Events')),
@@ -105,37 +105,7 @@ var_reco_4l = {
         # 'ptConeLeading':   (lambda c : c.pt_cone[0],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(leading) [GeV]', 'Events'))
     }
 
-from HNL.TMVA.reader import MVA_of_choice
-var_mva = {
-#     'highmass-e' : (lambda c : c.highmasse,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-    'highestmass-e' : (lambda c : c.highestmasse,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-#     'highmass-mu' : (lambda c : c.highmassmu,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-    'highestmass-mu' : (lambda c : c.highestmassmu,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-#     'highmass-tau' : (lambda c : c.highmasstau,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-    'highestmass-tau' : (lambda c : c.highestmasstau,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-#     'mediummass-e' :  (lambda c : c.mediummasse,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-#     'mediummass-mu' :  (lambda c : c.mediummassmu,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-    'mediummass85100-e' :  (lambda c : c.mediummass85100e,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-    'mediummass85100-mu' :  (lambda c : c.mediummass85100mu,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-    'mediummass150200-e' :  (lambda c : c.mediummass150200e,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-    'mediummass150200-mu' :  (lambda c : c.mediummass150200mu,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-    'mediummass250400-e' :  (lambda c : c.mediummass250400e,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-    'mediummass250400-mu' :  (lambda c : c.mediummass250400mu,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-#     'mediummass-tau' :  (lambda c : c.mediummasstau,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-    'lowmass-e' : (lambda c : c.lowmasse,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-    'lowmass-mu' : (lambda c : c.lowmassmu,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-    'lowmass-tau' : (lambda c : c.lowmasstau,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-    'lowestmass-e' : (lambda c : c.lowestmasse,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-    'lowestmass-mu' : (lambda c : c.lowestmassmu,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-    'lowestmass-taulep' : (lambda c : c.lowestmasstaulep,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-    'lowestmass-tauhad' : (lambda c : c.lowestmasstauhad,   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events')),
-}
-
-def trimVarMVA(available_mvas):
-        trimmed_dict = {}
-        for amva in available_mvas:
-                trimmed_dict[amva] = var_mva[amva]
-        return trimmed_dict
+from HNL.TMVA.mvaDefinitions import MVA_dict
 
 var_noselection = {
         'rawNlight': (lambda c : c._nLight,      np.arange(0., 10., 1.),         ('N_{light, tuple}', 'Events')),
@@ -152,8 +122,11 @@ def returnVariables(nl, is_reco, include_mva = None):
                 else: var_of_choice = var_gen_3l
 
         if include_mva is not None:
+                from HNL.TMVA.mvaDefinitions import MVA_dict,listAvailableMVAs
                 # var_of_choice = mergeTwoDictionaries(var_of_choice, var_mva)
-                var_of_choice = trimVarMVA(include_mva)
+                var_of_choice = {}
+                for k in listAvailableMVAs(include_mva):
+                        var_of_choice[k] = (MVA_dict[k][2],   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events'))
         
         return var_of_choice
 

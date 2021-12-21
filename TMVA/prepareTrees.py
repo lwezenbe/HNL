@@ -78,7 +78,7 @@ from HNL.EventSelection.eventCategorization import SUPER_CATEGORIES
 #     output_base = os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL')) if not args.isTest else os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'testArea'))
 output_base = os.path.expandvars(os.path.join('/user/$USER/public/ntuples/HNL')) if not args.isTest else os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'testArea'))
 
-if not args.merge or args.plot:
+if not args.merge:
 
     #
     # Submit subjobs
@@ -162,7 +162,7 @@ if not args.merge or args.plot:
     from HNL.EventSelection.event import Event
 
     #prepare object  and event selection
-    event =  Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region)
+    event =  Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = args.year, era = args.era)
 
     for entry in event_range:
         chain.GetEntry(entry)
@@ -320,12 +320,15 @@ else:
     signal_mergefiles = output_base+'/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Signal'
     background_mergefiles = output_base+'/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Background'
     background_mergefiles_pnfs = pnfs_base+'/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Background'
-    merge([signal_mergefiles, background_mergefiles], __file__, jobs, ('sample', 'subJob'), argParser)
+    # merge([signal_mergefiles, background_mergefiles], __file__, jobs, ('sample', 'subJob'), argParser)
+    merge([signal_mergefiles], __file__, jobs, ('sample', 'subJob'), argParser)
 
-    pnfs_base = os.path.expandvars(os.path.join('/pnfs/iihe/cms/store/user', '$USER', 'skimmedTuples/HNL/'))
     local_base = os.path.expandvars(os.path.join('/pnfs/iihe/cms/store/user', '$USER', 'skimmedTuples/HNL/'))
-    # if args.batchSystem != 'HTCondor' and not args.isTest:
-        # os.system('scp -rf '+output_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/* ' + pnfs_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/*')
+    makeDirIfNeeded(pnfs_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/*')
+
+    if not args.isTest:
+        os.system('cp -rf '+output_base+'/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Signal ' + pnfs_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/.')
+        # os.system('cp -rf '+output_base+'/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Background ' + pnfs_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/.')
 
     combined_dir = lambda base, sd : base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Combined/'+sd
     makeDirIfNeeded(combined_dir(pnfs_base, 'SingleTree')+'/test')
@@ -346,14 +349,16 @@ else:
 
     if args.merge:
 
-        makeDirIfNeeded(background_mergefiles+'/Combined/x')
-        os.system('hadd -f ' + background_mergefiles_pnfs+'/Combined/all_bkgr.root '+ all_bkgr_files)
+        # makeDirIfNeeded(background_mergefiles+'/Combined/x')
+        # os.system('hadd -f ' + background_mergefiles_pnfs+'/Combined/all_bkgr.root '+ all_bkgr_files)
 
-        os.system('hadd -f ' + bkgr_file('Combined/nonprompt_bkgr')+' ' + ' '.join([bkgr_file(n) for n in nonprompts_of_interest]))
+        # os.system('hadd -f ' + bkgr_file('Combined/nonprompt_bkgr')+' ' + ' '.join([bkgr_file(n) for n in nonprompts_of_interest]))
 
         first_pass = True
         for mass_range in mass_ranges:
-            for flavor in ['e', 'mu', 'taulep', 'tauhad']:
+            if mass_range not in ['lowestmass', 'lowmass']: continue
+            # for flavor in ['e', 'mu', 'taulep', 'tauhad']:
+            for flavor in ['taulep', 'tauhad']:
                 all_files_to_merge = []
                 for mass in mass_ranges[mass_range]:
                     if isValidRootFile(flavor_file[flavor](mass)): all_files_to_merge.append(flavor_file[flavor](mass))

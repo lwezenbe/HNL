@@ -15,6 +15,7 @@ def generalSettings(paintformat = "4.2f"):
     tdr.setTDRStyle()
     ROOT.gStyle.SetPaintTextFormat(paintformat)
     ROOT.gROOT.ProcessLine( "gErrorIgnoreLevel = 1001;")
+    ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
 def isList(item):
     if isinstance(item, (list,)) or isinstance(item, set): return True
@@ -115,6 +116,9 @@ class Plot:
         self.color_palette = color_palette
         self.color_palette_bkgr = color_palette_bkgr
 
+        self.setLegend()
+
+
     def createErrorHist(self):
         if len(self.s) > 0:
             self.stat_signal_errors = [s.Clone(s.GetName()+'_statError') for s in self.s]
@@ -141,10 +145,8 @@ class Plot:
                         bin_stat_error = self.stat_totbkgr_error.GetBinError(b)
                         bin_syst_error = self.syst_hist.GetBinError(b)
                         self.tot_totbkgr_error.SetBinError(b, np.sqrt(bin_stat_error ** 2 + bin_syst_error ** 2))
- 
 
-
-    def setAxisLog(self, is2D = False, stacked = True, min_cutoff = None):
+    def setAxisLog(self, is2D = False, stacked = True, min_cutoff = None, max_cutoff = None):
 
         if is2D:
             if self.x_log:
@@ -186,7 +188,7 @@ class Plot:
 
                 self.min_to_set = min_cutoff if min_cutoff is not None else 0.3*self.overall_min
             else:
-                self.max_to_set = 1.4*self.overall_max
+                self.max_to_set = 1.4*self.overall_max if max_cutoff is None else max_cutoff
                 # self.max_to_set = 23
                 self.min_to_set = min_cutoff if min_cutoff is not None else 0.7*self.overall_min
 
@@ -222,7 +224,13 @@ class Plot:
 
             self.plotpad.Update()
 
-
+    def setLegend(self, x1=0.4, y1=.7, x2=.9, y2=.9, ncolumns = 2):
+        self.legend = ROOT.TLegend(x1, y1, x2, y2)
+        self.legend.SetNColumns(ncolumns)
+        self.legend.SetTextSize(.03)
+        self.legend.SetFillStyle(0)
+        self.legend.SetBorderSize(0)
+        return self.legend
 
     def getYName(self): 
         from HNL.Plotting.plottingTools import allBinsSameWidth
@@ -580,7 +588,7 @@ class Plot:
 
 
     def drawHist(self, output_dir = None, normalize_signal = False, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None, 
-        custom_labels = None, draw_lines = None, message = None, min_cutoff = None, ref_line = 1.):
+        custom_labels = None, draw_lines = None, message = None, min_cutoff = None, max_cutoff = None, ref_line = 1.):
 
         #
         # Some default settings
@@ -590,7 +598,9 @@ class Plot:
         #
         # Create Canvas and pads
         #
-        self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
+        from random import randint
+        rand_int = randint(0, 10000)  #Nasty trick to suppress warnings of canvas with same name
+        self.canvas = ROOT.TCanvas("Canv"+self.name+str(rand_int), "Canv"+self.name+str(rand_int), 1000, 1000)
         self.setPads()
         self.plotpad.Draw()
         self.plotpad.cd()
@@ -753,7 +763,7 @@ class Plot:
         #
         # Calculate ranges of axis and set to log if requested
         #
-        self.setAxisLog(stacked = (len(self.b) > 0 and 'Stack' in bkgr_draw_option) or 'Stack' in draw_option, min_cutoff = min_cutoff)
+        self.setAxisLog(stacked = (len(self.b) > 0 and 'Stack' in bkgr_draw_option) or 'Stack' in draw_option, min_cutoff = min_cutoff, max_cutoff = max_cutoff)
 
         #
         # Set custom labels if needed
@@ -817,21 +827,18 @@ class Plot:
         
         self.canvas.cd()
         #Create Legend
-        legend = ROOT.TLegend(0.4, .7, .9, .9)
+        # legend = ROOT.TLegend(0.4, .7, .9, .9)
         # legend.SetNColumns(1)
-        legend.SetNColumns(2)
-        legend.SetTextSize(.03)
+
        
         loop_obj = [item for item in self.s]
         if len(self.b) > 0: loop_obj.extend(self.b)
         for h, n in zip(loop_obj, self.tex_names):
-            legend.AddEntry(h, n)
+            self.legend.AddEntry(h, n)
         if self.observed is not None:
-            legend.AddEntry(self.observed, 'data')
+            self.legend.AddEntry(self.observed, 'data')
 
-        legend.SetFillStyle(0)
-        legend.SetBorderSize(0)
-        legend.Draw()
+        self.legend.Draw()
 
         if self.draw_ratio is not None:
             just_errors = self.draw_ratio == 'errorsOnly'

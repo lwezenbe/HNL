@@ -227,9 +227,9 @@ if not args.makePlots:
     from HNL.EventSelection.event import Event
     if args.region == 'mix':
         region_to_select = 'lowMassSR' if chain.HNLmass <= 80 else 'highMassSR'
-        event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=region_to_select)
+        event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=region_to_select, analysis=args.analysis, year = args.year, era = args.era)
     else:
-        event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region)
+        event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = args.year, era = args.era)
 
     for entry in event_range:
         

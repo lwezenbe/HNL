@@ -64,6 +64,21 @@ class Efficiency(object):
                 self.efficiency = Histogram(eff.Clone(self.name+'_efficiency'))
             else:
                 self.efficiency = eff.Clone(self.name+'_efficiency')
+
+        #
+        # Check if physics makes sense
+        #
+        if not hist_object:
+            for b in range(1, self.efficiency.GetNcells()+1):
+                if self.efficiency.GetBinContent(b) < 0.:
+                    print "efficiency has negative value {0} in bin number {1}. Setting to 0.".format(self.efficiency.GetBinContent(b), b)
+                    self.efficiency.SetBinContent(b, 0.)
+                if self.efficiency.GetBinContent(b) > 1.:
+                    print "efficiency has value larger than one: {0} in bin number {1}. This is probably due to negative weights in denominator that dont pass to the numerator but you should check this. Setting to 1.".format(self.efficiency.GetBinContent(b), b)
+                    self.efficiency.SetBinContent(b, 1.)
+        else:
+            print "There is a chance you will get unphysical values, we could not check it at this time"
+
         return self.efficiency
 
     def evaluateEfficiency(self, chain, index = None, manual_var_entry = None):

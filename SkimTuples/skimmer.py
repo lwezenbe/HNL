@@ -221,6 +221,10 @@ if not args.checkLogs:
         else:
             chain.obj_sel = objectSelectionCollection('HNL', 'HNL', 'loose', 'loose', 'loose', False, analysis=args.analysis)
 
+    from HNL.Weights.tauEnergyScale import TauEnergyScale
+    chain.tau_energy_scale = TauEnergyScale(chain.era, chain.year, chain.obj_sel['tau_algo'])
+
+
     from HNL.Tools.helpers import progress
     from HNL.EventSelection.eventSelectionTools import selectLeptonsGeneral, selectGenLeptonsGeneral, translateForTraining
     from HNL.EventSelection.event import Event

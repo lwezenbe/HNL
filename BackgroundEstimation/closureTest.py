@@ -210,26 +210,21 @@ if not args.makePlots:
         event_range = sample.getEventRange(args.subJob)    
 
     chain.HNLmass = sample.getMass()
-    chain.year = args.year
-    chain.era = args.era
-    chain.selection = args.selection
-    chain.region = args.region
-    chain.analysis = args.analysis
+
+    from HNL.EventSelection.event import ClosureTestEvent
+    if args.isCheck:
+        if args.flavorToTest == ['tau']:
+            event =  ClosureTestEvent(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.region, flavors_of_interest=args.flavorToTest, in_data=args.inData, analysis=args.analysis, year=args.year, era = args.era) 
+        else:
+            raise RuntimeError("Wrong input for flavorToTest with isCheck arg on: "+str(args.flavorToTest))
+    else:
+        event =  ClosureTestEvent(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.region, flavors_of_interest=args.flavorToTest, in_data=args.inData, analysis=args.analysis, year=args.year, era = args.era) 
 
     #
     # Get luminosity weight
     #
     from HNL.Weights.reweighter import Reweighter
     reweighter = Reweighter(sample, sample_manager)
-
-    from HNL.EventSelection.event import ClosureTestEvent
-    if args.isCheck:
-        if args.flavorToTest == ['tau']:
-            event =  ClosureTestEvent(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.region, flavors_of_interest=args.flavorToTest, in_data=args.inData) 
-        else:
-            raise RuntimeError("Wrong input for flavorToTest with isCheck arg on: "+str(args.flavorToTest))
-    else:
-        event =  ClosureTestEvent(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.region, flavors_of_interest=args.flavorToTest, in_data=args.inData) 
 
     fakerate = {}
     if 'tau' in args.flavorToTest:

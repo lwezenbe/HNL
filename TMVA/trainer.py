@@ -24,13 +24,14 @@ argParser.add_argument('--writeInTree',   action='store_true', default=False,  h
 argParser.add_argument('--gui',     action='store_true',      default=False,   help='Open GUI at the end')
 argParser.add_argument('--plots',     action='store_true',      default=False,   help='Store plots')
 argParser.add_argument('--plotDetailedMVA',     action='store_true',      default=False,   help='Store plots')
+argParser.add_argument('--saveTrainings',     action='store',      default=None,   help='Store MVA for use in other portions of the code. Should always be of the form "<era>/<region>"')
 argParser.add_argument('--skipTraining',     action='store_true',      default=False,   help='Store plots')
 
 args = argParser.parse_args()
 
 ROOT.gROOT.SetBatch(True)
 
-if args.checkTreeContent: 
+if args.checkTreeContent or args.plots or args.saveTrainings: 
     args.skipTraining = True
 
 from HNL.TMVA.inputHandler import InputHandler
@@ -38,16 +39,21 @@ eras = "-".join(sorted(args.era))
 
 ih = InputHandler(eras, args.year, args.region, args.selection)
 
-ntrees = ['100', '200', '300']
-maxdepth = ['2', '3', '4']
+# ntrees = ['100', '200', '300']
+# maxdepth = ['2', '3', '4']
+# boosttypes = ['Grad', 'AdaBoost', 'RealAdaBoost']
+# shrinkage = ['0.1', '0.3', '1']
+
+ntrees = ['25', '50', '75', '100']
+maxdepth = ['1', '2', '3']
 boosttypes = ['Grad', 'AdaBoost', 'RealAdaBoost']
 shrinkage = ['0.1', '0.3', '1']
 
-# ntrees = ['300']
+# ntrees = ['25']
 # maxdepth = ['3']
-# boosttypes=['Grad']
-# shrinkage=['0.1']
-
+# boosttypes = ['Grad']
+# shrinkage = [ '1']
+ 
 def getOutFileName(signal_name):
     if args.cutString is None:
         return os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'training', eras+args.year, 
@@ -58,7 +64,7 @@ def getOutFileName(signal_name):
                             args.region+'-'+args.selection, out_cut_str, signal_name, signal_name+'.root'))        
 
 
-if not any([args.isChild, args.plots, args.plotDetailedMVA]):
+if not any([args.isChild, args.plots, args.plotDetailedMVA, args.saveTrainings]):
     if args.batchSystem != 'foreground': 
         jobs = []
         for signal in ih.signal_names:
@@ -196,3 +202,41 @@ if args.plotDetailedMVA:
         
         p = Plot(list_of_hist, list_of_names, signal, "MVA score", "Events", year='all', era='prelegacy', color_palette='Large')
         p.drawHist(output_dir = getOutFileName(signal).rsplit('/', 1)[0]+'/DetailedPlots', draw_option='Stack')
+
+if args.saveTrainings is not None:
+    base_folder = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'FinalTrainings', args.saveTrainings)
+    makeDirIfNeeded(os.path.join(base_folder, 'x'))
+
+    confirmation_message = raw_input("This will store the MVA as defined in the reader into the folder to use them in the rest of the code. Have you properly defined those? (y/n) ")
+    if confirmation_message not in ['y', 'Y']: exit(0)
+    from HNL.TMVA.mvaDefinitions import  MVA_dict
+
+    # Check if there are already weights stored
+    existing_files = [signal for signal in ih.signal_names if os.path.isfile(os.path.join(base_folder, signal+'.xml'))]
+    if len(existing_files) != 0:
+        warning_message = raw_input("Weight files are already defined for: \n \n  "+ '\n'.join(existing_files) + "\n\n Are you sure you want to overwrite these? (y/n) ")
+        if warning_message not in ['y', 'Y']: exit(0)
+
+    for signal in ih.signal_names:
+        # Open a text file to save information about the training for posterity
+        info_file = open(os.path.join(base_folder, signal+'.txt'), 'w')
+        info_file.write(' '.join(['eras: \t \t', ' '.join(args.era), '\n']))
+        info_file.write(' '.join(['years: \t \t', args.year, '\n']))
+        info_file.write(' '.join(['region: \t \t', args.region, '\n']))
+        info_file.write(' '.join(['selection: \t \t', args.selection, '\n']))
+        info_file.write(' '.join(['cut string: \t \t', str(args.cutString), '\n']))
+        info_file.write(' '.join(['training: \t \t', MVA_dict[signal][0], '\n']))
+        info_file.close()
+
+        #copy the weights file
+        if args.cutString is None:
+            os.system('scp '+os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'training', 
+                                            eras+'all', args.region+'-'+args.selection, signal, 'kBDT', 
+                                            'weights', 'factory_'+MVA_dict[signal][0]+'.weights.xml ') + ' '
+                            + os.path.join(base_folder, signal+'.xml'))
+        else:
+            os.system('scp '+os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'training', 
+                            eras+'all', args.region+'-'+args.selection, "".join(i for i in args.cutString if i not in "\/:*?<>|& "),
+                            signal, 'kBDT', 'weights', 'factory_'+MVA_dict[signal][0]+'.weights.xml') + ' '
+                            + os.path.join(base_folder, signal+'.xml'))
+
