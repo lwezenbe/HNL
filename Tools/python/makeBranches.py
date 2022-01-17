@@ -16,12 +16,24 @@ cType = {
     'l': 'ULong64_t',
     'O': 'Bool_t',
 }
+
+forbidden_characters = ['-']
+def removeAllForbiddenCharacters(original_name):
+    return ''.join([x for x in original_name if x not in forbidden_characters])
+
+
 #
 # Function to add new branches to a tree
 # the ProcessLine makes a new structure newVars that contains a sort of list of all branches as objects, as far as I understand
 #
 def makeBranches(tree, branches, already_defined=False):
     branches = [tuple(branch.split('/')) for branch in branches] 
+    for i, (name, t) in enumerate(sorted(branches)):
+        for fc in forbidden_characters:
+            if fc in name:  print "Forbidden character in name of new branch {0}. Changing name to {1}".format(name, removeAllForbiddenCharacters(name))
+            branches[i] = (removeAllForbiddenCharacters(name), t)
+            break
+
     if not already_defined: ROOT.gROOT.ProcessLine('struct newVars {' + ';'.join([cType[t] + ' ' + name for name, t in branches]) + ';};')
     
     from ROOT import newVars

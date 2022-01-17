@@ -45,6 +45,7 @@ class SearchRegionManager:
     # If not, no search regions are made and a single search region label is defined to which all events will be assigned
     #
     def getSearchRegion(self, chain):
+        print self.name
         if self.name == 'oldAN_lowMass':
             return getLowMassRegion(chain)
         elif self.name == 'oldAN_highMass':
@@ -67,6 +68,7 @@ region_groups['oldAN_lowMass'] = {
     'B' : [5, 6, 7, 8]
 }
 def getLowMassRegion(chain):
+    print chain.l_pt, chain.minMos
     if chain.l_pt[0] < 30:
         if chain.minMos < 10:
             return 1
@@ -165,27 +167,40 @@ from HNL.Plotting.plottingTools import extraTextFormat, drawLineFormat
 # plotGeneralGroups is a function that just makes bare plots without lines or extra text, it is meant to be used with tables when you're in a hurry
 #
 def plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, region_name, extra_text = None, sample_groups = False):
+    import HNL.Tools.histogram
     for group in region_groups[region_name].keys():
         group_signal_hist = [] 
         group_bkgr_hist = []
-        for ish, sh in enumerate(signal_hist):
-            group_signal_hist.append(ROOT.TH1D('tmp_signal_'+tex_names[ish]+'_'+group+out_path, 'tmp_signal', len(region_groups[region_name][group]), 0.5, len(region_groups[region_name][group])+0.5))
-            for ib, b in enumerate(region_groups[region_name][group]):
-                group_signal_hist[ish].SetBinContent(ib+1, sh.GetBinContent(b))
-                group_signal_hist[ish].SetBinError(ib+1, sh.GetBinError(b))
-
-        for ish, sh in enumerate(bkgr_hist):
-            group_bkgr_hist.append(ROOT.TH1D('tmp_bkgr_'+tex_names[ish]+'_'+group+out_path, 'tmp_bkgr', len(region_groups[region_name][group]), 0.5, len(region_groups[region_name][group])+0.5))
-            for ib, b in enumerate(region_groups[region_name][group]):
-                group_bkgr_hist[ish].SetBinContent(ib+1, sh.GetBinContent(b))
-                group_bkgr_hist[ish].SetBinError(ib+1, sh.GetBinError(b))
+        if signal_hist is not None:
+            for ish, sh in enumerate(signal_hist):
+                group_signal_hist.append(ROOT.TH1D('tmp_signal_'+tex_names[ish]+'_'+group+out_path, 'tmp_signal', len(region_groups[region_name][group]), 0.5, len(region_groups[region_name][group])+0.5))
+                for ib, b in enumerate(region_groups[region_name][group]):
+                    if isinstance(sh, HNL.Tools.histogram.Histogram):
+                        group_signal_hist[ish].SetBinContent(ib+1, sh.getHist().GetBinContent(b))
+                        group_signal_hist[ish].SetBinError(ib+1, sh.getHist().GetBinError(b))
+                    else:
+                        group_signal_hist[ish].SetBinContent(ib+1, sh.GetBinContent(b))
+                        group_signal_hist[ish].SetBinError(ib+1, sh.GetBinError(b))                        
+        
+        if bkgr_hist is not None:
+            for ish, sh in enumerate(bkgr_hist):
+                group_bkgr_hist.append(ROOT.TH1D('tmp_bkgr_'+tex_names[ish]+'_'+group+out_path, 'tmp_bkgr', len(region_groups[region_name][group]), 0.5, len(region_groups[region_name][group])+0.5))
+                for ib, b in enumerate(region_groups[region_name][group]):
+                    if isinstance(sh, HNL.Tools.histogram.Histogram):
+                        group_bkgr_hist[ish].SetBinContent(ib+1, sh.getHist().GetBinContent(b))
+                        group_bkgr_hist[ish].SetBinError(ib+1, sh.getHist().GetBinError(b))
+                    else:
+                        group_bkgr_hist[ish].SetBinContent(ib+1, sh.GetBinContent(b))
+                        group_bkgr_hist[ish].SetBinError(ib+1, sh.GetBinError(b))                        
         
         draw_ratio = 'errorsOnly' if len(group_signal_hist) > 0 and len(group_bkgr_hist) > 0 else None
         if sample_groups:
-            p = Plot(group_signal_hist, tex_names, bkgr_hist = group_bkgr_hist, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, 
+            # p = Plot(group_signal_hist if len(group_signal_hist) > 0 else None, tex_names, bkgr_hist = group_bkgr_hist if len(group_bkgr_hist) > 0 else None, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, 
+                # extra_text = extra_text, color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = draw_ratio)
+            p = Plot(group_signal_hist if len(group_signal_hist) > 0 else None, tex_names, bkgr_hist = group_bkgr_hist if len(group_bkgr_hist) > 0 else None, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, 
                 extra_text = extra_text, color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = draw_ratio)
         else:
-            p = Plot(group_signal_hist, tex_names, bkgr_hist = group_bkgr_hist, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, 
+            p = Plot(group_signal_hist if len(group_signal_hist) > 0 else None, tex_names, bkgr_hist = group_bkgr_hist if len(group_bkgr_hist) > 0 else None, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, 
                 extra_text = extra_text, syst_hist = 0.1, draw_ratio = draw_ratio)
         p.drawHist(output_dir = out_path, min_cutoff = 1.)
 
@@ -214,7 +229,7 @@ def plotLowMassRegions(signal_hist, bkgr_hist, tex_names, out_path, extra_text =
     # Custom labels
     custom_labels = ['0-10', '10-20', '20-30', '> 30']*2
 
-    draw_ratio = 'errorsOnly' if len(signal_hist) > 0 and len(bkgr_hist) > 0 else None
+    draw_ratio = 'errorsOnly' if signal_hist is not None and bkgr_hist is not None else None
     if sample_groups:
         p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'M_{2lOS}^{min} [GeV]', y_name = 'Events', extra_text = extra_text, y_log=True, 
             color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = draw_ratio)
@@ -230,14 +245,14 @@ def plotHighMassRegions(signal_hist, bkgr_hist, tex_names, out_path, extra_text 
 
     plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, 'oldAN_highMass', extra_text = extra_text, sample_groups = sample_groups)
     
-    draw_ratio = 'errorsOnly' if len(signal_hist) > 0 and len(bkgr_hist) > 0 else None
+    draw_ratio = 'errorsOnly' if signal_hist is not None and bkgr_hist is not None else None
     if sample_groups:
         p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text, 
             color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = draw_ratio)
     else:
         p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, 
             extra_text = extra_text, syst_hist = 0.1, draw_ratio = draw_ratio)
-    p.drawHist(output_dir = out_path, min_cutoff = 1.)
+    p.drawHist(output_dir = out_path, min_cutoff = 1., bkgr_draw_option="HistText")
                     
 class RegionCollection:
 

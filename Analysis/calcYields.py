@@ -716,7 +716,7 @@ else:
                     elif len(filtered_hist) == 1:
                         return filtered_hist[0]
                     else:
-                        new_hist = filtered_hist[0]
+                        new_hist = filtered_hist[0].Clone('new_hist')
                         for h in filtered_hist[1:]:
                             new_hist.Add(h)
                         return new_hist

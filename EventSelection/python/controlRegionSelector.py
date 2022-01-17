@@ -43,9 +43,12 @@ class WZCRfilter(FilterObject):
         return super(WZCRfilter, self).initEvent(3, cutter, sort_leptons = True, sideband = sideband)
 
     def passedFilter(self, cutter, kwargs={}):
-        from HNL.EventSelection.eventFilters import passedFilterWZCR
+        from HNL.EventSelection.eventFilters import passedFilterWZCR, passedFilterWZCRewkino
         if not self.initEvent(cutter, sideband=kwargs.get('sideband', None)):                                                 return False
-        if not passedFilterWZCR(self.chain, self.new_chain, is_reco_level = self.is_reco_level, cutter = cutter):                    return False
+        if self.chain.analysis != 'ewkino':
+            if not passedFilterWZCR(self.chain, self.new_chain, is_reco_level = self.is_reco_level, cutter = cutter):                    return False
+        else:
+            if not passedFilterWZCRewkino(self.chain, self.new_chain, is_reco_level = self.is_reco_level, cutter = cutter):                    return False
         return True
 
 class ConversionCRfilter(FilterObject):

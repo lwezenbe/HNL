@@ -117,6 +117,24 @@ def passedFilterWZCR(chain, new_chain, is_reco_level, cutter):
     if not cutter.cut(abs(new_chain.M3l-MZ) > 15, 'M3l_Z_veto'):    return False 
     return True
 
+def passedFilterWZCRewkino(chain, new_chain, is_reco_level, cutter):
+    if not cutter.cut(abs(new_chain.MZossf-MZ) < 15, 'On Z OSSF'):              return False
+    # if not cutter.cut(not passesZcuts(chain, new_chain, same_flavor=True), 'On Z OSSF'):              return False
+    if not cutter.cut(not bVeto(chain), 'b-veto'):                 return False
+    if not cutter.cut(new_chain.l_pt[l1] > 25, 'l1pt>25'):          return False
+    if new_chain.l_flavor[l2] == 1:
+        if not cutter.cut(new_chain.l_pt[l2] > 10, 'l2pt>10'):          return False
+    else:
+        if not cutter.cut(new_chain.l_pt[l2] > 15, 'l2pt>15'):          return False
+    if not cutter.cut(new_chain.l_pt[l3] > 10, 'l3pt>10'):          return False
+    if is_reco_level:
+        if not cutter.cut(100. > chain._met > 50., '100 > MET > 50'):             return False
+    else:
+        if not cutter.cut(100. > chain._gen_met > 50, '100 > MET > 50'):         return False
+    if not cutter.cut(abs(new_chain.M3l-MZ) > 15, 'M3l_Z_veto'):    return False 
+    if not cutter.cut(100. > new_chain.mtNonZossf > 50, 'MT cut'):    return False 
+    return True
+
 def passedFilterConversionCR(chain, new_chain, cutter):
     if not cutter.cut(containsOSSF(chain), 'OSSF present'):         return False
     if not cutter.cut(abs(new_chain.M3l-MZ) < 15, 'M3l_onZ'):       return False 

@@ -47,7 +47,7 @@ class SignalRegionSelector(FilterObject):
 
         if not self.initEvent(cutter, sideband=sideband): return False
 
-        if not self.is_reco_level:  return True #It has passed the basic selection
+        # if not self.is_reco_level:  return True #It has passed the basic selection
 
         if not self.passedStandaloneFilter(cutter, self.region, kwargs): return False
 

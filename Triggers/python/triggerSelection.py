@@ -222,6 +222,8 @@ def passOfflineThresholds(chain, new_chain, analysis):
         if '2016' in chain.year: return offlineThresholds2016(chain, new_chain)
         if chain.year == '2017': return offlineThresholds2017(chain, new_chain)
         if chain.year == '2018': return offlineThresholds2018(chain, new_chain)
+    elif analysis == 'ewkino':
+        return True
     
     else:
         raise RuntimeError('No known offline thresholds for analysis {}'.format(analysis))
