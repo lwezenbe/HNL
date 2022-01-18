@@ -348,6 +348,7 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
 
     #MTother
     chain.index_other = [item for item in [0, 1, 2] if item not in min_os][0] if min_os is not None else None
+    chain.index_nonZossf = [item for item in [0, 1, 2] if item not in z_ossf][0] if z_ossf is not None else None
 
     if chain.index_other is not None:
         if is_reco_level:    
@@ -366,6 +367,16 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
         new_chain.mtOther = -1
         new_chain.mtl1 = -1
         new_chain.mtl2 = -1
+
+    if chain.index_nonZossf is not None:
+        if is_reco_level:    
+            new_chain.mtNonZossf = np.sqrt(2*chain._met*new_chain.l_pt[chain.index_nonZossf]*(1-np.cos(deltaPhi(new_chain.l_phi[chain.index_nonZossf], chain._metPhi))))
+        else:
+            new_chain.mtNonZossf = np.sqrt(2*chain._gen_met*new_chain.l_pt[chain.index_nonZossf]*(1-np.cos(deltaPhi(new_chain.l_phi[chain.index_nonZossf], chain._gen_metPhi))))
+    else:
+        new_chain.mtNonZossf = -1
+
+
     #MT3 
     new_chain.mt3 = (l1Vec+l2Vec+l3Vec+metVec).Mt()
 

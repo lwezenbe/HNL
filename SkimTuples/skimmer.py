@@ -104,10 +104,6 @@ if not args.checkLogs:
     chain = sample.initTree(int(args.subJob))
     # print sample.list_of_subjobclusters
 
-
-    chain.year = args.year
-    chain.era = args.era
-    chain.analysis = args.analysis
     chain.is_signal = 'HNL' in sample.name
 
     #
@@ -212,6 +208,9 @@ if not args.checkLogs:
     #prepare object  and event selection
     from HNL.ObjectSelection.objectSelection import objectSelectionCollection, getObjectSelection
     if args.region is None:
+        chain.year = args.year
+        chain.era = args.era
+        chain.analysis = args.analysis
         if args.skimSelection == 'Old':
             chain.obj_sel = objectSelectionCollection('HNL', 'cutbased', 'loose', 'loose', 'loose', True, analysis=args.analysis)
         elif args.skimSelection in ['Luka', 'LukaFR']:
@@ -221,22 +220,23 @@ if not args.checkLogs:
         else:
             chain.obj_sel = objectSelectionCollection('HNL', 'HNL', 'loose', 'loose', 'loose', False, analysis=args.analysis)
 
-    from HNL.Weights.tauEnergyScale import TauEnergyScale
-    chain.tau_energy_scale = TauEnergyScale(chain.era, chain.year, chain.obj_sel['tau_algo'])
-
-
     from HNL.Tools.helpers import progress
     from HNL.EventSelection.eventSelectionTools import selectLeptonsGeneral, selectGenLeptonsGeneral, translateForTraining
     from HNL.EventSelection.event import Event
     if args.region is not None:
-        event = Event(chain, new_vars, is_reco_level=not args.genSkim, selection=args.skimSelection, strategy=args.strategy, region=args.region)
+        event = Event(chain, new_vars, is_reco_level=not args.genSkim, selection=args.skimSelection, strategy=args.strategy, region=args.region, year = args.year, era = args.era, analysis = args.analysis)
         chain.selection = args.skimSelection
         chain.region = args.region
         chain.strategy = 'MVA' if args.region != 'AN2017014' else 'cutbased'
 
+    
+    from HNL.Weights.tauEnergyScale import TauEnergyScale
+    chain.tau_energy_scale = TauEnergyScale(chain.era, chain.year, chain.obj_sel['tau_algo'])
+
     for entry in event_range:
         chain.GetEntry(entry)
-        if args.isTest: progress(entry - event_range[0], len(event_range))
+        progress(entry - event_range[0], len(event_range))
+        # if args.isTest: progress(entry - event_range[0], len(event_range))
     
         cutter.cut(True, 'Total')
 

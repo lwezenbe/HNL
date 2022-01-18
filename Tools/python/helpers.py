@@ -29,10 +29,31 @@ def getObjFromFile(fname, hname):
         htmp = f.Get(hname)
         if not htmp: return None
         ROOT.gDirectory.cd('PyROOT:/')
-        res = htmp.Clone()
+        if isinstance(htmp, ROOT.TTree):
+            res = htmp.CloneTree()
+        else:
+            res = htmp.Clone()
         return res
     finally:
         f.Close()
+
+def getHistFromTree(tree, vname, hname, bins, condition):
+    ROOT.gROOT.SetBatch(True)
+    # print ROOT.gROOT.pwd()
+
+    htmp = ROOT.TH1D(hname, hname, len(bins)-1, bins)
+    tree.Draw(vname+">>"+hname, condition+'*weight')
+    if not htmp: return None
+    ROOT.gDirectory.cd('PyROOT:/')
+    res = htmp.Clone()
+    #Add overflow and underflow bins
+    overflow=ROOT.TH1D(hname+'overflow', hname+'overflow', len(bins)-1, bins)
+    overflow.SetBinContent(1, htmp.GetBinContent(0))
+    overflow.SetBinContent(len(bins)-1, htmp.GetBinContent(len(bins)))
+    overflow.SetBinError(1, htmp.GetBinError(0))
+    overflow.SetBinError(len(bins)-1, htmp.GetBinError(len(bins)))
+    res.Add(overflow)
+    return res
 
 def loadtxtCstyle(source):
     arr = loadtxt(source)

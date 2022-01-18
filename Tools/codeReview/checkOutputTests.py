@@ -2,20 +2,27 @@ BASE_FOLDER = "/user/lwezenbe/Testing/"
 
 import glob
 import os
-from ROOT import TFile
+from ROOT import TFile, TTree
 from HNL.Tools.helpers import rootFileContent, getObjFromFile, makeDirIfNeeded
 from HNL.Tools.histogram import Histogram
 # import uproot
 
-def compareHist(path, name, withinerrors=False):
-    hist_prev = Histogram(getObjFromFile(path, name))
+def loadObjects(path, name):
+    obj_prev = getObjFromFile(path, name)
     try:
-        hist_latest_base_object  = getObjFromFile(path.replace("Previous", "Latest"), name)
+        obj_latest  = getObjFromFile(path.replace("Previous", "Latest"), name)
     except:
         return "Error while trying to access file with path {}".format(path.replace("Previous", "Latest"))
-    if hist_latest_base_object is None:
+    if obj_latest is None:
         return "Histogram with name '{0}' in file '{1}' is not present in Latest test".format(name, path)
-    hist_latest = Histogram(hist_latest_base_object)
+    return obj_prev, obj_latest
+
+
+def compareHist(hist_prev, hist_latest, withinerrors=False):
+    if not isinstance(hist_prev, Histogram):
+        hist_prev = Histogram(hist_prev)
+    if not isinstance(hist_latest, Histogram):
+        hist_latest = Histogram(hist_latest)
 
     if hist_prev.isTH2 and not hist_latest.isTH2:
         return "Histograms are different type"
@@ -43,18 +50,57 @@ def compareHist(path, name, withinerrors=False):
         for xb in xrange(1, x_bins+1):
             if not withinerrors:
                 if hist_prev.getHist().GetBinContent(xb) != hist_latest.getHist().GetBinContent(xb):
-                    we = compareHist(path, name, withinerrors=True)
+                    we = compareHist(hist_prev, hist_latest, withinerrors=True)
                     if we is None:
-                        return "Different content values in bin {0} \t \t \t WITHIN ERROR FOR ALL BINS".format(xb)
+                        return "Different content values in bin {0} \t \t \t WITHIN ERROR FOR ALL BINS. \n \t {1} +- {2} \t ---> \t {3} +- {4}".format(xb, hist_prev.getHist().GetMean(), hist_prev.getHist().GetMeanError(), hist_latest.getHist().GetMean(), hist_latest.getHist().GetMeanError())
                     else:
-                        return "Different content values in bin {0}".format(xb)
+                        return "Different content values in bin {0} \n \t {1} +- {2} \t ---> \t {3} +- {4}".format(xb, hist_prev.getHist().GetMean(), hist_prev.getHist().GetMeanError(), hist_latest.getHist().GetMean(), hist_latest.getHist().GetMeanError())
                 if hist_prev.getHist().GetBinError(xb) != hist_latest.getHist().GetBinError(xb):
-                    return "Different error values in bin {0}".format(xb)
+                    return "Different error values in bin {0} \n \t {1} +- {2} \t ---> \t {3} +- {4}".format(xb, hist_prev.getHist().GetMean(), hist_prev.getHist().GetMeanError(), hist_latest.getHist().GetMean(), hist_latest.getHist().GetMeanError())
             elif hist_prev.getHist().GetBinError(xb) > 0:
                 if abs( hist_prev.getHist().GetBinContent(xb)-hist_latest.getHist().GetBinContent(xb))/hist_prev.getHist().GetBinError(xb) > 1:
                     return  "Out of error bounds"
 
     return None
+
+def compareTrees(tree_prev, tree_latest, withinerrors=False):
+    branches_prev = tree_prev.GetListOfBranches()
+    branches_latest = tree_latest.GetListOfBranches()
+    branches_latest_names = [x.GetName() for x in branches_latest]
+
+    changed_branches = []
+
+    for b in branches:
+        if b.GetName() not in branches_latest_names: 
+            changed_branches.append('\t'+b.GetName() + ' not in new tree')
+            continue
+        tree_prev.Draw(b.GetName()+'>>tmp_prev')
+        tree_latest.Draw(b.GetName()+'>>tmp_latest')
+        mean_prev = ROOT.gDirectory.Get('tmp_prev').GetMean()
+        err_prev = ROOT.gDirectory.Get('tmp_prev').GetMeanError()   
+        mean_latest = ROOT.gDirectory.Get('tmp_latest').GetMean()
+        err_latest = ROOT.gDirectory.Get('tmp_latest').GetMeanError()
+
+        if mean_prev != mean_latest:
+            if withinerrors and abs(mean_prev-mean_latest) < err_prev:
+                continue
+            else:
+                changed_branches.append('\t {0}: \t {1} +- {2} \t ---> \t {3} +- {4}'.format(b.GetName(), mean_prev, err_prev, mean_latest, err_latest))
+    
+    if len(changed_branches) == 0:
+        return None
+    else:
+        return  ' \n '.join(changed_branches)
+
+def compareObjects(obj_prev, obj_latest, withinerrors=False):
+    if type(obj_prev) != type(obj_latest):
+        raise RuntimeError("Types of two objects to compare is different: {0} and {1}".format(type(obj_prev), type(obj_latest)))
+
+    if isinstance(obj_prev, TTree):
+        return compareTrees(obj_prev, obj_latest, withinerrors = withinerrors)
+    else:
+        return compareHist(obj_prev, obj_latest, withinerrors = withinerrors)
+    
 
 def plotComparison(path, name):
     if getObjFromFile(path.replace("Previous", "Latest"), name) is None: return
@@ -129,14 +175,18 @@ def compareFiles(f, withinerrors=False):
     everything_clear = True
     faulty_hn = []
     for hn in list_of_hist_names:
-        test_result = compareHist(f, hn)
+        obj_prev, obj_latest = loadObjects(f, hn)
+        test_result = compareHist(obj_prev, obj_latest)
         if test_result is not None:
             if withinerrors and 'WITHIN ERROR' in test_result:
                 continue
             everything_clear = False
             out_file.write(hn+': '+test_result+'\n')
             faulty_hn.append('\t ' +hn+': '+test_result+'\n')
-            plotComparison(f, hn)
+            try:
+                plotComparison(f, hn)
+            except:
+                pass
 
     if everything_clear:
         out_file.write("EVERYTHING CLEAR")

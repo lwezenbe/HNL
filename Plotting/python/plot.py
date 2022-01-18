@@ -419,10 +419,12 @@ class Plot:
         self.line.SetLineWidth(1)
         self.line.SetLineStyle(3)
 
+        draw_text = 'EPSame'
+        if self.draw_ratio == 'text': draw_text += 'Text'
         if not just_errors and len(ratios) > 0:
-            ratios[0].Draw('EPSame')
-            for r in ratios[1:]:
-                r.Draw('EPSame')
+            for r in ratios:
+                r.SetMarkerSize(1.)
+                r.Draw(draw_text)
 
        
         self.line.Draw()
@@ -438,6 +440,23 @@ class Plot:
         self.ratio_legend.SetFillStyle(0)
         self.ratio_legend.SetBorderSize(0)
         self.ratio_legend.Draw()
+
+        if len(ratios) == 1:
+            extra_text = ROOT.TLatex()
+            avg = 0.
+            nbins = ratios[0].GetNbinsX()
+            full_range = ratios[0].GetBinLowEdge(nbins + 1) - ratios[0].GetBinLowEdge(1)
+            for b in xrange(1, nbins + 1):
+                if ratios[0].GetBinContent(b) == 0.:
+                    full_range -= ratios[0].GetBinLowEdge(b+1) - ratios[0].GetBinLowEdge(b)
+                else:
+                    avg += ratios[0].GetBinContent(b) * (ratios[0].GetBinLowEdge(b+1) - ratios[0].GetBinLowEdge(b))
+            if full_range > 0.: 
+                avg /= full_range
+                extra_text_string = "Avg. Rat. = {0}".format(avg)
+                extra_text.SetNDC()
+                extra_text.SetTextSize(0.1)
+                extra_text.DrawLatex(0.55, 0.75, extra_text_string)
         
         self.ratio_pad.Update() 
         self.canvas.cd() 
@@ -611,8 +630,12 @@ class Plot:
         if isinstance(self.x_name, list):
             raise RuntimeError('invalid x_names')
 
-        if custom_labels is not None and len(custom_labels) != self.s[0].GetNbinsX():
-            raise RuntimeError("Inconsistent number of bins ("+str(self.s[0].GetNbinsX())+") compared to number of labels given ("+len(custom_labels)+")")
+        try:
+            if custom_labels is not None and len(custom_labels) != self.s[0].GetNbinsX():
+                raise RuntimeError("Inconsistent number of bins ("+str(self.s[0].GetNbinsX())+") compared to number of labels given ("+len(custom_labels)+")")
+        except:
+            if custom_labels is not None and len(custom_labels) != self.b[0].GetNbinsX():
+                raise RuntimeError("Inconsistent number of bins ("+str(self.b[0].GetNbinsX())+") compared to number of labels given ("+len(custom_labels)+")")
 
         if draw_option == 'Stack' and len(self.b) > 0:
             raise RuntimeError('The "Stack" option for signal is meant to be used when there is no background. In case of background, input the hist to stack as background.')

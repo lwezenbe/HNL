@@ -199,7 +199,14 @@ class Histogram:
         self.hist.Divide(other_histogram.getHist())
 
     def add(self, other_histogram):
-        self.hist.Add(other_histogram.getHist())
+        tmp_other_histogram = other_histogram.clone('other_hist_clone')
+        self.hist.Add(tmp_other_histogram.getHist())
+
+    def getYieldHistogram(self):
+        tmp_hist = ROOT.TH1D('totalyield', 'total yield', 1, 0, 1)
+        tmp_hist.SetBinContent(1, self.hist.GetSumOfWeights())
+        tmp_hist.SetBinError(1, self.hist.GetMeanError())
+        return Histogram(tmp_hist)
 
 def returnSqrt(th1):
     sqrt = th1.Clone('sqrt')
