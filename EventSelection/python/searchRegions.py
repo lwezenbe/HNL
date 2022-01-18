@@ -45,7 +45,6 @@ class SearchRegionManager:
     # If not, no search regions are made and a single search region label is defined to which all events will be assigned
     #
     def getSearchRegion(self, chain):
-        print self.name
         if self.name == 'oldAN_lowMass':
             return getLowMassRegion(chain)
         elif self.name == 'oldAN_highMass':
