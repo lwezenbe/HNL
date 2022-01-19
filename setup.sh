@@ -23,6 +23,14 @@ git clone https://github.com/cms-tau-pog/TauIDSFs TauPOG/TauIDSFs
 cd TauPOG
 scram b -j10
 
+#setup of correctionlibtool
+cd -
+git clone --recursive git@github.com:cms-nanoAOD/correctionlib.git
+cd correctionlib
+make PYTHON=python2
+make install PREFIX=../HNL/Weights/python/correctionlib
+scram b -j10
+
 cd -
 python3 -m pip install git+https://github.com/cms-nanoAOD/correctionlib.git
 git clone https://github.com/lwezenbe/HNL
