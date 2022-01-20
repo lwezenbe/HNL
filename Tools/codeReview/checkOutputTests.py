@@ -244,7 +244,7 @@ def checkAllOutput(withinerrors=False):
 def copyFiles():
     os.system('rm -r '+BASE_FOLDER+'Previous/*')
     os.system('rm -r '+BASE_FOLDER+'Plots/*')
-    os.system('rm -r '+BASE_FOLDER+'LOGS/*')
+    os.system('rm -r '+BASE_FOLDER+'LOG/*')
 
     subdir_list = glob.glob(BASE_FOLDER+'Latest/*')
     subdir_list = [s.split('/')[-1] for s in subdir_list]
