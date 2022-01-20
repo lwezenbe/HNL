@@ -494,7 +494,6 @@ else:
 
                 for b in bkgr_list:
                     bkgr = b.split('/')[-1]
-                    if not 'ZZ' in bkgr: continue
                     if 'QCD' in bkgr: continue
                     infile = TFile(b+'/variables.root', 'read')
                     intree = infile.Get('events') 
@@ -516,7 +515,6 @@ else:
                                     del(tmp_hist)
                             else:
                                 tmp_hist = Histogram(getHistFromTree(intree, v, 'tmp_'+bkgr+v+str(c)+'t', var_dict[v][1], cc))
-                                print tmp_hist.getHist().GetSumOfWeights()
                                 tmp_list_of_hist[c][v]['bkgr'][bkgr].add(tmp_hist)
                                 del(tmp_hist)
                     infile.Close()
