@@ -146,7 +146,8 @@ SUPER_CATEGORIES = {
     'SingleTau' : [5, 6, 7, 8, 9], 
     'NoTau' : [11, 12, 13, 14, 15, 16], 
     'Total': [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16], 
-    'TauFinalStates': [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    'TauFinalStates': [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    'Other': [17]
     }
 mutual_exclusive_supercategories = ['Ditau', 'SingleTau', 'NoTau']
 

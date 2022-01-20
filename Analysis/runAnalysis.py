@@ -356,6 +356,10 @@ if not args.makePlots and not args.makeDataCards:
         out_file.Close()
 
         cutter.saveCutFlow(output_name_full +writename+subjobAppendix+ '.root')
+        
+        if args.isTest:
+            from HNL.Tools.helpers import copyFileToTestingArea
+            copyFileToTestingArea(output_name_full +writename+subjobAppendix+ '.root', arg_string)
 
     closeLogger(log)
 
@@ -490,6 +494,7 @@ else:
 
                 for b in bkgr_list:
                     bkgr = b.split('/')[-1]
+                    if not 'ZZ' in bkgr: continue
                     if 'QCD' in bkgr: continue
                     infile = TFile(b+'/variables.root', 'read')
                     intree = infile.Get('events') 
@@ -511,6 +516,7 @@ else:
                                     del(tmp_hist)
                             else:
                                 tmp_hist = Histogram(getHistFromTree(intree, v, 'tmp_'+bkgr+v+str(c)+'t', var_dict[v][1], cc))
+                                print tmp_hist.getHist().GetSumOfWeights()
                                 tmp_list_of_hist[c][v]['bkgr'][bkgr].add(tmp_hist)
                                 del(tmp_hist)
                     infile.Close()
@@ -521,7 +527,8 @@ else:
                             tmp_list_of_hist[c][v]['bkgr']['non-prompt'].add(list_of_hist[c][v]['data']['sideband'])
 
             return tmp_list_of_hist
-
+        
+        print "Creating list of histograms"
         list_of_hist = createVariableDistributions(category_dict[args.categoriesToPlot], var, signal_list, bkgr_list, data_list)
 
         #

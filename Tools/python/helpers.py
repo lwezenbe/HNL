@@ -325,3 +325,16 @@ def calculateSignificance(hist1, hist2, cumulative=False):
     num.Divide(sqrtTot)
 
     return num
+
+def copyFileToTestingArea(original_path, arg_string):
+    split_path = original_path.split('/')
+    index_to_use = split_path.index('testArea') + 1
+    #
+    # Have to hardcode because $HOME doesnt work on t2b condor
+    #
+    path_to_use = os.path.expandvars("/storage_mnt/storage/user/lwezenbe/Testing/Latest/"+'/'.join(split_path[index_to_use:-1])+'/'+arg_string+'/'+split_path[-1])
+    makeDirIfNeeded(path_to_use)
+    os.system('scp '+original_path+' '+path_to_use)
+
+
+
