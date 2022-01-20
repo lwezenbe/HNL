@@ -20,7 +20,7 @@ class Reweighter:
             self.puReweightingUp   = getReweightingFunction(sample.chain.era, sample.chain.year, 'up')
             self.puReweightingDown = getReweightingFunction(sample.chain.era, sample.chain.year, 'down')
 
-            # if self.sample.chain.era != 'prelegacy': self.btagReweighting = btagReweighter('Deep', self.sample.chain.era, self.sample.chain.year, 'loose', self.sample.chain.selection)
+            if self.sample.chain.era != 'prelegacy': self.btagReweighting = btagReweighter('Deep', self.sample.chain.era, self.sample.chain.year, 'loose', self.sample.chain.selection)
 
             self.electronSF = ElectronRecoSF(self.sample.chain.era, self.sample.chain.year)
 
@@ -70,7 +70,7 @@ class Reweighter:
         tot_weight *= self.getPUWeight()
         tot_weight *= self.getElectronRecoSF()
         tot_weight *= self.getTauSF()
-        # if self.sample.chain.era != 'prelegacy': tot_weight *= self.getBTagWeight() #TODO: reskim of prelegacy samples because _jetSmeared not available
+        if self.sample.chain.era != 'prelegacy': tot_weight *= self.getBTagWeight() #TODO: reskim of prelegacy samples because _jetSmeared not available
         if sideband:
             tot_weight *= self.getFakeRateWeight()
         return tot_weight
@@ -89,8 +89,9 @@ if __name__ == '__main__':
     sm = SampleManager(era, '2017', 'Reco', 'fulllist_{0}2017_mconly'.format(era))
     # sm = SampleManager(era, '2017', 'noskim', 'fulllist_{0}2017_mconly'.format(era))
 
-    s = sm.getSample('ZZTo4L')
+    # s = sm.getSample('ZZTo4L')
     # s = sm.getSample('HNL-mu-m40')
+    s = sm.getSample('ST-s-channel')
 
     chain = s.initTree()
     chain.GetEntry(5)
@@ -108,8 +109,8 @@ if __name__ == '__main__':
     print reweighter.getPUWeight() 
     print reweighter.getTotalWeight() 
 
-    # chain.GetEntry(7)
-    # print 'b-tag weight', reweighter.getBTagWeight()
+    chain.GetEntry(7)
+    print 'b-tag weight', reweighter.getBTagWeight()
     # print 'electron weight', reweighter.getElectronRecoSF()
     # print 'tau weight', reweighter.getTauSF()
 

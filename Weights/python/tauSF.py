@@ -34,7 +34,7 @@ class TauSF:
         self.sftool_iso = TauIDSFTool(YEARLIB[era+year], ISOLIB[algorithm], WPLIB[wp_iso])
         self.sftool_e = TauIDSFTool(YEARLIB[era+year], ELIB[getCorrespondingLightLepDiscr(algorithm)[0]],  WPLIB[wp_e])
         # self.sftool_mu = TauIDSFTool(YEARLIB[era+year], MULIB[getCorrespondingLightLepDiscr(algorithm)[1]],  WPLIB[wp_mu])
-        self.sftool_mu = TauIDSFTool(YEARLIB['prelegacy'+year.split('p')[0]], MULIB[getCorrespondingLightLepDiscr(algorithm)[1]],  WPLIB[wp_mu]) #For now use the prelegacy as adviced by TauPOG
+        self.sftool_mu = TauIDSFTool(YEARLIB['prelegacy'+year.split('p')[0]], MULIB[getCorrespondingLightLepDiscr(algorithm)[1]],  WPLIB[wp_mu]) #For now use the prelegacy as advised by TauPOG
 
     def getSF(self, chain, index):
         if chain._tauGenStatus[index] == 1 or chain._tauGenStatus[index] == 3:

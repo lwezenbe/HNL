@@ -28,13 +28,13 @@ WP_prelegacy = { ('2016', 'loose', 'CSV') : 0.2217,
         ('2018', 'tight', 'Deep') : 0.7264
         }
 
-WP_UL = { ('2016pre', 'loose', 'CSV') : None,
-        ('2016pre', 'medium', 'CSV') : None,
-        ('2016pre', 'tight', 'CSV') : None,
+WP_UL = { ('2016pre', 'loose', 'CSV') : 0.1355,
+        ('2016pre', 'medium', 'CSV') : 0.4506,
+        ('2016pre', 'tight', 'CSV') : 0.7738,
         
-        ('2016post', 'loose', 'CSV') : None,
-        ('2016post', 'medium', 'CSV') : None,
-        ('2016post', 'tight', 'CSV') : None,
+        ('2016post', 'loose', 'CSV') : 0.1918,
+        ('2016post', 'medium', 'CSV') : 0.5847,
+        ('2016post', 'tight', 'CSV') : 0.8767,
         
         ('2017', 'loose', 'CSV') : 0.1355,
         ('2017', 'medium', 'CSV') : 0.4506,
@@ -49,13 +49,13 @@ WP_UL = { ('2016pre', 'loose', 'CSV') : None,
         ('2017', 'loose', 'AN2017014') : 0.5803,              #This number was copied from ewkino, 2017 was not used in AN2017014
         ('2018', 'loose', 'AN2017014') : 0.5803,              #This number was copied from ewkino, 2018 was not used in AN2017014
 
-        ('2016pre', 'loose', 'Deep') : None,
-        ('2016pre', 'medium', 'Deep') : None,
-        ('2016pre', 'tight', 'Deep') : None,
+        ('2016pre', 'loose', 'Deep') : 0.0532,
+        ('2016pre', 'medium', 'Deep') : 0.3040,
+        ('2016pre', 'tight', 'Deep') : 0.7476,
 
-        ('2016post', 'loose', 'Deep') : None,
-        ('2016post', 'medium', 'Deep') : None,
-        ('2016post', 'tight', 'Deep') : None,
+        ('2016post', 'loose', 'Deep') : 0.0480,
+        ('2016post', 'medium', 'Deep') : 0.2489,
+        ('2016post', 'tight', 'Deep') : 0.6377,
 
         ('2017', 'loose', 'Deep') : 0.0532,
         ('2017', 'medium', 'Deep') : 0.3040,
