@@ -234,6 +234,8 @@ if not args.checkLogs:
     chain.tau_energy_scale = TauEnergyScale(chain.era, chain.year, chain.obj_sel['tau_algo'])
 
     for entry in event_range:
+        if entry == 103675: continue
+
         chain.GetEntry(entry)
         progress(entry - event_range[0], len(event_range))
         # if args.isTest: progress(entry - event_range[0], len(event_range))

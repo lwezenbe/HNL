@@ -99,7 +99,8 @@ def getSampleManager(y):
 
 if args.isTest:
     if args.year is None: args.year = '2016'
-    if args.sample is None and not args.makePlots: args.sample = 'DYJetsToLL-M-50'
+    if args.sample is None and not args.makePlots: 
+        args.sample = 'DYJetsToLL-M-50' if not args.region == 'ZZCR' else 'ZZTo4L'
     args.isChild = True
     if args.subJob is None: args.subJob = '0'
     from HNL.Tools.helpers import generateArgString

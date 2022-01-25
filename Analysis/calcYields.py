@@ -74,7 +74,8 @@ if args.includeData and args.region in ['baseline', 'highMassSR', 'lowMassSR']:
 if args.isTest:
     args.isChild = True
 
-    if args.sample is None: args.sample = 'DYJetsToLL-M-50'
+    if args.sample is None: 
+       args.sample = 'DYJetsToLL-M-50' if not args.region == 'ZZCR' else 'ZZTo4L'
     if args.subJob is None: args.subJob = '0'
     if args.year is None: args.year = '2016'
     from HNL.Tools.helpers import generateArgString

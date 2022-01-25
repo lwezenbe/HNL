@@ -3,6 +3,7 @@ import numpy as np
 l1 = 0
 l2 = 1
 l3 = 2
+l4 = 3
 
 var_gen_3l = {'minMos':        (lambda c : c.minMos,   np.arange(0., 120., 12.),         ('min(M_{OS}) [GeV]', 'Events')),
         'm3l':          (lambda c : c.M3l,      np.arange(0., 240., 5.),         ('M_{3l} [GeV]', 'Events')),
@@ -105,6 +106,27 @@ var_reco_4l = {
         # 'ptConeLeading':   (lambda c : c.pt_cone[0],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(leading) [GeV]', 'Events'))
     }
 
+var_gen_4l = {'minMos':        (lambda c : c.minMos,   np.arange(0., 120., 12.),         ('min(M_{OS}) [GeV]', 'Events')),
+        'm4l':          (lambda c : c.M4l,      np.arange(0., 240., 5.),         ('M_{4l} [GeV]', 'Events')),
+        'met':          (lambda c : c._gen_met,     np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
+        'l1pt':      (lambda c : c.l_pt[l1],       np.arange(0., 300., 5.),       ('p_{T} (l1) [GeV]', 'Events')),
+        'l2pt':      (lambda c : c.l_pt[l2],       np.arange(0., 300., 5.),       ('p_{T} (l2) [GeV]', 'Events')),
+        'l3pt':      (lambda c : c.l_pt[l3],       np.arange(0., 300., 5.),       ('p_{T} (l3) [GeV]', 'Events')),
+        'l4pt':      (lambda c : c.l_pt[l4],       np.arange(0., 300., 5.),       ('p_{T} (l4) [GeV]', 'Events')),
+        'l1eta':      (lambda c : c.l_eta[l1],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l1)', 'Events')),
+        'l2eta':      (lambda c : c.l_eta[l2],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l2)', 'Events')),
+        'l3eta':      (lambda c : c.l_eta[l3],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l3)', 'Events')),
+        'l4eta':      (lambda c : c.l_eta[l4],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l4)', 'Events')),
+        'l1phi':      (lambda c : c.l_eta[l1],       np.arange(0, 3.0, 0.5),       ('#phi (l1)', 'Events')),
+        'l2phi':      (lambda c : c.l_eta[l2],       np.arange(0, 3.0, 0.5),       ('#phi (l2)', 'Events')),
+        'l3phi':      (lambda c : c.l_eta[l3],       np.arange(0, 3.0, 0.5),       ('#phi (l3)', 'Events')),
+        'l4phi':      (lambda c : c.l_eta[l4],       np.arange(0, 3.0, 0.5),       ('#phi (l4)', 'Events')),
+        # 'l1vispt':      (lambda c : c.l_vispt[l1],       np.arange(0., 100., 2.),       ('p_{T}^{vis} (l1) [GeV]', 'Events')),
+        # 'l2vispt':      (lambda c : c.l_vispt[l2],       np.arange(0., 100., 2.),       ('p_{T}^{vis} (l2) [GeV]', 'Events')),
+        # 'l3vispt':      (lambda c : c.l_vispt[l3],       np.arange(0., 100., 2.),       ('p_{T}^{vis} (l3) [GeV]' 'Events'))
+        }
+
+
 from HNL.TMVA.mvaDefinitions import MVA_dict
 
 var_noselection = {
@@ -115,11 +137,12 @@ var_noselection = {
 from HNL.Tools.helpers import mergeTwoDictionaries
 def returnVariables(nl, is_reco, include_mva = None):
         var_of_choice = None
-        if nl == 4:
-                var_of_choice = var_reco_4l
-        elif nl == 3:
-                if is_reco: var_of_choice = var_reco_3l
-                else: var_of_choice = var_gen_3l
+        if is_reco:
+            if nl == 4: var_of_choice = var_reco_4l
+            elif nl == 3: var_of_choice = var_reco_3l
+        else:
+            if nl == 3: var_of_choice = var_gen_3l
+            elif nl == 4: var_of_choice = var_gen_4l
 
         if include_mva is not None:
                 from HNL.TMVA.mvaDefinitions import MVA_dict,listAvailableMVAs
