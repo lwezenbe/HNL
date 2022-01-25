@@ -20,6 +20,8 @@ submission_parser.add_argument('--batchSystem',   action='store', default='HTCon
 submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--logLevel',  action='store', default='INFO', help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino'])
+
 
 argParser.add_argument('--makePlots', action='store_true', default=False,  help='Make plots.')
 
@@ -139,7 +141,7 @@ if not args.makePlots:
     #
     # Define event selection
     #
-    event = Event(chain, chain, is_reco_level=True, selection='default', strategy='MVA', region='NoSelection')    
+    event = Event(chain, chain, is_reco_level=True, selection='default', strategy='MVA', region='NoSelection', analysis=args.analysis, year = args.year, era = args.era)    
 
     #
     # Get luminosity weight
@@ -165,7 +167,7 @@ if not args.makePlots:
             for algo in all_algos:
                 for workingpoint in workingpoints:
                     passed = readBTagValue(chain, j, algo) > getBTagWP(chain.era, chain.year, workingpoint, algo)
-                    print passed, readBTagValue(chain, j, algo), getBTagWP(chain.era, chain.year, workingpoint, algo)
+#                    print passed, readBTagValue(chain, j, algo), getBTagWP(chain.era, chain.year, workingpoint, algo)
                     efficiencies[algo][getFlavor(chain, j)][workingpoint].fill(chain, lw.getLumiWeight(), passed, index = j)
 
     for ia, algo in enumerate(all_algos):

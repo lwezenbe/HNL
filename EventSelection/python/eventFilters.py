@@ -98,9 +98,11 @@ def passedFilterTauMixCT(chain, new_chain, is_reco_level, cutter, high_met = Tru
     return True
 
 def passedFilterZZCR(chain, new_chain, cutter): 
-    if not cutter.cut(not bVeto(chain), 'b-veto'):                 return False
-    if not cutter.cut(massDiff(chain.Mll_Z1, MZ) < 15, 'First Z ok'):                                                           return False
-    if not cutter.cut(new_chain.minMos > 12, 'min Mos > 12'):                                                                       return False
+    if not cutter.cut(chain.l_flavor.count(2) == 0, 'light leptons only'):      return False
+    if not cutter.cut(not bVeto(chain), 'b-veto'):                              return False
+    if not cutter.cut(massDiff(chain.Mll_Z1, MZ) < 15, 'First Z ok'):           return False
+    if not cutter.cut(massDiff(chain.Mll_Z2, MZ) < 15, 'Second Z ok'):           return False
+    if not cutter.cut(new_chain.minMos > 12, 'min Mos > 12'):                   return False
     return True
 
 def passedFilterWZCR(chain, new_chain, is_reco_level, cutter):

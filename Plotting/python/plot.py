@@ -188,7 +188,7 @@ class Plot:
 
                 self.min_to_set = min_cutoff if min_cutoff is not None else 0.3*self.overall_min
             else:
-                self.max_to_set = 1.4*self.overall_max if max_cutoff is None else max_cutoff
+                self.max_to_set = 1.7*self.overall_max if max_cutoff is None else max_cutoff
                 # self.max_to_set = 23
                 self.min_to_set = min_cutoff if min_cutoff is not None else 0.7*self.overall_min
 

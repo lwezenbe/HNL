@@ -17,9 +17,9 @@ SAMPLE_GROUPS = {
     'triboson': ['triboson'],
     'WZ': ['WZ'],
     # 'diboson': ('ZZ', 'WW', 'WZ'),
-    'ZZ-H': ['ZZ', 'Higgs', 'GluGlu'],
+    'ZZ-H': ['ZZ', 'ZH'],
     'XG': ['DY', 'ZG', 'WG'],
-    'other':['WJets', 'WW', 'QCD']
+    'other':['WJets', 'WW', 'QCD', 'HiggsToTauTau', 'HiggsToNonbb']
 }
 # SAMPLE_GROUPS = {
 #     'non-prompt': ['DY', 'WJets', 'WW', 'ST', 'TT'],

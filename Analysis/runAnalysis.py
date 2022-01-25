@@ -98,7 +98,8 @@ def getSampleManager(y):
 
 if args.isTest:
     if args.year is None: args.year = '2017'
-    if args.sample is None and not args.makePlots: args.sample = 'DYJetsToLL-M-50'
+    if args.sample is None and not args.makePlots: 
+        args.sample = 'DYJetsToLL-M-50' if not args.region == 'ZZCR' else 'ZZTo4L'
     args.isChild = True
     if args.subJob is None: args.subJob = '0'
     from HNL.Tools.helpers import generateArgString
@@ -356,6 +357,10 @@ if not args.makePlots and not args.makeDataCards:
         out_file.Close()
 
         cutter.saveCutFlow(output_name_full +writename+subjobAppendix+ '.root')
+        
+        if args.isTest:
+            from HNL.Tools.helpers import copyFileToTestingArea
+            copyFileToTestingArea(output_name_full +writename+subjobAppendix+ '.root', arg_string)
 
     closeLogger(log)
 
@@ -521,7 +526,8 @@ else:
                             tmp_list_of_hist[c][v]['bkgr']['non-prompt'].add(list_of_hist[c][v]['data']['sideband'])
 
             return tmp_list_of_hist
-
+        
+        print "Creating list of histograms"
         list_of_hist = createVariableDistributions(category_dict[args.categoriesToPlot], var, signal_list, bkgr_list, data_list)
 
         #
