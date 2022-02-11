@@ -37,8 +37,8 @@ def getObjectSelection(selection):
         object_selection = objectSelectionCollection(tau_algo='ewkino', light_algo='ewkino', analysis='ewkino', jet_algo = 'HNL')      
     elif selection == 'TTT':
         object_selection = objectSelectionCollection(tau_algo='HNL', light_algo='TTT', analysis='HNL', jet_algo = 'TTT')
-    elif selection == 'Luka':
-        object_selection = objectSelectionCollection(tau_algo='HNL', light_algo='Luka', analysis='HNL', jet_algo = 'Luka')
+    elif selection == 'tZq':
+        object_selection = objectSelectionCollection(tau_algo='HNL', light_algo='tZq', analysis='tZq', notau=True, jet_algo = 'tZq')
     else:
         print 'No valid selection parameter for object selection given, using defaults'
 

@@ -1,5 +1,5 @@
 from HNL.Weights.lumiweight import LumiWeight
-from HNL.Weights.puReweighting import getReweightingFunction
+from HNL.Weights.puReweighting import PUWeightReaderJSON
 from HNL.Weights.bTagWeighter import getReweightingFunction as btagReweighter
 from HNL.Weights.electronSF import ElectronRecoSF
 from HNL.ObjectSelection.tauSelector import getTauAlgoWP
@@ -16,9 +16,7 @@ class Reweighter:
 
         # pu weights
         if not sample.is_data:
-            self.puReweighting     = getReweightingFunction(sample.chain.era, sample.chain.year, 'central')
-            self.puReweightingUp   = getReweightingFunction(sample.chain.era, sample.chain.year, 'up')
-            self.puReweightingDown = getReweightingFunction(sample.chain.era, sample.chain.year, 'down')
+            self.puReweighting     = PUWeightReaderJSON(sample.chain.era, sample.chain.year)
 
             if self.sample.chain.era != 'prelegacy': self.btagReweighting = btagReweighter('Deep', self.sample.chain.era, self.sample.chain.year, 'loose', self.sample.chain.selection)
 
@@ -35,7 +33,7 @@ class Reweighter:
 
     def getPUWeight(self):
         if not self.sample.is_data:
-            return self.puReweighting(self.sample.chain._nTrueInt)
+            return self.puReweighting.readValue(self.sample.chain._nTrueInt)
         else:
             return 1.
 
@@ -75,7 +73,12 @@ class Reweighter:
             tot_weight *= self.getFakeRateWeight()
         return tot_weight
 
-
+    def fillTreeWithWeights(self, chain):
+        chain.lumiWeight = self.getLumiWeight()
+        chain.puWeight = self.getPUWeight()
+        chain.electronRecoWeight = self.getElectronRecoSF()
+        chain.tauSFWeight = self.getTauSF()
+        chain.btagWeight = self.getBTagWeight()
 
 if __name__ == '__main__':
     from HNL.Samples.sampleManager import SampleManager

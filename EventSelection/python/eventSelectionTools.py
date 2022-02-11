@@ -567,6 +567,15 @@ def isOSSF(chain, first_lepton, second_lepton):
     if chain.l_charge[first_lepton] == chain.l_charge[second_lepton]: return False
     return True  
 
+def noMllOnZ(chain):
+    for first_lepton in xrange(len(chain.l_indices)-1):
+        for second_lepton in xrange(first_lepton + 1, len(chain.l_indices)):
+            l1_vec = getFourVec(chain.l_pt[first_lepton], chain.l_eta[first_lepton], chain.l_phi[first_lepton], chain.l_e[first_lepton])
+            l2_vec = getFourVec(chain.l_pt[second_lepton], chain.l_eta[second_lepton], chain.l_phi[second_lepton], chain.l_e[second_lepton])
+            if massDiff((l1_vec+l2_vec).M(), MZ) < 15: return False
+    return True
+
+
 def containsOSSF(chain):
     for first_lepton in xrange(len(chain.l_indices)-1):
         for second_lepton in xrange(first_lepton + 1, len(chain.l_indices)):
@@ -599,7 +608,7 @@ def calcLT(chain, new_chain, is_reco_level = True):
 # Functions that change some values in the tree
 #
 from HNL.ObjectSelection.leptonSelector import coneCorrection
-def applyConeCorrection(chain, new_chain, light_algo = None, tau_algo = None, analysis = None):
+def applyConeCorrection(chain, new_chain, light_algo = None, tau_algo = None):
     try:
         chain.conecorrection_applied
     except:

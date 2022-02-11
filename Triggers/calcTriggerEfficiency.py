@@ -209,7 +209,7 @@ if not args.makePlots:
         if args.useRef and not cutter.cut(chain._passTrigger_ref, 'passed ref filter'):     continue
 
         event.initEvent()
-        if not event.passedFilter(cutter, sample.output, offline_thresholds = True): continue
+        if not event.passedFilter(cutter, sample.name, offline_thresholds = True): continue
         if chain.category not in CATEGORIES: continue
 
         from HNL.Triggers.triggerSelection import passTriggers

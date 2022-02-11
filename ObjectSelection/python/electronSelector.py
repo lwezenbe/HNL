@@ -511,7 +511,7 @@ def isLooseElectron(chain, index, algo):
     elif algo == 'leptonMVAtZq':        return isLooseElectrontZq(chain, index)
     elif algo == 'leptonMVAtop':        return isLooseElectronTop(chain, index)
     elif algo == 'TTT':                 return isLooseElectronTTT(chain, index)
-    elif algo == 'Luka':                 return isLooseElectronLuka(chain, index)
+    elif algo == 'tZq':                 return isLooseElectronLuka(chain, index)
     elif algo == 'HNL':                 return isLooseElectronHNL(chain, index)
     elif algo == 'ewkino':              return isLooseElectronEwkino(chain, index)
     else:
@@ -524,7 +524,7 @@ def isFOElectron(chain, index, algo):
     elif algo == 'leptonMVAtZq':        return isFOElectrontZq(chain, index)
     elif algo == 'leptonMVAtop':        return isFOElectronTop(chain, index)
     elif algo == 'TTT':                 return isFOElectronTTT(chain, index)
-    elif algo == 'Luka':                return isFOElectronLuka(chain, index)
+    elif algo == 'tZq':                return isFOElectronLuka(chain, index)
     elif algo == 'HNL':                return isFOElectronHNL(chain, index)
     elif algo == 'ewkino':              return isFOElectronEwkino(chain, index)
     else:
@@ -537,7 +537,7 @@ def isTightElectron(chain, index, algo):
     elif algo == 'leptonMVAtZq':        return isTightElectrontZq(chain, index)
     elif algo == 'leptonMVAtop':        return isTightElectronTop(chain, index)
     elif algo == 'TTT':                 return isTightElectronTTT(chain, index)
-    elif algo == 'Luka':                 return isTightElectronLuka(chain, index)
+    elif algo == 'tZq':                 return isTightElectronLuka(chain, index)
     elif algo == 'HNL':                 return isTightElectronHNL(chain, index)
     elif algo == 'ewkino':              return isTightElectronEwkino(chain, index)
     else:

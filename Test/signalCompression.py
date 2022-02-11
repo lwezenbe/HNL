@@ -112,7 +112,7 @@ for entry in eventRange:
     progress(entry-eventRange[0], len(eventRange))
     chain.GetEntry(entry)
 
-    if not es.passedFilter(cutter, sample.output): continue
+    if not es.passedFilter(cutter, sample.name): continue
     slm.saveNewOrder()
     category = ec.returnCategory()
     if not filterSuperCategory('SingleTau', category): continue

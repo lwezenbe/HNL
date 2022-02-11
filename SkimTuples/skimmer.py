@@ -24,7 +24,6 @@ submission_parser.add_argument('--logLevel',  action='store',      default='INFO
 submission_parser.add_argument('--summaryFile', action='store_true', default=False,  help='Create text file that shows all selected arguments')
 submission_parser.add_argument('--genSkim',  action='store_true',      default=False,               help='skim on generator level leptons')
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
-submission_parser.add_argument('--removeOverlap',  action='store_true',      default=False,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
 submission_parser.add_argument('--skimSelection',  action='store',      default='default',               help='Selection for the skim.', choices=['leptonMVAtop', 'TTT', 'Luka', 'AN2017014', 'LukaFR', 'default'])
 submission_parser.add_argument('--region',   action='store', default=None,  help='Choose the selection region', 
     choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
@@ -213,7 +212,7 @@ if not args.checkLogs:
         chain.analysis = args.analysis
         if args.skimSelection == 'Old':
             chain.obj_sel = objectSelectionCollection('HNL', 'cutbased', 'loose', 'loose', 'loose', True, analysis=args.analysis)
-        elif args.skimSelection in ['Luka', 'LukaFR']:
+        elif args.skimSelection in ['Luka']:
             chain.obj_sel = objectSelectionCollection('HNL', 'Luka', 'loose', 'loose', 'loose', False, analysis=args.analysis)
         elif args.skimSelection == 'TTT':
             chain.obj_sel = objectSelectionCollection('HNL', 'TTT', 'loose', 'loose', 'loose', False, analysis=args.analysis)
@@ -234,7 +233,6 @@ if not args.checkLogs:
     chain.tau_energy_scale = TauEnergyScale(chain.era, chain.year, chain.obj_sel['tau_algo'])
 
     for entry in event_range:
-        if entry == 103675: continue
 
         chain.GetEntry(entry)
         progress(entry - event_range[0], len(event_range))
@@ -243,10 +241,6 @@ if not args.checkLogs:
         cutter.cut(True, 'Total')
 
         if args.region is None:
-            if args.removeOverlap:
-                if 'DYJets' in sample.name and chain._zgEventType>=3: continue
-                if sample.name == 'ZG' and chain._hasInternalConversion: continue
-
             if args.genSkim:
                 selectGenLeptonsGeneral(chain, chain, 3)
             else:
@@ -261,7 +255,7 @@ if not args.checkLogs:
 
         else:
             event.initEvent()
-            if not event.passedFilter(cutter, sample.output): continue
+            if not event.passedFilter(cutter, sample.name): continue
             translateForTraining(new_vars)
 
         output_tree.lumiweight
@@ -277,7 +271,8 @@ if not args.checkLogs:
         else:
             hcounter = sample.getHist('hCounter')
         output_file.cd('blackJackAndHookers')
-        hcounter.Write()
+        if not args.reprocess or args.subJob == 0:
+            hcounter.Write()
         
     output_file.Close()
 

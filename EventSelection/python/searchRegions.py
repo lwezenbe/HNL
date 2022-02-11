@@ -165,7 +165,7 @@ from HNL.Plotting.plottingTools import extraTextFormat, drawLineFormat
 #
 # plotGeneralGroups is a function that just makes bare plots without lines or extra text, it is meant to be used with tables when you're in a hurry
 #
-def plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, region_name, extra_text = None, sample_groups = False):
+def plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, region_name, extra_text = None):
     import HNL.Tools.histogram
     for group in region_groups[region_name].keys():
         group_signal_hist = [] 
@@ -193,14 +193,8 @@ def plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, region_name, 
                         group_bkgr_hist[ish].SetBinError(ib+1, sh.GetBinError(b))                        
         
         draw_ratio = 'errorsOnly' if len(group_signal_hist) > 0 and len(group_bkgr_hist) > 0 else None
-        if sample_groups:
-            # p = Plot(group_signal_hist if len(group_signal_hist) > 0 else None, tex_names, bkgr_hist = group_bkgr_hist if len(group_bkgr_hist) > 0 else None, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, 
-                # extra_text = extra_text, color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = draw_ratio)
-            p = Plot(group_signal_hist if len(group_signal_hist) > 0 else None, tex_names, bkgr_hist = group_bkgr_hist if len(group_bkgr_hist) > 0 else None, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, 
+        p = Plot(group_signal_hist if len(group_signal_hist) > 0 else None, tex_names, bkgr_hist = group_bkgr_hist if len(group_bkgr_hist) > 0 else None, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, 
                 extra_text = extra_text, color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = draw_ratio)
-        else:
-            p = Plot(group_signal_hist if len(group_signal_hist) > 0 else None, tex_names, bkgr_hist = group_bkgr_hist if len(group_bkgr_hist) > 0 else None, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, 
-                extra_text = extra_text, syst_hist = 0.1, draw_ratio = draw_ratio)
         p.drawHist(output_dir = out_path, min_cutoff = 1.)
 
         del p, group_signal_hist, group_bkgr_hist
@@ -209,9 +203,9 @@ tdrStyle_Left_Margin = 0.16
 tdrStyle_Right_Margin = 0.02
 plotsize = 1-tdrStyle_Left_Margin-tdrStyle_Right_Margin
 
-def plotLowMassRegions(signal_hist, bkgr_hist, tex_names, out_path, extra_text = None, sample_groups = False):
+def plotLowMassRegions(signal_hist, bkgr_hist, tex_names, out_path, extra_text = None):
     #Plot per grouping
-    plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, 'oldAN_lowMass', extra_text=extra_text, sample_groups = sample_groups)
+    plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, 'oldAN_lowMass', extra_text=extra_text)
 
     #
     # All groups in 1 plot
@@ -229,28 +223,20 @@ def plotLowMassRegions(signal_hist, bkgr_hist, tex_names, out_path, extra_text =
     custom_labels = ['0-10', '10-20', '20-30', '> 30']*2
 
     draw_ratio = 'errorsOnly' if signal_hist is not None and bkgr_hist is not None else None
-    if sample_groups:
-        p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'M_{2lOS}^{min} [GeV]', y_name = 'Events', extra_text = extra_text, y_log=True, 
+    p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'M_{2lOS}^{min} [GeV]', y_name = 'Events', extra_text = extra_text, y_log=True, 
             color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = draw_ratio)
-    else:
-        p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'M_{2lOS}^{min} [GeV]', y_name = 'Events', extra_text = extra_text, y_log=True, 
-            syst_hist = 0.1, draw_ratio = draw_ratio)
  
     p.drawHist(output_dir = out_path, draw_lines = line_collection, min_cutoff = 0.1, custom_labels = custom_labels)
 
-def plotHighMassRegions(signal_hist, bkgr_hist, tex_names, out_path, extra_text = None, sample_groups = False):
+def plotHighMassRegions(signal_hist, bkgr_hist, tex_names, out_path, extra_text = None):
 
     #Plot per grouping
 
-    plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, 'oldAN_highMass', extra_text = extra_text, sample_groups = sample_groups)
+    plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, 'oldAN_highMass', extra_text = extra_text)
     
     draw_ratio = 'errorsOnly' if signal_hist is not None and bkgr_hist is not None else None
-    if sample_groups:
-        p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text, 
+    p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text, 
             color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = draw_ratio)
-    else:
-        p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, 
-            extra_text = extra_text, syst_hist = 0.1, draw_ratio = draw_ratio)
     p.drawHist(output_dir = out_path, min_cutoff = 1., bkgr_draw_option="HistText")
                     
 class RegionCollection:

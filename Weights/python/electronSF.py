@@ -56,13 +56,13 @@ class ElectronRecoSF:
             log.warning("Supercluster eta out of bounds: %3.2f (need %3.2f <= eta <=% 3.2f)", eta, self.e_etaMin, self.e_etaMax)
             eta = self.e_etaMin + 0.0001
 
-        if pt > self.e_ptMax:    pt = self.e_ptMax - 1 
-        elif pt <= self.e_ptMin: pt = self.e_ptMin + 1
+        if pt > self.e_ptMax:    pt = self.e_ptMax - 1. 
+        elif pt <= self.e_ptMin: pt = self.e_ptMin + 1.
 
         if chain._lPt[index] < 20:
-            return self.below20_hist.GetBinContent(self.below20_hist.FindBin(chain._lEtaSC[index], chain._lPt[index]))
+            return self.below20_hist.GetBinContent(self.below20_hist.FindBin(eta, pt))
         else:
-            return self.above20_hist.GetBinContent(self.above20_hist.FindBin(chain._lEtaSC[index], chain._lPt[index]))
+            return self.above20_hist.GetBinContent(self.above20_hist.FindBin(eta, pt))
 
     def getTotalRecoSF(self, chain):
         from HNL.ObjectSelection.electronSelector import isGoodElectron
@@ -70,6 +70,7 @@ class ElectronRecoSF:
         sf = 1.
         for e in xrange(chain._nMu, chain._nLight):
             if isGoodElectron(chain, e, workingpoint='loose'):
+        #        print e, self.getSingleRecoSF(chain, e)
                 sf *= self.getSingleRecoSF(chain, e)
         
         return sf
