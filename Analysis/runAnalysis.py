@@ -90,11 +90,10 @@ def getSampleManager(y):
     else:
         # skim_str = args.skimLevel
         skim_str = 'Reco'
-        #skim_str = 'noskim'
+    
     file_list = 'fulllist_'+args.era+str(y) if args.customList is None else args.customList
 
-    # sm = SampleManager(args.era, y, skim_str, file_list, skim_selection=args.selection, region=args.region)
-    sm = SampleManager(args.era, y, skim_str, file_list, skim_selection='default', region=args.region)
+    sm = SampleManager(args.era, y, skim_str, file_list, skim_selection=args.selection, region=args.region)
     return sm
 
 if args.isTest:
@@ -221,16 +220,6 @@ if not args.makePlots and not args.makeDataCards:
         from HNL.Tools.makeBranches import makeBranches
         new_vars = makeBranches(output_tree, branches)
 
-        # list_of_hist = {}
-        # if chain.is_data: prompt_string = ['total']
-        # else: prompt_string = ['prompt', 'nonprompt', 'total']
-        # for c in categories:
-        #     list_of_hist[c] = {}
-        #     for v in var.keys():
-        #         list_of_hist[c][v] = {}
-        #         for ps in prompt_string:
-        #             list_of_hist[c][v][ps] = Histogram(str(c)+'-'+v+'-'+sample.output+'-'+ps, var[v][0], var[v][2], var[v][1])
-
         #
         # Load in sample and chain
         #
@@ -280,8 +269,6 @@ if not args.makePlots and not args.makeDataCards:
         #
         for entry in event_range:
           
-            #if entry != 555: continue
- 
             chain.GetEntry(entry)
             if args.isTest: progress(entry - event_range[0], len(event_range))
  
@@ -310,11 +297,6 @@ if not args.makePlots and not args.makeDataCards:
                 prompt_str = None
                 chain.category = 17
 
-            #if prompt_str == 'prompt':
-            #   #print entry, str(chain._runNb)+':'+str(chain._lumiBlock)+':'+str(chain._eventNb), chain.category
-            #    print entry
-            
-
             if args.strategy == 'MVA':
                 tmva.predictAndWriteAll(chain)
 
@@ -330,7 +312,6 @@ if not args.makePlots and not args.makeDataCards:
             new_vars.category = chain.category
             new_vars.searchregion = srm[args.region].getSearchRegion(chain)
             output_tree.Fill()
-            #print new_vars.weight, reweighter.getLumiWeight(), reweighter.getPUWeight(), reweighter.getElectronRecoSF(), reweighter.getTauSF(), reweighter.getBTagWeight()
  
         #
         # Save histograms

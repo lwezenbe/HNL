@@ -37,7 +37,6 @@ class FilterObject(object):
 
 
 from HNL.EventSelection.signalRegionSelector import SignalRegionSelector
-# from HNL.EventSelection.controlRegionSelector import ZZCRfilter, WZCRfilter, ConversionCRfilter, TauFakeEnrichedDY, TauFakeEnrichedTT, TauClosureTest, ElectronClosureTest, MuonClosureTest, LightLeptonFakeMeasurementRegion, LukaClosureTest, ClosureTestMC, ClosureTestDATA
 from HNL.EventSelection.controlRegionSelector import ZZCRfilter, WZCRfilter, ConversionCRfilter, TauFakeEnrichedDY, TauFakeEnrichedTT, LightLeptonFakeMeasurementRegion, ClosureTestMC, ClosureTestDATA, GeneralMCCTRegion
 from HNL.EventSelection.controlRegionSelector import TauMixCTfilter, GeneralTrileptonFilter
 
@@ -99,17 +98,8 @@ class EventSelector:
         else:
             raise RuntimeError("Unknown region specified.")
 
-    def leptonFromMEExternalConversion(self):
-        for lepton_index in xrange(self.chain._nL):
-            if self.chain._lMatchPdgId[lepton_index] != 22: continue
-            if not (self.chain._lIsPrompt[lepton_index] and self.chain._lProvenanceConversion[lepton_index]): continue
-            return True
-        return False
-
     def removeOverlapDYandZG(self, sample_name, cutter):
-        #if 'DY' in sample_name and not cutter.cut(self.leptonFromMEExternalConversion(), 'Cleaning DY'): return False
         if 'DY' in sample_name and not cutter.cut(self.chain._zgEventType < 3, 'Cleaning DY'): return False
-        #if sample_name == 'ZG' and not cutter.cut(not self.leptonFromMEExternalConversion(), 'Cleaning XG'): return False
         if sample_name == 'ZG' and not cutter.cut(self.chain._zgEventType > 2, 'Cleaning XG'): return False
         return True
 
