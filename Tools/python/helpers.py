@@ -42,7 +42,17 @@ def getHistFromTree(tree, vname, hname, bins, condition):
     # print ROOT.gROOT.pwd()
 
     htmp = ROOT.TH1D(hname, hname, len(bins)-1, bins)
-    tree.Draw(vname+">>"+hname, condition+'*weight')
+    #tree.Draw(vname+">>"+hname, condition+'*weight')
+    #tree.Draw(vname+">>"+hname, condition+'*lumiWeight')
+    if 'Weight' in vname: 
+        tree.Draw(vname+">>"+hname, condition+'*lumiWeight')
+    else:
+        tree.Draw(vname+">>"+hname, condition+'*weight')
+        #tree.Draw(vname+">>"+hname, condition+'*lumiWeight')
+        #tree.Draw(vname+">>"+hname, condition+'*lumiWeight*electronRecoWeight')
+        #tree.Draw(vname+">>"+hname, condition+'*lumiWeight*electronRecoWeight*puWeight')
+        #tree.Draw(vname+">>"+hname, condition+'*lumiWeight*electronRecoWeight*btagWeight')
+        #tree.Draw(vname+">>"+hname, condition+'*lumiWeight*electronRecoWeight*btagWeight*puWeight')
     if not htmp: return None
     ROOT.gDirectory.cd('PyROOT:/')
     res = htmp.Clone()

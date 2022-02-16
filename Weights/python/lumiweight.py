@@ -5,28 +5,39 @@ LUMINOSITY_MAP = {
                     'prelegacy2016' : 35920.,
                     'prelegacy2017' : 41529.548819,
                     'prelegacy2018' : 59688.059536,
-                    'UL2016pre' : 19500.,
-                    'UL2016post' : 16800.,
+                    'UL2016pre' : 19520.,
+                    'UL2016post' : 16810.,
                     'UL2017' : 41480.,
                     'UL2018' : 59830.,
                     }
 
 class LumiWeight:
 
-    def __init__(self, sample, sample_manager, recalculate = False):
+    def __init__(self, sample, sample_manager, recalculate = True):
         self.sample = sample
         self.skimmed = sample_manager.skim != 'noskim'
         self.recalculate = recalculate
 
-        if (not self.skimmed or recalculate) and not self.sample.is_data: 
-            self.lumi_cluster = sample_manager.makeLumiClusters()[sample.shavedName()]
+#        if (not self.skimmed or recalculate) and not self.sample.is_data: 
+#            self.lumi_cluster = sample_manager.makeLumiClusters()[sample.shavedName()]
+#            self.total_hcount = 0
+#
+#            for cl_name in self.lumi_cluster:
+#                tmp_path = sample_manager.getPath(cl_name) #Getting the hcount from original unskimmed paths because of temporary bug in the hcounters copied to skimmed files
+#                self.total_hcount += self.sample.getHist('hCounter', tmp_path).GetSumOfWeights()
+#        elif self.skimmed:
+#            self.total_hcount = self.sample.getHist('hCounter').GetSumOfWeights()
+        
+        # Because of bug in weights, always use the hcount from original files
+        if not self.sample.is_data: 
+            self.lumi_cluster = sample_manager.makeLumiClusters(noskimpath=True)[sample.shavedName()]
             self.total_hcount = 0
 
             for cl_name in self.lumi_cluster:
-                tmp_path = sample_manager.getPath(cl_name)
+                tmp_path = sample_manager.getPath(cl_name, noskimpath=True) #Getting the hcount from original unskimmed paths because of temporary bug in the hcounters copied to skimmed files
                 self.total_hcount += self.sample.getHist('hCounter', tmp_path).GetSumOfWeights()
-        elif self.skimmed:
-            self.total_hcount = self.sample.getHist('hCounter')
+
+        #self.total_hcount = 1.
 
     def getLumiWeight(self):
         if self.sample.is_data:
@@ -39,8 +50,8 @@ class LumiWeight:
             try:
                 return self.sample.chain.lumiweight
             except:
-                self.lumi_weight = self.sample.chain._weight*(self.sample.xsec*LUMINOSITY_MAP[self.sample.chain.era+self.sample.chain.year])/self.total_hcount.GetSumOfWeights()
-                return self.lumi_weight 
+                self.recalculate = True
+                return self.getLumiWeight()
 
 
 if __name__ == '__main__':

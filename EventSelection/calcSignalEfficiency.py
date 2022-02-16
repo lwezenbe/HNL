@@ -268,7 +268,7 @@ if not args.makePlots:
     
         event.initEvent()
         if not args.genLevel:
-            passed = event.passedFilter(cutter, sample.output, ignoreSignalOverlapRemoval = args.flavor == 'taulep')
+            passed = event.passedFilter(cutter, sample.name, ignoreSignalOverlapRemoval = args.flavor == 'taulep')
         else:
             passed = True
             

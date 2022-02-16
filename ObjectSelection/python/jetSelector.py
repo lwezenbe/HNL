@@ -75,7 +75,7 @@ def isGoodJet(chain, index, cleaned = 'loose', selection = None):
         return isGoodJetAN2017014(chain, index, cleaned = cleaned)
     elif selection == 'TTT':
         return isGoodJetTTT(chain, index, cleaned = cleaned)
-    elif selection == 'Luka':
+    elif selection == 'tZq':
         return isGoodJetLuka(chain, index, cleaned = cleaned)
     else:
         return True
@@ -148,7 +148,8 @@ def isTightBJetTTT(chain, index):
     return True
 
 def isBaseBJetLuka(chain, index):
-    if not isGoodJet(chain, index, cleaned='loose', selection='Luka'): return False
+    if not isGoodJet(chain, index, cleaned='loose', selection='tZq'): return False
+    if abs(chain._jetEta[index]) > 2.5: return False
     return True
 
 def isLooseBJetLuka(chain, index):
@@ -175,7 +176,7 @@ def isBaseBJet(chain, index, selection):
         return isBaseBJetAN2017014(chain, index)
     elif selection == 'TTT':
         return isBaseBJetTTT(chain, index)
-    elif selection == 'Luka':
+    elif selection == 'tZq':
         return isBaseBJetLuka(chain, index)
     else:
         raise RuntimeError("Unknown selection for jets")
@@ -189,13 +190,13 @@ def isLooseBJet(chain, index, selection):
         return isLooseBJetAN2017014(chain, index)
     elif selection == 'TTT':
         return isLooseBJetTTT(chain, index)
-    elif selection == 'Luka':
+    elif selection == 'tZq':
         return isLooseBJetLuka(chain, index)
     else:
         raise RuntimeError("Unknown selection for jets")
 
 def isMediumBJet(chain, index, selection):
-    if selection == 'Luka':
+    if selection == 'tZq':
         return isMediumBJetLuka(chain, index)
     else:
         raise RuntimeError("Unknown selection for jets")
@@ -209,7 +210,7 @@ def isTightBJet(chain, index, selection):
         return isTightBJetAN2017014(chain, index)
     elif selection == 'TTT':
         return isTightBJetTTT(chain, index)
-    elif selection == 'Luka':
+    elif selection == 'tZq':
         return isTightBJetLuka(chain, index)
     else:
         raise RuntimeError("Unknown selection for jets")

@@ -10,7 +10,11 @@ import glob
 
 def getListOfGroupID(path):
     list_of_files = glob.glob(path+'/*root')
-    list_of_id = {f.rsplit('/')[-1].split('_')[1] for f in list_of_files if f.rsplit('/')[-1].split('_')[2]}
+    list_of_id = []
+    for f in list_of_files:
+        tmp_entry = f.rsplit('/')[-1].split('_')[:2]
+        if tmp_entry not in list_of_id and f.rsplit('/')[-1].split('_')[2]:
+            list_of_id.append([x for x in tmp_entry])
     return list_of_id
 
 def checkForMerge(paths):
@@ -35,9 +39,14 @@ def mergeSinglePath(path, groups_to_merge=None):
 
     for p in merge_paths:
         for group_id in getListOfGroupID(p):
+            gname, gid = group_id
             if groups_to_merge is not None and group_id not in groups_to_merge: continue
-            os.system('hadd  -f '+ p.rsplit('/', 1)[0]+ '/'+group_id+'.root '+p+'/*_'+group_id+'_*root')
-            os.system('rm -r '+p+'/*_'+group_id+'_*root')
+            os.system('hadd  -f '+ p.rsplit('/', 1)[0]+ '/'+gid+'-'+gname+'.root '+p+'/'+gname+'_'+gid+'_*root')
+        print {t[1] for t in getListOfGroupID(p)}
+        for x in {t[1] for t in getListOfGroupID(p)}:
+            print x
+            os.system('hadd  -f '+ p.rsplit('/', 1)[0]+ '/'+x+'.root '+p.rsplit('/', 1)[0]+'/'+x+'-*root')
+            os.system('rm -r '+p+'/*_'+gid+'_*root')
         if len(os.listdir(p)) == 0:
             os.system('rm -r '+p)
 

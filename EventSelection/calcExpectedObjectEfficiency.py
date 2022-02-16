@@ -178,7 +178,7 @@ if not args.merge:
         if args.isTest: progress(entry - event_range[0], len(event_range))
         
         event.initEvent()
-        if not event.passedFilter(cutter, sample.output): continue
+        if not event.passedFilter(cutter, sample.name): continue
 
         # print "passed filter"
             

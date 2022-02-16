@@ -102,12 +102,12 @@ def passedFilterZZCR(chain, new_chain, cutter):
     if not cutter.cut(not bVeto(chain), 'b-veto'):                              return False
     if not cutter.cut(massDiff(chain.Mll_Z1, MZ) < 15, 'First Z ok'):           return False
     if not cutter.cut(massDiff(chain.Mll_Z2, MZ) < 15, 'Second Z ok'):           return False
-    if not cutter.cut(new_chain.minMos > 12, 'min Mos > 12'):                   return False
+#    if not cutter.cut(new_chain.minMos > 12, 'min Mos > 12'):                   return False
     return True
 
 def passedFilterWZCR(chain, new_chain, is_reco_level, cutter):
+    if not cutter.cut(not fourthFOVeto(chain, new_chain, no_tau=chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
     if not cutter.cut(abs(new_chain.MZossf-MZ) < 15, 'On Z OSSF'):              return False
-    # if not cutter.cut(not passesZcuts(chain, new_chain, same_flavor=True), 'On Z OSSF'):              return False
     if not cutter.cut(not bVeto(chain), 'b-veto'):                 return False
     if not cutter.cut(new_chain.l_pt[l1] > 25, 'l1pt>25'):          return False
     if not cutter.cut(new_chain.l_pt[l2] > 15, 'l2pt>15'):          return False
@@ -121,7 +121,6 @@ def passedFilterWZCR(chain, new_chain, is_reco_level, cutter):
 
 def passedFilterWZCRewkino(chain, new_chain, is_reco_level, cutter):
     if not cutter.cut(abs(new_chain.MZossf-MZ) < 15, 'On Z OSSF'):              return False
-    # if not cutter.cut(not passesZcuts(chain, new_chain, same_flavor=True), 'On Z OSSF'):              return False
     if not cutter.cut(not bVeto(chain), 'b-veto'):                 return False
     if not cutter.cut(new_chain.l_pt[l1] > 25, 'l1pt>25'):          return False
     if new_chain.l_flavor[l2] == 1:
@@ -143,6 +142,18 @@ def passedFilterConversionCR(chain, new_chain, cutter):
     if not cutter.cut(chain.MZossf < 75, 'Mll < 75'):               return False
     if chain.selection == 'AN2017014' and not cutter.cut(passesPtCutsAN2017014(chain), 'pt_cuts'):     return False 
     if not cutter.cut(not bVeto(chain), 'b-veto'):                 return False
+    return True   
+
+def passedFilterConversionCRtZq(chain, new_chain, cutter):
+    if not cutter.cut(not fourthFOVeto(chain, new_chain, no_tau=chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
+    if not cutter.cut(new_chain.l_pt[l1] > 25, 'l1pt>25'):          return False
+    if not cutter.cut(new_chain.l_pt[l2] > 15, 'l2pt>15'):          return False
+    if not cutter.cut(new_chain.l_pt[l3] > 10, 'l3pt>10'):          return False
+    if not cutter.cut(containsOSSF(chain), 'OSSF present'):         return False
+    if not cutter.cut(abs(new_chain.M3l-MZ) < 15, 'M3l_onZ'):       return False 
+    from HNL.EventSelection.eventSelectionTools import noMllOnZ
+    if not cutter.cut(noMllOnZ(new_chain), 'Mll_offZ'):                        return False
+    if not cutter.cut(chain.minMossf > 35, 'Mll > 35'):             return False
     return True   
 
 def passedFilterTauFakeEnrichedDY(chain, new_chain, cutter, inverted_cut=False, b_veto=False, nometcut=False):

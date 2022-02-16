@@ -104,16 +104,34 @@ def listOfTriggersEwkino(chain):
     list_of_triggers.append(chain._passTrigger_e)
     return list_of_triggers
 
+def listOfTriggerstZq(chain):
+    list_of_triggers = []
+    list_of_triggers.append(chain._passTrigger_e)
+    list_of_triggers.append(chain._passTrigger_ee)
+    list_of_triggers.append(chain._passTrigger_eee)
+    list_of_triggers.append(chain._passTrigger_m)
+    list_of_triggers.append(chain._passTrigger_mm)
+    list_of_triggers.append(chain._passTrigger_mmm)
+    list_of_triggers.append(chain._passTrigger_em)
+    list_of_triggers.append(chain._passTrigger_eem)
+    list_of_triggers.append(chain._passTrigger_emm)
+    return list_of_triggers
+
+
 def passTriggers(chain, analysis = 'HNL'):
     if analysis == 'AN2017014':
         if '2016' in chain.year: return applyCustomTriggers(listOfTriggersAN2017014(chain))
         else:   return passTriggers(chain, analysis = 'HNL')
     elif analysis == 'ewkino':
         return applyCustomTriggers(listOfTriggersEwkino(chain))
-    else:
+    elif analysis in ['HNL']:
         if '2016' in chain.year and any(listOfTriggers2016(chain)): return True
         elif chain.year == '2017' and any(listOfTriggers2017(chain)): return True
         elif chain.year == '2018' and any(listOfTriggers2018(chain)): return True
+    elif analysis in ['tZq']:
+        return any(listOfTriggerstZq(chain))
+    else:
+        raise RuntimeError('No known trigger strategy for analysis {}'.format(analysis))
     return False
 
 def offlineThresholdsAN2017014(chain, new_chain):
@@ -224,7 +242,12 @@ def passOfflineThresholds(chain, new_chain, analysis):
         if chain.year == '2018': return offlineThresholds2018(chain, new_chain)
     elif analysis == 'ewkino':
         return True
-    
+
+    elif analysis == 'tZq':
+        if chain.l_pt[l1] < 25: return False
+        if chain.l_pt[l2] < 15: return False
+        if chain.l_pt[l3] < 10: return False
+        return True
     else:
         raise RuntimeError('No known offline thresholds for analysis {}'.format(analysis))
 

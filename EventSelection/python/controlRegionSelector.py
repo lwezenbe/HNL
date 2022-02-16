@@ -60,9 +60,12 @@ class ConversionCRfilter(FilterObject):
         return super(ConversionCRfilter, self).initEvent(3, cutter, sort_leptons = True, sideband = sideband)
 
     def passedFilter(self, cutter, kwargs={}):
-        from HNL.EventSelection.eventFilters import passedFilterConversionCR
+        from HNL.EventSelection.eventFilters import passedFilterConversionCR, passedFilterConversionCRtZq
         if not self.initEvent(cutter, sideband=kwargs.get('sideband', None)):                                                 return False
-        if not passedFilterConversionCR(self.chain, self.new_chain, cutter = cutter):                    return False
+        if self.chain.analysis != 'tZq':
+            if not passedFilterConversionCR(self.chain, self.new_chain, cutter = cutter):                    return False
+        else:
+            if not passedFilterConversionCRtZq(self.chain, self.new_chain, cutter = cutter):                    return False
         return True       
 
 class TauFakeEnrichedDY(FilterObject):

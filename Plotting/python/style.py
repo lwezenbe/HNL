@@ -35,13 +35,18 @@ def getColor(palette, index):
         return getBlackColor()
     elif palette == 'AN2017':
         return getAN2017Colors(index)
+    elif palette == 'tZq':
+        return gettZqColors(index)
+    elif palette == 'HNLfromTau':
+        return getHNLfromTauColors(index)
     elif palette == 'Large':
         return getLargeArrayColors(index)
     else:
         return getHistColor(index)
 
+pallete_by_tex = ['StackTauPOGbyName', 'WorkingPoints', 'AN2017', 'HNL', 'tZq', 'HNLfromTau']
 def getPaletteIndex(palette, index, tex_name):
-    if palette == 'StackTauPOGbyName' or palette == 'WorkingPoints' or palette == 'AN2017' or palette == 'HNL':
+    if palette in pallete_by_tex:
         return tex_name
     else:
         return index
@@ -132,6 +137,7 @@ def getHistDidar(index):
     if index == 8:      return ROOT.kAzure
     if index == 9:      return ROOT.kYellow
     else:               return ROOT.kBlack
+
 def getHNLColor(name):
     if '600' in name:   return TColor.GetColor("#0000bd")
     if '500' in name:   return TColor.GetColor("#262626")
@@ -150,6 +156,32 @@ def getHNLColor(name):
     else:               return TColor.GetColor("#a0d681")
 
 
+def getHNLfromTau(name):
+    if 'triboson' in name:           return TColor.GetColor("#87F1FF")
+    elif 'WZ' in name:          return TColor.GetColor("#de5a6a")
+    elif 'ZZ-H' in name:          return TColor.GetColor("#AAFAC8")
+    elif 'non-prompt' in name:       return TColor.GetColor("#4496c8")
+    elif 'QCD' in name:         return TColor.GetColor("#e5b7e5")
+    elif 'XG' in name:          return TColor.GetColor("#ffcc66")
+    elif 'TT-T+X' in name:         return TColor.GetColor("#6B717E") 
+    elif 'Other' in name:          return TColor.GetColor("#77BFA3")
+    
+    elif '600' in name:   return TColor.GetColor("#F7C59F")
+    elif '400' in name:   return TColor.GetColor("#A8C256")
+    elif '200' in name:   return TColor.GetColor("#9F4A54")
+    elif '150' in name:   return TColor.GetColor("#51A3A3")
+    elif '120' in name:   return TColor.GetColor("#D1D1D1")
+    elif '100' in name:   return TColor.GetColor("#EAD94C")
+    elif '80' in name:   return TColor.GetColor("#3B3561")
+    elif '60' in name:   return TColor.GetColor("#DD7373")
+    elif '40' in name:   return TColor.GetColor("#3454D1")
+    elif '20' in name:   return TColor.GetColor("#9368B7")
+    elif '10' in name:   return TColor.GetColor("#610F7F")
+    elif '5' in name:   return TColor.GetColor("#613DC1")
+#    elif 'H' in name:           return "#87F1FF"
+    else:                       return ROOT.kGreen
+
+
 def getAN2017Colors(name):
     if name == 'WZ': return TColor.GetColor("#ff6666")
     elif name == 'triboson': return TColor.GetColor("#6666ff")
@@ -157,6 +189,26 @@ def getAN2017Colors(name):
     elif name == 'ZZ-H': return TColor.GetColor("#ff9966")
     elif name == 'XG': return TColor.GetColor("#00cc00")
     elif name == 'non-prompt': return TColor.GetColor("#3399ff")
+    elif '-m100' in name: return TColor.GetColor("#ff0000")
+    elif '-m130' in name: return TColor.GetColor("#0000ff")
+    elif '-m150' in name: return TColor.GetColor("#00ff00")
+    elif '-m200' in name: return TColor.GetColor("#ffff00")
+    elif '-m400' in name: return TColor.GetColor("#00ffff")
+    elif '-m600' in name: return TColor.GetColor("#ff00ff")
+    elif '-m20' in name: return TColor.GetColor("#00ff00")
+    elif '-m40' in name: return TColor.GetColor("#ffff00")
+    elif '-m60' in name: return TColor.GetColor("#ff00ff")
+    else:               return TColor.GetColor("#012A36")
+
+def gettZqColors(name):
+    if name == 'WZ': return TColor.GetColor("#81efd7")
+    elif name == 'triboson': return TColor.GetColor("#c6ff00")
+    elif name == 'TT-T+X': return TColor.GetColor("#d6a2e8")
+    elif name == 'ZZ-H': return TColor.GetColor("#2fbc6c")
+    elif name == 'XG': return TColor.GetColor("#9c88ff")
+    elif name == 'non-prompt': return TColor.GetColor("#ffe380")
+    elif name == 'QCD': return TColor.GetColor("#DBB68F")
+    elif name == 'Other': return TColor.GetColor("#336fce")
     elif '-m100' in name: return TColor.GetColor("#ff0000")
     elif '-m130' in name: return TColor.GetColor("#0000ff")
     elif '-m150' in name: return TColor.GetColor("#00ff00")

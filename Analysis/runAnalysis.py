@@ -21,9 +21,9 @@ submission_parser.add_argument('--isTest',   action='store_true',       default=
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 submission_parser.add_argument('--dryRun',   action='store_true',       default=False,  help='do not launch subjobs, only show them')
 submission_parser.add_argument('--genLevel',   action='store_true',     default=False,  help='Use gen level variables')
-submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT', ])
+submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'tZq', 'TTT', ])
 submission_parser.add_argument('--strategy',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
-submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino'])
+submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino', 'tZq'])
 submission_parser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?')
 submission_parser.add_argument('--includeData',   action='store', default=[], nargs='*',  help='Also run over data', choices=['sideband', 'signalregion'])
 submission_parser.add_argument('--logLevel',  action='store', default='INFO',  help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
@@ -34,7 +34,7 @@ submission_parser.add_argument('--customList',  action='store',      default=Non
 
 argParser.add_argument('--makePlots',   action='store_true',    default=False,  help='Use existing root files to make the plots')
 argParser.add_argument('--showCuts',   action='store_true',     default=False,  help='Show what the pt cuts were for the category in the plots')
-argParser.add_argument('--groupSamples',   action='store_true', default=False,  help='plot Search Regions')
+argParser.add_argument('--individualSamples',   action='store_true', default=False,  help='plot each input sample separately')
 argParser.add_argument('--makeDataCards', action = 'store_true',  help='Make data cards of the data you have')
 argParser.add_argument('--rescaleSignal', type = float,  action='store', default=None,  help='Enter desired signal coupling squared')
 argParser.add_argument('--masses', type=float, nargs='*',  help='Only run or plot signal samples with mass given in this list')
@@ -90,7 +90,7 @@ def getSampleManager(y):
     else:
         # skim_str = args.skimLevel
         skim_str = 'Reco'
-        # skim_str = 'noskim'
+    
     file_list = 'fulllist_'+args.era+str(y) if args.customList is None else args.customList
 
     sm = SampleManager(args.era, y, skim_str, file_list, skim_selection=args.selection, region=args.region)
@@ -135,7 +135,7 @@ if not args.isChild and not args.makePlots and not args.makeDataCards:
     # if not args.dryRun and checkShouldMerge(__file__, argParser):
     #     raise RuntimeError("Already existing files available. You would be overwriting")
     for year in jobs.keys():
-        submitJobs(__file__, ('sample', 'subJob', 'includeData'), jobs[year], argParser, jobLabel = 'runAnalysis', additionalArgs= [('year', year)])
+        submitJobs(__file__, ('sample', 'subJob', 'includeData'), jobs[year], argParser, jobLabel = 'runAnalysis-'+str(year)+'-'+args.region, additionalArgs= [('year', year)])
     exit(0)
 
 #
@@ -216,18 +216,9 @@ if not args.makePlots and not args.makeDataCards:
         for v in var.keys():
             branches.extend(['{0}/F'.format(v)])
         branches.extend(['weight/F', 'isprompt/O', 'category/I', 'searchregion/I'])
+        branches.extend(['oldPuWeight/F'])
         from HNL.Tools.makeBranches import makeBranches
         new_vars = makeBranches(output_tree, branches)
-
-        # list_of_hist = {}
-        # if chain.is_data: prompt_string = ['total']
-        # else: prompt_string = ['prompt', 'nonprompt', 'total']
-        # for c in categories:
-        #     list_of_hist[c] = {}
-        #     for v in var.keys():
-        #         list_of_hist[c][v] = {}
-        #         for ps in prompt_string:
-        #             list_of_hist[c][v][ps] = Histogram(str(c)+'-'+v+'-'+sample.output+'-'+ps, var[v][0], var[v][2], var[v][1])
 
         #
         # Load in sample and chain
@@ -263,6 +254,10 @@ if not args.makePlots and not args.makeDataCards:
         #
         reweighter = Reweighter(sample, sample_manager)
 
+        #temporarily store old btag weights separately for comparison purposes
+        from HNL.Weights.puReweighting import getReweightingFunction
+        old_pu_weights = getReweightingFunction(args.era, year)
+
         #
         # Load in MVA reader if needed
         #
@@ -273,25 +268,19 @@ if not args.makePlots and not args.makeDataCards:
         # Loop over all events
         #
         for entry in event_range:
-            
+          
             chain.GetEntry(entry)
             if args.isTest: progress(entry - event_range[0], len(event_range))
  
             cutter.cut(True, 'Total')
 
             #
-            #Triggers
-            #
-            from HNL.Triggers.triggerSelection import passTriggers
-            if not cutter.cut(passTriggers(chain, analysis=args.analysis), 'pass_triggers'): continue
-           
-            #
             # Event selection
             #
             event.initEvent()
 
             need_sideband = [0, 1, 2] if chain.is_data and 'sideband' in args.includeData else None
-            if not event.passedFilter(cutter, sample.output, sideband = need_sideband, for_training = 'ForTraining' in args.region): continue
+            if not event.passedFilter(cutter, sample.name, sideband = need_sideband, for_training = 'ForTraining' in args.region): continue
 
             prompt_str = None
             if args.region != 'NoSelection':
@@ -314,14 +303,15 @@ if not args.makePlots and not args.makeDataCards:
             #
             # Fill tree
             #
+            reweighter.fillTreeWithWeights(chain)
             for v in var.keys():
                 setattr(new_vars, v, var[v][0](chain))
             new_vars.weight = reweighter.getTotalWeight(sideband='sideband' in args.includeData)
+            new_vars.oldPuWeight = old_pu_weights(chain._nTrueInt) if not sample.is_data else 1.
             new_vars.isprompt = prompt_str == 'prompt'
             new_vars.category = chain.category
             new_vars.searchregion = srm[args.region].getSearchRegion(chain)
             output_tree.Fill()
-
  
         #
         # Save histograms
@@ -387,8 +377,7 @@ else:
 
         # Collect background file locations
         if not args.signalOnly:
-            bkgr_list = [getOutputName('bkgr', year)+'/'+b for b in sample_manager.sample_outputs]
-            bkgr_list = [b for b in glob.glob(getOutputName('bkgr', year)+'/*') if b.split('/')[-1] in sample_manager.sample_outputs]
+            bkgr_list = [getOutputName('bkgr', year)+'/'+b for b in sample_manager.sample_outputs if os.path.isdir(getOutputName('bkgr', year)+'/'+b)]
         else:
             bkgr_list = []
 
@@ -403,10 +392,10 @@ else:
         mixed_list = signal_list + bkgr_list + data_list
         merge(mixed_list, __file__, jobs[year], ('sample', 'subJob', 'includeData'), argParser, istest=args.isTest, additionalArgs= [('year', year)])
 
-        if args.groupSamples:
-            background_collection = sample_manager.sample_groups.keys()+['non-prompt']
+        if not args.individualSamples:
+            background_collection = [x for x in sample_manager.sample_outputs if not 'HNL' in x and not 'Data' in x]+['non-prompt']
         else:
-            background_collection = [b.split('/')[-1] for b in bkgr_list]
+            background_collection = [x for x in sample_manager.sample_names if not 'HNL' in x and not 'Data' in x]
 
         #Clean list of hist
         tmp_signal_list = []
@@ -419,14 +408,8 @@ else:
             if args.masses is not None and sample_mass not in args.masses:  continue 
             if args.flavor is not None and '-'+args.flavor+'-' not in sample_name:  continue 
             tmp_signal_list.append(s)
-        for i_b, b in enumerate(bkgr_list):
-            sample_name = b.split('/')[-1]
-            if args.sample is not None and args.sample != sample_name:      continue
-            if sample_name not in sample_manager.sample_outputs:              continue 
-            tmp_bkgr_list.append(b) 
 
         signal_list = [x for x in tmp_signal_list]
-        bkgr_list = [x for x in tmp_bkgr_list]
 
         #Reset list_of_hist
         category_dict = {
@@ -442,10 +425,9 @@ else:
         # Create variable distributions
         #
 
-        def createVariableDistributions(categories_dict, var_dict, signal, background, data):
+        def createVariableDistributions(categories_dict, var_dict, signal, background, data, sample_manager):
             categories_to_use = categories_dict[0]
             category_conditions = categories_dict[1]
-
             tmp_list_of_hist = {}
             for c in categories_to_use:
                 tmp_list_of_hist[c] = {}
@@ -454,14 +436,15 @@ else:
 
             # Load in the signal histograms from the files
             if not args.bkgrOnly:
-                for s in signal_list:
+                print "Loading signal histograms"
+                for isignal, s in enumerate(signal_list):
+                    progress(isignal, len(signal_list))
                     infile = TFile(s+'/variables.root', 'read')
                     intree = infile.Get('events')
                     sample_name = s.split('/')[-1]
                     sample_mass = float(sample_name.split('-m')[-1])
 
                     for c, cc in zip(categories_to_use, category_conditions): 
-                        print 'loading signal ', c
                         for v in var_dict.keys():
                             tmp_list_of_hist[c][v]['signal'][sample_name] = Histogram(getHistFromTree(intree, v, str(c)+'-'+v+'-'+sample_name, var_dict[v][1], cc))
 
@@ -471,6 +454,7 @@ else:
                             # if args.rescaleSignal is not None:
                             #    tmp_list_of_hist[c][v]['signal'][sample_name].hist.Scale(args.rescaleSignal/(args.coupling**2))
                     infile.Close()
+                print '\n'
 
             if len(args.includeData) > 0:
                 for c, cc in zip(categories_to_use, category_conditions):
@@ -486,39 +470,37 @@ else:
                             tmp_list_of_hist[c][v]['data']['signalregion'] = Histogram(getHistFromTree(intree, v, str(c)+'-'+v+'-'+'-Data-signalregion', var_dict[v][1], cc))
                             infile.Close()
 
-
             if not args.signalOnly:
+                print "Loading background histograms"
                 for c in categories_to_use: 
                     for v in var_dict.keys():   
-                        for b in background_collection:
+                        for b in background:
                             tmp_list_of_hist[c][v]['bkgr'][b] = Histogram(b+v+str(c), var_dict[v][0], var_dict[v][2], var_dict[v][1])
 
-                for b in bkgr_list:
-                    bkgr = b.split('/')[-1]
-                    if 'QCD' in bkgr: continue
-                    infile = TFile(b+'/variables.root', 'read')
-                    intree = infile.Get('events') 
-                    for c, cc in zip(categories_to_use, category_conditions):
-                        for iv, v in enumerate(var_dict.keys()):  
-
-                            if args.groupSamples:
-                                sg = [sk for sk in sample_manager.sample_groups.keys() if bkgr in sample_manager.sample_groups[sk]]
-                                if len(sg) == 0:
-                                    if c == 1 and iv == 0: print bkgr, "not part of any sample group"
-                                    continue
-                                tmp_hist = Histogram(getHistFromTree(intree, v, 'tmp_'+bkgr+v+str(c)+'p', var_dict[v][1], '('+cc+'&&isprompt)'))
-                                tmp_list_of_hist[c][v]['bkgr'][sg[0]].add(tmp_hist)
-                                del(tmp_hist)
-
+                for ib, b in enumerate(background):
+                    print b
+                    progress(ib, len(background))
+                    if not args.individualSamples:
+                        if b == 'non-prompt': continue
+                        infile = TFile(getOutputName('bkgr', year)+'/'+b+'/variables.root', 'read')
+                        intree = infile.Get('events') 
+                        
+                        for c, cc in zip(categories_to_use, category_conditions):
+                            for iv, v in enumerate(var_dict.keys()):  
+                                tmp_list_of_hist[c][v]['bkgr'][b] = Histogram(getHistFromTree(intree, v, 'tmp_'+b+v+str(c)+'p', var_dict[v][1], '('+cc+'&&isprompt)'))
+                                           
                                 if len(args.includeData) == 0 or 'sideband' not in args.includeData:
-                                    tmp_hist = Histogram(getHistFromTree(intree, v, 'tmp_'+bkgr+v+str(c)+'np', var_dict[v][1], '('+cc+'&&!isprompt)'))
+                                    tmp_hist = Histogram(getHistFromTree(intree, v, 'tmp_'+b+v+str(c)+'np', var_dict[v][1], '('+cc+'&&!isprompt)'))
                                     tmp_list_of_hist[c][v]['bkgr']['non-prompt'].add(tmp_hist)
                                     del(tmp_hist)
-                            else:
-                                tmp_hist = Histogram(getHistFromTree(intree, v, 'tmp_'+bkgr+v+str(c)+'t', var_dict[v][1], cc))
-                                tmp_list_of_hist[c][v]['bkgr'][bkgr].add(tmp_hist)
-                                del(tmp_hist)
-                    infile.Close()
+                        infile.Close()
+                    else:
+                        infile = TFile(getOutputName('bkgr', year)+'/'+sample_manager.output_dict[b]+'/variables-'+b+'.root', 'read')
+                        intree = infile.Get('events')
+                        for c, cc in zip(categories_to_use, category_conditions):
+                            for iv, v in enumerate(var_dict.keys()):
+                                tmp_list_of_hist[c][v]['bkgr'][b] = Histogram(getHistFromTree(intree, v, 'tmp_'+b+v+str(c)+'t', var_dict[v][1], cc))
+                        infile.Close()
 
                 for c, cc in zip(categories_to_use, category_conditions):
                     for iv, v in enumerate(var_dict.keys()):
@@ -528,7 +510,8 @@ else:
             return tmp_list_of_hist
         
         print "Creating list of histograms"
-        list_of_hist = createVariableDistributions(category_dict[args.categoriesToPlot], var, signal_list, bkgr_list, data_list)
+        list_of_hist = createVariableDistributions(category_dict[args.categoriesToPlot], var, signal_list, background_collection, data_list, sample_manager)
+
 
         #
         #       Plot!
@@ -596,6 +579,28 @@ else:
 
         if args.makePlots:
 
+            def selectNMostContributingHist(hist_dict, n):
+                yield_dict = {x : hist_dict[x].getHist().GetSumOfWeights() for x in hist_dict.keys()}
+                no_other = False
+                if n > len(yield_dict.keys()): 
+                    n = len(yield_dict.keys())
+                    no_other = True
+                sorted_yields = sorted(yield_dict.iteritems(), key = lambda x : x[1], reverse=True)
+                hist_to_return = []
+                names_to_return = []
+                for (name, y) in sorted_yields[:n+1]:
+                    hist_to_return.append(hist_dict[name])
+                    names_to_return.append(name)
+                
+                if not no_other:
+                    other_hist = hist_dict[sorted_yields[n+1][0]].clone('other_hist')
+                    for (name, y) in sorted_yields[n+2:]:
+                        other_hist.add(hist_dict[name])
+
+                    hist_to_return.append(other_hist)
+                    names_to_return.append('Other')
+                return hist_to_return, names_to_return
+
             #
             # Set output directory, taking into account the different options
             #
@@ -644,27 +649,28 @@ else:
                         bkgr_hist = None
                     else:
                         bkgr_hist = []
-                        for bk in list_of_hist[c][v]['bkgr'].keys():
-                            bkgr_hist.append(list_of_hist[c][v]['bkgr'][bk])
-                            bkgr_legendnames.append(bk)
+                        if args.individualSamples:
+                            bkgr_hist, bkgr_legendnames = selectNMostContributingHist(list_of_hist[c][v]['bkgr'], 7)
+                        else:
+                            for bk in list_of_hist[c][v]['bkgr'].keys():
+                                bkgr_hist.append(list_of_hist[c][v]['bkgr'][bk])
+                                bkgr_legendnames.append(bk)
                 
                     # Make list of signal histograms for the plot object
                     signal_legendnames = []
                     if args.bkgrOnly or not list_of_hist[c][v]['signal'].values(): 
                         signal_hist = None
                     else:
+                        signal_hist = []
                         for sk in list_of_hist[c][v]['signal'].keys():
-                            signal_hist = list_of_hist[c][v]['signal'].values()
+                            signal_hist.append(list_of_hist[c][v]['signal'][sk])
                             # if 'filtered' in sk:
                             #     signal_legendnames.append('HNL m_{N} = 30 GeV w Pythia filter')
                             # else:
                             # signal_legendnames.append('HNL '+ sk.split('-')[1] +' m_{N} = '+sk.split('-m')[-1]+ ' GeV')
-                            if not args.rescaleSignal:
-                                signal_legendnames.append('#splitline{HNL m_{N}='+sk.split('-m')[-1]+ 'GeV}{V^{2}='+str(signal_couplingsquaredinsample[sk.split('-')[1]][int(sk.split('-m')[-1])])+'}')
-                            else:
-                                signal_legendnames.append('HNL m_{N}='+sk.split('-m')[-1]+ 'GeV')
+                            signal_legendnames.append('HNL m_{N}='+sk.split('-m')[-1]+ 'GeV')
 
-                    if len(args.includeData) > 0 and 'signalregion' in args.includeData:
+                    if len(args.includeData) > 0 and 'signalregion' in args.includeData and not 'Weight' in v:
                         observed_hist = list_of_hist[c][v]['data']['signalregion']
                     else:
                         observed_hist = None
@@ -690,24 +696,22 @@ else:
                             
                         if args.region == 'lowMassSR':
                             plotLowMassRegions(signal_hist, bkgr_hist, legend_names, 
-                                out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c), extra_text = extra_text, sample_groups = args.groupSamples)
+                                out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c), extra_text = extra_text)
                         if args.region == 'highMassSR':
                             plotHighMassRegions(signal_hist, bkgr_hist, legend_names, 
-                                out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c), extra_text = extra_text, sample_groups = args.groupSamples)
+                                out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c), extra_text = extra_text)
 
                     else:
 
                         # Create plot object (if signal and background are displayed, also show the ratio)
                         draw_ratio = None if args.signalOnly or args.bkgrOnly else True
                         if 'signalregion' in args.includeData: draw_ratio = True
-                        if args.groupSamples:
-                            # p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
-                            #         color_palette = 'Didar', color_palette_bkgr = 'AN2017')
-                            p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = False, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
-                                    color_palette = 'Didar', color_palette_bkgr = 'AN2017')
+                        if not args.individualSamples:
+                            p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
+                                    color_palette = 'Didar', color_palette_bkgr = 'AN2017' if not args.analysis == 'tZq' else 'tZq', x_name = var[v][2][0], y_name = var[v][2][1])
                         else:
                             p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = False, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
-                                    color_palette = 'Didar')
+                                    color_palette = 'Didar', color_palette_bkgr = 'Didar', x_name = var[v][2][0], y_name = var[v][2][1])
 
 
                         # Draw
@@ -723,21 +727,39 @@ else:
             grouped_categories = cat.SUPER_CATEGORIES
 
             print "Making Bar Charts"
-            list_of_hist_forbar = createVariableDistributions(category_dict['original'], {'searchregion' : var['searchregion']}, signal_list, bkgr_list, data_list)
+            list_of_hist_forbar = createVariableDistributions(category_dict['original'], {'searchregion' : var['searchregion']}, signal_list, background_collection, data_list, sample_manager)
             signal_names = [s.split('/')[-1] for s in signal_list]
             for supercat in grouped_categories.keys():
+                if nl != 3 and supercat != 'Other': continue
                 #
                 # Bkgr
                 #
                 if not args.signalOnly:
-                    hist_to_plot = {}
-                    for sample_name in background_collection:
-                        hist_to_plot[sample_name] = TH1D(sample_name+supercat, sample_name+supercat, len(grouped_categories[supercat]), 0, len(grouped_categories[supercat]))
+                    hist_to_plot = []
+                    if args.individualSamples:
+                        bkgr_hist_to_draw, bkgr_to_draw = selectNMostContributingHist(list_of_hist[supercat]['searchregion']['bkgr'], 7)
+                    else:
+                        bkgr_to_draw = [b for b in background_collection]
+                    for i_sample, sample_name in enumerate(bkgr_to_draw):
+                        hist_to_plot.append(TH1D(sample_name+supercat, sample_name+supercat, len(grouped_categories[supercat]), 0, len(grouped_categories[supercat])))
                         for i, c in enumerate(grouped_categories[supercat]):
-                            hist_to_plot[sample_name].SetBinContent(i+1, list_of_hist_forbar[c]['searchregion']['bkgr'][sample_name].getHist().GetSumOfWeights()) 
+                            if args.individualSamples and sample_name == 'Other':
+                                bkgr_hist = selectNMostContributingHist(list_of_hist_forbar[c]['searchregion']['bkgr'], 7)[0][-1]
+                                hist_to_plot[i_sample].SetBinContent(i+1, bkgr_hist.getHist().GetSumOfWeights()) 
+                            else:
+                                hist_to_plot[i_sample].SetBinContent(i+1, list_of_hist_forbar[c]['searchregion']['bkgr'][sample_name].getHist().GetSumOfWeights()) 
+
+                    if len(args.includeData) > 0 and 'signalregion' in args.includeData:
+                        observed_hist = TH1D('data'+supercat, 'data'+supercat, len(grouped_categories[supercat]), 0, len(grouped_categories[supercat]))
+                        for i, c in enumerate(grouped_categories[supercat]):
+                            observed_hist.SetBinContent(i+1, list_of_hist_forbar[c]['searchregion']['data']['signalregion'].getHist().GetSumOfWeights()) 
+                    else:
+                        observed_hist = None
 
                     x_names = [CATEGORY_TEX_NAMES[n] for n in grouped_categories[supercat]]
-                    p = Plot(hist_to_plot.values(), hist_to_plot.keys(), name = 'Events-bar-bkgr-'+supercat, x_name = x_names, y_name = 'Events', y_log='SingleTau' in supercat)            
+                    #p = Plot(hist_to_plot, bkgr_to_draw, name = 'Events-bar-bkgr-'+supercat, observed_hist = observed_hist, x_name = x_names, y_name = 'Events', y_log='SingleTau' in supercat, color_palette = 'Didar')            
+                    p = Plot(hist_to_plot, bkgr_to_draw, name = 'Events-bar-bkgr-'+supercat, observed_hist = observed_hist, x_name = x_names, y_name = 'Events', y_log='SingleTau' in supercat)            
+
                     p.drawBarChart(output_dir = os.path.join(output_dir, 'Yields', 'BarCharts'))
                 
                 #
@@ -781,8 +803,11 @@ else:
                 p.drawPieChart(output_dir = os.path.join(output_dir, 'Yields', 'PieCharts'), draw_percent=True)
 
             print "plotting cutflow"
-            for sample_name in sample_manager.sample_outputs:
-                in_file = [getOutputName('signal' if 'HNL' in sample_name else 'bkgr', year)+'/'+sample_name+'/variables.root']
+            for sample_name in background_collection:
+                if not args.individualSamples:
+                    in_file = [getOutputName('signal' if 'HNL' in sample_name else 'bkgr', year)+'/'+sample_name+'/variables.root']
+                else:
+                    in_file = [getOutputName('bkgr', year)+'/'+sample_manager.output_dict[sample_name]+'/variables-'+sample_name+'.root']
                 from HNL.Tools.helpers import isValidRootFile
                 if not isValidRootFile(in_file[0]): continue
                 name = [sample_name]

@@ -39,7 +39,7 @@ def mergeSmallFile(merge_file):
     path, name = merge_file.rsplit('/', 1)
     if not args.isTest:
         os.system('hadd -f -v '+path+'/'+name.split('_', 1)[1]+'.root '+merge_file+'/*root')
-        # os.system('rm -r -f '+ merge_file)
+        os.system('rm -r -f '+ merge_file)
     else:
         makeDirIfNeeded(path+'/testArea/'+name.split('_', 1)[1]+'.root')
         os.system('hadd -f -v '+path+'/testArea/'+name.split('_', 1)[1]+'.root '+merge_file+'/*root')
@@ -66,8 +66,8 @@ def mergeLargeFile(merge_file):
     for j, file_list in enumerate(split_list):
         if not args.isTest:
             os.system('hadd -f -v '+path+'/'+name+ '/tmp_batches/batch_'+str(j)+ '.root '+' '.join(file_list))
-            # for f in file_list:
-            #     os.system('rm '+f)
+            for f in file_list:
+                os.system('rm '+f)
         else:
             os.system('hadd -f -v '+path+'/testArea/'+name+ '/tmp_batches/batch_'+str(j)+ '.root '+' '.join(file_list))
 

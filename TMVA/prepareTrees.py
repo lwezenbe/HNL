@@ -175,12 +175,12 @@ if not args.merge:
         chain.obj_sel['ele_wp'] = 'FO'
         chain.obj_sel['mu_wp'] = 'FO'
         chain.obj_sel['tau_wp'] = 'FO'
-        if not event.passedFilter(cutter, sample.output, for_training=True): continue
+        if not event.passedFilter(cutter, sample.name, for_training=True): continue
         if len(chain.l_flavor) == chain.l_flavor.count(2): continue
 
         #Reset object selection
         event.resetObjSelection()
-        passes_full_selection = event.passedFilter(cutter, sample.output, for_training=True)
+        passes_full_selection = event.passedFilter(cutter, sample.name, for_training=True)
 
         prompt_str = 'nonprompt' if not passes_full_selection else 'prompt'
 

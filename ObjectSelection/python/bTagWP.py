@@ -100,7 +100,7 @@ def slidingDeepFlavorThreshold(era, year, pt, algo='Deep' ):
 def returnBTagValueBySelection(chain, jet, selection = None):
     if selection is None: selection = chain.obj_sel['jet_algo']
 
-    if selection in ['HNL', 'HNLLowPt', 'TTT', 'Luka']:
+    if selection in ['HNL', 'HNLLowPt', 'TTT', 'Luka', 'tZq']:
         return readBTagValue(chain, jet, 'Deep')
     else:
         return readBTagValue(chain, jet, 'AN2017014')

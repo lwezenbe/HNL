@@ -45,7 +45,7 @@ if args.isTest:
 
     if args.sample is None: args.sample = 'DYJetsToLL-M-50'
     if args.subJob is None: args.subJob = '0'
-    if args.year is None: args.year = '2016'
+    if args.year is None: args.year = '2017'
     if args.region is None: args.region = 'TauFakesDY'
     if args.application is None: args.application = args.region if args.region in ['TauFakesDY', 'TauFakesTT'] else 'TauFakesDY'
     from HNL.Tools.helpers import generateArgString
@@ -87,8 +87,8 @@ else:
     skim_str = 'Reco'
 
 if not args.inData:
-    # sublist = 'BackgroundEstimation/ClosureTests'
-    sublist = 'fulllist_'+args.era+args.year+'_nosignal_mconly'
+    sublist = 'BackgroundEstimation/ClosureTests_'+args.era+args.year
+    #sublist = 'fulllist_'+args.era+args.year+'_nosignal_mconly'
 else:
     sublist = 'fulllist_'+args.era+args.year+'_nosignal'
 sample_manager = SampleManager(args.era, args.year, skim_str, sublist, skim_selection=args.selection)
@@ -298,7 +298,7 @@ if not args.makePlots:
 
         #Event selection 
         event.initEvent()
-        if not event.passedFilter(cutter, sample.output): continue
+        if not event.passedFilter(cutter, sample.name): continue
 
         if args.inData and not chain.is_data:
             fake_index = event.getFakeIndex()
@@ -386,14 +386,13 @@ else:
                 backgrounds = []
                 background_names = []
 
-            tmp_bkgr_collection = {}
+            bkgr_collection = {}
             for sample_name in closureObjects.keys():
                 if 'Data' in sample_name: continue
-                tmp_bkgr_collection[sample_name] = closureObjects[sample_name][c][v].getSideband()
+                bkgr_collection[sample_name] = closureObjects[sample_name][c][v].getSideband()
 
-            grouped_backgrounds = mergeHistograms(tmp_bkgr_collection, sample_manager.sample_groups)
-            for b in grouped_backgrounds:
-                backgrounds.append(grouped_backgrounds[b])
+            for b in bkgr_collection:
+                backgrounds.append(bkgr_collection[b])
                 background_names.append(b)
 
             if args.inData:

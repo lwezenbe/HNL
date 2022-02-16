@@ -322,7 +322,7 @@ class Plot:
         if self.draw_significance:
             self.plotpad.SetBottomMargin(0.)
             self.sig_pad.SetTopMargin(0.05)
-            self.sig_pad.SetBottomMargin(0.3)
+            self.sig_pad.SetBottomMargin(0.1)
             self.sig_pad.Draw()
 
         return        
@@ -654,7 +654,7 @@ class Plot:
                 for i, (h, n) in enumerate(zip(self.s, self.s_tex_names)):
                     color_index = ps.getPaletteIndex(self.color_palette, self.s.index(h), n)
                     h.SetFillColor(ps.getColor(self.color_palette, color_index))
-                    h.SetLineColor(ps.getColor(self.color_palette, color_index))
+                    h.SetLineColor(ROOT.kBlack)
                     self.hs.Add(h)
             
             # Prepare for very basic signal
@@ -700,6 +700,8 @@ class Plot:
                 for i, (h, n) in enumerate(zip(self.b, self.b_tex_names)):
                     color_index = ps.getPaletteIndex(self.color_palette_bkgr, i, n)
                     h.SetFillColor(ps.getColor(self.color_palette_bkgr, color_index))
+                    h.SetLineColor(ROOT.kBlack)
+                    h.SetLineWidth(1)
                     self.hs.Add(h)
 
         self.tex_names = self.s_tex_names + self.b_tex_names
@@ -857,9 +859,9 @@ class Plot:
         loop_obj = [item for item in self.s]
         if len(self.b) > 0: loop_obj.extend(self.b)
         for h, n in zip(loop_obj, self.tex_names):
-            self.legend.AddEntry(h, n)
+            self.legend.AddEntry(h, n, 'F' if not 'HNL' in n else 'L')
         if self.observed is not None:
-            self.legend.AddEntry(self.observed, 'data')
+            self.legend.AddEntry(self.observed, 'data', 'EP')
 
         self.legend.Draw()
 
@@ -1039,7 +1041,15 @@ class Plot:
         self.setAxisLog(stacked = not parallel_bins)
         if not parallel_bins:
             self.hs.Draw('B')                                                        
-            
+           
+       #Draw observed
+        if self.observed is not None:
+            self.observed.SetLineColor(ROOT.kBlack)
+            self.observed.SetMarkerColor(ROOT.kBlack)
+            self.observed.SetMarkerStyle(8)
+            self.observed.SetMarkerSize(1)
+            self.observed.Draw("EPSame")
+ 
         #Create Legend
         legend = ROOT.TLegend(0.5, .75, .95, .9)
         legend.SetNColumns(2)
@@ -1048,6 +1058,8 @@ class Plot:
         if len(self.b) > 0: loop_obj.extend(self.b)
         for h, n in zip(loop_obj, self.tex_names):
             legend.AddEntry(h, n)
+        if self.observed is not None:
+            legend.AddEntry(self.observed, 'data')
         legend.SetFillStyle(0)
         legend.SetBorderSize(0)
         legend.Draw()

@@ -42,15 +42,10 @@ if args.isTest:
     if args.flavor is None: args.flavor = 'tau'
     if args.flavor == 'tau' and args.tauRegion is None: args.tauRegion = 'TauFakesDYttl'
     if args.sample is None: 
-        if args.era != 'UL':
-            if args.inData: args.sample = 'Data-'+args.era+args.year
-            elif args.flavor == 'e': args.sample = 'QCDEMEnriched-80to120'
-            elif args.flavor == 'mu': args.sample = 'QCDmuEnriched-80to120'
-            else:   args.sample = 'DYJetsToLL-M-50'
-        else:
-            if args.inData: args.sample = 'Data-'+args.era+args.year
-            elif args.flavor in ['e', 'mu']: args.sample = 'QCD-80to120'
-            else:   args.sample = 'DYJetsToLL-M-50'
+        if args.inData: args.sample = 'Data-'+args.era+args.year
+        elif args.flavor == 'e': args.sample = 'QCDEMEnriched-80to120'
+        elif args.flavor == 'mu': args.sample = 'QCDmuEnriched-80to120'
+        else:   args.sample = 'DYJetsToLL-M-50'
     from HNL.Tools.helpers import generateArgString
     arg_string =  generateArgString(argParser)
 else:
@@ -103,7 +98,8 @@ elif args.flavor == 'mu':
 elif args.flavor == 'e':
     sublist = 'BackgroundEstimation/ElectronFakes-'+args.era+args.year
 
-sample_manager = SampleManager(args.era, args.year, skim_str, sublist, skim_selection=args.selection)
+selection_to_use = args.selection if args.flavor == 'tau' else 'LukaFR'
+sample_manager = SampleManager(args.era, args.year, skim_str, sublist, skim_selection=selection_to_use)
 
 #
 # Define job list
@@ -242,17 +238,16 @@ if not args.makePlots:
 
         #Event selection
         if args.flavor == 'e':
-            if not event.passedFilter(cutter, sample.output, only_electrons = True, require_jets = True, offline_thresholds=False): continue
+            if not event.passedFilter(cutter, sample.name, only_electrons = True, require_jets = True, offline_thresholds=False): continue
         elif args.flavor == 'mu':
-            if not event.passedFilter(cutter, sample.output, only_muons = True, require_jets = True, offline_thresholds=False): continue
+            if not event.passedFilter(cutter, sample.name, only_muons = True, require_jets = True, offline_thresholds=False): continue
         else:
-            if not event.passedFilter(cutter, sample.output): continue
+            if not event.passedFilter(cutter, sample.name): continue
         fake_index = event.event_selector.selector.getFakeIndex()
         
         if args.inData and not chain.is_data:
             if not chain._lIsPrompt[chain.l_indices[fake_index]]: continue
             passed = True #Always fill both denom and enum for this case (subtraction of prompt contribution)
-            print reweighter.getLumiWeight()
             weight = -1.*reweighter.getLumiWeight()
         else:
             if not chain.is_data and not cutter.cut(chain.l_isfake[fake_index], 'fake lepton'): continue
