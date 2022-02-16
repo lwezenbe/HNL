@@ -78,7 +78,6 @@ class PUWeightReaderJSON:
         #return self.pujson[self.name].evaluate(syst, ntrueint)
         return self.pujson[self.name].evaluate(ntrueint, syst)
 
-
 if __name__ == '__main__':
     from HNL.Samples.sample import createSampleList, getSampleFromList
     from HNL.Tools.logger import getLogger, closeLogger

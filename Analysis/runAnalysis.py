@@ -436,7 +436,9 @@ else:
 
             # Load in the signal histograms from the files
             if not args.bkgrOnly:
-                for s in signal_list:
+                print "Loading signal histograms"
+                for isignal, s in enumerate(signal_list):
+                    progress(isignal, len(signal_list))
                     infile = TFile(s+'/variables.root', 'read')
                     intree = infile.Get('events')
                     sample_name = s.split('/')[-1]
@@ -452,6 +454,7 @@ else:
                             # if args.rescaleSignal is not None:
                             #    tmp_list_of_hist[c][v]['signal'][sample_name].hist.Scale(args.rescaleSignal/(args.coupling**2))
                     infile.Close()
+                print '\n'
 
             if len(args.includeData) > 0:
                 for c, cc in zip(categories_to_use, category_conditions):
@@ -468,12 +471,15 @@ else:
                             infile.Close()
 
             if not args.signalOnly:
+                print "Loading background histograms"
                 for c in categories_to_use: 
                     for v in var_dict.keys():   
                         for b in background:
                             tmp_list_of_hist[c][v]['bkgr'][b] = Histogram(b+v+str(c), var_dict[v][0], var_dict[v][2], var_dict[v][1])
 
-                for b in background:
+                for ib, b in enumerate(background):
+                    print b
+                    progress(ib, len(background))
                     if not args.individualSamples:
                         if b == 'non-prompt': continue
                         infile = TFile(getOutputName('bkgr', year)+'/'+b+'/variables.root', 'read')
@@ -655,16 +661,14 @@ else:
                     if args.bkgrOnly or not list_of_hist[c][v]['signal'].values(): 
                         signal_hist = None
                     else:
+                        signal_hist = []
                         for sk in list_of_hist[c][v]['signal'].keys():
-                            signal_hist = list_of_hist[c][v]['signal'].values()
+                            signal_hist.append(list_of_hist[c][v]['signal'][sk])
                             # if 'filtered' in sk:
                             #     signal_legendnames.append('HNL m_{N} = 30 GeV w Pythia filter')
                             # else:
                             # signal_legendnames.append('HNL '+ sk.split('-')[1] +' m_{N} = '+sk.split('-m')[-1]+ ' GeV')
-                            if not args.rescaleSignal:
-                                signal_legendnames.append('#splitline{HNL m_{N}='+sk.split('-m')[-1]+ 'GeV}{V^{2}='+str(signal_couplingsquaredinsample[sk.split('-')[1]][int(sk.split('-m')[-1])])+'}')
-                            else:
-                                signal_legendnames.append('HNL m_{N}='+sk.split('-m')[-1]+ 'GeV')
+                            signal_legendnames.append('HNL m_{N}='+sk.split('-m')[-1]+ 'GeV')
 
                     if len(args.includeData) > 0 and 'signalregion' in args.includeData and not 'Weight' in v:
                         observed_hist = list_of_hist[c][v]['data']['signalregion']
@@ -703,7 +707,7 @@ else:
                         draw_ratio = None if args.signalOnly or args.bkgrOnly else True
                         if 'signalregion' in args.includeData: draw_ratio = True
                         if not args.individualSamples:
-                            p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = v == 'btagWeight', extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
+                            p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
                                     color_palette = 'Didar', color_palette_bkgr = 'AN2017' if not args.analysis == 'tZq' else 'tZq', x_name = var[v][2][0], y_name = var[v][2][1])
                         else:
                             p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = False, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,

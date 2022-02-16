@@ -47,8 +47,8 @@ def getHistFromTree(tree, vname, hname, bins, condition):
     if 'Weight' in vname: 
         tree.Draw(vname+">>"+hname, condition+'*lumiWeight')
     else:
-        #tree.Draw(vname+">>"+hname, condition+'*weight')
-        tree.Draw(vname+">>"+hname, condition+'*lumiWeight')
+        tree.Draw(vname+">>"+hname, condition+'*weight')
+        #tree.Draw(vname+">>"+hname, condition+'*lumiWeight')
         #tree.Draw(vname+">>"+hname, condition+'*lumiWeight*electronRecoWeight')
         #tree.Draw(vname+">>"+hname, condition+'*lumiWeight*electronRecoWeight*puWeight')
         #tree.Draw(vname+">>"+hname, condition+'*lumiWeight*electronRecoWeight*btagWeight')

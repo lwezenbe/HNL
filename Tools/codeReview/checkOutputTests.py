@@ -3,6 +3,7 @@ BASE_FOLDER = "/user/lwezenbe/Testing/"
 import glob
 import os
 from ROOT import TFile, TTree
+import ROOT
 from HNL.Tools.helpers import rootFileContent, getObjFromFile, makeDirIfNeeded
 from HNL.Tools.histogram import Histogram
 # import uproot
@@ -15,7 +16,7 @@ def loadObjects(path, name):
         return "Error while trying to access file with path {}".format(path.replace("Previous", "Latest"))
     if obj_latest is None:
         return "Histogram with name '{0}' in file '{1}' is not present in Latest test".format(name, path)
-    return obj_prev, obj_latest
+    return (obj_prev, obj_latest)
 
 
 def compareHist(hist_prev, hist_latest, withinerrors=False):
@@ -60,33 +61,39 @@ def compareHist(hist_prev, hist_latest, withinerrors=False):
             elif hist_prev.getHist().GetBinError(xb) > 0:
                 if abs( hist_prev.getHist().GetBinContent(xb)-hist_latest.getHist().GetBinContent(xb))/hist_prev.getHist().GetBinError(xb) > 1:
                     return  "Out of error bounds"
-
+    
     return None
 
 def compareTrees(tree_prev, tree_latest, withinerrors=False):
+    import ROOT
+    ROOT.gROOT.SetBatch(True)
+
     branches_prev = tree_prev.GetListOfBranches()
     branches_latest = tree_latest.GetListOfBranches()
     branches_latest_names = [x.GetName() for x in branches_latest]
 
     changed_branches = []
 
-    for b in branches:
+    for b in branches_prev:
         if b.GetName() not in branches_latest_names: 
             changed_branches.append('\t'+b.GetName() + ' not in new tree')
             continue
         tree_prev.Draw(b.GetName()+'>>tmp_prev')
         tree_latest.Draw(b.GetName()+'>>tmp_latest')
-        mean_prev = ROOT.gDirectory.Get('tmp_prev').GetMean()
-        err_prev = ROOT.gDirectory.Get('tmp_prev').GetMeanError()   
-        mean_latest = ROOT.gDirectory.Get('tmp_latest').GetMean()
-        err_latest = ROOT.gDirectory.Get('tmp_latest').GetMeanError()
+        try:
+            mean_prev = ROOT.gDirectory.Get('tmp_prev').GetMean()
+            err_prev = ROOT.gDirectory.Get('tmp_prev').GetMeanError()   
+            mean_latest = ROOT.gDirectory.Get('tmp_latest').GetMean()
+            err_latest = ROOT.gDirectory.Get('tmp_latest').GetMeanError()
+        except:
+            print '\t \t branch {0} gives None object'.format(b.GetName())
+            continue
 
         if mean_prev != mean_latest:
             if withinerrors and abs(mean_prev-mean_latest) < err_prev:
                 continue
             else:
                 changed_branches.append('\t {0}: \t {1} +- {2} \t ---> \t {3} +- {4}'.format(b.GetName(), mean_prev, err_prev, mean_latest, err_latest))
-    
     if len(changed_branches) == 0:
         return None
     else:
@@ -96,7 +103,7 @@ def compareObjects(obj_prev, obj_latest, withinerrors=False):
     if type(obj_prev) != type(obj_latest):
         raise RuntimeError("Types of two objects to compare is different: {0} and {1}".format(type(obj_prev), type(obj_latest)))
 
-    if isinstance(obj_prev, TTree):
+    if isinstance(obj_prev, ROOT.TTree):
         return compareTrees(obj_prev, obj_latest, withinerrors = withinerrors)
     else:
         return compareHist(obj_prev, obj_latest, withinerrors = withinerrors)
@@ -163,6 +170,7 @@ def plotComparison(path, name):
 
 
 def compareFiles(f, withinerrors=False):
+    print '\t Checking', f
     in_file = TFile(f, "read")
     list_of_hist_names = []
     for c in rootFileContent(in_file, basepath='', getNested=True):
@@ -175,8 +183,14 @@ def compareFiles(f, withinerrors=False):
     everything_clear = True
     faulty_hn = []
     for hn in list_of_hist_names:
-        obj_prev, obj_latest = loadObjects(f, hn)
-        test_result = compareHist(obj_prev, obj_latest)
+        obj = loadObjects(f, hn)
+        if isinstance(obj, str):
+            out_file.write(hn+': '+obj+'\n')
+            faulty_hn.append('\t ' +hn+': '+obj+'\n')
+            continue
+        
+        obj_prev, obj_latest = obj
+        test_result = compareObjects(obj_prev, obj_latest)
         if test_result is not None:
             if withinerrors and 'WITHIN ERROR' in test_result:
                 continue
@@ -184,7 +198,7 @@ def compareFiles(f, withinerrors=False):
             out_file.write(hn+': '+test_result+'\n')
             faulty_hn.append('\t ' +hn+': '+test_result+'\n')
             try:
-                plotComparison(f, hn)
+                if not isinstance(obj_prev, TTree): plotComparison(f, hn)
             except:
                 pass
 
@@ -256,6 +270,7 @@ def copyFiles():
                     makeDirIfNeeded(root.replace('Latest','Previous')+'/'+f)
                     os.system("scp "+root+'/'+f+" "+root.replace('Latest','Previous')+'/'+f)
 
+    os.system('rm -r '+BASE_FOLDER+'Latest/*')
 
 if __name__ == "__main__":
     import argparse
