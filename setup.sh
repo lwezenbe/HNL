@@ -23,6 +23,12 @@ git clone https://github.com/cms-tau-pog/TauIDSFs TauPOG/TauIDSFs
 cd TauPOG
 scram b -j10
 
+cd -
+git clone https://github.com/lwezenbe/HNL
+cd HNL
+scram b -j 10
+python Stat/python/combineSetup.py
+
 #setup of correctionlibtool
 cd -
 git clone --recursive git@github.com:cms-nanoAOD/correctionlib.git
@@ -31,12 +37,11 @@ make PYTHON=python2
 make install PREFIX=../HNL/Weights/python/correctionlib
 scram b -j10
 
+cd HNL/Weights/data
+git clone https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration.git
+
 cd -
-python3 -m pip install git+https://github.com/cms-nanoAOD/correctionlib.git
-git clone https://github.com/lwezenbe/HNL
 cd HNL
-scram b -j 10
-python Stat/python/combineSetup.py
 
 pip install PyPdf2 --user
 
