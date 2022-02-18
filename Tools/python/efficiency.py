@@ -100,7 +100,7 @@ class Efficiency(object):
             var[2] = min(max(self.getEfficiency().GetZaxis().GetBinCenter(1), var[2]), self.getEfficiency().GetZaxis().GetBinCenter(self.getEfficiency().GetZaxis().GetLast()))  
         else:
             var = min(max(self.getEfficiency().GetXaxis().GetBinCenter(1), var), self.getEfficiency().GetXaxis().GetBinCenter(self.getEfficiency().GetXaxis().GetLast()))
-        
+ 
         if self.isTH2:
             bin_to_read = self.getEfficiency().FindBin(var[0], var[1])
         elif self.isTH3:

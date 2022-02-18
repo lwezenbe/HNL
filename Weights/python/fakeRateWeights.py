@@ -18,9 +18,9 @@ year_dict = {
     '2018': '2018',
 }
 
-default_tau_path = lambda proc, year, selection, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', year, data_string, 'tau', 'TauFakes'+proc+'ttl-'+selection, proc, 'events.root')
-default_ele_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', era+'-'+year, 'Lukav2', 'fakeRateMap_'+data_string+'_electron_'+year+'_'+'mT' if data_string=='data' else 'fakeRateMap_'+data_string+'_electron_'+year+'.root')
-default_mu_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', era+'-'+year, 'Lukav2', 'fakeRateMap_'+data_string+'_muon_'+year+'_'+'mT' if data_string=='data' else 'fakeRateMap_'+data_string+'_muon_'+year+'.root')
+default_tau_path = lambda proc, year, selection, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', year, data_string, 'tau', 'TauFakes'+proc+'ttl-'+selection, proc if data_string != 'DATA' else '' , 'events.root')
+default_ele_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', era+'-'+year, 'Lukav2', 'fakeRateMap_'+data_string+'_electron_'+year+'_'+'mT.root' if data_string=='data' else 'fakeRateMap_'+data_string+'_electron_'+year+'.root')
+default_mu_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', era+'-'+year, 'Lukav2', 'fakeRateMap_'+data_string+'_muon_'+year+'_'+'mT.root' if data_string=='data' else 'fakeRateMap_'+data_string+'_muon_'+year+'.root')
 
 ele = 0
 mu = 1

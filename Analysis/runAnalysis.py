@@ -25,11 +25,11 @@ submission_parser.add_argument('--selection',   action='store', default='default
 submission_parser.add_argument('--strategy',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
 submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino', 'tZq'])
 submission_parser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?')
-submission_parser.add_argument('--includeData',   action='store', default=[], nargs='*',  help='Also run over data', choices=['sideband', 'signalregion'])
+submission_parser.add_argument('--includeData',   action='store', default=None, help='Also run over data', choices=['includeSideband', 'signalregion'])
 submission_parser.add_argument('--logLevel',  action='store', default='INFO',  help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 submission_parser.add_argument('--skimLevel',  action='store', default='auto',  choices=['noskim', 'Reco', 'RecoGeneral', 'auto'])
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
-
+submission_parser.add_argument('--tag',  action='store',      default=None,               help='Tag with additional information for the output', choices = ['TauFakes', 'sidebandInMC'])
 
 
 argParser.add_argument('--makePlots',   action='store_true',    default=False,  help='Use existing root files to make the plots')
@@ -49,11 +49,8 @@ args = argParser.parse_args()
 from HNL.Tools.logger import getLogger, closeLogger
 log = getLogger(args.logLevel)
 
-if len(args.includeData) > 0 and args.region == 'NoSelection':
+if args.includeData is not None and args.region == 'NoSelection':
     raise RuntimeError('inData does not work with this selection region')
-
-if len(args.includeData) > 0 and 'signalregion' in args.includeData and args.region in ['baseline', 'highMassSR', 'lowMassSR']:
-    raise RuntimeError('These options combined would mean unblinding. This is not allowed.')
 
 if args.strategy == 'MVA':
     if args.selection != 'default':
@@ -65,6 +62,12 @@ if args.strategy == 'MVA':
 
 if args.genLevel and args.selection == 'AN2017014':
     raise RuntimeError('gen level is currently not implemented on AN2017014 analysis selection')
+
+if args.genLevel and args.tag == 'TauFakes':
+    raise RuntimeError('gen level can not be used for estimating TauFake fractions')
+
+if args.includeData == 'signalregion' and args.region in ['baseline', 'lowMassSR', 'highMassSR']:
+    raise RuntimeError('Running data in signal region without looking at the sideband. Either run in sideband or do not attempt this before approval')
 
 #
 # General imports
@@ -83,13 +86,12 @@ from ROOT import TFile
 import numpy as np
 
 def getSampleManager(y):
-    if args.genLevel or ():
+    if args.genLevel:
         skim_str = 'noskim'
-    elif args.includeData is not None and 'sideband' in args.includeData:
+    elif args.includeData == 'includeSideband':
         skim_str = 'Reco'
     else:
-        # skim_str = args.skimLevel
-        skim_str = 'Reco'
+        skim_str = args.skimLevel
     
     file_list = 'fulllist_'+args.era+str(y) if args.customList is None else args.customList
 
@@ -116,16 +118,11 @@ for year in args.year:
     sample_manager = getSampleManager(year)
 
     for sample_name in sample_manager.sample_names:
-        if len(args.includeData) == 0 and 'Data' in sample_name: continue
+        if args.includeData is None and 'Data' in sample_name: continue
         sample = sample_manager.getSample(sample_name)
         if args.sample and args.sample != sample.name: continue
-        if not 'Data' in sample_name:
-            for njob in xrange(sample.returnSplitJobs()): 
-                jobs[year] += [(sample.name, str(njob), None)]
-        else:
-            for njob in xrange(sample.returnSplitJobs()): 
-                for include_data in args.includeData:
-                    jobs[year] += [(sample.name, str(njob), include_data)]   
+        for njob in xrange(sample.returnSplitJobs()): 
+            jobs[year] += [(sample.name, str(njob), None)]
 
 #
 # Submit subjobs
@@ -135,7 +132,7 @@ if not args.isChild and not args.makePlots and not args.makeDataCards:
     # if not args.dryRun and checkShouldMerge(__file__, argParser):
     #     raise RuntimeError("Already existing files available. You would be overwriting")
     for year in jobs.keys():
-        submitJobs(__file__, ('sample', 'subJob', 'includeData'), jobs[year], argParser, jobLabel = 'runAnalysis-'+str(year)+'-'+args.region, additionalArgs= [('year', year)])
+        submitJobs(__file__, ('sample', 'subJob'), jobs[year], argParser, jobLabel = 'runAnalysis-'+str(year)+'-'+args.region, additionalArgs= [('year', year)])
     exit(0)
 
 #
@@ -185,11 +182,12 @@ else:
     regions.append(args.region)
     srm[args.region] = SearchRegionManager(args.region)
 
-def getOutputName(st, y):
+def getOutputName(st, y, tag=None):
+    translated_tag = '' if tag is None else '-'+tag
     if not args.isTest:
-        return os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'runAnalysis', args.analysis, '-'.join([args.strategy, args.selection, args.region, reco_or_gen_str]), args.era+'-'+y, st)
+        return os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'runAnalysis', args.analysis+translated_tag, '-'.join([args.strategy, args.selection, args.region, reco_or_gen_str]), args.era+'-'+y, st)
     else:
-        return os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', 'runAnalysis', args.analysis, '-'.join([args.strategy, args.selection, args.region, reco_or_gen_str]), args.era+'-'+y, st)
+        return os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 'data', 'testArea', 'runAnalysis', args.analysis+translated_tag, '-'.join([args.strategy, args.selection, args.region, reco_or_gen_str]), args.era+'-'+y, st)
 
 #
 # Loop over samples and events
@@ -204,19 +202,37 @@ if not args.makePlots and not args.makeDataCards:
     #Start a loop over samples
     sample_names = []
     for sample in sample_manager.sample_list:
+
+        #
+        # Do not run over samples that we dont need
+        #
         if args.sample and sample.name != args.sample: continue
         if sample.name not in sample_manager.sample_names: continue
 
+        #
+        # Initialize chain
+        #
         chain = sample.initTree(needhcount=False)
-        if len(args.includeData) == 0 and chain.is_data: continue
+        if args.includeData is None and chain.is_data: continue
 
+        #
+        # Check if we need to run the sideband
+        #
+        need_sideband = None
+        if chain.is_data and args.includeData == 'includeSideband':
+            need_sideband = [0,1,2]
+        elif not chain.is_data and args.tag == 'sidebandInMC':
+            need_sideband = [0,1,2]
+
+        #
+        # Prepare output tree
+        #
         from ROOT import TTree
         output_tree = TTree('events', 'events')
         branches = []
         for v in var.keys():
             branches.extend(['{0}/F'.format(v)])
-        branches.extend(['weight/F', 'isprompt/O', 'category/I', 'searchregion/I'])
-        branches.extend(['oldPuWeight/F'])
+        branches.extend(['weight/F', 'isprompt/O', 'category/I', 'searchregion/I', 'issideband/O'])
         from HNL.Tools.makeBranches import makeBranches
         new_vars = makeBranches(output_tree, branches)
 
@@ -254,10 +270,6 @@ if not args.makePlots and not args.makeDataCards:
         #
         reweighter = Reweighter(sample, sample_manager)
 
-        #temporarily store old btag weights separately for comparison purposes
-        from HNL.Weights.puReweighting import getReweightingFunction
-        old_pu_weights = getReweightingFunction(args.era, year)
-
         #
         # Load in MVA reader if needed
         #
@@ -279,18 +291,45 @@ if not args.makePlots and not args.makeDataCards:
             #
             event.initEvent()
 
-            need_sideband = [0, 1, 2] if chain.is_data and 'sideband' in args.includeData else None
-            if not event.passedFilter(cutter, sample.name, sideband = need_sideband, for_training = 'ForTraining' in args.region): continue
+           
+            is_sideband_event = False
+            manually_blinded = True
+            passed_tight_selection = event.passedFilter(cutter, sample.name, sideband = [2] if args.tag == 'TauFakes' else None, for_training = 'ForTraining' in args.region, manually_blinded = manually_blinded)
+            if need_sideband is None:
+                if not passed_tight_selection: continue
+            else:
+                if not passed_tight_selection:
+                    # If tight selection failed because of something beyond the three tight selection, the next step should be relatively fast
+                    passed_sideband_selection = event.passedFilter(cutter, sample.name, sideband = need_sideband, for_training = 'ForTraining' in args.region)
+                    if not passed_sideband_selection: continue
+                    is_sideband_event = True
+                else:
+                    pass
 
+            #
+            # Make the code blind in signal regions
+            # If you ever remove these next lines, set remove manually_blinded as well
+            #
+            if args.region in ['baseline', 'lowMassSR', 'highMassSR'] and chain.is_data and not is_sideband_event:
+                continue            
+
+            #
+            # Determine if it is a prompt event
+            # Depending on the previous step, the selection should be the tight or the FO (because of rerunning)
+            #
             prompt_str = None
             if args.region != 'NoSelection':
                 if len(chain.l_flavor) == chain.l_flavor.count(2): continue #Not all taus
 
                 nprompt = 0
                 if not 'Data' in sample.name:
-                    for index in chain.l_indices:
-                        if not args.genLevel and chain._lIsPrompt[index]: nprompt += 1
-                        elif args.genLevel and chain._gen_lIsPrompt[index]: nprompt += 1
+                    for i, index in enumerate(chain.l_indices):
+                        #For taufakes we're only interested in FO tau to make the prompt consideration
+                        if args.tag == 'TauFakes':
+                            if chain._lIsPrompt[index] or chain._lFlavor[index] < 2 or chain.l_istight[i]: nprompt += 1
+                        else:            
+                            if not args.genLevel and chain._lIsPrompt[index]: nprompt += 1
+                            elif args.genLevel and chain._gen_lIsPrompt[index]: nprompt += 1
                     
                     prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
             else:
@@ -306,11 +345,11 @@ if not args.makePlots and not args.makeDataCards:
             reweighter.fillTreeWithWeights(chain)
             for v in var.keys():
                 setattr(new_vars, v, var[v][0](chain))
-            new_vars.weight = reweighter.getTotalWeight(sideband='sideband' in args.includeData)
-            new_vars.oldPuWeight = old_pu_weights(chain._nTrueInt) if not sample.is_data else 1.
+            new_vars.weight = reweighter.getTotalWeight(sideband = is_sideband_event)
             new_vars.isprompt = prompt_str == 'prompt'
             new_vars.category = chain.category
             new_vars.searchregion = srm[args.region].getSearchRegion(chain)
+            new_vars.issideband = is_sideband_event
             output_tree.Fill()
  
         #
@@ -319,16 +358,16 @@ if not args.makePlots and not args.makeDataCards:
         subjobAppendix = '_subJob' + args.subJob if args.subJob else ''
         
         is_signal = 'HNL' in sample.name
-        if len(args.includeData) > 0 and chain.is_data:
+        if chain.is_data:
             signal_str = 'data'
-            sample_output_name = sample.output +'-'+args.includeData[0] if len(args.includeData) == 1 else None
+            sample_output_name = sample.output
         else:
             signal_str = 'signal' if is_signal else 'bkgr'
             sample_output_name = sample.output
 
 
-        if args.signalOnly and args.genLevel:       output_name_full = os.path.join(getOutputName(signal_str, year), 'signalOrdering', sample_output_name)
-        else:      output_name_full = os.path.join(getOutputName(signal_str, year), sample_output_name) 
+        if args.signalOnly and args.genLevel:       output_name_full = os.path.join(getOutputName(signal_str, year, args.tag), 'signalOrdering', sample_output_name)
+        else:      output_name_full = os.path.join(getOutputName(signal_str, year, args.tag), sample_output_name) 
 
 
         if args.isChild:
@@ -336,21 +375,19 @@ if not args.makePlots and not args.makeDataCards:
         else:
             output_name_full += '/'
                 
-        if len(args.includeData) > 0 and chain.is_data: writename = 'variables-'+args.includeData[0]
-        else: writename = 'variables'
-
         from HNL.Tools.helpers import makeDirIfNeeded
-        makeDirIfNeeded(output_name_full +writename+subjobAppendix+ '.root')
-        out_file = TFile(output_name_full +writename+subjobAppendix+ '.root', 'recreate')
+        write_name = 'variables'
+        makeDirIfNeeded(output_name_full +write_name+subjobAppendix+ '.root')
+        out_file = TFile(output_name_full +write_name+subjobAppendix+ '.root', 'recreate')
         output_tree.Write()
         out_file.Write()
         out_file.Close()
-
-        cutter.saveCutFlow(output_name_full +writename+subjobAppendix+ '.root')
+        
+        cutter.saveCutFlow(output_name_full +write_name+subjobAppendix+ '.root')
         
         if args.isTest:
             from HNL.Tools.helpers import copyFileToTestingArea
-            copyFileToTestingArea(output_name_full +writename+subjobAppendix+ '.root', arg_string)
+            copyFileToTestingArea(output_name_full +write_name+subjobAppendix+ '.root', arg_string)
 
     closeLogger(log)
 
@@ -368,7 +405,7 @@ else:
         sample_manager = getSampleManager(year)
             
         if not args.bkgrOnly:
-            signal_list = [s for s in glob.glob(getOutputName('signal', year)+'/*'+args.flavor+'-*') if s.split('/')[-1] in sample_manager.sample_outputs]
+            signal_list = [s for s in glob.glob(getOutputName('signal', year, args.tag)+'/*'+args.flavor+'-*') if s.split('/')[-1] in sample_manager.sample_outputs]
             for i, s in enumerate(signal_list):
                 if 'signalOrdering' in s:
                     signal_list.pop(i)
@@ -377,20 +414,20 @@ else:
 
         # Collect background file locations
         if not args.signalOnly:
-            bkgr_list = [getOutputName('bkgr', year)+'/'+b for b in sample_manager.sample_outputs if os.path.isdir(getOutputName('bkgr', year)+'/'+b)]
+            bkgr_list = [getOutputName('bkgr', year, args.tag)+'/'+b for b in sample_manager.sample_outputs if os.path.isdir(getOutputName('bkgr', year)+'/'+b)]
         else:
             bkgr_list = []
 
         # data
-        if len(args.includeData) > 0:
-            data_list = glob.glob(getOutputName('data', year)+'/Data*')
+        if args.includeData is not None:
+            data_list = glob.glob(getOutputName('data', year, args.tag)+'/Data*')
         else:
             data_list = []
 
         print 'check merge'
         # Merge files if necessary
         mixed_list = signal_list + bkgr_list + data_list
-        merge(mixed_list, __file__, jobs[year], ('sample', 'subJob', 'includeData'), argParser, istest=args.isTest, additionalArgs= [('year', year)])
+        merge(mixed_list, __file__, jobs[year], ('sample', 'subJob'), argParser, istest=args.isTest, additionalArgs= [('year', year)])
 
         if not args.individualSamples:
             background_collection = [x for x in sample_manager.sample_outputs if not 'HNL' in x and not 'Data' in x]+['non-prompt']
@@ -446,7 +483,7 @@ else:
 
                     for c, cc in zip(categories_to_use, category_conditions): 
                         for v in var_dict.keys():
-                            tmp_list_of_hist[c][v]['signal'][sample_name] = Histogram(getHistFromTree(intree, v, str(c)+'-'+v+'-'+sample_name, var_dict[v][1], cc))
+                            tmp_list_of_hist[c][v]['signal'][sample_name] = Histogram(getHistFromTree(intree, v, str(c)+'-'+v+'-'+sample_name, var_dict[v][1], '('+cc+'&&!issideband)'))
 
                             coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
                             tmp_list_of_hist[c][v]['signal'][sample_name].hist.Scale(coupling_squared/signal_couplingsquaredinsample[args.flavor][sample_mass])
@@ -456,19 +493,18 @@ else:
                     infile.Close()
                 print '\n'
 
-            if len(args.includeData) > 0:
+            if args.includeData is not None:
                 for c, cc in zip(categories_to_use, category_conditions):
                     for v in var_dict:
-                        if 'sideband' in args.includeData: 
+                        if args.includeData == 'includeSideband': 
                             infile = TFile(data_list[0]+'/variables-sideband.root', 'read')
                             intree = infile.Get('events')
-                            tmp_list_of_hist[c][v]['data']['sideband'] = Histogram(getHistFromTree(intree, v, str(c)+'-'+v+'-'+'-Data-sideband', var_dict[v][1], cc))
+                            tmp_list_of_hist[c][v]['data']['sideband'] = Histogram(getHistFromTree(intree, v, str(c)+'-'+v+'-'+'-Data-sideband', var_dict[v][1], '('+cc+'&&issideband)'))
                             infile.Close()
-                        if 'signalregion' in args.includeData: 
-                            infile = TFile(data_list[0]+'/variables-signalregion.root', 'read')
-                            intree = infile.Get('events')
-                            tmp_list_of_hist[c][v]['data']['signalregion'] = Histogram(getHistFromTree(intree, v, str(c)+'-'+v+'-'+'-Data-signalregion', var_dict[v][1], cc))
-                            infile.Close()
+                        infile = TFile(data_list[0]+'/variables-signalregion.root', 'read')
+                        intree = infile.Get('events')
+                        tmp_list_of_hist[c][v]['data']['signalregion'] = Histogram(getHistFromTree(intree, v, str(c)+'-'+v+'-'+'-Data-signalregion', var_dict[v][1], '('+cc+'&&!issideband)'))
+                        infile.Close()
 
             if not args.signalOnly:
                 print "Loading background histograms"
@@ -478,7 +514,6 @@ else:
                             tmp_list_of_hist[c][v]['bkgr'][b] = Histogram(b+v+str(c), var_dict[v][0], var_dict[v][2], var_dict[v][1])
 
                 for ib, b in enumerate(background):
-                    print b
                     progress(ib, len(background))
                     if not args.individualSamples:
                         if b == 'non-prompt': continue
@@ -487,10 +522,10 @@ else:
                         
                         for c, cc in zip(categories_to_use, category_conditions):
                             for iv, v in enumerate(var_dict.keys()):  
-                                tmp_list_of_hist[c][v]['bkgr'][b] = Histogram(getHistFromTree(intree, v, 'tmp_'+b+v+str(c)+'p', var_dict[v][1], '('+cc+'&&isprompt)'))
+                                tmp_list_of_hist[c][v]['bkgr'][b] = Histogram(getHistFromTree(intree, v, 'tmp_'+b+v+str(c)+'p', var_dict[v][1], '('+cc+'&&isprompt&&!issideband)'))
                                            
-                                if len(args.includeData) == 0 or 'sideband' not in args.includeData:
-                                    tmp_hist = Histogram(getHistFromTree(intree, v, 'tmp_'+b+v+str(c)+'np', var_dict[v][1], '('+cc+'&&!isprompt)'))
+                                if args.includeData != 'includeSideband':
+                                    tmp_hist = Histogram(getHistFromTree(intree, v, 'tmp_'+b+v+str(c)+'np', var_dict[v][1], '('+cc+'&&!isprompt&&!issideband)'))
                                     tmp_list_of_hist[c][v]['bkgr']['non-prompt'].add(tmp_hist)
                                     del(tmp_hist)
                         infile.Close()
@@ -499,12 +534,13 @@ else:
                         intree = infile.Get('events')
                         for c, cc in zip(categories_to_use, category_conditions):
                             for iv, v in enumerate(var_dict.keys()):
-                                tmp_list_of_hist[c][v]['bkgr'][b] = Histogram(getHistFromTree(intree, v, 'tmp_'+b+v+str(c)+'t', var_dict[v][1], cc))
+                                tmp_list_of_hist[c][v]['bkgr'][b] = Histogram(getHistFromTree(intree, v, 'tmp_'+b+v+str(c)+'t', var_dict[v][1], '('+cc+'&&!issideband)'))
                         infile.Close()
 
-                for c, cc in zip(categories_to_use, category_conditions):
-                    for iv, v in enumerate(var_dict.keys()):
-                        if len(args.includeData) > 0 and 'sideband' in args.includeData:
+
+                if args.includeData == 'includeSideband':
+                    for c, cc in zip(categories_to_use, category_conditions):
+                        for iv, v in enumerate(var_dict.keys()):
                             tmp_list_of_hist[c][v]['bkgr']['non-prompt'].add(list_of_hist[c][v]['data']['sideband'])
 
             return tmp_list_of_hist
@@ -707,7 +743,7 @@ else:
                         draw_ratio = None if args.signalOnly or args.bkgrOnly else True
                         if 'signalregion' in args.includeData: draw_ratio = True
                         if not args.individualSamples:
-                            p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
+                            p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = False, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
                                     color_palette = 'Didar', color_palette_bkgr = 'AN2017' if not args.analysis == 'tZq' else 'tZq', x_name = var[v][2][0], y_name = var[v][2][1])
                         else:
                             p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = False, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
