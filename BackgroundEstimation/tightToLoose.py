@@ -297,7 +297,6 @@ else:
         if args.inData:
             output_dir = makePathTimeStamped(base_path_out)
             in_file = base_path_in+'/events.root'
-            #in_file = base_path_in+'/Data/events.root'
         else:
             output_dir = makePathTimeStamped(base_path_out +'/'+sample_output)
             in_file = base_path_in+'/'+sample_output+'/events.root'

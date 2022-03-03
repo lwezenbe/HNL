@@ -27,7 +27,6 @@ class SingleFlavorFakeRateCollection:
     def getFractionalFakeFactor(self, chain, index, manual_var_entry = None):
         fake_factor = 0.
         for n in self.frac_names:
-            print n, self.frac_weights[n]
             fake_factor += self.frac_weights[n]*self.fakerates[n].returnFakeFactor(chain, index, manual_var_entry)
         return fake_factor
 

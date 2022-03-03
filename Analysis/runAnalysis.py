@@ -123,7 +123,6 @@ for year in args.year:
         sample = sample_manager.getSample(sample_name)
         if args.sample and args.sample != sample.name: continue
         for njob in xrange(sample.returnSplitJobs()): 
-        #for njob in xrange(1): 
             jobs[year] += [(sample.name, str(njob), None)]
 
 #
@@ -286,7 +285,6 @@ if not args.makePlots and not args.makeDataCards:
           
             chain.GetEntry(entry)
             if args.isTest: progress(entry - event_range[0], len(event_range))
-            #progress(entry - event_range[0], len(event_range))
  
             cutter.cut(True, 'Total')
 
