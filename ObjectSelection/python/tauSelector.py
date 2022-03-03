@@ -412,8 +412,6 @@ def getTauAlgoWP(chain, selection = None, general_wp = None):
     general_wp = checkTauWP(chain, general_wp)
     selection = checkTauAlgorithm(chain, selection)
 
-
-    print general_wp
     if selection == 'HNL':
         if general_wp in ['loose', 'FO']:
             return 'deeptauVSjets', ('vvvloose', 'loose', 'loose')

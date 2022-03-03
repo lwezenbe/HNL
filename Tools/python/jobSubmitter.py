@@ -216,7 +216,7 @@ def submitJobs(script, subjob_args, subjob_list, argparser, **kwargs):
     print len(subjob_list), 'jobs submitted'
 
 from HNL.Tools.logger import successfullJob
-def checkCompletedJobs(script, subJobList, argparser, subLog = None, additionalArgs=None):
+def checkCompletedJobs(script, subJobList, argparser, subLog = None, additionalArgs=None, level = 0):
     failed_jobs = []
     args = argparser.parse_args()
     submitArgs   = getSubmitArgs(argparser, args, additionalArgs=additionalArgs)
@@ -228,7 +228,7 @@ def checkCompletedJobs(script, subJobList, argparser, subLog = None, additionalA
             logfile = os.path.join(logdir, str(subJob[-1]) + ".log")
         else:
             logfile = os.path.join(logdir, str(subJob[-1]) + ".err")
-        if not successfullJob(logfile): failed_jobs.append(subJob)
+        if not successfullJob(logfile, level = level): failed_jobs.append(subJob)
     
     if len(failed_jobs) != 0:
         print "FOLLOWING JOBS FAILED"

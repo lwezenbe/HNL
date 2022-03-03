@@ -37,8 +37,8 @@ class FilterObject(object):
 
 
 from HNL.EventSelection.signalRegionSelector import SignalRegionSelector
-from HNL.EventSelection.controlRegionSelector import ZZCRfilter, WZCRfilter, ConversionCRfilter, TauFakeEnrichedDY, TauFakeEnrichedTT, LightLeptonFakeMeasurementRegion, ClosureTestMC, ClosureTestDATA, GeneralMCCTRegion
-from HNL.EventSelection.controlRegionSelector import TauMixCTfilter, GeneralTrileptonFilter
+from HNL.EventSelection.controlRegionSelector import ZZCRfilter, WZCRfilter, ConversionCRfilter, TauFakeEnrichedDY, TauFakeEnrichedTT, LightLeptonFakeMeasurementRegion, ClosureTestMC, GeneralMCCTRegion
+from HNL.EventSelection.controlRegionSelector import TauMixCTfilter, GeneralTrileptonFilter, LightLepFakeEnrichedDY, LightLepFakeEnrichedTT
 
 class EventSelector:
 
@@ -65,30 +65,22 @@ class EventSelector:
             self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'tightWP' : True, 'b_veto' : True, 'nometcut':True})
         elif self.name == 'TauFakesTT':
             self.selector = TauFakeEnrichedTT(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'tightWP' : True})
+        elif self.name == 'TauFakesTTCT':
+            self.selector = TauFakeEnrichedTT(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'tightWP' : True, 'inverted_cut' : True})
         elif self.name == 'TauFakesDYttl':
             self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'TauFakesTTttl':
             self.selector = TauFakeEnrichedTT(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
+        elif self.name == 'LightLepFakesDY':
+            self.selector = LightLepFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args = additional_options)
+        elif self.name == 'LightLepFakesTT':
+            self.selector = LightLepFakeEnrichedTT(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args = additional_options)
         elif self.name == 'LightLeptonFakes':
             self.selector = LightLeptonFakeMeasurementRegion(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'TauMixCT':
             self.selector = TauMixCTfilter(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
-        elif self.name == 'TauMixCTNoMet':
-            self.selector = TauMixCTfilter(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options={'no_met' : True})
-        elif self.name == 'TauMixCTLowMet':
-            self.selector = TauMixCTfilter(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options={'high_met' : False})
-        elif self.name == 'TauMixCTLowMetM3lcut':
-            self.selector = TauMixCTfilter(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options={'high_met' : False, 'm3lcut' : True})
-        elif self.name == 'TauMixCTLowMetM3lcutNoBveto':
-            self.selector = TauMixCTfilter(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options={'high_met' : False, 'm3lcut' : True, 'b_veto' : False})
-        elif self.name == 'TauMixCTM3lcut':
-            self.selector = TauMixCTfilter(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options={'m3lcut' : True})
-        elif self.name == 'TauMixCTM3lcutInverted':
-            self.selector = TauMixCTfilter(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options={'high_met' : False, 'm3lcut_inverted' : True, 'b_veto' : False})
-        elif self.name == 'TauMixCTNoBveto':
-            self.selector = TauMixCTfilter(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options={'b_veto' : False})
-        elif self.name == 'TauMixCTLowMetNoBveto':
-            self.selector = TauMixCTfilter(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options={'high_met' : False, 'b_veto' : False})
+        elif self.name == 'TauMixCThighmet':
+            self.selector = TauMixCTfilter(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_options={'high_met' : True, 'no_met' : False})
         elif self.name == 'MCCT':
             self.selector = GeneralMCCTRegion(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'NoSelection':
@@ -107,9 +99,9 @@ class EventSelector:
         if 'taulep' in sample_name:
             nlight = 0.
             ntau = 0.
-            for l in xrange(chain._gen_nL):
-                if chain._gen_lFlavor[l] == 2 and chain._gen_lVisPt[l] > 18.: ntau += 1.
-                if chain._gen_lFlavor[l] != 2 and chain._gen_lPt[l] > 15. and chain._gen_lEta[l] < 3.: nlight += 1.
+            for l in xrange(self.chain._gen_nL):
+                if self.chain._gen_lFlavor[l] == 2 and self.chain._gen_lVisPt[l] > 18.: ntau += 1.
+                if self.chain._gen_lFlavor[l] != 2 and self.chain._gen_lPt[l] > 15. and self.chain._gen_lEta[l] < 3.: nlight += 1.
             return ntau < 1 or nlight < 1
         else:
             return True

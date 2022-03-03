@@ -68,11 +68,10 @@ class Sample(object):
                     print "No file loaded, check the input path of "+self.name+" again."
             split_jobs = int(round((tot_size/self.max_filesize)+0.5))
             if '*' in init_value:       
-                split_jobs *= int(init_value.split('*')[-1])
+                split_jobs *= float(init_value.split('*')[-1])
         else:
             split_jobs = int(init_value)
-            print 'splitJobs', split_jobs
-        return split_jobs
+        return max(1, int(split_jobs))
 
     def returnSplitJobs(self):
         if isinstance(self.split_jobs, str) and 'Calc' in self.split_jobs:
@@ -113,7 +112,7 @@ class Sample(object):
 
         for f in self.list_of_files:
             if 'pnfs' in f:
-                f = 'root://maite.iihe.ac.be'+f
+                f = 'root://maite.iihe.ac.be/'+f
             self.chain.Add(f)
         
         if not self.is_data and needhcount:   

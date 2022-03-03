@@ -41,9 +41,10 @@ class SignalRegionSelector(FilterObject):
 
     def passedFilter(self, cutter, kwargs):
         sideband=kwargs.get('sideband', None)
+        manually_blinded = kwargs.get('manually_blinded', False)
 
-        if self.chain.is_data and sideband is None:
-            raise RuntimeError("Running this would mean unblinding. Dont do this.")
+        if self.chain.is_data and sideband is None and not manually_blinded:
+            raise RuntimeError("\033[93m Running this would mean unblinding. Make sure you dont store the results. \033[0m")
 
         if not self.initEvent(cutter, sideband=sideband): return False
 

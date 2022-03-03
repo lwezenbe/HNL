@@ -49,9 +49,6 @@ nl = 3 if args.region != 'ZZCR' else 4
 from HNL.Tools.logger import getLogger, closeLogger
 log = getLogger(args.logLevel)
 
-if args.includeData and args.region in ['baseline', 'highMassSR', 'lowMassSR']:
-    raise RuntimeError('These options combined would mean unblinding. This is not allowed.')
-
 #
 # Change some settings if this is a test
 #
@@ -144,7 +141,6 @@ for year in args.year:
 
     for sample_name in sample_manager.sample_names:
         if args.sample and args.sample not in sample_name: continue 
-        if not args.includeData and sample_name == 'Data': continue
         sample = sample_manager.getSample(sample_name)
         for njob in xrange(sample.returnSplitJobs()):
             jobs[year] += [(sample.name, str(njob))]
@@ -175,9 +171,10 @@ if not args.makePlots and args.makeDataCards is None:
         if sample.name not in sample_manager.sample_names: continue
         if args.sample and sample.name != args.sample: continue
 
-        if not args.includeData and sample.name == 'Data': 
-            raise RuntimeError('Trying to run data while it is not allowed. Stopping the program')
         chain = sample.initTree(needhcount = False)
+
+        if chain.is_data and args.region in ['baseline', 'highMassSR', 'lowMassSR']:
+            raise RuntimeError('These options combined would mean unblinding. This is not allowed.')
 
         print 'Processing', sample.name
 

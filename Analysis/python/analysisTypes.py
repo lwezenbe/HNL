@@ -110,8 +110,8 @@ var_reco_4l = {
         'l4eta':      (lambda c : c.l_eta[3],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l4)', 'Events')),
         'NJet':      (lambda c : c.njets,       np.arange(0., 12., 1.),       ('#Jets', 'Events')),
         'NbJet':      (lambda c : c.nbjets,       np.arange(0., 12., 1.),       ('#B Jets', 'Events')),
-        'MllZ1':       (lambda c : c.Mll_Z1,      np.arange(0., 157.5, 7.5),         ('M_{ll}(Z_{1}) [GeV]', 'Events')), 
-        'MllZ2':       (lambda c : c.Mll_Z2,      np.arange(0., 153.75, 3.75),         ('M_{ll}(Z_{2}) [GeV]', 'Events')),
+        'MllZ1':       (lambda c : c.Mll_Z1,      np.arange(70., 112., 2.),         ('M_{ll}(Z_{1}) [GeV]', 'Events')), 
+        'MllZ2':       (lambda c : c.Mll_Z2,      np.arange(70., 112., 2.),         ('M_{ll}(Z_{2}) [GeV]', 'Events')),
         # 'ptConeLeading':   (lambda c : c.pt_cone[0],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(leading) [GeV]', 'Events'))
     }
 
@@ -145,7 +145,7 @@ var_noselection = {
 
 from HNL.Tools.helpers import mergeTwoDictionaries
 def returnVariables(nl, is_reco, include_mva = None):
-        var_of_choice = None
+        var_of_choice = {}
         if is_reco:
             if nl == 4: var_of_choice = var_reco_4l
             elif nl == 3: var_of_choice = var_reco_3l
@@ -158,7 +158,6 @@ def returnVariables(nl, is_reco, include_mva = None):
         if include_mva is not None:
                 from HNL.TMVA.mvaDefinitions import MVA_dict,listAvailableMVAs
                 # var_of_choice = mergeTwoDictionaries(var_of_choice, var_mva)
-                var_of_choice = {}
                 for k in listAvailableMVAs(include_mva):
                         var_of_choice[k] = (MVA_dict[k][2],   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events'))
         

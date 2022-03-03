@@ -114,6 +114,44 @@ class TauFakeEnrichedTT(FilterObject):
     def getFakeIndex(self):
         return 2
 
+class LightLepFakeEnrichedDY(FilterObject):
+    
+    def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None, additional_args = None):
+        super(LightLepFakeEnrichedDY, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
+        self.use_default_objects = additional_args.get('tightwp', False) if additional_args is not None else False
+        self.fake_flavors = additional_args.get('fake_flavors', [0, 1]) if additional_args is not None else [0, 1]
+        if not self.use_default_objects:
+            self.chain.obj_sel['notau'] = True
+            self.chain.obj_sel['ele_wp'] = 'FO'
+            self.chain.obj_sel['mu_wp'] = 'FO'
+
+    def initEvent(self, cutter):
+        return super(LightLepFakeEnrichedDY, self).initEvent(3, cutter, sort_leptons = False, sideband = None)
+
+    def passedFilter(self, cutter, kwargs={}):
+        if not self.initEvent(cutter):                                return False
+        from HNL.EventSelection.eventFilters import passedFilterLightLepFakeEnrichedDY
+        self.fake_index = passedFilterLightLepFakeEnrichedDY(self.chain, self.new_chain, cutter, tightwp = self.use_default_objects, fake_flavors = self.fake_flavors)
+        return self.fake_index is not None
+
+    def getFakeIndex(self):
+        return self.fake_index
+
+class LightLepFakeEnrichedTT(FilterObject):
+    
+    def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None, additional_args = None):
+        super(LightLepFakeEnrichedTT, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
+        self.fake_flavors = additional_args.get('fake_flavors', [0, 1]) if additional_args is not None else [0, 1]
+        self.chain.obj_sel['notau'] = True
+
+    def initEvent(self, cutter):
+        return super(LightLepFakeEnrichedTT, self).initEvent(3, cutter, sort_leptons = False, sideband = None)
+
+    def passedFilter(self, cutter, kwargs={}):
+        if not self.initEvent(cutter):                                return False
+        from HNL.EventSelection.eventFilters import passedFilterLightLepFakeEnrichedTT
+        return passedFilterLightLepFakeEnrichedTT(self.chain, self.new_chain, cutter, fake_flavors = self.fake_flavors)
+
 from HNL.ObjectSelection.leptonSelector import isGoodLepton, isFakeLepton
 from HNL.EventSelection.eventSelectionTools import selectJets
 #Orthogonal due to selection of exactly 1 lepton
@@ -255,56 +293,54 @@ class ClosureTestMC(FilterObject):
 
         return True
 
-class ClosureTestDATA(FilterObject):
-    flavor_dict = {'tau' : 2, 'ele' : 0, 'mu' : 1}
-
-    def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None, additional_options=None):
-        super(ClosureTestDATA, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, sideband = None)
-        self.flavors_of_interest = additional_options
-        if self.flavors_of_interest is None: 
-            raise RuntimeError('Input for ClosureTestDATA for flavors_of_interest is None')
-    
-        # Set Object Selection
-        self.chain.obj_sel['tau_wp'] = 'FO' if 'tau' in self.flavors_of_interest else 'tight'
-        self.chain.obj_sel['ele_wp'] = 'FO' if 'ele' in self.flavors_of_interest else 'tight'
-        self.chain.obj_sel['mu_wp'] = 'FO' if 'mu' in self.flavors_of_interest else 'tight'
-
-        self.loose_leptons_of_interest = []
-
-    def initEvent(self, cutter):
-        return super(ClosureTestDATA, self).initEvent(3, cutter, sort_leptons = False)
-
-    def passedFilter(self, cutter, kwargs):
-        if not self.initEvent(cutter):                                return False
-        region = kwargs.get('region')
-        if self.flavors_of_interest == ['tau'] and region == 'TauFakesDY':
-            from HNL.EventSelection.eventFilters import passedFilterTauFakeEnrichedDY
-            if not passedFilterTauFakeEnrichedDY(chain, new_chain, cutter, inverted_cut=False): return False
-            self.loose_leptons_of_interest = [2]
-            return True
-        if self.flavors_of_interest == ['tau'] and region == 'TauFakesTT':
-            from HNL.EventSelection.eventFilters import passedFilterTauFakeEnrichedDY
-            if not passedFilterTauFakeEnrichedTT(chain, new_chain, cutter, inverted_cut=True): return False            
-            self.loose_leptons_of_interest = [2]
-            return True
-        elif self.flavors_of_interest == ['tau'] and region == 'TauMixCT':
-            return passedFilterTauMixCT(self.chain, self.new_chain, self.is_reco_level, cutter)
-        else:
-            return False
-
-    def getFakeIndex(self):
-        return 2
+#class ClosureTestDATA(FilterObject):
+#    flavor_dict = {'tau' : 2, 'ele' : 0, 'mu' : 1}
+#
+#    def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None, additional_options=None):
+#        super(ClosureTestDATA, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, sideband = None)
+#        self.flavors_of_interest = additional_options
+#        if self.flavors_of_interest is None: 
+#            raise RuntimeError('Input for ClosureTestDATA for flavors_of_interest is None')
+#    
+#        # Set Object Selection
+#        self.chain.obj_sel['tau_wp'] = 'FO' if 'tau' in self.flavors_of_interest else 'tight'
+#        self.chain.obj_sel['ele_wp'] = 'FO' if 'ele' in self.flavors_of_interest else 'tight'
+#        self.chain.obj_sel['mu_wp'] = 'FO' if 'mu' in self.flavors_of_interest else 'tight'
+#
+#        self.loose_leptons_of_interest = []
+#
+#    def initEvent(self, cutter):
+#        return super(ClosureTestDATA, self).initEvent(3, cutter, sort_leptons = False)
+#
+#    def passedFilter(self, cutter, kwargs):
+#        if not self.initEvent(cutter):                                return False
+#        region = kwargs.get('region')
+#        if self.flavors_of_interest == ['tau'] and region == 'TauFakesDY':
+#            from HNL.EventSelection.eventFilters import passedFilterTauFakeEnrichedDY
+#            if not passedFilterTauFakeEnrichedDY(chain, new_chain, cutter, inverted_cut=False): return False
+#            self.loose_leptons_of_interest = [2]
+#            return True
+#        if self.flavors_of_interest == ['tau'] and region == 'TauFakesTT':
+#            from HNL.EventSelection.eventFilters import passedFilterTauFakeEnrichedDY
+#            if not passedFilterTauFakeEnrichedTT(chain, new_chain, cutter, inverted_cut=True): return False            
+#            self.loose_leptons_of_interest = [2]
+#            return True
+#        elif self.flavors_of_interest == ['tau'] and region == 'TauMixCT':
+#            return passedFilterTauMixCT(self.chain, self.new_chain, self.is_reco_level, cutter)
+#        else:
+#            return False
+#
+#    def getFakeIndex(self):
+#        return 2
 
 
 class TauMixCTfilter(FilterObject):
 
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None, additional_options={}):
         super(TauMixCTfilter, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
-        self.high_met = additional_options.get('high_met', True)
+        self.high_met = additional_options.get('high_met', False)
         self.b_veto = additional_options.get('b_veto', True)
-        self.m3lcut = additional_options.get('m3lcut', False)
-        self.m3lcut_inverted = additional_options.get('m3lcut_inverted', False)
-        self.no_met = additional_options.get('no_met', False)
+        self.no_met = additional_options.get('no_met', True)
 
     def initEvent(self, cutter, sideband=None):
         return super(TauMixCTfilter, self).initEvent(3, cutter, sort_leptons = True, sideband=sideband)
@@ -312,7 +348,7 @@ class TauMixCTfilter(FilterObject):
     def passedFilter(self, cutter, kwargs={}):
         if not self.initEvent(cutter, sideband=kwargs.get('sideband', None)):                                return False
         from HNL.EventSelection.eventFilters import passedFilterTauMixCT
-        return passedFilterTauMixCT(self.chain, self.new_chain, self.is_reco_level, cutter, high_met = self.high_met, b_veto = self.b_veto, m3lcut = self.m3lcut, no_met = self.no_met, m3lcut_inverted = self.m3lcut_inverted)
+        return passedFilterTauMixCT(self.chain, self.new_chain, self.is_reco_level, cutter, high_met = self.high_met, b_veto = self.b_veto, no_met = self.no_met)
 
 
 

@@ -24,10 +24,10 @@ relExtraDY = 1.2
 
 extraOverCmsTextSize  = 0.76
 
-lumi_13TeV = {'prelegacy2016': "35.9 fb^{-1}", 'UL2016pre' : "35.9 fb^{-1}", 'UL2016post' : "35.9 fb^{-1}",
-                'prelegacy2017': "41.5 fb^{-1}", 'UL2017': "41.5 fb^{-1}",
-                'prelegacy2018': "59.7 fb^{-1}", 'UL2018': "59.7 fb^{-1}", 
-                'prelegacyall': "137.1 fb^{-1}", 'ULall': "137.1 fb^{-1}"}
+lumi_13TeV = {'prelegacy2016': "35.9 fb^{-1}", 'UL2016pre' : "19.52 fb^{-1}", 'UL2016post' : "16.81 fb^{-1}",
+                'prelegacy2017': "41.5 fb^{-1}", 'UL2017': "41.48 fb^{-1}",
+                'prelegacy2018': "59.7 fb^{-1}", 'UL2018': "59.83 fb^{-1}", 
+                'prelegacyall': "137.1 fb^{-1}", 'ULall': "137.6 fb^{-1}"}
 # lumi_8TeV  = "19.7 fb^{-1}" 
 # lumi_7TeV  = "5.1 fb^{-1}"
 # lumi_sqrtS = ""
@@ -150,7 +150,7 @@ def CMS_lumi(pad,  iPeriod,  iPosX, extraText = '', drawLumi = None):
                 latex.DrawLatex(posX_, posY_- relExtraDY*cmsTextSize*t, extraText)
     elif( writeExtraText ):
         if( iPosX==0):
-            posX_ =   l +  2.7*relPosX*(1-l-r)
+            posX_ =   l +  3.6*relPosX*(1-l-r)
             posY_ =   1-t+lumiTextOffset*t
 
         latex.SetTextFont(extraTextFont)

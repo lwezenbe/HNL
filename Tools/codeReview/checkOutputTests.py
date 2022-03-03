@@ -38,9 +38,14 @@ def compareHist(hist_prev, hist_latest, withinerrors=False):
 
         for xb in xrange(1, x_bins+1):
             for yb in xrange(1, y_bins+1):
-                if hist_prev.getHist().GetBinContent(xb, yb) != hist_latest.getHist().GetBinContent(xb, yb):
-                    return "Different content values in bin ({0}, {1})".format(xb, yb)
-                if hist_prev.getHist().GetBinError(xb, yb) != hist_latest.getHist().GetBinError(xb, yb):
+                val_prev = hist_prev.getHist().GetBinContent(xb, yb)
+                val_latest = hist_latest.getHist().GetBinContent(xb, yb)
+                err_prev = hist_prev.getHist().GetBinError(xb, yb)
+                err_latest = hist_latest.getHist().GetBinError(xb, yb)
+                if val_prev != val_latest:
+                    return "Different content values in bin ({0}, {1}) \n \t {2} += {3} \t ---> \t {4} +- {5}".format(xb, yb, val_prev, err_prev, val_latest, err_latest)
+                    
+                if err_prev != err_latest:
                     return "Different error values in bin ({0}, {1})".format(xb, yb)
 
     else:

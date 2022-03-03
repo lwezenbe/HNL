@@ -28,7 +28,10 @@ class Event(object):
 
         self.chain.tau_energy_scale = TauEnergyScale(chain.era, chain.year, chain.obj_sel['tau_algo'])
 
-    def initEvent(self):
+        self.original_object_selection = {k:self.chain.obj_sel[k] for k in self.chain.obj_sel.keys()}
+
+    def initEvent(self, reset_obj_sel = False):
+        if reset_obj_sel: self.chain.obj_sel = {k:self.original_object_selection[k] for k in self.chain.obj_sel.keys()} #reset object selection
         self.chain.is_loose_lepton = [None]*self.chain._nL
         self.chain.is_FO_lepton = [None]*self.chain._nL
         self.chain.is_tight_lepton = [None]*self.chain._nL
@@ -73,8 +76,9 @@ class ClosureTestEvent(Event):
     flavor_dict = {'tau' : 2, 'ele' : 0, 'mu' : 1}
 
     def __init__(self, chain, new_chain, strategy, region, selection, flavors_of_interest, in_data, analysis, year, era, is_reco_level = True):
-        super(ClosureTestEvent, self).__init__(chain, new_chain, is_reco_level, strategy=strategy, region=region, selection=selection, analysis=analysis, year=year, era=era)
         self.flavors_of_interest = flavors_of_interest
+        self.translated_flavors_of_interest = [self.flavor_dict[i] for i in self.flavors_of_interest]
+        super(ClosureTestEvent, self).__init__(chain, new_chain, is_reco_level, strategy=strategy, region=region, selection=selection, analysis=analysis, year=year, era=era, additional_options={'fake_flavors' : self.translated_flavors_of_interest})
         self.in_data = in_data
         if self.flavors_of_interest is None: 
             raise RuntimeError('Input for ClosureTestMC for flavors_of_interest is None')
@@ -86,7 +90,6 @@ class ClosureTestEvent(Event):
 
         self.loose_leptons_of_interest = []
 
-        self.translated_flavors_of_interest = [self.flavor_dict[i] for i in self.flavors_of_interest]
 
 
     def hasCorrectNumberOfFakes(self):

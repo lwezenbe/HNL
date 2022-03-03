@@ -4,6 +4,12 @@ from HNL.ObjectSelection.leptonSelector import isGoodLepton
 #
 #       Defines jet WP and b-tagging
 #
+def getSmearedJetPt(chain, index):
+    if chain.era != 'prelegacy':
+        return chain._jetSmearedPt[index]
+    else:
+        return chain._jetPt[index]  #smearedpt temporarily not available in prelegacy skims
+
 def isCleanFromLeptons(chain, index, wp):
     if wp is None: return True
     for l in xrange(chain._nL):
@@ -13,7 +19,7 @@ def isCleanFromLeptons(chain, index, wp):
     return True
 
 def isGoodJetAN2017014(chain, index, cleaned = 'loose'):
-    if chain._jetPt[index] < 25:        return False
+    if getSmearedJetPt(chain, index) < 25:        return False
     if abs(chain._jetEta[index]) > 2.4: return False
     if chain.year != '2018':
         if not chain._jetIsLoose[index]:    return False
@@ -23,21 +29,21 @@ def isGoodJetAN2017014(chain, index, cleaned = 'loose'):
     return True
 
 def isGoodJetHNL(chain, index, cleaned = 'loose'):
-    if chain._jetPt[index] < 25:        return False
+    if getSmearedJetPt(chain, index) < 25:        return False
     if abs(chain._jetEta[index]) > 2.4: return False
     if not chain._jetIsTight[index]:    return False
     if cleaned is not None and not isCleanFromLeptons(chain, index, cleaned):       return False
     return True
 
 def isGoodJetHNLLowPt(chain, index, cleaned = 'loose'):
-    if chain._jetPt[index] < 25:        return False
+    if getSmearedJetPt(chain, index) < 25:        return False
     if abs(chain._jetEta[index]) > 2.4: return False
     if not chain._jetIsTight[index]:    return False
     if cleaned is not None and not isCleanFromLeptons(chain, index, cleaned):       return False
     return True
 
 def isGoodJetTTT(chain, index, cleaned = 'loose'):
-    if chain._jetSmearedPt[index] < 30:        return False
+    if getSmearedJetPt(chain, index) < 30:        return False
     # if chain._jetPt[index] < 30:        return False
     if abs(chain._jetEta[index]) > 2.4: return False
     if not chain._jetIsTight[index]:    return False
@@ -45,7 +51,7 @@ def isGoodJetTTT(chain, index, cleaned = 'loose'):
     return True
 
 def isGoodJetLuka(chain, index, cleaned = 'loose'):
-    if chain._jetPt[index] < 25:                                                    return False
+    if getSmearedJetPt(chain, index) < 25:                                                    return False
     if abs(chain._jetEta[index]) > 5.:                                              return False
     if not chain._jetIsTight[index]:                                                return False
     if 2.7 < abs(chain._jetEta[index]) < 3 and chain._jetPt[index] < 60:            return False

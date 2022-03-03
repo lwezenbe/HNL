@@ -9,6 +9,9 @@ def setDefault(paintformat = "4.2f"):
     gStyle.SetPaintTextFormat(paintformat)
     gROOT.ProcessLine( "gErrorIgnoreLevel = 1001;")
     # gROOT.ForceStyle()
+    ROOT.gErrorIgnoreLevel = ROOT.kWarning 
+    ROOT.TGaxis.SetMaxDigits(3)
+
 
 def setDefault2D():
     setDefault()
@@ -38,7 +41,7 @@ def getColor(palette, index):
     elif palette == 'tZq':
         return gettZqColors(index)
     elif palette == 'HNLfromTau':
-        return getHNLfromTauColors(index)
+        return getHNLfromTau(index)
     elif palette == 'Large':
         return getLargeArrayColors(index)
     else:
@@ -165,7 +168,10 @@ def getHNLfromTau(name):
     elif 'XG' in name:          return TColor.GetColor("#ffcc66")
     elif 'TT-T+X' in name:         return TColor.GetColor("#6B717E") 
     elif 'Other' in name:          return TColor.GetColor("#77BFA3")
-    
+    #elif 'Predicted' in name:           return TColor.GetColor("#f4f1bb")
+    elif 'Predicted' in name:           return TColor.GetColor("#E4BE9E")
+    #elif 'Predicted' in name:           return TColor.GetColor("#D5D8A7")
+ 
     elif '600' in name:   return TColor.GetColor("#F7C59F")
     elif '400' in name:   return TColor.GetColor("#A8C256")
     elif '200' in name:   return TColor.GetColor("#9F4A54")
