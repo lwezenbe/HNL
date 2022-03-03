@@ -7,6 +7,7 @@ ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
 SUCCESS_MESSAGE = "JOB SUCCESSFULLY COMPLETED. NO NEED TO RESUBMIT"
 OTHER_ERRORS = ["SysError in <TFile::Flush>", "Input/output error"]
+L1_ERRORS = ["Error in <TBasket::ReadBasketBuffers>"]
 
 def getLogger(level='INFO', logFile=None):
     # If it already exist, return it
@@ -55,16 +56,18 @@ def closeLogger(logger):
 def logLevel(logger, level):
     return logger.getEffectiveLevel() <= logging.getLevelName(level)
 
-def successfullJob(fname):
+def successfullJob(fname, level = 0):
     try:
         lines = [line.split('%')[0].strip() for line in open(fname)] 
     except:
         return False
-    
     for line in lines:
+        if level == 1:
+            for err in L1_ERRORS:
+                if err in line: return False
         for err in OTHER_ERRORS:
             if err in line: return False
-            
+       
         passed = SUCCESS_MESSAGE in line
 
         if not passed: continue

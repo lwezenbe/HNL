@@ -2,7 +2,7 @@
 #       Selection of filters to drag and drop into selectors         #
 ######################################################################
 
-from HNL.EventSelection.eventSelectionTools import bVeto, massDiff, passesZcuts, containsOSSF, fourthFOVeto, threeSameSignVeto, nBjets
+from HNL.EventSelection.eventSelectionTools import bVeto, massDiff, passesZcuts, isOSSF, containsOSSF, fourthFOVeto, threeSameSignVeto, nBjets
 from HNL.EventSelection.eventSelectionTools import l1, l2, l3, l4, MZ
 from HNL.Tools.helpers import getFourVec, deltaPhi, deltaR
 
@@ -76,13 +76,13 @@ def passHighMassSelection(chain, new_chain, is_reco_level, cutter, for_training=
 # CR filters
 #
 
-def passedFilterTauMixCT(chain, new_chain, is_reco_level, cutter, high_met = True, b_veto = True, m3lcut = False, no_met=False, m3lcut_inverted = False):
+def passedFilterTauMixCT(chain, new_chain, is_reco_level, cutter, high_met = True, b_veto = True, no_met=False):
     if not cutter.cut(not fourthFOVeto(chain, new_chain, no_tau=chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
     if not cutter.cut(not threeSameSignVeto(new_chain), 'No three same sign'):        return False
     if b_veto and not cutter.cut(not bVeto(chain), 'b-veto'):              return False
+    if not cutter.cut(new_chain.l_flavor.count(2) == 2, '2 tau'):                   return False
     if not cutter.cut(new_chain.l_pt[l1] < 55, 'l1pt<55'):      return False
-    if m3lcut and not cutter.cut(new_chain.M3l < 80, 'm3l<80'):            return False
-    if m3lcut_inverted and not cutter.cut(new_chain.M3l > 150, 'm3l>150'):            return False
+    if not cutter.cut(new_chain.M3l > 150, 'm3l>150'):            return False
     if not no_met:
         if is_reco_level:
             if high_met:
@@ -94,7 +94,7 @@ def passedFilterTauMixCT(chain, new_chain, is_reco_level, cutter, high_met = Tru
                 if not cutter.cut(chain._gen_met > 75, 'MET > 75'):             return False
             else:
                 if not cutter.cut(chain._gen_met < 75, 'MET < 75'):             return False    
-        if not cutter.cut(not containsOSSF(chain), 'no OSSF'):      return False
+    if not cutter.cut(not containsOSSF(chain), 'no OSSF'):      return False
     return True
 
 def passedFilterZZCR(chain, new_chain, cutter): 
@@ -173,22 +173,97 @@ def passedFilterTauFakeEnrichedDY(chain, new_chain, cutter, inverted_cut=False, 
     # if not cutter.cut(chain._tauGenStatus[chain.l_indices[2]] == 6, 'fake tau'):    return False
     return True
 
+def passedFilterLightLepFakeEnrichedDY(chain, new_chain, cutter, tightwp = False, fake_flavors = [0, 1]):
+
+    if not cutter.cut(new_chain.l_flavor.count(2) == 0, 'no tau'):                   return None
+
+    l1Vec = getFourVec(new_chain.l_pt[0], new_chain.l_eta[0], new_chain.l_phi[0], new_chain.l_e[0])
+    l2Vec = getFourVec(new_chain.l_pt[1], new_chain.l_eta[1], new_chain.l_phi[1], new_chain.l_e[1])
+    l3Vec = getFourVec(new_chain.l_pt[2], new_chain.l_eta[2], new_chain.l_phi[2], new_chain.l_e[2])
+    lVec = [l1Vec, l2Vec, l3Vec]
+
+    if tightwp:
+        if not cutter.cut(abs(new_chain.MZossf-MZ) < 15, 'On Z OSSF'):              return None
+        fake_index = new_chain.index_nonZossf
+        ossf_pair = [item for item in [0, 1, 2] if item != fake_index]
+    else:
+        ossf_pair = None
+        closest_mass = 99999.
+        for i1 in xrange(3):
+            if not new_chain.l_istight[i1]: continue
+            for i2 in xrange(3):
+                if i2 <= i1 or not new_chain.l_istight[i2]: continue
+                if not isOSSF(new_chain, i1, i2): continue
+                tmp_mass = (lVec[i1]+lVec[i2]).M()
+                if abs(tmp_mass - 91.) < abs(closest_mass - 91.): 
+                    ossf_pair = [i1, i2]
+                    closest_mass = tmp_mass
+        if ossf_pair is None:   return None
+        fake_index = [item for item in [0, 1, 2] if item not in ossf_pair][0] 
+
+    if new_chain.l_flavor[fake_index] not in fake_flavors: return None     
+    
+    if not cutter.cut(chain._met < 50, 'MET < 50'):                                 return None
+
+    if not cutter.cut(not bVeto(chain), 'b-veto'):                   return None 
+
+    if isOSSF(new_chain, fake_index, ossf_pair[0]) and abs((lVec[fake_index]+lVec[ossf_pair[0]]).M() - 91.) < 15: return None
+    if isOSSF(new_chain, fake_index, ossf_pair[1]) and abs((lVec[fake_index]+lVec[ossf_pair[1]]).M() - 91.) < 15: return None
+
+    if not cutter.cut(abs(new_chain.M3l-MZ) > 15, 'Off-Z m3l'):              return None
+    metVec = getFourVec(chain._met, 0., chain._metPhi, chain._met)
+    if not cutter.cut((metVec+lVec[fake_index]).Mt() > 80, 'Remove WZ'):              return None
+
+    return fake_index
+
+
 def passedFilterTauFakeEnrichedTT(chain, new_chain, cutter, inverted_cut=False):
     if not cutter.cut(new_chain.l_flavor.count(0) == 1, '1 e'):                   return False
     if not cutter.cut(new_chain.l_flavor.count(1) == 1, '1 mu'):                  return False
     if not cutter.cut(new_chain.l_flavor.count(2) == 1, '1 tau'):                 return False
     if not cutter.cut(new_chain.l_charge[0] != new_chain.l_charge[1], 'OS'):        return False
 
-    if nBjets(chain, 'tight') < 1:      return False
+    if not cutter.cut(nBjets(chain, 'tight') > 0, '> 0 b-jets'):      return False
 
     l1Vec = getFourVec(new_chain.l_pt[0], new_chain.l_eta[0], new_chain.l_phi[0], new_chain.l_e[0])
     l2Vec = getFourVec(new_chain.l_pt[1], new_chain.l_eta[1], new_chain.l_phi[1], new_chain.l_e[1])
 
-    if not cutter.cut((l1Vec + l2Vec).M() > 20, 'Mll cut'):             return False
+    if not inverted_cut:
+        if not cutter.cut((l1Vec + l2Vec).M() > 20, 'Mll > 20'):             return False
+    else:
+        if not cutter.cut((l1Vec + l2Vec).M() < 20, 'Mll < 20'):             return False
 
-    if not cutter.cut(chain._met < 50, 'MET < 50'):                                 return False
+    #if not cutter.cut(chain._met < 50, 'MET < 50'):                                 return False
 
     # if not cutter.cut(chain._tauGenStatus[chain.l_indices[2]] == 6, 'fake tau'):    return False
+    return True
+
+def passedFilterLightLepFakeEnrichedTT(chain, new_chain, cutter, tightwp = False, fake_flavors = [0, 1]):
+
+    if not cutter.cut(new_chain.l_flavor.count(2) == 0, 'no tau'):                   return False
+
+    n_tight_ele = 0
+    n_tight_mu = 0
+    passed_charges = []
+    for il, fl in enumerate(new_chain.l_flavor):
+        if new_chain.l_istight[il]:
+            if fl == 0: n_tight_ele += 1
+            if fl == 1: n_tight_mu += 1
+            passed_charges.append(new_chain.l_charge[il])
+        else:
+            if fl not in fake_flavors: return False  
+    
+    if not cutter.cut(n_tight_ele > 0, '> 0 tight ele'):                return False
+    if not cutter.cut(n_tight_mu > 0, '> 0 tight mu'):                return False
+
+    from HNL.EventSelection.eventSelectionTools import noMllOnZ
+    if not cutter.cut(noMllOnZ(new_chain), 'Mll_offZ'):                        return False
+
+    #At this stage at least 1 ele and 1 mu in passed_charges, if not all charges the same, at least one OSOF pair
+    if not cutter.cut(not all([x == passed_charges[0] for x in passed_charges]), 'OSOF pair'): return False 
+    
+    if not cutter.cut(nBjets(chain, 'tight') > 0, '> 0 b-jets'):      return False
+
     return True
 
 def passedGeneralMCCT(chain, new_chain, cutter, flavors):

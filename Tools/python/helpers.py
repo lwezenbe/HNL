@@ -8,7 +8,7 @@ import sys
 #
 def isValidRootFile(fname):
     if not os.path.exists(os.path.expandvars(fname)): return False
-    if 'pnfs' in fname: fname = 'root://maite.iihe.ac.be'+ fname         #faster for pnfs files + avoids certain unstable problems I had with input/output errors
+    if 'pnfs' in fname: fname = 'root://maite.iihe.ac.be/'+ fname         #faster for pnfs files + avoids certain unstable problems I had with input/output errors
     f = ROOT.TFile.Open(fname)
     if not f: return False
     try:
@@ -22,7 +22,7 @@ def isValidRootFile(fname):
 def getObjFromFile(fname, hname):
     assert isValidRootFile(fname)
 
-    if 'pnfs' in fname: fname = 'root://maite.iihe.ac.be'+ fname         #faster for pnfs file
+    if 'pnfs' in fname: fname = 'root://maite.iihe.ac.be/'+ fname         #faster for pnfs file
     try:
         f = ROOT.TFile.Open(fname)
         f.cd()

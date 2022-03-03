@@ -4,7 +4,7 @@ from HNL.EventSelection.eventCategorization import SUPER_CATEGORIES
 from HNL.Tools.helpers import getObjFromFile
 
 in_file_path = lambda era, y, s, r, sample, strategy : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 
-                                                'data', 'calcYields', era+'-'+y, '-'.join([strategy, s, r, 'TauFakes']), sample, 'nonprompt', 'events.root')
+                                                'data', 'runAnalysis', 'HNL-TauFakes', '-'.join([strategy, s, r, 'reco']), era+'-'+y, 'bkgr', sample, 'variables.root')
 out_file_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Weights', 'data', 'tauFakeContributions', 'weights.json')
 
 import json
@@ -20,12 +20,13 @@ cat_dict = {
     'TauFakesDY' : [17]
 }
 
-TT_contributions = ['TT', 'TG', 'TTG', 'ttX', 'ST', 'TTTT']
-DY_contributions = ['DY', 'WJets', 'WZ', 'ZZ', 'WW', 'triboson', 'Higgs']
-# TT_contributions = ['TT']
-# DY_contributions = ['DY']
+TT_contributions = ['TT-T+X']
+DY_contributions = ['XG', 'WZ', 'ZZ-H', 'Other', 'triboson']
 
 def determineWeights(eras, years, selections, regions, strategy):
+    from ROOT import TFile
+    from HNL.Tools.helpers import getHistFromTree
+    import numpy as np
     weights = {}
     for era in eras:
         weights[era] = {}
@@ -34,18 +35,22 @@ def determineWeights(eras, years, selections, regions, strategy):
             for selection in selections:
                 weights[era][year][selection] = {}
                 for region in regions:
-                    print region
                     tt_tot = 0.
                     dy_tot = 0.
                     for c in cat_dict[region]:
                         for tt_c in TT_contributions:
-                            tmp_tt_hist = getObjFromFile(in_file_path(year, selection, region, tt_c, strategy), str(c)+'_nonprompt')
+                            infile = TFile(in_file_path(era, year, selection, region, tt_c, strategy), 'read')
+                            intree = infile.Get('events')
+                            tmp_tt_hist = getHistFromTree(intree, 'searchregion', tt_c, np.arange(0., 2., 1.), '(!isprompt)')
                             tt_tot += tmp_tt_hist.GetSumOfWeights()
+                            infile.Close()
+
                         for dy_c in DY_contributions:
-                            print in_file_path(year, selection, region, dy_c, strategy), str(c)+'_nonprompt'
-                            tmp_dy_hist = getObjFromFile(in_file_path(year, selection, region, dy_c, strategy), str(c)+'_nonprompt')
+                            infile = TFile(in_file_path(era, year, selection, region, dy_c, strategy), 'read')
+                            intree = infile.Get('events')
+                            tmp_dy_hist = getHistFromTree(intree, 'searchregion', dy_c, np.arange(0., 2., 1.), '(!isprompt)')
                             dy_tot += tmp_dy_hist.GetSumOfWeights()
-                    print tt_tot, dy_tot
+                            infile.Close()
                     weights[era][year][selection][region] = {'DY' : dy_tot/(tt_tot+dy_tot), 'TT' : tt_tot/(tt_tot+dy_tot)}            
 
     json_f = json.dumps(weights)
@@ -70,4 +75,4 @@ if __name__ == '__main__':
     argParser.add_argument('--regions',   action='store', nargs='*', default=['highMassSR', 'lowMassSR'],  help='Choose the selection region')
     args = argParser.parse_args()
 
-    determineWeights(args.years, args.selections, args.regions, args.strategy)
+    determineWeights(args.eras, args.years, args.selections, args.regions, args.strategy)

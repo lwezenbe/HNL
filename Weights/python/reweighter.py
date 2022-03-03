@@ -25,9 +25,13 @@ class Reweighter:
 
             self.electronSF = ElectronRecoSF(self.sample.chain.era, self.sample.chain.year)
 
+            #
+            # Tau SF
+            #
             from HNL.Weights.tauSF import TauSF
             tau_algo, tau_wp = getTauAlgoWP(self.sample.chain)
             self.tauSF = TauSF(sample.chain.era, sample.chain.year, tau_algo, tau_wp[0], tau_wp[1], tau_wp[2])
+
 
         self.fakerate_collection = None
 
@@ -79,6 +83,16 @@ class Reweighter:
             tot_weight *= self.getFakeRateWeight()
         return tot_weight
 
+    def getTestWeight(self, sideband=False):
+        tot_weight = 1.
+        tot_weight *= self.getLumiWeight()
+        tot_weight *= self.getPUWeight()
+        tot_weight *= self.getElectronRecoSF()
+        if self.sample.chain.era != 'prelegacy': tot_weight *= self.getBTagWeight() #TODO: reskim of prelegacy samples because _jetSmeared not available
+        if sideband:
+            tot_weight *= self.getFakeRateWeight()
+        return tot_weight
+    
     def fillTreeWithWeights(self, chain):
         chain.lumiWeight = self.getLumiWeight()
         chain.puWeight = self.getPUWeight()

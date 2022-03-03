@@ -52,8 +52,6 @@ class TauSF:
             if chain._lFlavor[l] == 2: total_sf *= self.getSF(chain, l)
         return total_sf
 
-
-
 if __name__ == "__main__":
     iso_wp = ['vvvloose', 'vvloose', 'vloose', 'loose', 'medium', 'tight', 'vtight', 'vvtight']
     ele_wp = ['vvloose', 'vloose', 'loose', 'medium', 'tight', 'vtight', 'vvtight']

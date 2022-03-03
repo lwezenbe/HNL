@@ -26,7 +26,7 @@ submission_parser.add_argument('--noskim', action='store_true', default=False,  
 submission_parser.add_argument('--isCheck', action='store_true', default=False,  help='Check the setup by using the exact same region as the ttl measurement')
 submission_parser.add_argument('--splitInCategories', action='store_true', default=False,  help='Split into different categories')
 submission_parser.add_argument('--inData',   action='store_true', default=False,  help='Run in data')
-submission_parser.add_argument('--region', action='store', default=None, type=str,  help='What region was the tau fake closure test you want to use measured in?')
+submission_parser.add_argument('--region', action='store', default=None, type=str,  help='What region was the tau fake closure test you want to use measured in?', choices=['TauFakesDYCT', 'TauFakesTT', 'MCCT', 'LightLepFakesDY', 'LightLepFakesTT', 'TauMixCT', 'TauFakesDYCTnomet', 'TauFakesTTCT'])
 submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino'])
 submission_parser.add_argument('--application', action='store', default=None, type=str,  help='What region was the tau fake rate you want to use applied for?', 
     choices=['TauFakesDY', 'TauFakesDYnomet', 'TauFakesTT', 'WeightedMix', 'OSSFsplitMix'])
@@ -87,7 +87,7 @@ else:
     skim_str = 'Reco'
 
 if not args.inData:
-    sublist = 'BackgroundEstimation/ClosureTests_'+args.era+args.year
+    sublist = 'BackgroundEstimation/TauFakes-'+args.era+args.year
     #sublist = 'fulllist_'+args.era+args.year+'_nosignal_mconly'
 else:
     sublist = 'fulllist_'+args.era+args.year+'_nosignal'
@@ -124,18 +124,18 @@ else:
             'mtOther':              (lambda c : c.mtOther,      np.arange(0., 300., 15.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
             'ptFakes':              (lambda c, i : c.l_pt[i],         np.arange(0., 300., 15.),       ('p_{T} [GeV]', 'Events')),
             'etaFakes':             (lambda c, i : c.l_eta[i],        np.arange(-2.5, 3.0, 0.5),       ('#eta', 'Events')),
-            'ptLeading':            (lambda c : c.l_pt[0],         np.arange(0., 100., 15.),       ('p_{T} [GeV]', 'Events')),
-            'ptLeadingLukabins':    (lambda c : c.l_pt[0],         np.linspace(10., 200., num = 10),       ('p_{T} [GeV]', 'Events')),
-            'etaLeading':           (lambda c : abs(c.l_eta[0]),        np.arange(0., 3.0, 0.5),       ('|#eta|', 'Events')),
-            'etaLeadingFine':       (lambda c : abs(c.l_eta[0]),        np.arange(0, 2.75, 0.25),       ('|#eta|', 'Events')),
-            'ptSubleading':         (lambda c : c.l_pt[1],         np.arange(0., 100., 15.),       ('p_{T} [GeV]', 'Events')),
-            'ptSubleadingLukabins': (lambda c : c.l_pt[1],         np.linspace(10., 200., num = 10),       ('p_{T} [GeV]', 'Events')),
-            'etaSubleading':        (lambda c : abs(c.l_eta[1]),        np.arange(0., 3.0, 0.5),       ('|#eta|', 'Events')),
-            'etaSubleadingFine':    (lambda c : abs(c.l_eta[1]),        np.arange(0, 2.75, 0.25),       ('|#eta|', 'Events')),
-            'ptTrailing':           (lambda c : c.l_pt[2],         np.arange(0., 100., 15.),       ('p_{T} [GeV]', 'Events')),
-            'ptTrailingLukabins':   (lambda c : c.l_pt[2],         np.linspace(10., 200., num = 10),       ('p_{T} [GeV]', 'Events')),
-            'etaTrailing':          (lambda c : abs(c.l_eta[2]),        np.arange(0., 3.0, 0.5),       ('|#eta|', 'Events')),
-            'etaTrailingFine':      (lambda c : abs(c.l_eta[2]),        np.arange(0, 2.75, 0.25),       ('|#eta|', 'Events')),
+            'ptLeading':            (lambda c : c.l_pt[0],         np.arange(0., 100., 15.),       ('p_{T}(leading) [GeV]', 'Events')),
+            'ptLeadingLukabins':    (lambda c : c.l_pt[0],         np.linspace(10., 200., num = 10),       ('p_{T}(leading) [GeV]', 'Events')),
+            'etaLeading':           (lambda c : abs(c.l_eta[0]),        np.arange(0., 3.0, 0.5),       ('|#eta(leading)|', 'Events')),
+            'etaLeadingFine':       (lambda c : abs(c.l_eta[0]),        np.arange(0, 2.75, 0.25),       ('|#eta(leading)|', 'Events')),
+            'ptSubleading':         (lambda c : c.l_pt[1],         np.arange(0., 100., 15.),       ('p_{T}(subleading) [GeV]', 'Events')),
+            'ptSubleadingLukabins': (lambda c : c.l_pt[1],         np.linspace(10., 200., num = 10),       ('p_{T}(subleading) [GeV]', 'Events')),
+            'etaSubleading':        (lambda c : abs(c.l_eta[1]),        np.arange(0., 3.0, 0.5),       ('|#eta(subleading)|', 'Events')),
+            'etaSubleadingFine':    (lambda c : abs(c.l_eta[1]),        np.arange(0, 2.75, 0.25),       ('|#eta(subleading)|', 'Events')),
+            'ptTrailing':           (lambda c : c.l_pt[2],         np.arange(0., 100., 15.),       ('p_{T}(trailing) [GeV]', 'Events')),
+            'ptTrailingLukabins':   (lambda c : c.l_pt[2],         np.linspace(10., 200., num = 10),       ('p_{T}(trailing) [GeV]', 'Events')),
+            'etaTrailing':          (lambda c : abs(c.l_eta[2]),        np.arange(0., 3.0, 0.5),       ('|#eta(trailing)|', 'Events')),
+            'etaTrailingFine':      (lambda c : abs(c.l_eta[2]),        np.arange(0, 2.75, 0.25),       ('|#eta(trailing)|', 'Events')),
             'mt3':                  (lambda c : c.mt3,          np.arange(0., 315., 15.),         ('M_{T}(3l) [GeV]', 'Events')),
             'LT':                   (lambda c : c.LT,           np.arange(0., 915., 15.),         ('L_{T} [GeV]', 'Events')),
             'HT':                   (lambda c : c.HT,           np.arange(0., 915., 15.),         ('H_{T} [GeV]', 'Events')),
@@ -153,7 +153,7 @@ def getOutputBase():
                                         args.era+'-'+args.year, data_str, flavors_to_test_str))
 
     if args.flavorToTest == ['tau']:
-        output_name = os.path.join(output_name, args.region, args.application)
+        output_name = os.path.join(output_name, args.region, str(args.application))
 
     if args.isCheck:
         output_name += '/isCheck'
@@ -188,7 +188,7 @@ if not args.makePlots:
     #
     if not args.isChild:
         from HNL.Tools.jobSubmitter import submitJobs
-        submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'closureTest')
+        submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'closureTest-'+args.era+args.year+'-'+str(args.application))
         exit(0)
 
     #
@@ -246,24 +246,32 @@ if not args.makePlots:
                                                     ossf_map = {True : 'DY', False : 'TT'})  
     else:
         fakerate[2] = None
+
+    luka_year_dict = {
+        '2016pre' : '2016PreVFP',    
+        '2016post' : '2016PostVFP',    
+        '2017' : '2017',    
+        '2018' : '2018',    
+    }
     if 'ele' in args.flavorToTest: 
         mod_year = '2016' if '2016' in args.year else args.year
         if args.inData:
-            fakerate[0] = FakeRateEmulator('fakeRate_electron_'+mod_year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 
-                                            'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'Lukav2', 'fakeRateMap_data_electron_'+mod_year+'_mT.root'))
+            fakerate[0] = FakeRateEmulator('fakeRate_electron_'+luka_year_dict[args.year], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 
+                                            'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'fakeRateMap_data_electron_'+luka_year_dict[args.year]+'_mT.root'))
         else:
-            fakerate[0] = FakeRateEmulator('fakeRate_electron_'+mod_year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 
-                                            'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'Lukav2', 'fakeRateMap_MC_electron_'+mod_year+'.root'))
+            fakerate[0] = FakeRateEmulator('fakeRate_electron_'+luka_year_dict[args.year], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 
+                                            'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'fakeRateMap_MC_electron_'+luka_year_dict[args.year]+'.root'))
     else:
         fakerate[0] = None
     if 'mu' in args.flavorToTest: 
         mod_year = '2016' if '2016' in args.year else args.year
         if args.inData:
-            fakerate[1] = FakeRateEmulator('fakeRate_muon_'+mod_year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 
-                                            'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'Lukav2', 'fakeRateMap_data_muon_'+mod_year+'_mT.root'))
+            fakerate[1] = FakeRateEmulator('fakeRate_muon_'+luka_year_dict[args.year], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 
+                                            'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'fakeRateMap_data_muon_'+luka_year_dict[args.year]+'_mT.root'))
         else:
-            fakerate[1] = FakeRateEmulator('fakeRate_muon_'+mod_year, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 
-                                            'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'Lukav2', 'fakeRateMap_MC_muon_'+mod_year+'.root'))
+            fakerate[1] = FakeRateEmulator('fakeRate_muon_'+luka_year_dict[args.year], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 
+                                            'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'fakeRateMap_MC_muon_'+luka_year_dict[args.year]+'.root'))
+            
     else:
         fakerate[1] = None
 
@@ -303,12 +311,11 @@ if not args.makePlots:
         if args.inData and not chain.is_data:
             fake_index = event.getFakeIndex()
             if any([chain.l_isfake[i] for i in fake_index]): continue
-
-
+   
         cat = event.event_category.returnAnalysisCategory()
 
         fake_factor = fakerate_collection.getFakeWeight()
-        weight = reweighter.getLumiWeight()
+        weight = reweighter.getTotalWeight()
 
         for v in var:
             if v == 'ptFakes' or v == 'etaFakes':
@@ -373,12 +380,29 @@ else:
         for sample_name in closureObjects.keys():
             for c in getCategories():
                 for v in var:
-                    p = Plot(name = v, signal_hist = closureObjects[sample_name][c][v].getObserved(), bkgr_hist = closureObjects[sample_name][c][v].getSideband(), 
-                                color_palette='Black', color_palette_bkgr='Stack', tex_names = ["Observed", 'Predicted'], draw_ratio = True)
-                    p.drawHist(output_dir = output_dir+'/'+sample_name+'/'+c, draw_option='EP')
+                    p = Plot(name = v, observed_hist = closureObjects[sample_name][c][v].getObserved(), bkgr_hist = closureObjects[sample_name][c][v].getSideband(), 
+                                color_palette='Black', color_palette_bkgr='Stack', tex_names = ['Predicted'], draw_ratio = True, year = args.year, era = args.era,
+                                x_name = var[v][2][0], y_name = var[v][2][1])
+                    p.setLegend(x1 = 0.5, ncolumns = 1)
+                    p.drawHist(output_dir = output_dir+'/'+sample_name+'/'+c, observed_name = 'Observed')
     
     for c in getCategories():
         for v in var:
+            if args.inData:
+                observed_h = closureObjects['Data'][c][v].getObserved()
+                for isample, sample_name in enumerate(closureObjects.keys()):
+                    if 'Data' in sample_name: continue
+                    else:
+                        observed_h.Add(closureObjects[sample_name][c][v].getSideband(), -1.)
+            else:
+                for isample, sample_name in enumerate(closureObjects.keys()):
+                    if 'Data' in sample_name: continue
+                    if isample == 0:
+                        observed_h = closureObjects[sample_name][c][v].getObserved()
+                    else:
+                        observed_h.Add(closureObjects[sample_name][c][v].getObserved())
+
+            
             if args.inData:
                 backgrounds = [closureObjects["Data"][c][v].getSideband()]
                 background_names = ['Predicted']
@@ -389,23 +413,14 @@ else:
             bkgr_collection = {}
             for sample_name in closureObjects.keys():
                 if 'Data' in sample_name: continue
-                bkgr_collection[sample_name] = closureObjects[sample_name][c][v].getSideband()
+                bkgr_collection[sample_name] = closureObjects[sample_name][c][v].getObserved()
 
             for b in bkgr_collection:
                 backgrounds.append(bkgr_collection[b])
                 background_names.append(b)
 
-            if args.inData:
-                signal_h = closureObjects['Data'][c][v].getObserved()
-            else:
-                for isample, sample_name in enumerate(closureObjects.keys()):
-                    if 'Data' in sample_name: continue
-                    if isample == 0:
-                        signal_h = closureObjects[sample_name][c][v].getObserved()
-                    else:
-                        signal_h.Add(closureObjects[sample_name][c][v].getObserved())
-
-            p = Plot(name = v, signal_hist = signal_h, bkgr_hist = backgrounds, color_palette='Black', color_palette_bkgr='StackTauPOGbyName', tex_names = ["Observed"]+background_names, 
-                        draw_ratio = True, year = args.year, era = args.era)
-            p.drawHist(output_dir = output_dir+'/Stacked/'+c, draw_option='EP')
+            p = Plot(name = v, bkgr_hist = backgrounds, observed_hist = observed_h, color_palette='Black', tex_names = background_names, 
+                        draw_ratio = True, year = args.year, era = args.era, x_name = var[v][2][0], y_name = var[v][2][1])
+            p.setLegend(x1 = 0.5, ncolumns = 2)
+            p.drawHist(output_dir = output_dir+'/Stacked/'+c, observed_name = 'Observed')
     

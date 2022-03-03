@@ -18,9 +18,17 @@ year_dict = {
     '2018': '2018',
 }
 
+luka_year_dict = {
+    '2016pre' : '2016PreVFP',
+    '2016post' : '2016PostVFP',
+    '2017' : '2017',
+    '2018' : '2018',
+}
+
+
 default_tau_path = lambda proc, year, selection, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', year, data_string, 'tau', 'TauFakes'+proc+'ttl-'+selection, proc if data_string != 'DATA' else '' , 'events.root')
-default_ele_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', era+'-'+year, 'Lukav2', 'fakeRateMap_'+data_string+'_electron_'+year+'_'+'mT.root' if data_string=='data' else 'fakeRateMap_'+data_string+'_electron_'+year+'.root')
-default_mu_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', era+'-'+year, 'Lukav2', 'fakeRateMap_'+data_string+'_muon_'+year+'_'+'mT.root' if data_string=='data' else 'fakeRateMap_'+data_string+'_muon_'+year+'.root')
+default_ele_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', era+'-'+year, 'fakeRateMap_data_electron_'+luka_year_dict[year]+'_mT.root')
+default_mu_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', era+'-'+year, 'fakeRateMap_data_muon_'+luka_year_dict[year]+'_mT.root')
 
 ele = 0
 mu = 1
@@ -65,8 +73,9 @@ def returnTauFR(tau_method, chain):
 
 def returnFakeRateCollection(chain):
     fakerates = {}
-    fakerates[ele] = FakeRateEmulator('fakeRate_electron_'+year_dict[str(chain.year)], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_ele_path(chain.era, str(chain.year), data_dict[(chain.is_data, 'light')]))
-    fakerates[mu] = FakeRateEmulator('fakeRate_muon_'+year_dict[str(chain.year)], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_mu_path(chain.era, str(chain.year), data_dict[(chain.is_data, 'light')]))
+    fakerates[ele] = FakeRateEmulator('fakeRate_electron_'+luka_year_dict[str(chain.year)], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_ele_path(chain.era, str(chain.year), data_dict[(chain.is_data, 'light')]))
+    print default_ele_path(chain.era, str(chain.year), data_dict[(chain.is_data, 'light')]), 'fakeRate_electron_'+luka_year_dict[str(chain.year)]
+    fakerates[mu] = FakeRateEmulator('fakeRate_muon_'+luka_year_dict[str(chain.year)], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_mu_path(chain.era, str(chain.year), data_dict[(chain.is_data, 'light')]))
     fakerates[tau] = returnTauFR(TAU_METHOD, chain)
 
     fakerate_collection = FakeRateCollection(chain, fakerates)

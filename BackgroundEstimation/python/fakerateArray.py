@@ -63,7 +63,7 @@ class FakeRateCollection:
         nleptons = 0
         for i in xrange(len(self.chain.l_indices)):
             if not self.chain.l_istight[i]:
-                if self.chain.selection in ['Luka', 'default'] and self.chain.l_flavor[i] == 0:
+                if self.chain.selection in ['Luka', 'default'] and self.chain.l_flavor[i] in [0, 1]:
                     man_var = [min(44.9, self.chain.l_pt[i]), abs(self.chain.l_eta[i])]
                 else:
                     man_var = None

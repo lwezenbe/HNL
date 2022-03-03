@@ -91,7 +91,8 @@ def getSampleManager(y):
     elif args.includeData == 'includeSideband':
         skim_str = 'Reco'
     else:
-        skim_str = args.skimLevel
+        #skim_str = args.skimLevel
+        skim_str = 'Reco'
     
     file_list = 'fulllist_'+args.era+str(y) if args.customList is None else args.customList
 
@@ -152,6 +153,7 @@ elif args.strategy == 'MVA':
     var = at.returnVariables(nl, not args.genLevel, args.region)
 else:
     var = at.returnVariables(nl, not args.genLevel)
+
 
 #
 # Define categories to use
@@ -289,8 +291,8 @@ if not args.makePlots and not args.makeDataCards:
             #
             # Event selection
             #
-            event.initEvent()
-
+            
+            event.initEvent(reset_obj_sel = True)
            
             is_sideband_event = False
             manually_blinded = True
@@ -305,7 +307,7 @@ if not args.makePlots and not args.makeDataCards:
                     is_sideband_event = True
                 else:
                     pass
-
+          
             #
             # Make the code blind in signal regions
             # If you ever remove these next lines, set remove manually_blinded as well
@@ -414,7 +416,7 @@ else:
 
         # Collect background file locations
         if not args.signalOnly:
-            bkgr_list = [getOutputName('bkgr', year, args.tag)+'/'+b for b in sample_manager.sample_outputs if os.path.isdir(getOutputName('bkgr', year)+'/'+b)]
+            bkgr_list = [getOutputName('bkgr', year, args.tag)+'/'+b for b in sample_manager.sample_outputs if os.path.isdir(getOutputName('bkgr', year, args.tag)+'/'+b)]
         else:
             bkgr_list = []
 
@@ -496,13 +498,10 @@ else:
             if args.includeData is not None:
                 for c, cc in zip(categories_to_use, category_conditions):
                     for v in var_dict:
-                        if args.includeData == 'includeSideband': 
-                            infile = TFile(data_list[0]+'/variables-sideband.root', 'read')
-                            intree = infile.Get('events')
-                            tmp_list_of_hist[c][v]['data']['sideband'] = Histogram(getHistFromTree(intree, v, str(c)+'-'+v+'-'+'-Data-sideband', var_dict[v][1], '('+cc+'&&issideband)'))
-                            infile.Close()
-                        infile = TFile(data_list[0]+'/variables-signalregion.root', 'read')
+                        infile = TFile(data_list[0]+'/variables.root', 'read')
                         intree = infile.Get('events')
+                        if args.includeData == 'includeSideband': 
+                            tmp_list_of_hist[c][v]['data']['sideband'] = Histogram(getHistFromTree(intree, v, str(c)+'-'+v+'-'+'-Data-sideband', var_dict[v][1], '('+cc+'&&issideband)'))
                         tmp_list_of_hist[c][v]['data']['signalregion'] = Histogram(getHistFromTree(intree, v, str(c)+'-'+v+'-'+'-Data-signalregion', var_dict[v][1], '('+cc+'&&!issideband)'))
                         infile.Close()
 
@@ -517,7 +516,7 @@ else:
                     progress(ib, len(background))
                     if not args.individualSamples:
                         if b == 'non-prompt': continue
-                        infile = TFile(getOutputName('bkgr', year)+'/'+b+'/variables.root', 'read')
+                        infile = TFile(getOutputName('bkgr', year, args.tag)+'/'+b+'/variables.root', 'read')
                         intree = infile.Get('events') 
                         
                         for c, cc in zip(categories_to_use, category_conditions):
@@ -674,7 +673,7 @@ else:
             for c in cat.SUPER_CATEGORIES.keys():
                 c_name = CATEGORY_NAMES[c] if c not in cat.SUPER_CATEGORIES.keys() else c
 
-                extra_text = [extraTextFormat(c_name, xpos = 0.2, ypos = 0.82, textsize = None, align = 12)]  #Text to display event type in plot
+                extra_text = [extraTextFormat(c_name, xpos = 0.2, ypos = 0.72, textsize = None, align = 12)]  #Text to display event type in plot
         
                 # Plots that display chosen for chosen signal masses and backgrounds the distributions for the different variables
                 # S and B in same canvas for each variable
@@ -706,7 +705,7 @@ else:
                             # signal_legendnames.append('HNL '+ sk.split('-')[1] +' m_{N} = '+sk.split('-m')[-1]+ ' GeV')
                             signal_legendnames.append('HNL m_{N}='+sk.split('-m')[-1]+ 'GeV')
 
-                    if len(args.includeData) > 0 and 'signalregion' in args.includeData and not 'Weight' in v:
+                    if args.includeData == 'signalregion' and not 'Weight' in v:
                         observed_hist = list_of_hist[c][v]['data']['signalregion']
                     else:
                         observed_hist = None
@@ -741,17 +740,18 @@ else:
 
                         # Create plot object (if signal and background are displayed, also show the ratio)
                         draw_ratio = None if args.signalOnly or args.bkgrOnly else True
-                        if 'signalregion' in args.includeData: draw_ratio = True
+                        if args.includeData == 'signalregion': draw_ratio = True
                         if not args.individualSamples:
-                            p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = False, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
-                                    color_palette = 'Didar', color_palette_bkgr = 'AN2017' if not args.analysis == 'tZq' else 'tZq', x_name = var[v][2][0], y_name = var[v][2][1])
+                            p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
+                                    color_palette = 'Didar', color_palette_bkgr = 'HNLfromTau' if not args.analysis == 'tZq' else 'tZq', x_name = var[v][2][0], y_name = var[v][2][1])
                         else:
-                            p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = False, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
+                            p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
                                     color_palette = 'Didar', color_palette_bkgr = 'Didar', x_name = var[v][2][0], y_name = var[v][2][1])
 
 
                         # Draw
-                        p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c_name), normalize_signal = True, draw_option='EHist', min_cutoff = 1)
+                        #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c_name), normalize_signal = True, draw_option='EHist', min_cutoff = 1)
+                        p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c_name), normalize_signal = False, draw_option='EHist', min_cutoff = 1)
                         # p.drawHist(output_dir = os.path.join(output_dir, c_name), normalize_signal = False, draw_option='EHist', min_cutoff = 1)
 
             #
@@ -785,7 +785,7 @@ else:
                             else:
                                 hist_to_plot[i_sample].SetBinContent(i+1, list_of_hist_forbar[c]['searchregion']['bkgr'][sample_name].getHist().GetSumOfWeights()) 
 
-                    if len(args.includeData) > 0 and 'signalregion' in args.includeData:
+                    if args.includeData == 'signalregion':
                         observed_hist = TH1D('data'+supercat, 'data'+supercat, len(grouped_categories[supercat]), 0, len(grouped_categories[supercat]))
                         for i, c in enumerate(grouped_categories[supercat]):
                             observed_hist.SetBinContent(i+1, list_of_hist_forbar[c]['searchregion']['data']['signalregion'].getHist().GetSumOfWeights()) 

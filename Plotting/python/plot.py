@@ -16,6 +16,7 @@ def generalSettings(paintformat = "4.2f"):
     ROOT.gStyle.SetPaintTextFormat(paintformat)
     ROOT.gROOT.ProcessLine( "gErrorIgnoreLevel = 1001;")
     ROOT.gErrorIgnoreLevel = ROOT.kWarning
+    ROOT.TGaxis.SetMaxDigits(2)
 
 def isList(item):
     if isinstance(item, (list,)) or isinstance(item, set): return True
@@ -49,7 +50,7 @@ from HNL.Plotting.style import setDefault, setDefault2D
 class Plot:
     
     def __init__(self, signal_hist = None, tex_names = None, name = None, x_name = None, y_name = None, bkgr_hist = None, observed_hist = None, syst_hist = None, extra_text = None, 
-        x_log = None, y_log = None, draw_ratio = None, draw_significance = None, color_palette = 'Didar', color_palette_bkgr = 'StackTauPOGbyName', year = '2016', era = 'prelegacy'):
+        x_log = None, y_log = None, draw_ratio = None, draw_significance = None, color_palette = 'HNLfromTau', color_palette_bkgr = 'HNLfromTau', year = '2016', era = 'prelegacy'):
 
         self.s = makeList(getHistList(signal_hist)) if signal_hist is not None else []
         try:
@@ -216,11 +217,11 @@ class Plot:
                 self.b[0].SetMinimum(self.min_to_set)
                 self.b[0].SetMaximum(self.max_to_set)
                 # self.b[0].GetXaxis().SetRangeUser(15., 900.)
-                # self.b[0].GetXaxis().SetTitleSize(.06)
-                # self.b[0].GetYaxis().SetTitleSize(.06)
-                # self.b[0].GetXaxis().SetLabelSize(.06)
-                # self.b[0].GetYaxis().SetLabelSize(.06)
-                # self.b[0].GetYaxis().SetTitleOffset(1)
+                self.b[0].GetXaxis().SetTitleSize(.06)
+                self.b[0].GetYaxis().SetTitleSize(.06)
+                self.b[0].GetXaxis().SetLabelSize(.06)
+                self.b[0].GetYaxis().SetLabelSize(.06)
+                self.b[0].GetYaxis().SetTitleOffset(1)
 
             self.plotpad.Update()
 
@@ -304,7 +305,6 @@ class Plot:
             plot_pad_y = 0.45
         elif self.draw_ratio is not None:
             self.ratio_pad = ROOT.TPad('ratio_pad', 'ratio_pad', 0, 0.05, 1, 0.25)
-            self.ratio_pad.SetBottomMargin(0.3)
             plot_pad_y = 0.25
         elif self.draw_significance:
             self.sig_pad = ROOT.TPad('sig_pad', 'sig_pad', 0, 0.05, 1, 0.25)
@@ -316,6 +316,7 @@ class Plot:
         if self.draw_ratio is not None:
             self.plotpad.SetBottomMargin(0.)
             self.ratio_pad.SetTopMargin(0.05)
+            self.ratio_pad.SetBottomMargin(0.38)
             if self.x_log: self.ratio_pad.SetLogx()  
             self.ratio_pad.Draw()
 
@@ -385,12 +386,12 @@ class Plot:
         self.tot_err.GetYaxis().SetTitleSize(.18)
         self.tot_err.GetXaxis().SetLabelSize(.18)
         self.tot_err.GetYaxis().SetLabelSize(.18)
-        self.tot_err.GetYaxis().SetTitleOffset(.4)
+        self.tot_err.GetYaxis().SetTitleOffset(.3)
         self.tot_err.GetYaxis().SetNdivisions(505)
         if self.draw_significance:
             self.tot_err.GetXaxis().SetLabelOffset(999999)
         else:
-            self.tot_err.GetXaxis().SetTitleOffset(0.8)
+            self.tot_err.GetXaxis().SetTitleOffset(0.95)
         if self.draw_significance:
             self.tot_err.SetTitle('; ; '+ytitle)
         else:
@@ -429,7 +430,7 @@ class Plot:
        
         self.line.Draw()
 
-        self.ratio_legend = ROOT.TLegend(0.2, .7, .6, .9)
+        self.ratio_legend = ROOT.TLegend(0.2, .75, .6, .9)
         self.ratio_legend.SetNColumns(3)
         self.ratio_legend.AddEntry(self.stat_err, 'Stat. Pred. Error', 'F')
         self.ratio_legend.AddEntry(self.tot_err, 'Tot. Pred. Error', 'F')
@@ -453,10 +454,10 @@ class Plot:
                     avg += ratios[0].GetBinContent(b) * (ratios[0].GetBinLowEdge(b+1) - ratios[0].GetBinLowEdge(b))
             if full_range > 0.: 
                 avg /= full_range
-                extra_text_string = "Avg. Rat. = {0}".format(avg)
+                extra_text_string = "Avg. Rat. = {:.3}".format(avg)
                 extra_text.SetNDC()
                 extra_text.SetTextSize(0.1)
-                extra_text.DrawLatex(0.55, 0.75, extra_text_string)
+                extra_text.DrawLatex(0.55, 0.78, extra_text_string)
         
         self.ratio_pad.Update() 
         self.canvas.cd() 
@@ -607,7 +608,7 @@ class Plot:
 
 
     def drawHist(self, output_dir = None, normalize_signal = False, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None, 
-        custom_labels = None, draw_lines = None, message = None, min_cutoff = None, max_cutoff = None, ref_line = 1.):
+        custom_labels = None, draw_lines = None, message = None, min_cutoff = None, max_cutoff = None, ref_line = 1., observed_name = 'Data'):
 
         #
         # Some default settings
@@ -783,7 +784,7 @@ class Plot:
             self.observed.Draw("EPSame")
 
 
-        tdr.setTDRStyle()                       #TODO: Find out why we need a setTDRStyle after drawing the stack
+        #tdr.setTDRStyle()                       #TODO: Find out why we need a setTDRStyle after drawing the stack
 
         #
         # Calculate ranges of axis and set to log if requested
@@ -861,7 +862,7 @@ class Plot:
         for h, n in zip(loop_obj, self.tex_names):
             self.legend.AddEntry(h, n, 'F' if not 'HNL' in n else 'L')
         if self.observed is not None:
-            self.legend.AddEntry(self.observed, 'data', 'EP')
+            self.legend.AddEntry(self.observed, observed_name, 'EP')
 
         self.legend.Draw()
 
@@ -911,6 +912,7 @@ class Plot:
             h.SetTitle(';'+self.x_name+';'+self.y_name) 
             h.Draw(option)
             if names is not None:
+                print ih, names, names[ih], output_dir
                 output_name = output_dir +'/'+names[ih] #Not using name here because loop over things with different names
             else:
                 output_name = output_dir +'/'+h.GetName() #Not using name here because loop over things with different names

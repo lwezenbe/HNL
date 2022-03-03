@@ -107,6 +107,9 @@ sample_manager = SampleManager(args.era, args.year, skim_str, sublist, skim_sele
 jobs = []
 for sample_name in sample_manager.sample_names:
     if args.sample and args.sample not in sample_name: continue
+    if args.tauRegion is not None and not args.inData:
+        if args.tauRegion == 'TauFakesDYttl' and not 'DY' in sample_name: continue
+        elif args.tauRegion == 'TauFakesTTttl' and not 'TT' in sample_name: continue
     sample = sample_manager.getSample(sample_name)
     for njob in xrange(sample.returnSplitJobs()):
         jobs += [(sample.name, str(njob))]
@@ -144,7 +147,7 @@ if not args.makePlots:
     #
     if not args.isChild:
         from HNL.Tools.jobSubmitter import submitJobs
-        submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'tightToLoose')
+        submitJobs(__file__, ('sample', 'subJob'), jobs, argParser, jobLabel = 'tightToLoose-'+args.era+args.year)
         exit(0)
 
     #
@@ -178,12 +181,6 @@ if not args.makePlots:
         event_range = xrange(max_events) if max_events < len(sample.getEventRange(args.subJob)) else sample.getEventRange(args.subJob)
     else:
         event_range = sample.getEventRange(args.subJob)    
-
-    #
-    # Get luminosity weight
-    #
-    from HNL.Weights.reweighter import Reweighter
-    lw = Reweighter(sample, sample_manager)
 
     from HNL.EventSelection.eventCategorization import EventCategory
     try:
@@ -233,7 +230,6 @@ if not args.makePlots:
         #     if not cutter.cut(passTriggers(chain, 'HNL'), 'pass_triggers'): continue
 
         # if not cutter.cut(passTriggers(chain, 'ewkino'), 'pass_triggers'): continue
-
         event.initEvent()
 
         #Event selection
@@ -244,15 +240,16 @@ if not args.makePlots:
         else:
             if not event.passedFilter(cutter, sample.name): continue
         fake_index = event.event_selector.selector.getFakeIndex()
-        
+ 
         if args.inData and not chain.is_data:
             if not chain._lIsPrompt[chain.l_indices[fake_index]]: continue
-            passed = True #Always fill both denom and enum for this case (subtraction of prompt contribution)
-            weight = -1.*reweighter.getLumiWeight()
+            #passed = True #Always fill both denom and enum for this case (subtraction of prompt contribution)
+            passed = isGoodLepton(chain, chain.l_indices[fake_index], 'tight')
+            weight = -1.*reweighter.getTotalWeight()
         else:
             if not chain.is_data and not cutter.cut(chain.l_isfake[fake_index], 'fake lepton'): continue
             passed = isGoodLepton(chain, chain.l_indices[fake_index], 'tight')
-            weight = reweighter.getLumiWeight()
+            weight = reweighter.getTotalWeight()
         
         fakerates.fillFakeRates(chain, weight, passed, index = fake_index)
 
@@ -293,6 +290,10 @@ else:
 
     for sample_output in samples_to_plot:
         if args.isTest and sample_output != 'DY': continue
+        if args.tauRegion is not None and not args.inData:
+            if args.tauRegion == 'TauFakesDYttl' and not 'DY' in sample_output: continue
+            elif args.tauRegion == 'TauFakesTTttl' and not 'TT' in sample_output: continue
+
         if args.inData:
             output_dir = makePathTimeStamped(base_path_out)
             in_file = base_path_in+'/events.root'
@@ -306,3 +307,14 @@ else:
 
             p = Plot(signal_hist = ttl, name = 'ttl_'+fr, year = args.year, era = args.era, x_name="p_{T} [GeV]", y_name = "|#eta|")
             p.draw2D(output_dir = output_dir, names = ['ttl_'+fr])
+
+        # Draw all components
+        if args.inData:
+            from HNL.BackgroundEstimation.fakerate import FakeRate
+            for f in glob.glob(base_path_in+'/*/events.root'):
+                fr = FakeRate('total/tauttl', None, None, f)
+                ttl_hist  = [fr.getNumerator(), fr.getDenominator(), fr.getEfficiency()]
+                
+                p = Plot(signal_hist = ttl_hist, name = 'ttl_'+f.rsplit('/', 2)[1], year = args.year, era = args.era, x_name="p_{T} [GeV]", y_name = "|#eta|")
+
+                p.draw2D(output_dir = output_dir+'/Components', names = ['ttl_'+f.rsplit('/', 2)[1]+addendum for addendum in '_num', '_denom', ''])

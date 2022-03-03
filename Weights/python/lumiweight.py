@@ -13,7 +13,7 @@ LUMINOSITY_MAP = {
 
 class LumiWeight:
 
-    def __init__(self, sample, sample_manager, recalculate = True):
+    def __init__(self, sample, sample_manager, recalculate = False):
         self.sample = sample
         self.skimmed = sample_manager.skim != 'noskim'
         self.recalculate = recalculate
@@ -29,13 +29,23 @@ class LumiWeight:
 #            self.total_hcount = self.sample.getHist('hCounter').GetSumOfWeights()
         
         # Because of bug in weights, always use the hcount from original files
-        if not self.sample.is_data: 
-            self.lumi_cluster = sample_manager.makeLumiClusters(noskimpath=True)[sample.shavedName()]
-            self.total_hcount = 0
+        if not self.sample.is_data:
+            if recalculate:
+                self.lumi_cluster = sample_manager.makeLumiClusters(noskimpath=True)[sample.shavedName()]
+                self.total_hcount = 0
 
-            for cl_name in self.lumi_cluster:
-                tmp_path = sample_manager.getPath(cl_name, noskimpath=True) #Getting the hcount from original unskimmed paths because of temporary bug in the hcounters copied to skimmed files
-                self.total_hcount += self.sample.getHist('hCounter', tmp_path).GetSumOfWeights()
+                for cl_name in self.lumi_cluster:
+                    tmp_path = sample_manager.getPath(cl_name, noskimpath=True) #Getting the hcount from original unskimmed paths because of temporary bug in the hcounters copied to skimmed files
+                    self.total_hcount += self.sample.getHist('hCounter', tmp_path).GetSumOfWeights()
+
+            else:
+                year = sample_manager.year
+                era = sample_manager.era
+                import os, json
+                f = open(os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Weights', 'data', 'hcounters', era+year, 'hcounter.json')),)
+                weights = json.load(f)
+                self.total_hcount = weights[sample.name]
+                f.close()
 
         #self.total_hcount = 1.
 
