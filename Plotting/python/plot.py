@@ -197,6 +197,8 @@ class Plot:
             # Set min and max
             #
             if stacked:
+                print self.hs
+                print self.hs.GetXaxis()
                 self.hs.SetMinimum(self.min_to_set)
                 self.hs.SetMaximum(self.max_to_set)
                 self.hs.GetXaxis().SetTitleSize(.06)

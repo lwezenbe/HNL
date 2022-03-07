@@ -34,12 +34,24 @@ class Cutter():
     def printAllEvents(self):
         return [(cut, self.list_of_cuts[cut]) for cut in self.order_of_cuts]
 
-    def saveCutFlow(self, out_file):
+    def saveCutFlow(self, out_file, arg_string = None):
 
-        if isValidRootFile(out_file):
-            f = TFile(out_file, 'update')
+        original_path = out_file
+        if arg_string is not None:
+            split_path = out_file.split('/')
+            index_to_use = split_path.index('testArea') + 1
+            #
+            # Have to hardcode because $HOME doesnt work on t2b condor
+            #
+            import os
+            path_to_use = os.path.expandvars("/storage_mnt/storage/user/lwezenbe/Testing/Latest/"+'/'.join(split_path[index_to_use:-1])+'/'+arg_string+'/'+split_path[-1])
         else:
-            f = TFile(out_file, 'recreate')
+            path_to_use = original_path
+
+        if isValidRootFile(path_to_use):
+            f = TFile(path_to_use, 'update')
+        else:
+            f = TFile(path_to_use, 'recreate')
         
         f.mkdir('cutflow')
         f.cd('cutflow')
@@ -55,6 +67,10 @@ class Cutter():
         # t = TTree('cutflowtree', 'cutflowtree')
         # branches = [cut+'/F' for cut in self.order_of_cuts]
         # new_vars = makeBranches(t, branches)
+
+        # Now rerun with real testArea
+        if arg_string is not None:
+            self.saveCutFlow(original_path, None)
 
 from HNL.Plotting.plot import makeList
 def printCutFlow(in_file_paths, out_file_path, in_file_path_names):

@@ -216,6 +216,8 @@ if not args.makePlots:
 
     for entry in event_range:
 
+        if entry != 8052: continue
+
         chain.GetEntry(entry)
         if args.isTest: progress(entry - event_range[0], len(event_range))
 
@@ -250,7 +252,9 @@ if not args.makePlots:
             if not chain.is_data and not cutter.cut(chain.l_isfake[fake_index], 'fake lepton'): continue
             passed = isGoodLepton(chain, chain.l_indices[fake_index], 'tight')
             weight = reweighter.getTotalWeight()
-        
+       
+        print entry, passed, weight
+ 
         fakerates.fillFakeRates(chain, weight, passed, index = fake_index)
 
     print fakerates.getFakeRate('total').getNumerator().GetSumOfWeights(), fakerates.getFakeRate('total').getDenominator().GetSumOfWeights()

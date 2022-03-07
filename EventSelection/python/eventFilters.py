@@ -76,7 +76,7 @@ def passHighMassSelection(chain, new_chain, is_reco_level, cutter, for_training=
 # CR filters
 #
 
-def passedFilterTauMixCT(chain, new_chain, is_reco_level, cutter, high_met = True, b_veto = True, no_met=False):
+def passedFilterTauMixCT(chain, new_chain, is_reco_level, cutter, high_met, b_veto, no_met):
     if not cutter.cut(not fourthFOVeto(chain, new_chain, no_tau=chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
     if not cutter.cut(not threeSameSignVeto(new_chain), 'No three same sign'):        return False
     if b_veto and not cutter.cut(not bVeto(chain), 'b-veto'):              return False
@@ -156,8 +156,9 @@ def passedFilterConversionCRtZq(chain, new_chain, cutter):
     if not cutter.cut(chain.minMossf > 35, 'Mll > 35'):             return False
     return True   
 
-def passedFilterTauFakeEnrichedDY(chain, new_chain, cutter, inverted_cut=False, b_veto=False, nometcut=False):
+def passedFilterTauFakeEnrichedDY(chain, new_chain, cutter, b_veto, nometcut):
     if not cutter.cut(new_chain.l_flavor.count(2) == 1, '1 tau'):                   return False
+    if not cutter.cut(not fourthFOVeto(chain, new_chain, no_tau=chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
 
     if not cutter.cut(new_chain.l_flavor[0] == new_chain.l_flavor[1], 'SF'):        return False
     if not cutter.cut(new_chain.l_charge[0] != new_chain.l_charge[1], 'OS'):        return False
@@ -173,7 +174,7 @@ def passedFilterTauFakeEnrichedDY(chain, new_chain, cutter, inverted_cut=False, 
     # if not cutter.cut(chain._tauGenStatus[chain.l_indices[2]] == 6, 'fake tau'):    return False
     return True
 
-def passedFilterLightLepFakeEnrichedDY(chain, new_chain, cutter, tightwp = False, fake_flavors = [0, 1]):
+def passedFilterLightLepFakeEnrichedDY(chain, new_chain, cutter, tightwp, fake_flavors):
 
     if not cutter.cut(new_chain.l_flavor.count(2) == 0, 'no tau'):                   return None
 
@@ -217,7 +218,7 @@ def passedFilterLightLepFakeEnrichedDY(chain, new_chain, cutter, tightwp = False
     return fake_index
 
 
-def passedFilterTauFakeEnrichedTT(chain, new_chain, cutter, inverted_cut=False):
+def passedFilterTauFakeEnrichedTT(chain, new_chain, cutter, inverted_cut):
     if not cutter.cut(new_chain.l_flavor.count(0) == 1, '1 e'):                   return False
     if not cutter.cut(new_chain.l_flavor.count(1) == 1, '1 mu'):                  return False
     if not cutter.cut(new_chain.l_flavor.count(2) == 1, '1 tau'):                 return False
@@ -238,7 +239,7 @@ def passedFilterTauFakeEnrichedTT(chain, new_chain, cutter, inverted_cut=False):
     # if not cutter.cut(chain._tauGenStatus[chain.l_indices[2]] == 6, 'fake tau'):    return False
     return True
 
-def passedFilterLightLepFakeEnrichedTT(chain, new_chain, cutter, tightwp = False, fake_flavors = [0, 1]):
+def passedFilterLightLepFakeEnrichedTT(chain, new_chain, cutter):
 
     if not cutter.cut(new_chain.l_flavor.count(2) == 0, 'no tau'):                   return False
 
