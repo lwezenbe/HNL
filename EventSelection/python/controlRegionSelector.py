@@ -72,7 +72,7 @@ class TauFakeEnrichedDY(FilterObject):
     
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None, additional_args = None):
         super(TauFakeEnrichedDY, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
-        self.use_default_objects = additional_args.get('tightwp', False) if additional_args is not None else False
+        self.use_default_objects = additional_args.get('tightWP', False) if additional_args is not None else False
         self.nometcut = additional_args.get('nometcut', False) if additional_args is not None else False
         self.b_veto = additional_args.get('b_veto', False) if additional_args is not None else False
         if not self.use_default_objects:
@@ -86,7 +86,7 @@ class TauFakeEnrichedDY(FilterObject):
     def passedFilter(self, cutter, kwargs={}):
         if not self.initEvent(cutter):                                return False
         from HNL.EventSelection.eventFilters import passedFilterTauFakeEnrichedDY
-        if not passedFilterTauFakeEnrichedDY(self.chain, self.new_chain, cutter, nometcut = self.nometcut): return False
+        if not passedFilterTauFakeEnrichedDY(self.chain, self.new_chain, cutter, nometcut = self.nometcut, b_veto = self.b_veto): return False
         return True
 
     def getFakeIndex(self):
@@ -96,7 +96,8 @@ class TauFakeEnrichedTT(FilterObject):
     
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None, additional_args = None):
         super(TauFakeEnrichedTT, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
-        self.use_default_objects = additional_args.get('tightwp', False) if additional_args is not None else False
+        self.use_default_objects = additional_args.get('tightWP', False) if additional_args is not None else False
+        self.inverted_cut = additional_args.get('inverted_cut', False) if additional_args is not None else False
         if not self.use_default_objects:
             self.chain.obj_sel['tau_wp'] = 'FO'
             self.chain.obj_sel['ele_wp'] = 'tight'
@@ -108,7 +109,7 @@ class TauFakeEnrichedTT(FilterObject):
     def passedFilter(self, cutter, kwargs={}):
         if not self.initEvent(cutter):                                return False
         from HNL.EventSelection.eventFilters import passedFilterTauFakeEnrichedTT
-        if not passedFilterTauFakeEnrichedTT(self.chain, self.new_chain, cutter): return False        
+        if not passedFilterTauFakeEnrichedTT(self.chain, self.new_chain, cutter, inverted_cut = self.inverted_cut): return False        
         return True
 
     def getFakeIndex(self):
@@ -297,9 +298,9 @@ class TauMixCTfilter(FilterObject):
 
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None, additional_options={}):
         super(TauMixCTfilter, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
-        self.high_met = additional_options.get('high_met', False)
+        self.high_met = additional_options.get('high_met', True)
         self.b_veto = additional_options.get('b_veto', True)
-        self.no_met = additional_options.get('no_met', True)
+        self.no_met = additional_options.get('no_met', False)
 
     def initEvent(self, cutter, sideband=None):
         return super(TauMixCTfilter, self).initEvent(3, cutter, sort_leptons = True, sideband=sideband)

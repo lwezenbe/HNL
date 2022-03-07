@@ -14,7 +14,7 @@ cType = {
     'D': 'Double_t',
     'L': 'Long64_t',
     'l': 'ULong64_t',
-    'O': 'Bool_t',
+    'O': 'Bool_t'
 }
 
 forbidden_characters = ['-']

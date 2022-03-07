@@ -23,3 +23,26 @@ class ClosureObject(HistogramCollection):
 
     def getSideband(self):
         return self.getHistogram('sideband')
+
+from HNL.Tools.outputTree import OutputTree
+class ClosureTree(OutputTree):
+
+    def __init__(self, name, path, branches = None):
+        if branches is not None:
+            branches.extend(['is_sideband/O', 'weight/F', 'fake_factor/F', 'original_weight/F'])
+        super(ClosureTree, self).__init__(name, path, branches)
+
+    def fill(self, weight, fake_factor):
+        self.setTreeVariable('is_sideband', fake_factor != 1.) 
+        self.setTreeVariable('weight', fake_factor*weight) 
+        self.setTreeVariable('fake_factor', fake_factor) 
+        self.setTreeVariable('original_weight', weight)
+        super(ClosureTree, self).fill() 
+   
+    def getObserved(self, vname, hname, bins, condition=None):
+        new_condition = '!is_sideband' if condition is None else condition + '&&!is_sideband'
+        return super(ClosureTree, self).getHistFromTree(vname, hname, bins, new_condition)
+
+    def getSideband(self, vname, hname, bins, condition=None):
+        new_condition = 'is_sideband' if condition is None else condition + '&&is_sideband'
+        return super(ClosureTree, self).getHistFromTree(vname, hname, bins, new_condition)

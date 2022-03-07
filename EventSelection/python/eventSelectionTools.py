@@ -271,6 +271,16 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
     new_chain.Ml23 = (l2Vec+l3Vec).M()         
     new_chain.Ml13 = (l1Vec+l3Vec).M()
 
+    #All mt's
+    if is_reco_level:    
+        new_chain.mtl1 = np.sqrt(2*chain._met*new_chain.l_pt[l1]*(1-np.cos(deltaPhi(new_chain.l_phi[l1], chain._metPhi))))
+        new_chain.mtl2 = np.sqrt(2*chain._met*new_chain.l_pt[l2]*(1-np.cos(deltaPhi(new_chain.l_phi[l2], chain._metPhi))))
+        new_chain.mtl3 = np.sqrt(2*chain._met*new_chain.l_pt[l3]*(1-np.cos(deltaPhi(new_chain.l_phi[l3], chain._metPhi))))
+    else:
+        new_chain.mtl1 = np.sqrt(2*chain._gen_met*new_chain.l_pt[l1]*(1-np.cos(deltaPhi(new_chain.l_phi[l1], chain._gen_metPhi))))
+        new_chain.mtl2 = np.sqrt(2*chain._gen_met*new_chain.l_pt[l2]*(1-np.cos(deltaPhi(new_chain.l_phi[l2], chain._gen_metPhi))))
+        new_chain.mtl3 = np.sqrt(2*chain._gen_met*new_chain.l_pt[l3]*(1-np.cos(deltaPhi(new_chain.l_phi[l3], chain._gen_metPhi))))
+
     #
     # Get OS, OSSF, SS, SSSF variables
     #
@@ -355,18 +365,18 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
             new_chain.mtOther = np.sqrt(2*chain._met*new_chain.l_pt[chain.index_other]*(1-np.cos(deltaPhi(new_chain.l_phi[chain.index_other], chain._metPhi))))
             leading_os = min_os[0] if new_chain.l_pt[min_os[0]] > new_chain.l_pt[min_os[1]] else min_os[1]
             subleading_os = min_os[0] if new_chain.l_pt[min_os[0]] < new_chain.l_pt[min_os[1]] else min_os[1]
-            new_chain.mtl1 = np.sqrt(2*chain._met*new_chain.l_pt[leading_os]*(1-np.cos(deltaPhi(new_chain.l_phi[leading_os], chain._metPhi))))
-            new_chain.mtl2 = np.sqrt(2*chain._met*new_chain.l_pt[subleading_os]*(1-np.cos(deltaPhi(new_chain.l_phi[subleading_os], chain._metPhi))))
+            new_chain.mtl1os = np.sqrt(2*chain._met*new_chain.l_pt[leading_os]*(1-np.cos(deltaPhi(new_chain.l_phi[leading_os], chain._metPhi))))
+            new_chain.mtl2os = np.sqrt(2*chain._met*new_chain.l_pt[subleading_os]*(1-np.cos(deltaPhi(new_chain.l_phi[subleading_os], chain._metPhi))))
         else:
             new_chain.mtOther = np.sqrt(2*chain._gen_met*new_chain.l_pt[chain.index_other]*(1-np.cos(deltaPhi(new_chain.l_phi[chain.index_other], chain._gen_metPhi))))
             leading_os = min_os[0] if new_chain.l_pt[min_os[0]] > new_chain.l_pt[min_os[1]] else min_os[1]
             subleading_os = min_os[0] if new_chain.l_pt[min_os[0]] < new_chain.l_pt[min_os[1]] else min_os[1]
-            new_chain.mtl1 = np.sqrt(2*chain._gen_met*new_chain.l_pt[leading_os]*(1-np.cos(deltaPhi(new_chain.l_phi[leading_os], chain._gen_metPhi))))
-            new_chain.mtl2 = np.sqrt(2*chain._gen_met*new_chain.l_pt[subleading_os]*(1-np.cos(deltaPhi(new_chain.l_phi[subleading_os], chain._gen_metPhi))))
+            new_chain.mtl1os = np.sqrt(2*chain._gen_met*new_chain.l_pt[leading_os]*(1-np.cos(deltaPhi(new_chain.l_phi[leading_os], chain._gen_metPhi))))
+            new_chain.mtl2os = np.sqrt(2*chain._gen_met*new_chain.l_pt[subleading_os]*(1-np.cos(deltaPhi(new_chain.l_phi[subleading_os], chain._gen_metPhi))))
     else:
         new_chain.mtOther = -1
-        new_chain.mtl1 = -1
-        new_chain.mtl2 = -1
+        new_chain.mtl1os = -1
+        new_chain.mtl2os = -1
 
     if chain.index_nonZossf is not None:
         if is_reco_level:    
