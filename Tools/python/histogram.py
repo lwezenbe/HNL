@@ -112,7 +112,7 @@ class Histogram:
         if self.overflow:
             xval = min(max(self.hist.GetXaxis().GetBinCenter(1), var[0]), self.hist.GetXaxis().GetBinCenter(self.hist.GetXaxis().GetLast()))
             yval = min(max(self.hist.GetYaxis().GetBinCenter(1), var[1]), self.hist.GetYaxis().GetBinCenter(self.hist.GetYaxis().GetLast()))
-            zval = min(max(self.hist.GetZaxis().GetBinCenter(1), var[2]), self.hist.GetZaxis().GetBinCenter(self.hist.GetYaxis().GetLast()))
+            zval = min(max(self.hist.GetZaxis().GetBinCenter(1), var[2]), self.hist.GetZaxis().GetBinCenter(self.hist.GetZaxis().GetLast()))
         else:
             xval = var[0]
             yval = var[1]

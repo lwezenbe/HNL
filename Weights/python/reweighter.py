@@ -35,6 +35,9 @@ class Reweighter:
 
         self.fakerate_collection = None
 
+    def getPrefireWeight(self):
+        return self.sample.chain._prefireWeight
+
     def getLumiWeight(self):
         return self.lumiweighter.getLumiWeight()
 
@@ -81,6 +84,7 @@ class Reweighter:
         if self.sample.chain.era != 'prelegacy': tot_weight *= self.getBTagWeight() #TODO: reskim of prelegacy samples because _jetSmeared not available
         if sideband:
             tot_weight *= self.getFakeRateWeight()
+        #tot_weight *= self.getPrefireWeight()
         return tot_weight
 
     def getTestWeight(self, sideband=False):

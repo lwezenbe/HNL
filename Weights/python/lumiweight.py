@@ -52,16 +52,22 @@ class LumiWeight:
     def getLumiWeight(self):
         if self.sample.is_data:
             return 1.
-        elif not self.skimmed or self.recalculate:
-            #the _weight is needed because otherwise the hcounter might be wrong for the denominator
+        else:
             self.lumi_weight = self.sample.chain._weight*(self.sample.xsec*LUMINOSITY_MAP[self.sample.chain.era+self.sample.chain.year])/self.total_hcount
             return self.lumi_weight 
-        else:
-            try:
-                return self.sample.chain.lumiweight
-            except:
-                self.recalculate = True
-                return self.getLumiWeight()
+
+
+        #elif not self.skimmed or self.recalculate:
+        #    #the _weight is needed because otherwise the hcounter might be wrong for the denominator
+        #    self.lumi_weight = self.sample.chain._weight*(self.sample.xsec*LUMINOSITY_MAP[self.sample.chain.era+self.sample.chain.year])/self.total_hcount
+        #    print self.sample.chain._weight, self.sample.xsec, LUMINOSITY_MAP[self.sample.chain.era+self.sample.chain.year], self.total_hcount
+        #    return self.lumi_weight 
+        #else:
+        #    try:
+        #        return self.sample.chain.lumiweight
+        #    except:
+        #        self.recalculate = True
+        #        return self.getLumiWeight()
 
 
 if __name__ == '__main__':
@@ -69,16 +75,18 @@ if __name__ == '__main__':
     from HNL.Tools.logger import getLogger, closeLogger
     log = getLogger('INFO')
 
-    sm = SampleManager('UL', '2017', 'Reco', 'fulllist_UL2017_mconly')
+    #sm = SampleManager('UL', '2017', 'Reco', 'fulllist_UL2017_mconly')
+    sm = SampleManager('UL', '2016pre', 'Reco', 'fulllist_UL2016pre_mconly', skim_selection = 'default')
 
-    # s = sm.getSample('ZZTo4L')
+    s = sm.getSample('WZTo3LNu')
     # s = sm.getSample('HNL-tau-m800')
-    s = sm.getSample('DYJetsToLL-M-50')
+    # s = sm.getSample('DYJetsToLL-M-50')
 
     chain = s.initTree()
-    lw = LumiWeight(s, sm)
+    lw = LumiWeight(s, sm, recalculate = True)
+    lw.total_hcount
     chain.GetEntry(5)
-    chain.year = '2017'
+    chain.year = '2016pre'
     chain.era = 'UL'
     print s.name
     print lw.getLumiWeight() 

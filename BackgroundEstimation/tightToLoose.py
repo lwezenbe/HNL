@@ -108,7 +108,7 @@ jobs = []
 for sample_name in sample_manager.sample_names:
     if args.sample and args.sample not in sample_name: continue
     if args.tauRegion is not None and not args.inData:
-        if args.tauRegion == 'TauFakesDYttl' and not 'DY' in sample_name: continue
+        if 'TauFakesDYttl' in args.tauRegion and not 'DY' in sample_name: continue
         elif args.tauRegion == 'TauFakesTTttl' and not 'TT' in sample_name: continue
     sample = sample_manager.getSample(sample_name)
     for njob in xrange(sample.returnSplitJobs()):
@@ -197,8 +197,10 @@ if not args.makePlots:
     # Create fake rate objects
     #
     if args.flavor == 'tau':
-        fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), getOutputName(region_to_select), 
-                                                (np.array([20., 25., 35., 50., 70., 100.]), np.arange(0., 3.0, 0.5)))
+        #fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i]), c._met], ('pt', 'eta', 'met'), getOutputName(region_to_select), 
+        #                                        (np.array([20., 25., 35., 50., 70., 100.]), np.arange(0., 3.0, 0.5), np.array([0., 20., 35., 50., 100.])))
+        fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i]), c._tauDecayMode[c.l_indices[i]]], ('pt', 'eta', 'DM'), getOutputName(region_to_select), 
+                                                (np.array([20., 25., 35., 50., 70., 100.]), np.arange(0., 3.0, 0.5), np.arange(-0.5, 12.5, 1.)))
     elif args.flavor == 'mu':
         fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), getOutputName(region_to_select), 
                                                 (np.array([10., 20., 30., 45., 65., 100.]), np.array([0., 1.2, 2.1, 2.4])))
@@ -215,8 +217,6 @@ if not args.makePlots:
     from HNL.Triggers.triggerSelection import passTriggers
 
     for entry in event_range:
-
-        if entry != 8052: continue
 
         chain.GetEntry(entry)
         if args.isTest: progress(entry - event_range[0], len(event_range))
@@ -242,7 +242,7 @@ if not args.makePlots:
         else:
             if not event.passedFilter(cutter, sample.name): continue
         fake_index = event.event_selector.selector.getFakeIndex()
- 
+
         if args.inData and not chain.is_data:
             if not chain._lIsPrompt[chain.l_indices[fake_index]]: continue
             #passed = True #Always fill both denom and enum for this case (subtraction of prompt contribution)
@@ -252,9 +252,6 @@ if not args.makePlots:
             if not chain.is_data and not cutter.cut(chain.l_isfake[fake_index], 'fake lepton'): continue
             passed = isGoodLepton(chain, chain.l_indices[fake_index], 'tight')
             weight = reweighter.getTotalWeight()
-       
-        print entry, passed, weight
- 
         fakerates.fillFakeRates(chain, weight, passed, index = fake_index)
 
     print fakerates.getFakeRate('total').getNumerator().GetSumOfWeights(), fakerates.getFakeRate('total').getDenominator().GetSumOfWeights()
@@ -292,6 +289,14 @@ else:
 
     samples_to_plot = ['Data'] if args.inData else sample_manager.getOutputs()
 
+    dm_dict = {'-0.5to0.5':'DM0',
+                '0.5to1.5':'DM1',
+        #        '3.5to4.5':'DM4',
+        #        '4.5to5.5':'DM5',
+        #        '5.5to6.5':'DM6',
+                '9.5to10.5' : 'DM10',
+                '10.5to11.5' : 'DM11'}
+
     for sample_output in samples_to_plot:
         if args.isTest and sample_output != 'DY': continue
         if args.tauRegion is not None and not args.inData:
@@ -308,9 +313,18 @@ else:
         fakerates = createFakeRatesWithJetBins('tauttl', None, None, in_file)
         for fr in fakerates.bin_collection:
             ttl = fakerates.getFakeRate(fr).getEfficiency()
+            if args.flavor != 'tau':
+                p = Plot(signal_hist = ttl, name = 'ttl_'+fr, year = args.year, era = args.era, x_name="p_{T} [GeV]", y_name = "|#eta|")
+                p.draw2D(output_dir = output_dir, names = ['ttl_'+fr])
 
-            p = Plot(signal_hist = ttl, name = 'ttl_'+fr, year = args.year, era = args.era, x_name="p_{T} [GeV]", y_name = "|#eta|")
-            p.draw2D(output_dir = output_dir, names = ['ttl_'+fr])
+            else:
+                from HNL.Tools.histogram import Histogram
+                sliced_hist = Histogram(ttl).slice3DalongZ()
+                for sn in sliced_hist.keys():
+                    if sn not in dm_dict.keys(): continue
+                    p = Plot(signal_hist = sliced_hist[sn], year = args.year, era = args.era, x_name="p_{T} [GeV]", y_name = "|#eta|")
+                    p.draw2D(output_dir = output_dir, names = ['ttl_'+dm_dict[sn]+'_'+fr])
+
 
         # Draw all components
         if args.inData:

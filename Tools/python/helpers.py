@@ -76,7 +76,7 @@ def loadtxtCstyle(source):
 #
 
 def progress(i, n, prefix="", size=60):
-    x = int(size*i/(n-1))
+    x = int(size*i/(n-1)) if n != 1 else int(size*i)
     sys.stdout.write("%s\x1b[6;30;42m%s\x1b[0m\x1b[0;30;41m%s\x1b[0m %i/%i %s\r" % (" "*0, " "*x, " "*(size-x), i, n, prefix))
     sys.stdout.flush()
 

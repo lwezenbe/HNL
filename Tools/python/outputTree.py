@@ -51,24 +51,38 @@ class OutputTree(object):
             raise RuntimeError("Tree in reading mode, you can not change input vars")
 
     def getHistFromTree(self, vname, hname, bins, condition):
+        dim = 1
+        if '-' in vname:
+            vname = ":".join(reversed(vname.split('-')))
+            dim = len(vname.split(':'))
+
         import ROOT
         ROOT.gROOT.SetBatch(True)
-    
-        htmp = ROOT.TH1D(hname, hname, len(bins)-1, bins)
+   
+        if dim == 1: 
+            htmp = ROOT.TH1D(hname, hname, len(bins)-1, bins)
+        elif dim == 2:
+            htmp = ROOT.TH2D(hname, hname, len(bins[0])-1, bins[0], len(bins[1])-1, bins[1])
+        else:
+            raise RuntimeError("Currently no support for 3 dimensional plots")
+
         if 'Weight' in vname: 
             self.tree.Draw(vname+">>"+hname, '('+condition+')*lumiWeight')
         else:
             self.tree.Draw(vname+">>"+hname, '('+condition+')*weight')
+            #self.tree.Draw(vname+">>"+hname, '('+condition+')*lumiWeight*btagWeight*puWeight')
+            #self.tree.Draw(vname+">>"+hname, '('+condition+')*lumiWeight*puWeight')
         if not htmp: return None
         ROOT.gDirectory.cd('PyROOT:/')
         res = htmp.Clone()
         #Add overflow and underflow bins
-        overflow=ROOT.TH1D(hname+'overflow', hname+'overflow', len(bins)-1, bins)
-        overflow.SetBinContent(1, htmp.GetBinContent(0))
-        overflow.SetBinContent(len(bins)-1, htmp.GetBinContent(len(bins)))
-        overflow.SetBinError(1, htmp.GetBinError(0))
-        overflow.SetBinError(len(bins)-1, htmp.GetBinError(len(bins)))
-        res.Add(overflow)
+        if dim == 1:
+            overflow=ROOT.TH1D(hname+'overflow', hname+'overflow', len(bins)-1, bins)
+            overflow.SetBinContent(1, htmp.GetBinContent(0))
+            overflow.SetBinContent(len(bins)-1, htmp.GetBinContent(len(bins)))
+            overflow.SetBinError(1, htmp.GetBinError(0))
+            overflow.SetBinError(len(bins)-1, htmp.GetBinError(len(bins)))
+            res.Add(overflow)
         return res 
 
     def closeTree(self):

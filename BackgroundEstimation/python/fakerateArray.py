@@ -67,7 +67,7 @@ class FakeRateCollection:
                     man_var = [min(44.9, self.chain.l_pt[i]), abs(self.chain.l_eta[i])]
                 else:
                     man_var = None
-                
+             
                 ff = self.returnFakeFactor(l_index = i, manual_var_entry = man_var)
                 if ff == 'skip': continue
 
@@ -88,6 +88,7 @@ class ConditionalFakeRate:
         self.path = path
         self.bins = bins
         self.fakerates = {}
+        #If bins is None, FakeRate loads in fake rate
         self.fakerates['total'] = FakeRate(self.name, self.var, self.var_tex, self.path, self.bins, subdirs = ['total'])
 
     def addBin(self, bin_name, condition):
@@ -108,13 +109,22 @@ class ConditionalFakeRate:
     def getFakeRate(self, bin_name):
         return self.fakerates[bin_name]
 
+    def returnFakeFactor(self, chain, l_index = None, manual_var_entry = None):
+        condition_of_choice = None
+        for condition in self.bin_collection.keys():
+            if condition == 'total': continue
+            if not self.bin_collection[condition](chain): continue
+            if condition_of_choice is not None:
+                raise RuntimeError("conditions in conditional fake rate are not exclusive. You will need to design a special function for them to be read out by the ConditionalFakeRate returnFakeFactor function.")           
+            condition_of_choice = condition
+
+        return self.fakerates[condition].returnFakeFactor(chain, l_index, manual_var_entry)
+
 def createFakeRatesWithJetBins(name, var, var_tex, path, bins = None):
     fr_array = ConditionalFakeRate(name, var, var_tex, path, bins)
     fr_array.addBin('0jets', lambda c: c.njets == 0)
     fr_array.addBin('njets', lambda c: c.njets > 0)
     return fr_array
-
-
 
 import os
 def loadFakeRatesWithJetBins(name, var, var_tex, path_base, flavor, indata=False):

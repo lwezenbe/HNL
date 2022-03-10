@@ -88,8 +88,8 @@ else:
     skim_str = 'Reco'
 
 if not args.inData:
-    #sublist = 'BackgroundEstimation/TauFakes-'+args.era+args.year
-    sublist = 'fulllist_'+args.era+args.year+'_nosignal_mconly'
+    sublist = 'BackgroundEstimation/TauFakes-'+args.era+args.year
+    #sublist = 'fulllist_'+args.era+args.year+'_nosignal_mconly'
 else:
     sublist = 'fulllist_'+args.era+args.year+'_nosignal'
 sample_manager = SampleManager(args.era, args.year, skim_str, sublist, skim_selection=args.selection)
@@ -105,6 +105,7 @@ jobs = []
 for sample_name in sample_manager.sample_names:
     if args.sample and args.sample not in sample_name: continue
     sample = sample_manager.getSample(sample_name)
+    if not args.inData and args.application == 'TauFakesDY' and not 'DY' in sample.name: continue
     for njob in xrange(sample.returnSplitJobs()):
         jobs += [(sample.name, str(njob))]
 
@@ -150,7 +151,16 @@ else:
             'mtnonossf':          (lambda c : c.mtNonZossf,      np.arange(0., 240., 5.),         ('M_{ll,Z} [GeV]', 'Events')),
             'NJet':      (lambda c : c.njets,       np.arange(0., 12., 1.),       ('#Jets', 'Events')),
             'NbJet':      (lambda c : c.nbjets,       np.arange(0., 12., 1.),       ('#B Jets', 'Events')),
-    }   
+            'Nele':      (lambda c : len([x for x in c.l_flavor if x == 0]),       np.arange(0., 4., 1.),       ('#electrons', 'Events')),
+            'Nmu':      (lambda c : len([x for x in c.l_flavor if x == 1]),       np.arange(0., 4., 1.),       ('#muons', 'Events')),
+            'Ntau':      (lambda c : len([x for x in c.l_flavor if x == 2]),       np.arange(0., 4., 1.),       ('#taus', 'Events')),
+            'tauDecayMode':      (lambda c, i : c._tauDecayMode[i],       np.arange(-0.5, 11.5, 1.),       ('tau DM', 'Events'))
+    }  
+
+if not args.inData:
+    var['tauGenStatus'] = (lambda c, i : c._tauGenStatus[i],       np.arange(0.5, 7.5, 1.),       ('TauGenStatus', '#taus')) 
+    var['provenance'] = (lambda c, i : c._lProvenance[i],       np.arange(0.5, 20.5, 1.),       ('Provenance', '#taus')) 
+    var['provenanceCompressed'] = (lambda c, i : c._lProvenanceCompressed[i],       np.arange(0.5, 7.5, 1.),       ('Provenance', '#taus')) 
 
 subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
 data_str = 'DATA' if args.inData else 'MC'
@@ -241,13 +251,18 @@ if not args.makePlots:
     if 'tau' in args.flavorToTest:
         if not args.inData:
             base_path_tau = lambda proc : os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', 
-                                                                        args.era+'-'+args.year, data_str, 'tau', 'TauFakes'+proc+'ttl-'+args.selection, proc, 'events.root'))
+                                                                        args.era+'-'+args.year, data_str, 'tau', 'TauFakes'+proc+'ttlnomet-'+args.selection, proc, 'events.root'))
         else:
             base_path_tau = lambda proc : os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', 
-                                                                        args.era+'-'+args.year, data_str, 'tau', 'TauFakes'+proc+'ttl-'+args.selection, 'events.root'))
+                                                                        args.era+'-'+args.year, data_str, 'tau', 'TauFakes'+proc+'ttlnomet-'+args.selection, 'events.root'))
         if args.application == 'TauFakesDY':
-            fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('DY'), subdirs = ['total'])
+            #fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('DY'), subdirs = ['total'])
+            fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i], c._tauDecayMode[c.l_indices[i]]], ('pt', 'eta', 'DM'), base_path_tau('DY'), subdirs = ['total'])
+            #fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('DY'), subdirs = ['0jets'])
+            #from HNL.BackgroundEstimation.fakerateArray import createFakeRatesWithJetBins
+            #fakerate[2] = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('DY'))
         elif args.application == 'TauFakesTT':
+            #fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('TT'), subdirs = ['total'])
             fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('TT'), subdirs = ['total'])
         elif args.application == 'WeightedMix':
             fakerate[2] = SingleFlavorFakeRateCollection([base_path_tau('DY'), base_path_tau('TT')], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], 
@@ -344,7 +359,10 @@ if not args.makePlots:
             #else:
             #    if args.splitInCategories: co[cat][v].fillClosure(chain, weight, fake_factor)
             #    co['total'][v].fillClosure(chain, weight, fake_factor)
-            co.setTreeVariable(v, var[v][0](chain))   
+            try:
+                co.setTreeVariable(v, var[v][0](chain))   
+            except:
+                co.setTreeVariable(v, var[v][0](chain, chain.l_indices[2]))   
         co.setTreeVariable('category', cat)
         co.fill(weight, fake_factor)
 
@@ -445,10 +463,12 @@ else:
             sample_name = in_file.rsplit('/', 1)[-1]
             closure_trees[sample_name] = ClosureTree('closure', in_file+'/events.root')
 
+        #condition = "tauDecayMode==1"
+        condition = None
         if not args.inData:
             for sample_name in closure_trees.keys():
                 for v in var:
-                    p = Plot(name = v, observed_hist = closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1]), bkgr_hist = closure_trees[sample_name].getSideband(v, v+'-'+sample_name, var[v][1]), 
+                    p = Plot(name = v, observed_hist = closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1], condition=condition), bkgr_hist = closure_trees[sample_name].getSideband(v, v+'-'+sample_name, var[v][1], condition=condition), 
                                 color_palette='Black', color_palette_bkgr='Stack', tex_names = ['Predicted'], draw_ratio = True, year = args.year, era = args.era,
                                 x_name = var[v][2][0], y_name = var[v][2][1])
                     p.setLegend(x1 = 0.5, ncolumns = 1)
@@ -456,22 +476,22 @@ else:
 
         for v in var:
             if args.inData:
-                observed_h = closure_trees['Data'].getObserved(v, v+'-'+sample_name, var[v][1])
+                observed_h = closure_trees['Data'].getObserved(v, v+'-'+sample_name, var[v][1], condition)
                 for isample, sample_name in enumerate(closure_trees.keys()):
                     if 'Data' in sample_name: continue
                     else:
-                        observed_h.Add(closure_trees[sample_name].getSideband(v, v+'-'+sample_name, var[v][1]), -1.)
+                        observed_h.Add(closure_trees[sample_name].getSideband(v, v+'-'+sample_name, var[v][1], condition), -1.)
             else:
                 for isample, sample_name in enumerate(closure_trees.keys()):
                     if 'Data' in sample_name: continue
                     if isample == 0:
-                        observed_h = closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1])
+                        observed_h = closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1], condition)
                     else:
-                        observed_h.Add(closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1]))
+                        observed_h.Add(closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1], condition))
 
                 
             if args.inData:
-                backgrounds = [closure_trees["Data"].getSideband(v, v+'-'+sample_name, var[v][1])]
+                backgrounds = [closure_trees["Data"].getSideband(v, v+'-'+sample_name, var[v][1], condition)]
                 background_names = ['Predicted']
             else:
                 backgrounds = []

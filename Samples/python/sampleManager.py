@@ -39,6 +39,8 @@ class SampleManager:
         self.era = era
         self.year = year
 
+        print skim
+
         if skim_selection is None:
             self.skim = 'noskim'
         elif skim == 'auto':
