@@ -238,6 +238,7 @@ def isBaseTau(chain, index):
     else:
         if chain._lPt[index] < 20:                return False
     if chain._lEta[index] > 2.3:                return False
+    if abs(chain._dz[index]) >= 0.2:            return False
     if chain._tauDecayMode[index] == 5 or chain._tauDecayMode[index] == 6: return False
     if not isCleanFromLightLeptons(chain, index):       return False
     return True
