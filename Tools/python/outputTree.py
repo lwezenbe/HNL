@@ -70,8 +70,6 @@ class OutputTree(object):
             self.tree.Draw(vname+">>"+hname, '('+condition+')*lumiWeight')
         else:
             self.tree.Draw(vname+">>"+hname, '('+condition+')*weight')
-            #self.tree.Draw(vname+">>"+hname, '('+condition+')*lumiWeight*btagWeight*puWeight')
-            #self.tree.Draw(vname+">>"+hname, '('+condition+')*lumiWeight*puWeight')
         if not htmp: return None
         ROOT.gDirectory.cd('PyROOT:/')
         res = htmp.Clone()

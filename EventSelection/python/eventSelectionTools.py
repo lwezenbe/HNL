@@ -413,6 +413,8 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
     new_chain.mindr_l3 = min(new_chain.dr_l1l3, new_chain.dr_l2l3)
     new_chain.maxdr_l3 = max(new_chain.dr_l1l3, new_chain.dr_l2l3)
 
+    new_chain.dphi_l3met = deltaPhi(new_chain.l_phi[2], chain._metPhi)
+
 def calculateFourLepVariables(chain, new_chain):
     l1Vec = getFourVec(new_chain.l_pt[l1], new_chain.l_eta[l1], new_chain.l_phi[l1], new_chain.l_e[l1])
     l2Vec = getFourVec(new_chain.l_pt[l2], new_chain.l_eta[l2], new_chain.l_phi[l2], new_chain.l_e[l2])

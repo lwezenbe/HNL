@@ -69,21 +69,6 @@ var_reco_3l = {
         #'mtnonossf':          (lambda c : c.mtNonZossf,      np.arange(0., 240., 5.),         ('M_{ll,Z} [GeV]', 'Events')),
         'NJet':      (lambda c : c.njets,       np.arange(0., 12., 1.),       ('#Jets', 'Events')),
         'NbJet':      (lambda c : c.nbjets,       np.arange(0., 12., 1.),       ('#B Jets', 'Events')),
-        'l3deepTauvse' : (lambda c : c._tauDeepTauVsEleRaw[c.l_indices[2]], np.arange(0, 1.05, 0.05), ('l3 deeptau vs jets score', 'Events')),
-        'l3deepTauvsmu' : (lambda c : c._tauDeepTauVsEleMu[c.l_indices[2]], np.arange(0, 1.05, 0.05), ('l3 deeptau vs jets score', 'Events')),
-        'l3deepTauvsjets' : (lambda c : c._tauDeepTauVsJetsRaw[c.l_indices[2]], np.arange(0, 1.05, 0.05), ('l3 deeptau vs jets score', 'Events')),
-        'l3decaymode' : (lambda c : c._tauDecayMode[c.l_indices[2]], np.arange(-0.5, 12.5, 1.), ('l3 taudecay mode', 'Events')),
-        'l3decaymodeOld' : (lambda c : c._decayModeFindingOld[c.l_indices[2]], np.arange(-0.5, 12.5, 1.), ('l3 taudecay mode', 'Events')),
-        'l3decaymodeNew' : (lambda c : c._decayModeFindingNew[c.l_indices[2]], np.arange(-0.5, 12.5, 1.), ('l3 taudecay mode', 'Events')),
-        #'l3genstatus' : (lambda c : c._tauGenStatus[c.l_indices[2]], np.arange(-0.5, 12.5, 1.), ('l3 taudecay mode', 'Events')),
-        #'l3mompdg' : (lambda c : c._lMomPdgId[c.l_indices[2]], np.arange(-0.5, 50.5, 1.), ('l3 taudecay mode', 'Events')),
-        #'l3provenance' : (lambda c : c._lProvenance[c.l_indices[2]], np.arange(-0.5, 20.5, 1.), ('l3 taudecay mode', 'Events')),
-        #'l3provenancecompressed' : (lambda c : c._lProvenanceCompressed[c.l_indices[2]], np.arange(-0.5, 12.5, 1.), ('l3 taudecay mode', 'Events')),
-        #'l3matchpdg' : (lambda c : c._lMatchPdgId[c.l_indices[2]], np.arange(-0.5, 50.5, 1.), ('l3 taudecay mode', 'Events')),
-        #'l3matchpt' : (lambda c : c._lMatchPt[c.l_indices[2]], np.arange(-0.5, 12.5, 1.), ('l3 taudecay mode', 'Events')),
-        'l3tauIsoMVAold' : (lambda c : c._tauIsoMVADBdR03oldDMwLT[c.l_indices[2]], np.arange(0, 1.05, 0.05), ('l3 taudecay mode', 'Events')),
-        'l3tauIsoMVAnew' : (lambda c : c._tauIsoMVADBdR03newDMwLT[c.l_indices[2]], np.arange(0, 1.05, 0.05), ('l3 taudecay mode', 'Events')),
-        'l3tauElectronMVAraw' : (lambda c : c._tauAgainstElectronMVA6Raw[c.l_indices[2]], np.arange(0, 1.05, 0.05), ('l3 taudecay mode', 'Events')),
     }
 
 var_reco_4l = {

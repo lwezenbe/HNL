@@ -92,7 +92,6 @@ def getSampleManager(y):
         skim_str = 'Reco'
     else:
         skim_str = args.skimLevel
-        #skim_str = 'Reco'
     
     file_list = 'fulllist_'+args.era+str(y) if args.customList is None else args.customList
 
@@ -306,8 +305,6 @@ if not args.makePlots and not args.makeDataCards:
         #
         for entry in event_range:
 
-            #if not entry not in [965, 5842, 5970, 6779, 17319]: continue
- 
             chain.GetEntry(entry)
             if args.isTest: progress(entry - event_range[0], len(event_range))
  
@@ -429,10 +426,8 @@ else:
         if not args.individualSamples:
             background_collection = []
             for x in sample_manager.sample_outputs:
-                print x
                 if 'HNL' in x: continue
                 if 'Data' in x: continue
-                print sample_manager.output_dict
                 if not os.path.isdir(getOutputName('bkgr', year)+'/'+x): continue
                 background_collection.append(x)
             
@@ -458,12 +453,10 @@ else:
         category_dict = {
             'original' : ([x for x in categories], ['(category=={0})'.format(x) for x in categories]),
             'analysis': (cat.ANALYSIS_CATEGORIES.keys(), ['('+'||'.join(['category=={0}'.format(x) for x in cat.ANALYSIS_CATEGORIES[y]])+')' for y in cat.ANALYSIS_CATEGORIES.keys()]),
-            #'super' : (cat.SUPER_CATEGORIES.keys(), ['('+'||'.join(['category=={0}'.format(x) for x in cat.SUPER_CATEGORIES[y]])+')' for y in cat.SUPER_CATEGORIES.keys()])
-            'super' : (['SingleTau'], ['('+'||'.join(['category=={0}'.format(x) for x in cat.SUPER_CATEGORIES[y]])+')&&l3decaymode==0' for y in ['SingleTau']])
+            'super' : (cat.SUPER_CATEGORIES.keys(), ['('+'||'.join(['category=={0}'.format(x) for x in cat.SUPER_CATEGORIES[y]])+')' for y in cat.SUPER_CATEGORIES.keys()])
         } 
         
         #Add entry for the search regions in the var dictionary
-        #var = {}
         var['searchregion'] = (lambda c : c.searchregion, np.arange(0.5, srm[args.region].getNumberOfSearchRegions()+1.5, 1.), ('Search Region', 'Events'))
 
         # Custom Var that you can create from existing var (i.e. 2D plots)
@@ -509,7 +502,6 @@ else:
                 for ic, (c, cc) in enumerate(zip(categories_to_use, category_conditions)):
                     progress(ic, len(categories_to_use))
                     for v in var_dict:
-                        print v
                         intree = OutputTree('events', data_list[0]+'/variables.root')
                         if args.includeData == 'includeSideband': 
                             tmp_list_of_hist[c][v]['data']['sideband'] = Histogram(intree.getHistFromTree(v, str(c)+'-'+v+'-'+'-Data-sideband', var_dict[v][1], '('+cc+'&&issideband)'))
@@ -529,7 +521,6 @@ else:
                         intree = OutputTree('events', getOutputName('bkgr', year, args.tag)+'/'+b+'/variables.root')                       
  
                         for c, cc in zip(categories_to_use, category_conditions):
-                            print cc
                             for iv, v in enumerate(var_dict.keys()):  
                                 tmp_list_of_hist[c][v]['bkgr'][b] = Histogram(intree.getHistFromTree(v, 'tmp_'+b+v+str(c)+'p', var_dict[v][1], '('+cc+'&&isprompt&&!issideband)'))
                                            
@@ -552,7 +543,6 @@ else:
             return tmp_list_of_hist
         
         print "Creating list of histograms"
-        print signal_list, background_collection
         list_of_hist = createVariableDistributions(category_dict[args.categoriesToPlot], var, signal_list, background_collection, data_list, sample_manager)
 
         #

@@ -18,19 +18,9 @@ class LumiWeight:
         self.skimmed = sample_manager.skim != 'noskim'
         self.recalculate = recalculate
 
-#        if (not self.skimmed or recalculate) and not self.sample.is_data: 
-#            self.lumi_cluster = sample_manager.makeLumiClusters()[sample.shavedName()]
-#            self.total_hcount = 0
-#
-#            for cl_name in self.lumi_cluster:
-#                tmp_path = sample_manager.getPath(cl_name) #Getting the hcount from original unskimmed paths because of temporary bug in the hcounters copied to skimmed files
-#                self.total_hcount += self.sample.getHist('hCounter', tmp_path).GetSumOfWeights()
-#        elif self.skimmed:
-#            self.total_hcount = self.sample.getHist('hCounter').GetSumOfWeights()
-        
-        # Because of bug in weights, always use the hcount from original files
         if not self.sample.is_data:
             if recalculate:
+                #Get hcounter from original file
                 self.lumi_cluster = sample_manager.makeLumiClusters(noskimpath=True)[sample.shavedName()]
                 self.total_hcount = 0
 
@@ -39,6 +29,7 @@ class LumiWeight:
                     self.total_hcount += self.sample.getHist('hCounter', tmp_path).GetSumOfWeights()
 
             else:
+                #Read hcounter from json
                 year = sample_manager.year
                 era = sample_manager.era
                 import os, json
@@ -55,20 +46,6 @@ class LumiWeight:
         else:
             self.lumi_weight = self.sample.chain._weight*(self.sample.xsec*LUMINOSITY_MAP[self.sample.chain.era+self.sample.chain.year])/self.total_hcount
             return self.lumi_weight 
-
-
-        #elif not self.skimmed or self.recalculate:
-        #    #the _weight is needed because otherwise the hcounter might be wrong for the denominator
-        #    self.lumi_weight = self.sample.chain._weight*(self.sample.xsec*LUMINOSITY_MAP[self.sample.chain.era+self.sample.chain.year])/self.total_hcount
-        #    print self.sample.chain._weight, self.sample.xsec, LUMINOSITY_MAP[self.sample.chain.era+self.sample.chain.year], self.total_hcount
-        #    return self.lumi_weight 
-        #else:
-        #    try:
-        #        return self.sample.chain.lumiweight
-        #    except:
-        #        self.recalculate = True
-        #        return self.getLumiWeight()
-
 
 if __name__ == '__main__':
     from HNL.Samples.sampleManager import SampleManager

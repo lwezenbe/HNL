@@ -197,8 +197,6 @@ class Plot:
             # Set min and max
             #
             if stacked:
-                #print self.hs
-                #print self.hs.GetXaxis()
                 self.hs.SetMinimum(self.min_to_set)
                 self.hs.SetMaximum(self.max_to_set)
                 self.hs.GetXaxis().SetTitleSize(.06)
@@ -538,7 +536,6 @@ class Plot:
 
     def savePlot(self, destination, message = None):
         makeDirIfNeeded(destination)
-        print destination
         destination_components = destination.split('/')
         cleaned_components = [x for x in destination_components if not isTimeStampFormat(x)]
         try:

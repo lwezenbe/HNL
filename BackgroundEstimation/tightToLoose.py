@@ -197,10 +197,8 @@ if not args.makePlots:
     # Create fake rate objects
     #
     if args.flavor == 'tau':
-        #fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i]), c._met], ('pt', 'eta', 'met'), getOutputName(region_to_select), 
-        #                                        (np.array([20., 25., 35., 50., 70., 100.]), np.arange(0., 3.0, 0.5), np.array([0., 20., 35., 50., 100.])))
-        fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i]), c._tauDecayMode[c.l_indices[i]]], ('pt', 'eta', 'DM'), getOutputName(region_to_select), 
-                                                (np.array([20., 25., 35., 50., 70., 100.]), np.arange(0., 3.0, 0.5), np.arange(-0.5, 12.5, 1.)))
+        fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), getOutputName(region_to_select), 
+                                                (np.array([20., 25., 35., 50., 70., 100.]), np.arange(0., 3.0, 0.5)))
     elif args.flavor == 'mu':
         fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), getOutputName(region_to_select), 
                                                 (np.array([10., 20., 30., 45., 65., 100.]), np.array([0., 1.2, 2.1, 2.4])))
@@ -223,15 +221,6 @@ if not args.makePlots:
 
         cutter.cut(True, 'total')
         
-        #
-        #Triggers
-        #
-        # if args.selection == 'AN2017014':
-        #     if not cutter.cut(passTriggers(chain, 'HNL_old'), 'pass_triggers'): continue
-        # else:
-        #     if not cutter.cut(passTriggers(chain, 'HNL'), 'pass_triggers'): continue
-
-        # if not cutter.cut(passTriggers(chain, 'ewkino'), 'pass_triggers'): continue
         event.initEvent()
 
         #Event selection
@@ -245,7 +234,6 @@ if not args.makePlots:
 
         if args.inData and not chain.is_data:
             if not chain._lIsPrompt[chain.l_indices[fake_index]]: continue
-            #passed = True #Always fill both denom and enum for this case (subtraction of prompt contribution)
             passed = isGoodLepton(chain, chain.l_indices[fake_index], 'tight')
             weight = -1.*reweighter.getTotalWeight()
         else:
@@ -291,9 +279,6 @@ else:
 
     dm_dict = {'-0.5to0.5':'DM0',
                 '0.5to1.5':'DM1',
-        #        '3.5to4.5':'DM4',
-        #        '4.5to5.5':'DM5',
-        #        '5.5to6.5':'DM6',
                 '9.5to10.5' : 'DM10',
                 '10.5to11.5' : 'DM11'}
 
@@ -313,18 +298,8 @@ else:
         fakerates = createFakeRatesWithJetBins('tauttl', None, None, in_file)
         for fr in fakerates.bin_collection:
             ttl = fakerates.getFakeRate(fr).getEfficiency()
-            if args.flavor != 'tau':
-                p = Plot(signal_hist = ttl, name = 'ttl_'+fr, year = args.year, era = args.era, x_name="p_{T} [GeV]", y_name = "|#eta|")
-                p.draw2D(output_dir = output_dir, names = ['ttl_'+fr])
-
-            else:
-                from HNL.Tools.histogram import Histogram
-                sliced_hist = Histogram(ttl).slice3DalongZ()
-                for sn in sliced_hist.keys():
-                    if sn not in dm_dict.keys(): continue
-                    p = Plot(signal_hist = sliced_hist[sn], year = args.year, era = args.era, x_name="p_{T} [GeV]", y_name = "|#eta|")
-                    p.draw2D(output_dir = output_dir, names = ['ttl_'+dm_dict[sn]+'_'+fr])
-
+            p = Plot(signal_hist = ttl, name = 'ttl_'+fr, year = args.year, era = args.era, x_name="p_{T} [GeV]", y_name = "|#eta|")
+            p.draw2D(output_dir = output_dir, names = ['ttl_'+fr])
 
         # Draw all components
         if args.inData:

@@ -62,7 +62,7 @@ class EventSelector:
         elif self.name == 'TauFakesDYnomet':
             self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'tightWP' : True, 'nometcut' : True})
         elif self.name == 'TauFakesDYCT':
-            self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'tightWP' : True, 'b_veto' : True})
+            self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'tightWP' : True, 'b_veto' : True, 'inverted_met_cut':True})
         elif self.name == 'TauFakesDYCTnomet':
             self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'tightWP' : True, 'b_veto' : True, 'nometcut':True})
         elif self.name == 'TauFakesTT':
