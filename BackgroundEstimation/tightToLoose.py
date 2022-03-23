@@ -201,18 +201,6 @@ if not args.makePlots:
     branches = ['l_pt/F', 'l_eta/F', 'l_decaymode/I', 'met/F', 'weight/F', 'l_flavor/I']
     fakerate = EfficiencyTree('ttl', getOutputName(region_to_select), branches = branches)
 
-    #if args.flavor == 'tau':
-    #    fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), getOutputName(region_to_select), 
-    #                                            (np.array([20., 25., 35., 50., 70., 100.]), np.arange(0., 3.0, 0.5)))
-    #elif args.flavor == 'mu':
-    #    fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), getOutputName(region_to_select), 
-    #                                            (np.array([10., 20., 30., 45., 65., 100.]), np.array([0., 1.2, 2.1, 2.4])))
-    #elif args.flavor == 'e':
-    #    fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), getOutputName(region_to_select), 
-    #                                            (np.array([10., 20., 30., 45., 65., 100.]), np.array([0., .8, 1.442, 2.5])))
-    #else:
-    #    raise RuntimeError('Invalid flavor')
-    
     #
     # Loop over all events
     #
@@ -251,17 +239,8 @@ if not args.makePlots:
         fakerate.setTreeVariable('l_decaymode', chain._tauDecayMode[chain.l_indices[fake_index]])
         fakerate.setTreeVariable('l_flavor', chain.l_flavor[fake_index])
        
-        #fakerates.fillFakeRates(chain, weight, passed, index = fake_index)
         fakerate.fill(passed)
 
-    #print fakerates.getFakeRate('total').getNumerator().GetSumOfWeights(), fakerates.getFakeRate('total').getDenominator().GetSumOfWeights()
-    #print fakerates.getFakeRate('total').getNumerator().GetEntries(), fakerates.getFakeRate('total').getDenominator().GetEntries()
-    #print fakerates.getFakeRate('0jets').getNumerator().GetSumOfWeights(), fakerates.getFakeRate('0jets').getDenominator().GetSumOfWeights()
-    #print fakerates.getFakeRate('0jets').getNumerator().GetEntries(), fakerates.getFakeRate('0jets').getDenominator().GetEntries()
-    #print fakerates.getFakeRate('njets').getNumerator().GetSumOfWeights(), fakerates.getFakeRate('njets').getDenominator().GetSumOfWeights()
-    #print fakerates.getFakeRate('njets').getNumerator().GetEntries(), fakerates.getFakeRate('njets').getDenominator().GetEntries()
-    #fakerates.writeFakeRates(is_test=arg_string)
-    
     fakerate.write(is_test = arg_string)
 
     cutter.saveCutFlow(getOutputName(region_to_select))
