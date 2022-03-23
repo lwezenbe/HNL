@@ -59,8 +59,10 @@ class EventSelector:
             self.selector = ConversionCRfilter(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'TauFakesDY':
             self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'tightWP' : True})
+        elif self.name == 'TauFakesDYnomet':
+            self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'tightWP' : True, 'nometcut' : True})
         elif self.name == 'TauFakesDYCT':
-            self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'tightWP' : True, 'b_veto' : True})
+            self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'tightWP' : True, 'b_veto' : True, 'inverted_met_cut':True})
         elif self.name == 'TauFakesDYCTnomet':
             self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'tightWP' : True, 'b_veto' : True, 'nometcut':True})
         elif self.name == 'TauFakesTT':
@@ -69,6 +71,8 @@ class EventSelector:
             self.selector = TauFakeEnrichedTT(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'tightWP' : True, 'inverted_cut' : True})
         elif self.name == 'TauFakesDYttl':
             self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
+        elif self.name == 'TauFakesDYttlnomet':
+            self.selector = TauFakeEnrichedDY(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, additional_args={'nometcut' : True})
         elif self.name == 'TauFakesTTttl':
             self.selector = TauFakeEnrichedTT(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
         elif self.name == 'LightLepFakesDY':

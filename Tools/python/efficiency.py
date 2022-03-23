@@ -182,8 +182,8 @@ class Efficiency(object):
             self.efficiency_denom.getHist().Write(name+'_denom')
             # self.getEfficiency().Write(name+'_efficiency')
         else:
-            self.efficiency_num.getHist().Write()
-            self.efficiency_denom.getHist().Write()
+            self.efficiency_num.getHist().Write(self.name+'_num')
+            self.efficiency_denom.getHist().Write(self.name+'_denom')
             # self.getEfficiency().Write()
         output_file.Close()
 

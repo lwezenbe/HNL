@@ -34,7 +34,6 @@ submission_parser.add_argument('--selection',   action='store', default='default
 submission_parser.add_argument('--logLevel',  action='store', default='INFO', help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 
 argParser.add_argument('--makePlots', action='store_true', default=False,  help='make plots')
-argParser.add_argument('--oldFormat', action='store_true', default=False,  help='make plots')
 
 args = argParser.parse_args()
 
@@ -88,8 +87,7 @@ else:
     skim_str = 'Reco'
 
 if not args.inData:
-    #sublist = 'BackgroundEstimation/TauFakes-'+args.era+args.year
-    sublist = 'fulllist_'+args.era+args.year+'_nosignal_mconly'
+    sublist = 'BackgroundEstimation/TauFakes-'+args.era+args.year
 else:
     sublist = 'fulllist_'+args.era+args.year+'_nosignal'
 sample_manager = SampleManager(args.era, args.year, skim_str, sublist, skim_selection=args.selection)
@@ -105,6 +103,7 @@ jobs = []
 for sample_name in sample_manager.sample_names:
     if args.sample and args.sample not in sample_name: continue
     sample = sample_manager.getSample(sample_name)
+    if not args.inData and args.application == 'TauFakesDY' and not 'DY' in sample.name: continue
     for njob in xrange(sample.returnSplitJobs()):
         jobs += [(sample.name, str(njob))]
 
@@ -150,7 +149,16 @@ else:
             'mtnonossf':          (lambda c : c.mtNonZossf,      np.arange(0., 240., 5.),         ('M_{ll,Z} [GeV]', 'Events')),
             'NJet':      (lambda c : c.njets,       np.arange(0., 12., 1.),       ('#Jets', 'Events')),
             'NbJet':      (lambda c : c.nbjets,       np.arange(0., 12., 1.),       ('#B Jets', 'Events')),
-    }   
+            'Nele':      (lambda c : len([x for x in c.l_flavor if x == 0]),       np.arange(0., 4., 1.),       ('#electrons', 'Events')),
+            'Nmu':      (lambda c : len([x for x in c.l_flavor if x == 1]),       np.arange(0., 4., 1.),       ('#muons', 'Events')),
+            'Ntau':      (lambda c : len([x for x in c.l_flavor if x == 2]),       np.arange(0., 4., 1.),       ('#taus', 'Events')),
+            'tauDecayMode':      (lambda c, i : c._tauDecayMode[i],       np.arange(-0.5, 11.5, 1.),       ('tau DM', 'Events'))
+    }  
+
+if not args.inData:
+    var['tauGenStatus'] = (lambda c, i : c._tauGenStatus[i],       np.arange(0.5, 7.5, 1.),       ('TauGenStatus', '#taus')) 
+    var['provenance'] = (lambda c, i : c._lProvenance[i],       np.arange(0.5, 20.5, 1.),       ('Provenance', '#taus')) 
+    var['provenanceCompressed'] = (lambda c, i : c._lProvenanceCompressed[i],       np.arange(0.5, 7.5, 1.),       ('Provenance', '#taus')) 
 
 subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
 data_str = 'DATA' if args.inData else 'MC'
@@ -245,8 +253,16 @@ if not args.makePlots:
         else:
             base_path_tau = lambda proc : os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', 
                                                                         args.era+'-'+args.year, data_str, 'tau', 'TauFakes'+proc+'ttl-'+args.selection, 'events.root'))
+        #bins = (np.array([20., 25., 35., 50., 70., 100.]), np.arange(0., 3.0, 0.5), np.arange(-0.5, 12.5, 0.5))
+        bins = (np.array([20., 25., 35., 50., 70., 100.]), np.arange(0., 3.0, 0.5))
         if args.application == 'TauFakesDY':
-            fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('DY'), subdirs = ['total'])
+            #fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('DY'), subdirs = ['total'])
+            if args.year == '2016pre' and args.inData:
+                #fakerate[2] = FakeRate.getFakeRateFromTree('ttl', base_path_tau('DY'), "l_pt-abs(l_eta)-l_decaymode", bins, var = lambda c, i: [c.l_pt[i], abs(c.l_eta[i]), c._tauDecayMode[c.l_indices[i]]])
+                fakerate[2] = FakeRate.getFakeRateFromTree('ttl', base_path_tau('DY'), "l_pt-abs(l_eta)", bins, var = lambda c, i: [c.l_pt[i], abs(c.l_eta[i])])
+            else:
+                #fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('DY'), subdirs = ['total'])
+                fakerate[2] = FakeRate.getFakeRateFromTree('ttl', base_path_tau('DY'), "l_pt-abs(l_eta)", bins, var = lambda c, i: [c.l_pt[i], abs(c.l_eta[i])])
         elif args.application == 'TauFakesTT':
             fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('TT'), subdirs = ['total'])
         elif args.application == 'WeightedMix':
@@ -265,7 +281,6 @@ if not args.makePlots:
         '2018' : '2018',    
     }
     if 'ele' in args.flavorToTest: 
-        mod_year = '2016' if '2016' in args.year else args.year
         if args.inData:
             fakerate[0] = FakeRateEmulator('fakeRate_electron_'+luka_year_dict[args.year], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 
                                             'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'fakeRateMap_data_electron_'+luka_year_dict[args.year]+'_mT.root'))
@@ -275,7 +290,6 @@ if not args.makePlots:
     else:
         fakerate[0] = None
     if 'mu' in args.flavorToTest: 
-        mod_year = '2016' if '2016' in args.year else args.year
         if args.inData:
             fakerate[1] = FakeRateEmulator('fakeRate_muon_'+luka_year_dict[args.year], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 
                                             'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'fakeRateMap_data_muon_'+luka_year_dict[args.year]+'_mT.root'))
@@ -331,32 +345,14 @@ if not args.makePlots:
         weight = reweighter.getTotalWeight()
 
         for v in var:
-            #if v == 'ptFakes' or v == 'etaFakes':
-            #    #Special case, only for taus, in which case there is only one tau which is in the last position
-            #    if args.isCheck:
-            #        if args.splitInCategories: co[cat][v].fillClosure(chain, weight, fake_factor, index=2)
-            #        co['total'][v].fillClosure(chain, weight, fake_factor, index=2)
-            #    else:
-            #        #General case
-            #        for l in event.loose_leptons_of_interest:
-            #            if args.splitInCategories: co[cat][v].fillClosure(chain, weight, fake_factor, index=l)
-            #            co['total'][v].fillClosure(chain, weight, fake_factor, index=l)
-            #else:
-            #    if args.splitInCategories: co[cat][v].fillClosure(chain, weight, fake_factor)
-            #    co['total'][v].fillClosure(chain, weight, fake_factor)
-            co.setTreeVariable(v, var[v][0](chain))   
+            try:
+                co.setTreeVariable(v, var[v][0](chain))   
+            except:
+                co.setTreeVariable(v, var[v][0](chain, chain.l_indices[2]))   
         co.setTreeVariable('category', cat)
         co.fill(weight, fake_factor)
 
     co.write(is_test=arg_string)
-
-    #print "Observed:", co['total']['m3l'].getObserved().GetSumOfWeights()
-    #print "Predicted:", co['total']['m3l'].getSideband().GetSumOfWeights()
-
-    #for b in xrange(1, co['total']['etaFakes'].getObserved().GetNbinsX()+1):
-    #    print "bin", b, "at eta =", co['total']['etaFakes'].getObserved().GetBinCenter(b), ":" 
-    #    print "OBSERVED:",  co['total']['etaFakes'].getObserved().GetBinContent(b)
-    #    print "PREDICTED:",  co['total']['etaFakes'].getSideband().GetBinContent(b)
 
     cutter.saveCutFlow(getOutputName())
 
@@ -376,118 +372,67 @@ else:
     base_path_split  = base_path.rsplit('/data/')
     output_dir = makePathTimeStamped(base_path_split[0] +'/data/Results/'+base_path_split[1])
 
-    if args.oldFormat:
-        closureObjects = {}
-        for in_file in in_files:
-            if 'Results' in in_file: continue
-            if 'isCheck' in in_file and not args.isCheck: continue
-            sample_name = in_file.rsplit('/', 1)[-1]
-            closureObjects[sample_name] = {}
-            for c in getCategories():
-                closureObjects[sample_name][c] = {}
-                for v in var:
-                    closureObjects[sample_name][c][v] = ClosureObject('closure-'+v+'-'+c, None, None, in_file+'/events.root')
+    from HNL.BackgroundEstimation.closureObject import ClosureTree
+    closure_trees = {}
+    for in_file in in_files:
+        if 'Results' in in_file: continue
+        if 'isCheck' in in_file and not args.isCheck: continue
+        sample_name = in_file.rsplit('/', 1)[-1]
+        closure_trees[sample_name] = ClosureTree('closure', in_file+'/events.root')
 
-        if not args.inData:
-            for sample_name in closureObjects.keys():
-                for c in getCategories():
-                    for v in var:
-                        p = Plot(name = v, observed_hist = closureObjects[sample_name][c][v].getObserved(), bkgr_hist = closureObjects[sample_name][c][v].getSideband(), 
-                                    color_palette='Black', color_palette_bkgr='Stack', tex_names = ['Predicted'], draw_ratio = True, year = args.year, era = args.era,
-                                    x_name = var[v][2][0], y_name = var[v][2][1])
-                        p.setLegend(x1 = 0.5, ncolumns = 1)
-                        p.drawHist(output_dir = output_dir+'/'+sample_name+'/'+c, observed_name = 'Observed')
-        
-        for c in getCategories():
+    #condition = "tauDecayMode!=0"
+    condition = None
+    if not args.inData:
+        for sample_name in closure_trees.keys():
             for v in var:
-                if args.inData:
-                    observed_h = closureObjects['Data'][c][v].getObserved()
-                    for isample, sample_name in enumerate(closureObjects.keys()):
-                        if 'Data' in sample_name: continue
-                        else:
-                            observed_h.Add(closureObjects[sample_name][c][v].getSideband(), -1.)
+                p = Plot(name = v, observed_hist = closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1], condition=condition), bkgr_hist = closure_trees[sample_name].getSideband(v, v+'-'+sample_name, var[v][1], condition=condition), 
+                            color_palette='Black', color_palette_bkgr='Stack', tex_names = ['Predicted'], draw_ratio = True, year = args.year, era = args.era,
+                            x_name = var[v][2][0], y_name = var[v][2][1])
+                p.setLegend(x1 = 0.5, ncolumns = 1)
+                p.drawHist(output_dir = output_dir+'/'+sample_name+'/total', observed_name = 'Observed')
+
+    for v in var:
+        if args.inData:
+            observed_h = closure_trees['Data'].getObserved(v, v+'-'+sample_name, var[v][1], condition)
+            for isample, sample_name in enumerate(closure_trees.keys()):
+                if 'Data' in sample_name: continue
                 else:
-                    for isample, sample_name in enumerate(closureObjects.keys()):
-                        if 'Data' in sample_name: continue
-                        if isample == 0:
-                            observed_h = closureObjects[sample_name][c][v].getObserved()
-                        else:
-                            observed_h.Add(closureObjects[sample_name][c][v].getObserved())
-
-                
-                if args.inData:
-                    backgrounds = [closureObjects["Data"][c][v].getSideband()]
-                    background_names = ['Predicted']
+                    observed_h.Add(closure_trees[sample_name].getSideband(v, v+'-'+sample_name, var[v][1], condition), -1.)
+        else:
+            for isample, sample_name in enumerate(closure_trees.keys()):
+                if 'Data' in sample_name: continue
+                if isample == 0:
+                    observed_h = closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1], condition)
                 else:
-                    backgrounds = []
-                    background_names = []
+                    observed_h.Add(closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1], condition))
 
-                bkgr_collection = {}
-                for sample_name in closureObjects.keys():
-                    if 'Data' in sample_name: continue
-                    bkgr_collection[sample_name] = closureObjects[sample_name][c][v].getObserved()
-
-                for b in bkgr_collection:
-                    backgrounds.append(bkgr_collection[b])
-                    background_names.append(b)
-
-                p = Plot(name = v, bkgr_hist = backgrounds, observed_hist = observed_h, color_palette='Black', tex_names = background_names, 
-                            draw_ratio = True, year = args.year, era = args.era, x_name = var[v][2][0], y_name = var[v][2][1])
-                p.setLegend(x1 = 0.5, ncolumns = 2)
-                p.drawHist(output_dir = output_dir+'/Stacked/'+c, observed_name = 'Observed')
-
-    else:
-        from HNL.BackgroundEstimation.closureObject import ClosureTree
-        closure_trees = {}
-        for in_file in in_files:
-            if 'Results' in in_file: continue
-            if 'isCheck' in in_file and not args.isCheck: continue
-            sample_name = in_file.rsplit('/', 1)[-1]
-            closure_trees[sample_name] = ClosureTree('closure', in_file+'/events.root')
-
-        if not args.inData:
-            for sample_name in closure_trees.keys():
-                for v in var:
-                    p = Plot(name = v, observed_hist = closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1]), bkgr_hist = closure_trees[sample_name].getSideband(v, v+'-'+sample_name, var[v][1]), 
-                                color_palette='Black', color_palette_bkgr='Stack', tex_names = ['Predicted'], draw_ratio = True, year = args.year, era = args.era,
-                                x_name = var[v][2][0], y_name = var[v][2][1])
-                    p.setLegend(x1 = 0.5, ncolumns = 1)
-                    p.drawHist(output_dir = output_dir+'/'+sample_name+'/total', observed_name = 'Observed')
-
-        for v in var:
-            if args.inData:
-                observed_h = closure_trees['Data'].getObserved(v, v+'-'+sample_name, var[v][1])
-                for isample, sample_name in enumerate(closure_trees.keys()):
-                    if 'Data' in sample_name: continue
-                    else:
-                        observed_h.Add(closure_trees[sample_name].getSideband(v, v+'-'+sample_name, var[v][1]), -1.)
-            else:
-                for isample, sample_name in enumerate(closure_trees.keys()):
-                    if 'Data' in sample_name: continue
-                    if isample == 0:
-                        observed_h = closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1])
-                    else:
-                        observed_h.Add(closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1]))
-
-                
-            if args.inData:
-                backgrounds = [closure_trees["Data"].getSideband(v, v+'-'+sample_name, var[v][1])]
-                background_names = ['Predicted']
-            else:
-                backgrounds = []
-                background_names = []
-
-            bkgr_collection = {}
+            
+        bkgr_collection = {}
+        if args.inData:
+            backgrounds = [closure_trees["Data"].getSideband(v, v+'-'+sample_name, var[v][1], condition)]
+            background_names = ['Predicted']
             for sample_name in closure_trees.keys():
                 if 'Data' in sample_name: continue
                 bkgr_collection[sample_name] = closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1])
+                backgrounds[0].Add(closure_trees[sample_name].getSideband(v, v+'-'+sample_name, var[v][1], condition), -1.)
+        else:
+            backgrounds = []
+            background_names = []
 
-            for b in bkgr_collection:
-                backgrounds.append(bkgr_collection[b])
-                background_names.append(b)
+            for sample_name in closure_trees.keys():
+                if 'Data' in sample_name: continue
+                bkgr_collection[sample_name] = closure_trees[sample_name].getSideband(v, v+'-'+sample_name, var[v][1])
 
-            p = Plot(name = v, bkgr_hist = backgrounds, observed_hist = observed_h, color_palette='Black', tex_names = background_names, 
-                        draw_ratio = True, year = args.year, era = args.era, x_name = var[v][2][0], y_name = var[v][2][1])
-            p.setLegend(x1 = 0.5, ncolumns = 2)
-            p.drawHist(output_dir = output_dir+'/Stacked/total', observed_name = 'Observed')
+        for b in bkgr_collection:
+            backgrounds.append(bkgr_collection[b])
+            background_names.append(b)
+
+        syst_hist = backgrounds[0].Clone("syst hist")
+        for b in xrange(1, syst_hist.GetNbinsX()+1):
+            syst_hist.SetBinError(b, 0.3*syst_hist.GetBinContent(b))
+    
+        p = Plot(name = v, bkgr_hist = backgrounds, observed_hist = observed_h, color_palette='Black', tex_names = background_names, 
+                    draw_ratio = True, year = args.year, era = args.era, x_name = var[v][2][0], y_name = var[v][2][1], syst_hist = syst_hist)
+        p.setLegend(x1 = 0.5, ncolumns = 2)
+        p.drawHist(output_dir = output_dir+'/Stacked/total', observed_name = 'Observed')
 

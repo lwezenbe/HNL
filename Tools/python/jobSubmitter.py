@@ -250,7 +250,8 @@ def checkShouldMerge(script, argparser, subLog = None, additionalArgs=None):
     with open(path_to_check) as f:
         first_line = f.readline()
 
-    if first_line == 'True':
+    #if first_line == 'True':
+    if 'True' in first_line:
         return True
     else:
         return False

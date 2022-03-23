@@ -74,6 +74,7 @@ class TauFakeEnrichedDY(FilterObject):
         super(TauFakeEnrichedDY, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
         self.use_default_objects = additional_args.get('tightWP', False) if additional_args is not None else False
         self.nometcut = additional_args.get('nometcut', False) if additional_args is not None else False
+        self.inverted_met_cut = additional_args.get('inverted_met_cut', False) if additional_args is not None else False
         self.b_veto = additional_args.get('b_veto', False) if additional_args is not None else False
         if not self.use_default_objects:
             self.chain.obj_sel['tau_wp'] = 'FO'
@@ -86,7 +87,7 @@ class TauFakeEnrichedDY(FilterObject):
     def passedFilter(self, cutter, kwargs={}):
         if not self.initEvent(cutter):                                return False
         from HNL.EventSelection.eventFilters import passedFilterTauFakeEnrichedDY
-        if not passedFilterTauFakeEnrichedDY(self.chain, self.new_chain, cutter, nometcut = self.nometcut, b_veto = self.b_veto): return False
+        if not passedFilterTauFakeEnrichedDY(self.chain, self.new_chain, cutter, nometcut = self.nometcut, b_veto = self.b_veto, inverted_met_cut = self.inverted_met_cut): return False
         return True
 
     def getFakeIndex(self):

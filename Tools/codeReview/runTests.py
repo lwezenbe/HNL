@@ -14,7 +14,7 @@ argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--allCombinations',  action='store_true', default=False,  help='Run code that makes long list of all arguments to be combined in tests')
 argParser.add_argument('--rerun',  action='store_true', default=False,  help='rerun failed jobs')
 argParser.add_argument('--checkLogs',  action='store_true', default=False,  help='Run code that makes long list of all arguments to be combined in tests')
-argParser.add_argument('--batchSystem',  action='store', default='Cream02',  help='What batch system to use', choices = ['Cream02', 'HTCondor'])
+argParser.add_argument('--batchSystem',  action='store', default='HTCondor',  help='What batch system to use', choices = ['Cream02', 'HTCondor'])
 args = argParser.parse_args()
 
 if not args.checkLogs:

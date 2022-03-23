@@ -28,6 +28,7 @@ submission_parser.add_argument('--tauRegion', action='store', type=str, default 
 submission_parser.add_argument('--logLevel',  action='store', default='INFO', help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 
 argParser.add_argument('--makePlots', action='store_true', default=False,  help='Make plots.')
+argParser.add_argument('--plotComponents', action='store_true', default=False,  help='Plot all components that make up data ttl')
 
 args = argParser.parse_args()
 
@@ -77,7 +78,7 @@ from HNL.EventSelection.event import Event
 from HNL.ObjectSelection.leptonSelector import isGoodLepton
 from HNL.Tools.helpers import makeDirIfNeeded
 from HNL.Weights.reweighter import Reweighter
-
+from HNL.Tools.outputTree import EfficiencyTree
 
 #
 # Load in the sample list 
@@ -108,7 +109,7 @@ jobs = []
 for sample_name in sample_manager.sample_names:
     if args.sample and args.sample not in sample_name: continue
     if args.tauRegion is not None and not args.inData:
-        if args.tauRegion == 'TauFakesDYttl' and not 'DY' in sample_name: continue
+        if 'TauFakesDYttl' in args.tauRegion and not 'DY' in sample_name: continue
         elif args.tauRegion == 'TauFakesTTttl' and not 'TT' in sample_name: continue
     sample = sample_manager.getSample(sample_name)
     for njob in xrange(sample.returnSplitJobs()):
@@ -196,42 +197,22 @@ if not args.makePlots:
     #
     # Create fake rate objects
     #
-    if args.flavor == 'tau':
-        fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), getOutputName(region_to_select), 
-                                                (np.array([20., 25., 35., 50., 70., 100.]), np.arange(0., 3.0, 0.5)))
-    elif args.flavor == 'mu':
-        fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), getOutputName(region_to_select), 
-                                                (np.array([10., 20., 30., 45., 65., 100.]), np.array([0., 1.2, 2.1, 2.4])))
-    elif args.flavor == 'e':
-        fakerates = createFakeRatesWithJetBins('tauttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), getOutputName(region_to_select), 
-                                                (np.array([10., 20., 30., 45., 65., 100.]), np.array([0., .8, 1.442, 2.5])))
-    else:
-        raise RuntimeError('Invalid flavor')
-    
+
+    branches = ['l_pt/F', 'l_eta/F', 'l_decaymode/I', 'met/F', 'weight/F', 'l_flavor/I']
+    fakerate = EfficiencyTree('ttl', getOutputName(region_to_select), branches = branches)
+
     #
     # Loop over all events
     #
     from HNL.Tools.helpers import progress
-    from HNL.Triggers.triggerSelection import passTriggers
 
     for entry in event_range:
-
-        if entry != 8052: continue
 
         chain.GetEntry(entry)
         if args.isTest: progress(entry - event_range[0], len(event_range))
 
         cutter.cut(True, 'total')
         
-        #
-        #Triggers
-        #
-        # if args.selection == 'AN2017014':
-        #     if not cutter.cut(passTriggers(chain, 'HNL_old'), 'pass_triggers'): continue
-        # else:
-        #     if not cutter.cut(passTriggers(chain, 'HNL'), 'pass_triggers'): continue
-
-        # if not cutter.cut(passTriggers(chain, 'ewkino'), 'pass_triggers'): continue
         event.initEvent()
 
         #Event selection
@@ -242,28 +223,26 @@ if not args.makePlots:
         else:
             if not event.passedFilter(cutter, sample.name): continue
         fake_index = event.event_selector.selector.getFakeIndex()
- 
+
         if args.inData and not chain.is_data:
             if not chain._lIsPrompt[chain.l_indices[fake_index]]: continue
-            #passed = True #Always fill both denom and enum for this case (subtraction of prompt contribution)
             passed = isGoodLepton(chain, chain.l_indices[fake_index], 'tight')
-            weight = -1.*reweighter.getTotalWeight()
+            fakerate.setTreeVariable('weight', -1.*reweighter.getTotalWeight())
         else:
             if not chain.is_data and not cutter.cut(chain.l_isfake[fake_index], 'fake lepton'): continue
             passed = isGoodLepton(chain, chain.l_indices[fake_index], 'tight')
-            weight = reweighter.getTotalWeight()
-       
-        print entry, passed, weight
- 
-        fakerates.fillFakeRates(chain, weight, passed, index = fake_index)
+            fakerate.setTreeVariable('weight', reweighter.getTotalWeight())
 
-    print fakerates.getFakeRate('total').getNumerator().GetSumOfWeights(), fakerates.getFakeRate('total').getDenominator().GetSumOfWeights()
-    print fakerates.getFakeRate('total').getNumerator().GetEntries(), fakerates.getFakeRate('total').getDenominator().GetEntries()
-    print fakerates.getFakeRate('0jets').getNumerator().GetSumOfWeights(), fakerates.getFakeRate('0jets').getDenominator().GetSumOfWeights()
-    print fakerates.getFakeRate('0jets').getNumerator().GetEntries(), fakerates.getFakeRate('0jets').getDenominator().GetEntries()
-    print fakerates.getFakeRate('njets').getNumerator().GetSumOfWeights(), fakerates.getFakeRate('njets').getDenominator().GetSumOfWeights()
-    print fakerates.getFakeRate('njets').getNumerator().GetEntries(), fakerates.getFakeRate('njets').getDenominator().GetEntries()
-    fakerates.writeFakeRates(is_test=arg_string)
+        fakerate.setTreeVariable('met', chain._met)
+        fakerate.setTreeVariable('l_pt', chain.l_pt[fake_index])
+        fakerate.setTreeVariable('l_eta', chain.l_eta[fake_index])
+        fakerate.setTreeVariable('l_decaymode', chain._tauDecayMode[chain.l_indices[fake_index]])
+        fakerate.setTreeVariable('l_flavor', chain.l_flavor[fake_index])
+       
+        fakerate.fill(passed)
+
+    fakerate.write(is_test = arg_string)
+
     cutter.saveCutFlow(getOutputName(region_to_select))
     closeLogger(log)
 
@@ -305,20 +284,49 @@ else:
             output_dir = makePathTimeStamped(base_path_out +'/'+sample_output)
             in_file = base_path_in+'/'+sample_output+'/events.root'
 
-        fakerates = createFakeRatesWithJetBins('tauttl', None, None, in_file)
-        for fr in fakerates.bin_collection:
-            ttl = fakerates.getFakeRate(fr).getEfficiency()
+        conditions = {
+            'DM0' : 'l_decaymode==0',
+            'DM1' : 'l_decaymode==1',
+            'DM10' : 'l_decaymode==10',
+            'DM11' : 'l_decaymode==11',
+        }
+        
+        bins = (np.array([20., 25., 35., 50., 70., 100.]), np.arange(0., 3.0, 0.5))
+        fakerate = EfficiencyTree('ttl', in_file)
+        fakerate.setBins(bins)
 
-            p = Plot(signal_hist = ttl, name = 'ttl_'+fr, year = args.year, era = args.era, x_name="p_{T} [GeV]", y_name = "|#eta|")
-            p.draw2D(output_dir = output_dir, names = ['ttl_'+fr])
+        #fakerates = createFakeRatesWithJetBins('tauttl', None, None, in_file)
+        #for fr in fakerates.bin_collection:
+        #    ttl = fakerates.getFakeRate(fr).getEfficiency()
+        #    p = Plot(signal_hist = ttl, name = 'ttl_'+fr, year = args.year, era = args.era, x_name="p_{T} [GeV]", y_name = "|#eta|")
+        #    p.draw2D(output_dir = output_dir, names = ['ttl_'+fr])
+        
+        ttl = fakerate.getEfficiency('l_pt-abs(l_eta)', 'total')
+        p = Plot(signal_hist = ttl, name = 'ttl_total', year = args.year, era = args.era, x_name="p_{T} [GeV]", y_name = "|#eta|")
+        p.draw2D(output_dir = output_dir, names = ['ttl_total'])
+        for c in conditions:
+            ttl = fakerate.getEfficiency('l_pt-abs(l_eta)', c, conditions[c])
+            p = Plot(signal_hist = ttl, name = 'ttl_'+c, year = args.year, era = args.era, x_name="p_{T} [GeV]", y_name = "|#eta|")
+            p.draw2D(output_dir = output_dir, names = ['ttl_'+c])
 
         # Draw all components
-        if args.inData:
+        if args.inData and args.plotComponents:
             from HNL.BackgroundEstimation.fakerate import FakeRate
             for f in glob.glob(base_path_in+'/*/events.root'):
-                fr = FakeRate('total/tauttl', None, None, f)
-                ttl_hist  = [fr.getNumerator(), fr.getDenominator(), fr.getEfficiency()]
-                
-                p = Plot(signal_hist = ttl_hist, name = 'ttl_'+f.rsplit('/', 2)[1], year = args.year, era = args.era, x_name="p_{T} [GeV]", y_name = "|#eta|")
+                for c in conditions:
+                    fakerate = EfficiencyTree('ttl', f)
+                    fakerate.setBins(bins)
+                    ttl_hist  = [fakerate.getNumerator('l_pt-abs(l_eta)', c, conditions[c]), fakerate.getDenominator('l_pt-abs(l_eta)', c, conditions[c]), fakerate.getEfficiency('l_pt-abs(l_eta)', c, conditions[c])]
+                    
+                    p = Plot(signal_hist = ttl_hist, name = 'ttl_'+f.rsplit('/', 2)[1], year = args.year, era = args.era, x_name="p_{T} [GeV]", y_name = "|#eta|")
+                    p.draw2D(output_dir = output_dir+'/Components', names = ['ttl_'+f.rsplit('/', 2)[1]+'_'+c+addendum for addendum in '_num', '_denom', ''])
 
-                p.draw2D(output_dir = output_dir+'/Components', names = ['ttl_'+f.rsplit('/', 2)[1]+addendum for addendum in '_num', '_denom', ''])
+        export_fakerate = raw_input('Would you like to export these fake rates for use in analysis sidebands? Y/N \n')
+        if export_fakerate in ['y', 'Y'] and not args.isTest and args.flavor == 'tau':
+            from HNL.BackgroundEstimation.fakerate import FakeRate
+            #bins = (np.array([20., 25., 35., 50., 70., 100.]), np.arange(0., 3.0, 0.5), np.arange(-0.5, 12.5, 0.5))
+            bins = (np.array([20., 25., 35., 50., 70., 100.]), np.arange(0., 3.0, 0.5))
+            #fakerate = FakeRate.getFakeRateFromTree('ttl', in_file, "l_pt-abs(l_eta)-l_decaymode", bins, var = lambda c, i: [c.l_pt[i], abs(c.l_eta[i]), c._tauDecayMode[c.l_indices[i]]])
+            fakerate = FakeRate.getFakeRateFromTree('ttl', in_file, "l_pt-abs(l_eta)", bins, var = lambda c, i: [c.l_pt[i], abs(c.l_eta[i])])
+            fakerate.path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Weights', 'data', 'FakeRates', args.era+'-'+args.year, 'Tau', args.tauRegion+'-'+args.selection, 'DATA' if args.inData else 'MC', 'fakerate.root')
+            fakerate.write(name = 'ttl')

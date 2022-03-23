@@ -156,7 +156,7 @@ def passedFilterConversionCRtZq(chain, new_chain, cutter):
     if not cutter.cut(chain.minMossf > 35, 'Mll > 35'):             return False
     return True   
 
-def passedFilterTauFakeEnrichedDY(chain, new_chain, cutter, b_veto, nometcut):
+def passedFilterTauFakeEnrichedDY(chain, new_chain, cutter, b_veto, nometcut, inverted_met_cut):
     if not cutter.cut(new_chain.l_flavor.count(2) == 1, '1 tau'):                   return False
     if not cutter.cut(not fourthFOVeto(chain, new_chain, no_tau=chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
 
@@ -167,7 +167,9 @@ def passedFilterTauFakeEnrichedDY(chain, new_chain, cutter, b_veto, nometcut):
     l2Vec = getFourVec(new_chain.l_pt[1], new_chain.l_eta[1], new_chain.l_phi[1], new_chain.l_e[1])
 
     if not cutter.cut(abs(91.19 - (l1Vec + l2Vec).M()) < 15, 'Z window'):             return False
-    if not nometcut and not cutter.cut(chain._met < 50, 'MET < 50'):                                 return False
+    if not nometcut:
+        if not inverted_met_cut and not cutter.cut(chain._met < 50, 'MET < 50'):                                 return False
+        if inverted_met_cut and not cutter.cut(chain._met > 50, 'MET > 50'):                                 return False
 
     if b_veto and not cutter.cut(not bVeto(chain), 'b-veto'): return False
 

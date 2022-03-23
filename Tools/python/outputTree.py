@@ -50,25 +50,49 @@ class OutputTree(object):
         else:
             raise RuntimeError("Tree in reading mode, you can not change input vars")
 
-    def getHistFromTree(self, vname, hname, bins, condition):
+    def getHistFromTree(self, vname, hname, bins, condition = None):
+        dim = 1
+        if '-' in vname:
+            vname = ":".join(reversed(vname.split('-')))
+            dim = len(vname.split(':'))
+
         import ROOT
         ROOT.gROOT.SetBatch(True)
-    
-        htmp = ROOT.TH1D(hname, hname, len(bins)-1, bins)
-        if 'Weight' in vname: 
-            self.tree.Draw(vname+">>"+hname, '('+condition+')*lumiWeight')
+   
+        if dim == 1: 
+            htmp = ROOT.TH1D(hname, hname, len(bins)-1, bins)
+        elif dim == 2:
+            htmp = ROOT.TH2D(hname, hname, len(bins[0])-1, bins[0], len(bins[1])-1, bins[1])
+        elif dim == 3:
+            htmp = ROOT.TH3D(hname, hname, len(bins[0])-1, bins[0], len(bins[1])-1, bins[1], len(bins[2])-1, bins[2])
         else:
-            self.tree.Draw(vname+">>"+hname, '('+condition+')*weight')
+            raise RuntimeError("Currently no support for 3 dimensional plots")
+
+        weight = ''
+        if 'Weight' in vname:
+            if condition is not None:
+                weight = '('+condition+')*lumiWeight'
+            else:
+                weight = 'lumiWeight'
+        else:
+            if condition is not None:
+                weight = '('+condition+')*weight'
+            else:
+                weight = 'weight'
+        self.tree.Draw(vname+">>"+hname, weight)
         if not htmp: return None
         ROOT.gDirectory.cd('PyROOT:/')
         res = htmp.Clone()
         #Add overflow and underflow bins
-        overflow=ROOT.TH1D(hname+'overflow', hname+'overflow', len(bins)-1, bins)
-        overflow.SetBinContent(1, htmp.GetBinContent(0))
-        overflow.SetBinContent(len(bins)-1, htmp.GetBinContent(len(bins)))
-        overflow.SetBinError(1, htmp.GetBinError(0))
-        overflow.SetBinError(len(bins)-1, htmp.GetBinError(len(bins)))
-        res.Add(overflow)
+        if dim == 1:
+            from HNL.Tools.helpers import add1Doverflow
+            res = add1Doverflow(res)
+        if dim == 2:
+            from HNL.Tools.helpers import add2Doverflow
+            res = add2Doverflow(res)
+        if dim == 3:
+            from HNL.Tools.helpers import add3Doverflow
+            res = add3Doverflow(res)
         return res 
 
     def closeTree(self):
@@ -84,14 +108,21 @@ class EfficiencyTree(OutputTree):
         self.setTreeVariable('passed', passed)
         super(EfficiencyTree, self).fill()
 
-    def getNumerator(self, vname, hname, bins, condition):
-        return super(EfficiencyTree, self).getHistFromTree(vname, hname, bins, condition+'&&passed') 
+    def setBins(self, bins):
+        self.bins = bins
+
+    def getNumerator(self, vname, hname, condition = None):
+        if condition is None: 
+            condition = 'passed'
+        else:   
+            condition += '&&passed'                     
+        return super(EfficiencyTree, self).getHistFromTree(vname, hname, self.bins, condition) 
     
-    def getDenominator(self, vname, hname, bins, condition):
-        return super(EfficiencyTree, self).getHistFromTree(vname, hname, bins, condition) 
+    def getDenominator(self, vname, hname, condition = None):
+        return super(EfficiencyTree, self).getHistFromTree(vname, hname, self.bins, condition) 
    
-    def getEfficiency(self, vname, hname, bins, condition, inPercent = False):
-        eff = self.getNumerator(vname, hname, bins, condition).Clone('tmp_'+self.name)
-        eff.Divide(eff, self.getDenominator(vname, hname, bins, condition), 1., 1., "B")
+    def getEfficiency(self, vname, hname, condition = None, inPercent = False):
+        eff = self.getNumerator(vname, hname, condition).Clone('tmp_'+self.name)
+        eff.Divide(eff, self.getDenominator(vname, hname, condition), 1., 1., "B")
         if inPercent: eff.Scale(100.)
         return eff
