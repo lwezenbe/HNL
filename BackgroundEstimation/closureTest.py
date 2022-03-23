@@ -253,8 +253,16 @@ if not args.makePlots:
         else:
             base_path_tau = lambda proc : os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', 
                                                                         args.era+'-'+args.year, data_str, 'tau', 'TauFakes'+proc+'ttl-'+args.selection, 'events.root'))
+        #bins = (np.array([20., 25., 35., 50., 70., 100.]), np.arange(0., 3.0, 0.5), np.arange(-0.5, 12.5, 0.5))
+        bins = (np.array([20., 25., 35., 50., 70., 100.]), np.arange(0., 3.0, 0.5))
         if args.application == 'TauFakesDY':
-            fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('DY'), subdirs = ['total'])
+            #fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('DY'), subdirs = ['total'])
+            if args.year == '2016pre' and args.inData:
+                #fakerate[2] = FakeRate.getFakeRateFromTree('ttl', base_path_tau('DY'), "l_pt-abs(l_eta)-l_decaymode", bins, var = lambda c, i: [c.l_pt[i], abs(c.l_eta[i]), c._tauDecayMode[c.l_indices[i]]])
+                fakerate[2] = FakeRate.getFakeRateFromTree('ttl', base_path_tau('DY'), "l_pt-abs(l_eta)", bins, var = lambda c, i: [c.l_pt[i], abs(c.l_eta[i])])
+            else:
+                #fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('DY'), subdirs = ['total'])
+                fakerate[2] = FakeRate.getFakeRateFromTree('ttl', base_path_tau('DY'), "l_pt-abs(l_eta)", bins, var = lambda c, i: [c.l_pt[i], abs(c.l_eta[i])])
         elif args.application == 'TauFakesTT':
             fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('TT'), subdirs = ['total'])
         elif args.application == 'WeightedMix':
@@ -273,7 +281,6 @@ if not args.makePlots:
         '2018' : '2018',    
     }
     if 'ele' in args.flavorToTest: 
-        mod_year = '2016' if '2016' in args.year else args.year
         if args.inData:
             fakerate[0] = FakeRateEmulator('fakeRate_electron_'+luka_year_dict[args.year], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 
                                             'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'fakeRateMap_data_electron_'+luka_year_dict[args.year]+'_mT.root'))
@@ -283,7 +290,6 @@ if not args.makePlots:
     else:
         fakerate[0] = None
     if 'mu' in args.flavorToTest: 
-        mod_year = '2016' if '2016' in args.year else args.year
         if args.inData:
             fakerate[1] = FakeRateEmulator('fakeRate_muon_'+luka_year_dict[args.year], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 
                                             'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'fakeRateMap_data_muon_'+luka_year_dict[args.year]+'_mT.root'))
@@ -374,7 +380,7 @@ else:
         sample_name = in_file.rsplit('/', 1)[-1]
         closure_trees[sample_name] = ClosureTree('closure', in_file+'/events.root')
 
-    #condition = "tauDecayMode==1"
+    #condition = "tauDecayMode!=0"
     condition = None
     if not args.inData:
         for sample_name in closure_trees.keys():
@@ -401,24 +407,32 @@ else:
                     observed_h.Add(closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1], condition))
 
             
+        bkgr_collection = {}
         if args.inData:
             backgrounds = [closure_trees["Data"].getSideband(v, v+'-'+sample_name, var[v][1], condition)]
             background_names = ['Predicted']
+            for sample_name in closure_trees.keys():
+                if 'Data' in sample_name: continue
+                bkgr_collection[sample_name] = closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1])
+                backgrounds[0].Add(closure_trees[sample_name].getSideband(v, v+'-'+sample_name, var[v][1], condition), -1.)
         else:
             backgrounds = []
             background_names = []
 
-        bkgr_collection = {}
-        for sample_name in closure_trees.keys():
-            if 'Data' in sample_name: continue
-            bkgr_collection[sample_name] = closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1])
+            for sample_name in closure_trees.keys():
+                if 'Data' in sample_name: continue
+                bkgr_collection[sample_name] = closure_trees[sample_name].getSideband(v, v+'-'+sample_name, var[v][1])
 
         for b in bkgr_collection:
             backgrounds.append(bkgr_collection[b])
             background_names.append(b)
 
+        syst_hist = backgrounds[0].Clone("syst hist")
+        for b in xrange(1, syst_hist.GetNbinsX()+1):
+            syst_hist.SetBinError(b, 0.3*syst_hist.GetBinContent(b))
+    
         p = Plot(name = v, bkgr_hist = backgrounds, observed_hist = observed_h, color_palette='Black', tex_names = background_names, 
-                    draw_ratio = True, year = args.year, era = args.era, x_name = var[v][2][0], y_name = var[v][2][1])
+                    draw_ratio = True, year = args.year, era = args.era, x_name = var[v][2][0], y_name = var[v][2][1], syst_hist = syst_hist)
         p.setLegend(x1 = 0.5, ncolumns = 2)
         p.drawHist(output_dir = output_dir+'/Stacked/total', observed_name = 'Observed')
 

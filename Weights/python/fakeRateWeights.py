@@ -26,46 +26,34 @@ luka_year_dict = {
 }
 
 
-default_tau_path = lambda proc, year, selection, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', year, data_string, 'tau', 'TauFakes'+proc+'ttl-'+selection, proc if data_string != 'DATA' else '' , 'events.root')
-default_ele_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', era+'-'+year, 'fakeRateMap_data_electron_'+luka_year_dict[year]+'_mT.root')
-default_mu_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', era+'-'+year, 'fakeRateMap_data_muon_'+luka_year_dict[year]+'_mT.root')
+def lightLepFileName(year, data_string, flavor):
+    if data_string == 'data':
+        return 'fakeRateMap_'+data_string+'_'+flavor+'_'+year+'_mT.root'
+    else:
+        return 'fakeRateMap_'+data_string+'_'+flavor+'_'+year+'.root'
+
+default_tau_path = lambda proc, year, selection, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Weights', 'data', 'FakeRates', year, 'Tau', 'TauFakes'+proc+'ttl-'+selection, data_string, 'fakerate.root')
+default_ele_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', era+'-'+year, lightLepFileName(luka_year_dict[year], data_string, 'electron'))
+default_mu_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', era+'-'+year, lightLepFileName(luka_year_dict[year], data_string, 'muon'))
 
 ele = 0
 mu = 1
 tau = 2
 
-# TAU_METHOD = 'WeightedMix'
+#TAU_METHOD = 'WeightedMix'
 TAU_METHOD = 'TauFakesDY'
 
 def returnTauFR(tau_method, chain):
-    #
-    # Go back to first part once all fake rates have been estimated
-    #
-    # if tau_method == 'TauFakesDY':
-    #     return FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_tau_path('DY', chain.era+'-'+chain.year, chain.selection), subdirs = ['total'])
-    # elif tau_method == 'TauFakesTT':
-    #     return FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_tau_path('TT', chain.era+'-'+chain.year, chain.selection), subdirs = ['total'])
-    # elif tau_method == 'WeightedMix':
-    #     from HNL.BackgroundEstimation.getTauFakeContributions import getWeights
-    #     return SingleFlavorFakeRateCollection([default_tau_path('DY', chain.era+'-'+chain.year, chain.selection), default_tau_path('TT', chain.era+'-'+chain.year, chain.selection)], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], 
-    #                                         frac_weights = getWeights(chain.era+'-'+chain.year, chain.selection, chain.region), frac_names = ['DY', 'TT'])   
-    # elif tau_method == 'OSSFsplitMix':
-    #     return SingleFlavorFakeRateCollection([default_tau_path('DY', chain.era+'-'+chain.year, chain.selection), default_tau_path('TT', chain.era+'-'+chain.year, chain.selection)], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], method = 'OSSFsplitMix',
-    #                                         ossf_map = {True : 'DY', False : 'TT'})  
-    # else:
-    #     raise RuntimeError('Unknown method "{}"in fakeRateWeights.py'.format(tau_method))
-
-
     if tau_method == 'TauFakesDY':
-        return FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_tau_path('DY', chain.era+'-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')]), subdirs = ['total'])
+        return FakeRate('ttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), default_tau_path('DY', chain.era+'-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')]))
     elif tau_method == 'TauFakesTT':
-        return FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_tau_path('TT', chain.era+'-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')]), subdirs = ['total'])
+        return FakeRate('ttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), default_tau_path('TT', chain.era+'-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')]))
     elif tau_method == 'WeightedMix':
         from HNL.BackgroundEstimation.getTauFakeContributions import getWeights
-        return SingleFlavorFakeRateCollection([default_tau_path('DY', 'prelegacy-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')]), default_tau_path('TT', 'prelegacy-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')])], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], 
-                                            frac_weights = getWeights('prelegacy', chain.year, chain.selection, chain.region), frac_names = ['DY', 'TT'])   
+        return SingleFlavorFakeRateCollection([default_tau_path('DY', chain.era+'-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')]), default_tau_path('TT', chain.era+'-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')])], ['ttl', 'ttl'], ['DY', 'TT'], 
+                                            frac_weights = getWeights(chain.era, chain.year, chain.selection, chain.region), frac_names = ['DY', 'TT'])   
     elif tau_method == 'OSSFsplitMix':
-        return SingleFlavorFakeRateCollection([default_tau_path('DY', 'prelegacy-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')]), default_tau_path('TT', 'prelegacy-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')])], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], method = 'OSSFsplitMix',
+        return SingleFlavorFakeRateCollection([default_tau_path('DY', chain.era+'-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')]), default_tau_path('TT', chain.era+'-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')])], ['ttl', 'ttl'], ['DY', 'TT'], method = 'OSSFsplitMix',
                                             ossf_map = {True : 'DY', False : 'TT'})  
     else:
         raise RuntimeError('Unknown method "{}"in fakeRateWeights.py'.format(tau_method))
@@ -74,7 +62,6 @@ def returnTauFR(tau_method, chain):
 def returnFakeRateCollection(chain):
     fakerates = {}
     fakerates[ele] = FakeRateEmulator('fakeRate_electron_'+luka_year_dict[str(chain.year)], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_ele_path(chain.era, str(chain.year), data_dict[(chain.is_data, 'light')]))
-    print default_ele_path(chain.era, str(chain.year), data_dict[(chain.is_data, 'light')]), 'fakeRate_electron_'+luka_year_dict[str(chain.year)]
     fakerates[mu] = FakeRateEmulator('fakeRate_muon_'+luka_year_dict[str(chain.year)], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_mu_path(chain.era, str(chain.year), data_dict[(chain.is_data, 'light')]))
     fakerates[tau] = returnTauFR(TAU_METHOD, chain)
 

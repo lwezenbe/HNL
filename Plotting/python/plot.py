@@ -171,8 +171,8 @@ class Plot:
                         to_check_max += [k for k in self.b]
 
             # self.overall_max = max([pt.getOverallMaximum(to_check_max), 1])
-            self.overall_max = max([pt.getOverallMaximum(to_check_max)])
-            self.overall_min = pt.getOverallMinimum(to_check_min, zero_not_allowed=True)
+            self.overall_max = max([pt.getOverallMaximum(to_check_max, syst_hist = self.syst_hist)])
+            self.overall_min = pt.getOverallMinimum(to_check_min, zero_not_allowed=True, syst_hist = self.syst_hist)
 
             if self.x_log:
                 self.plotpad.SetLogx()
@@ -598,14 +598,19 @@ class Plot:
 
         if len(self.b) > 0:
             if bkgr_draw_option == 'Stack':
-                self.stat_totbkgr_error.SetFillStyle(3013)
-                self.stat_totbkgr_error.SetFillColor(ROOT.kGray+2)
-                self.stat_totbkgr_error.SetMarkerStyle(0)
-                self.stat_totbkgr_error.Draw("E2 Same")
+                #self.stat_totbkgr_error.SetFillStyle(3013)
+                #self.stat_totbkgr_error.SetFillColor(ROOT.kGray+2)
+                #self.stat_totbkgr_error.SetMarkerStyle(0)
+                #self.stat_totbkgr_error.Draw("E2 Same")
+                self.tot_totbkgr_error.SetFillStyle(3013)
+                self.tot_totbkgr_error.SetFillColor(ROOT.kGray+2)
+                self.tot_totbkgr_error.SetMarkerStyle(0)
+                self.tot_totbkgr_error.Draw("E2 Same")
             elif 'E' in bkgr_draw_option:
                 for i in xrange(len(self.b)):
                     self.stat_bkgr_errors[i].Draw("E Same")
 
+        self.legend.AddEntry(self.tot_totbkgr_error, 'Total Error' if self.syst_hist is not None else 'Stat. Error')
 
     def drawHist(self, output_dir = None, normalize_signal = False, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None, 
         custom_labels = None, draw_lines = None, message = None, min_cutoff = None, max_cutoff = None, ref_line = 1., observed_name = 'Data'):

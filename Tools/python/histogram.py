@@ -55,8 +55,11 @@ class Histogram:
             else:
                 self.hist = ROOT.TH1D(self.name, self.name, len(self.bins)-1, self.bins)
                 self.hist.Sumw2()
-            self.hist.SetXTitle(self.var_tex[0])
-            self.hist.SetYTitle(self.var_tex[1])
+            try:
+                self.hist.SetXTitle(self.var_tex[0])
+                self.hist.SetYTitle(self.var_tex[1])
+            except:
+                pass
         else:
             print "Incorrect input for Histogram"
             exit(0)
@@ -207,6 +210,7 @@ class Histogram:
         tmp_hist.SetBinContent(1, self.hist.GetSumOfWeights())
         tmp_hist.SetBinError(1, self.hist.GetMeanError())
         return Histogram(tmp_hist)
+
 
 def returnSqrt(th1):
     sqrt = th1.Clone('sqrt')

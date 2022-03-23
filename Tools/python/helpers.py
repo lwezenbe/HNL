@@ -223,11 +223,13 @@ def rootFileContent(d, basepath="/", getNested=False, starting_dir=None):
 # existing root function for it
 #
 
-def getMaxWithErr(hist):
+def getMaxWithErr(hist, syst_hist = None):
     max_val = 0
     if isinstance(hist, ROOT.TH1):
         for bx in xrange(1, hist.GetNbinsX()+1):
             new_val = hist.GetBinContent(bx) + hist.GetBinErrorUp(bx)
+            if syst_hist is not None:
+                new_val += syst_hist.GetBinErrorUp(bx)
             if new_val > max_val:       max_val = new_val
 
     elif isinstance(hist, ROOT.TH2):
@@ -248,12 +250,14 @@ def getMaxWithErr(hist):
 
     return max_val  
             
-def getMinWithErr(hist, zero_not_allowed=False):
+def getMinWithErr(hist, zero_not_allowed=False, syst_hist = None):
     min_val = 99999999.
     if isinstance(hist, ROOT.TH1):
         for bx in xrange(1, hist.GetNbinsX()+1):
             if zero_not_allowed and not hist.GetBinContent(bx) > 0.: continue
             new_val = hist.GetBinContent(bx) - hist.GetBinErrorLow(bx)
+            if syst_hist is not None:
+                new_val -= syst_hist.GetBinErrorLow(bx)
             if zero_not_allowed and new_val <= 0.: new_val = hist.GetBinContent(bx)
             if new_val < min_val:       min_val = new_val
 
@@ -347,4 +351,82 @@ def copyFileToTestingArea(original_path, arg_string):
     os.system('scp '+original_path+' '+path_to_use)
 
 
+def add1Doverflow(hist):
+    overflow=hist.Clone()
+    overflow.Reset()
+    nbinsx = hist.GetNbinsX()
+    overflow.SetBinContent(1, hist.GetBinContent(0))
+    overflow.SetBinContent(nbinsx, hist.GetBinContent(nbinsx+1))
+    overflow.SetBinError(1, hist.GetBinError(0))
+    overflow.SetBinError(nbinsx, hist.GetBinError(nbinsx+1))
+    hist.Add(overflow)
+    return hist
+ 
+def add2Doverflow(hist):
+    overflow=hist.Clone()
+    overflow.Reset()
+    nbinsx = hist.GetNbinsX()
+    nbinsy = hist.GetNbinsY()
+    for bx in xrange(1, nbinsx+1):
+        for by in xrange(1, nbinsy+1):
+            if bx == 1:
+                overflow.SetBinContent(bx, by, overflow.GetBinContent(bx, by) + hist.GetBinContent(0, by))
+            if by == 1:
+                overflow.SetBinContent(bx, by, overflow.GetBinContent(bx, by) + hist.GetBinContent(bx, 0))
+            if bx == nbinsx:
+                overflow.SetBinContent(bx, by, overflow.GetBinContent(bx, by) + hist.GetBinContent(nbinsx+1, by))
+            if by == nbinsy:
+                overflow.SetBinContent(bx, by, overflow.GetBinContent(bx, by) + hist.GetBinContent(bx, nbinsy+1))
+    # Now add all corners
+    overflow.SetBinContent(1, 1, overflow.GetBinContent(1, 1) + hist.GetBinContent(0, 0))
+    overflow.SetBinContent(1, nbinsy, overflow.GetBinContent(1, nbinsy) + hist.GetBinContent(0, nbinsy+1))
+    overflow.SetBinContent(nbinsx, nbinsy, overflow.GetBinContent(nbinsx, nbinsy) + hist.GetBinContent(nbinsx+1, nbinsy+1))
+    overflow.SetBinContent(nbinsx, 1, overflow.GetBinContent(nbinsx, 1) + hist.GetBinContent(nbinsx+1, 0))
+  
+    # Set errors 
+    for bx in xrange(1, nbinsx+1):
+        for by in xrange(1, nbinsy+1):
+            overflow.SetBinError(bx, by, sqrt(abs(overflow.GetBinContent(bx, by))))
 
+    hist.Add(overflow)
+    return hist
+
+def add3Doverflow(hist):
+    overflow=hist.Clone()
+    overflow.Reset()
+    nbinsx = hist.GetNbinsX()
+    nbinsy = hist.GetNbinsY()
+    nbinsz = hist.GetNbinsZ()
+    for bx in xrange(1, nbinsx+1):
+        for by in xrange(1, nbinsy+1):
+            for bz in xrange(1, nbinsz+1):
+                if bx == 1:
+                    overflow.SetBinContent(bx, by, bz, overflow.GetBinContent(bx, by, bz) + hist.GetBinContent(0, by, bz))
+                if by == 1:
+                    overflow.SetBinContent(bx, by, bz, overflow.GetBinContent(bx, by, bz) + hist.GetBinContent(bx, 0, bz))
+                if bz == 1:
+                    overflow.SetBinContent(bx, by, bz, overflow.GetBinContent(bx, by, bz) + hist.GetBinContent(bx, by, 0))
+                if bx == nbinsx:
+                    overflow.SetBinContent(bx, by, bz, overflow.GetBinContent(bx, by, bz) + hist.GetBinContent(nbinsx+1, by, bz))
+                if by == nbinsy:
+                    overflow.SetBinContent(bx, by, bz, overflow.GetBinContent(bx, by, bz) + hist.GetBinContent(bx, nbinsy+1, bz))
+                if bz == nbinsz:
+                    overflow.SetBinContent(bx, by, bz, overflow.GetBinContent(bx, by, bz) + hist.GetBinContent(bx, by, nbinsz+1))
+    # Now add all corners
+    overflow.SetBinContent(1, 1, 1, overflow.GetBinContent(1, 1, 1) + hist.GetBinContent(0, 0, 0))
+    overflow.SetBinContent(1, nbinsy, 1, overflow.GetBinContent(1, nbinsy, 1) + hist.GetBinContent(0, nbinsy+1, 0))
+    overflow.SetBinContent(nbinsx, nbinsy, 1, overflow.GetBinContent(nbinsx, nbinsy, 1) + hist.GetBinContent(nbinsx+1, nbinsy+1, 0))
+    overflow.SetBinContent(nbinsx, 1, 1, overflow.GetBinContent(nbinsx, 1, 1) + hist.GetBinContent(nbinsx+1, 0, 0))
+    overflow.SetBinContent(1, 1, nbinsz, overflow.GetBinContent(1, 1, nbinsz) + hist.GetBinContent(0, 0, nbinsz+1))
+    overflow.SetBinContent(1, nbinsy, nbinsz, overflow.GetBinContent(1, nbinsy, nbinsz) + hist.GetBinContent(0, nbinsy+1, nbinsz+1))
+    overflow.SetBinContent(nbinsx, nbinsy, nbinsz, overflow.GetBinContent(nbinsx, nbinsy, nbinsz) + hist.GetBinContent(nbinsx+1, nbinsy+1, nbinsz+1))
+    overflow.SetBinContent(nbinsx, 1, nbinsz, overflow.GetBinContent(nbinsx, 1, nbinsz) + hist.GetBinContent(nbinsx+1, 0, nbinsz+1))
+  
+    # Set errors 
+    for bx in xrange(1, nbinsx+1):
+        for by in xrange(1, nbinsy+1):
+            for bz in xrange(1, nbinsz+1):
+                overflow.SetBinError(bx, by, bz, sqrt(abs(overflow.GetBinContent(bx, by, bz))))
+
+    hist.Add(overflow)
+    return hist

@@ -10,10 +10,12 @@ from HNL.Tools.histogram import Histogram
 class FakeRateEmulator(FakeRate):
 
     def __init__(self, name, var, var_tex, path):
+        print name, path
         super(FakeRateEmulator, self).__init__(name, var, var_tex, path, bins=tmp_bins)
         self.efficiency_num = None
         self.efficiency_denom = None
         self.efficiency = getObjFromFile(self.path, self.name)
+        print self.efficiency
         efficiency_hist_obj = Histogram(self.efficiency)
         self.isTH2 = efficiency_hist_obj.isTH2
 

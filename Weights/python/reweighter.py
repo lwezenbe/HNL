@@ -54,7 +54,9 @@ class Reweighter:
         try:
             return self.fakerate_collection.getFakeWeight()
         except:
+            print 'before'
             self.fakerate_collection = returnFakeRateCollection(self.sample.chain)
+            print 'after'
             return self.fakerate_collection.getFakeWeight()
 
     def getBTagWeight(self):

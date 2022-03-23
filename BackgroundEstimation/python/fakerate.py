@@ -1,4 +1,6 @@
+from HNL.Tools.histogram import Histogram
 from HNL.Tools.efficiency import Efficiency
+from HNL.Tools.outputTree import EfficiencyTree
 
 class FakeRate(Efficiency):
     
@@ -29,3 +31,22 @@ class FakeRate(Efficiency):
             return 1.
         else:
             return weight
+
+    @classmethod
+    def getFakeRateFromTree(cls, name, path, vname, bins, var = None, condition = None):
+        fakerate_tree = FakeRateTree(name, path)
+        return fakerate_tree.getFakeRateObject(vname, bins, var, condition)
+
+
+class FakeRateTree(EfficiencyTree):
+
+    def __init__(self, name, path, branches = None):
+        super(FakeRateTree, self).__init__(name, path, branches)
+
+    def getFakeRateObject(self, vname, bins, var = None, condition = None):
+        fakerate_object = FakeRate(self.name, var, None, self.path, bins)
+        self.setBins(bins)
+        fakerate_object.efficiency_num = Histogram(self.getNumerator(vname, self.name, condition))
+        fakerate_object.efficiency_denom = Histogram(self.getDenominator(vname, self.name, condition))
+        #fakerate_object.efficiency = Histogram(self.getEfficiency(vname, self.name, condition))
+        return fakerate_object

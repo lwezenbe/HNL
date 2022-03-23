@@ -428,7 +428,7 @@ else:
             for x in sample_manager.sample_outputs:
                 if 'HNL' in x: continue
                 if 'Data' in x: continue
-                if not os.path.isdir(getOutputName('bkgr', year)+'/'+x): continue
+                if not os.path.isdir(getOutputName('bkgr', year, args.tag)+'/'+x): continue
                 background_collection.append(x)
             
             background_collection += ['non-prompt']
@@ -533,7 +533,6 @@ else:
                         for c, cc in zip(categories_to_use, category_conditions):
                             for iv, v in enumerate(var_dict.keys()):
                                 tmp_list_of_hist[c][v]['bkgr'][b] = Histogram(intree.getHistFromTree(v, 'tmp_'+b+v+str(c)+'t', var_dict[v][1], '('+cc+'&&!issideband)'))
-
 
                 if args.includeData == 'includeSideband':
                     for c, cc in zip(categories_to_use, category_conditions):
@@ -665,7 +664,6 @@ else:
             from HNL.EventSelection.eventCategorization import CATEGORY_NAMES
             # for c in list_of_hist.keys():
             for c in category_dict[args.categoriesToPlot][0]:
-                print category_dict
                 c_name = CATEGORY_NAMES[c] if c in CATEGORY_NAMES.keys() else c
 
                 extra_text = [extraTextFormat(c_name, xpos = 0.2, ypos = 0.72, textsize = None, align = 12)]  #Text to display event type in plot
@@ -737,7 +735,7 @@ else:
                         draw_ratio = None if args.signalOnly or args.bkgrOnly else True
                         if args.includeData == 'signalregion': draw_ratio = True
                         if not args.individualSamples:
-                            p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
+                            p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = False, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
                                     color_palette = 'Didar', color_palette_bkgr = 'HNLfromTau' if not args.analysis == 'tZq' else 'tZq', x_name = var[v][2][0], y_name = var[v][2][1])
                         else:
                             p = Plot(signal_hist, legend_names, c_name+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
@@ -749,7 +747,7 @@ else:
                         if '-' in v:
                             p.draw2D(output_dir = os.path.join(output_dir+'/2D', 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c_name))
                         else:
-                            p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c_name), normalize_signal = False, draw_option='EHist', min_cutoff = 1)
+                            p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c_name), normalize_signal = True, draw_option='EHist', min_cutoff = 1)
                         # p.drawHist(output_dir = os.path.join(output_dir, c_name), normalize_signal = False, draw_option='EHist', min_cutoff = 1)
 
             #

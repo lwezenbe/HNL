@@ -56,6 +56,7 @@ def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False
 
     try:
         if not istest and not checkShouldMerge(script, argparser, additionalArgs=additionalArgs):
+            print checkShouldMerge(script, argparser, additionalArgs=additionalArgs)
             print "Nothing to merge"
             return
     except:
