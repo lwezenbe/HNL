@@ -175,12 +175,16 @@ if not args.merge:
         chain.obj_sel['ele_wp'] = 'FO'
         chain.obj_sel['mu_wp'] = 'FO'
         chain.obj_sel['tau_wp'] = 'FO'
-        if not event.passedFilter(cutter, sample.name, for_training=True): continue
+        
+        # Remove when doing tau training
+        chain.obj_sel['notau'] = True
+
+        if not event.passedFilter(cutter, sample.name, ignoreSignalOverlapRemoval=True): continue
         if len(chain.l_flavor) == chain.l_flavor.count(2): continue
 
         #Reset object selection
         event.resetObjSelection()
-        passes_full_selection = event.passedFilter(cutter, sample.name, for_training=True)
+        passes_full_selection = event.passedFilter(cutter, sample.name, ignoreSignalOverlapRemoval=True)
 
         prompt_str = 'nonprompt' if not passes_full_selection else 'prompt'
 
@@ -319,16 +323,15 @@ else:
 
     signal_mergefiles = output_base+'/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Signal'
     background_mergefiles = output_base+'/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Background'
-    background_mergefiles_pnfs = pnfs_base+'/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Background'
-    # merge([signal_mergefiles, background_mergefiles], __file__, jobs, ('sample', 'subJob'), argParser)
-    merge([signal_mergefiles], __file__, jobs, ('sample', 'subJob'), argParser)
+    background_mergefiles_pnfs = pnfs_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Background'
+    merge([signal_mergefiles, background_mergefiles], __file__, jobs, ('sample', 'subJob'), argParser)
 
     local_base = os.path.expandvars(os.path.join('/pnfs/iihe/cms/store/user', '$USER', 'skimmedTuples/HNL/'))
     makeDirIfNeeded(pnfs_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/*')
 
     if not args.isTest:
         os.system('cp -rf '+output_base+'/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Signal ' + pnfs_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/.')
-        # os.system('cp -rf '+output_base+'/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Background ' + pnfs_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/.')
+        os.system('cp -rf '+output_base+'/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Background ' + pnfs_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/.')
 
     combined_dir = lambda base, sd : base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Combined/'+sd
     makeDirIfNeeded(combined_dir(pnfs_base, 'SingleTree')+'/test')
@@ -344,27 +347,27 @@ else:
     }
 
     bkgr_file = lambda bkgr_name : pnfs_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Background/'+bkgr_name+'.root'
-    all_bkgr_files = bkgr_file('*')
-    nonprompts_of_interest = ['DY', 'TT', 'ttX']
+    all_bkgrs = sample_manager.getOutputs()
+    all_bkgr_files = ' '.join([bkgr_file(b) for b in all_bkgrs if not 'HNL' in b])
+    nonprompts_of_interest = ['XG', 'TT-T+X']
 
-    if args.merge:
 
-        # makeDirIfNeeded(background_mergefiles+'/Combined/x')
-        # os.system('hadd -f ' + background_mergefiles_pnfs+'/Combined/all_bkgr.root '+ all_bkgr_files)
+    makeDirIfNeeded(background_mergefiles_pnfs+'/Combined/x')
+    os.system('hadd -f ' + background_mergefiles_pnfs+'/Combined/all_bkgr.root '+ all_bkgr_files)
 
-        # os.system('hadd -f ' + bkgr_file('Combined/nonprompt_bkgr')+' ' + ' '.join([bkgr_file(n) for n in nonprompts_of_interest]))
+    os.system('hadd -f ' + bkgr_file('Combined/nonprompt_bkgr')+' ' + ' '.join([bkgr_file(n) for n in nonprompts_of_interest]))
 
-        first_pass = True
-        for mass_range in mass_ranges:
-            if mass_range not in ['lowestmass', 'lowmass']: continue
-            # for flavor in ['e', 'mu', 'taulep', 'tauhad']:
-            for flavor in ['taulep', 'tauhad']:
-                all_files_to_merge = []
-                for mass in mass_ranges[mass_range]:
-                    if isValidRootFile(flavor_file[flavor](mass)): all_files_to_merge.append(flavor_file[flavor](mass))
-                mergeSignal(pnfs_base + '/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Signal' +'/'+mass_range+'-'+flavor+'.root', all_files_to_merge, first_pass)
-                first_pass = False
+    first_pass = True
+    for mass_range in mass_ranges:
+        if mass_range not in ['lowestmass', 'lowmass']: continue
+        for flavor in ['e', 'mu', 'taulep', 'tauhad']:
+            all_files_to_merge = []
+            for mass in mass_ranges[mass_range]:
+                if args.year == '2016pre' and mass == 70: continue
+                if isValidRootFile(flavor_file[flavor](mass)): all_files_to_merge.append(flavor_file[flavor](mass))
+            mergeSignal(pnfs_base + '/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Signal' +'/'+mass_range+'-'+flavor+'.root', all_files_to_merge, first_pass)
+            first_pass = False
 
-                # os.system('hadd -f ' + combined_dir(pnfs_base, 'SingleTree')+'/'+mass_range+'-'+flavor+'.root '+signal_mergefiles+'/'+mass_range+'-'+flavor+'.root ' +background_mergefiles+'/Combined/all_bkgr.root ')
+            # os.system('hadd -f ' + combined_dir(pnfs_base, 'SingleTree')+'/'+mass_range+'-'+flavor+'.root '+signal_mergefiles+'/'+mass_range+'-'+flavor+'.root ' +background_mergefiles+'/Combined/all_bkgr.root ')
 
 

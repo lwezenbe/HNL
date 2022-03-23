@@ -3,6 +3,11 @@ INPUT_BASE = lambda era, year : os.path.expandvars(os.path.join('/pnfs/iihe/cms/
 import os
 import ROOT
 
+signalregion_cuts = {
+    'lowMassSR' : 'l1_pt<55&&M3l<80&&met<75&&minMossf>0',
+    'highMassSR' : 'l1_pt>55&&l2_pt>15&&l3_pt>10&&abs(MZossf-91.1876)>15&&abs(M3l-91.1876)>15&&minMossf>5'
+}
+
 class InputHandler:
 
     def __init__(self, era, year, region, selection):
@@ -64,24 +69,24 @@ class InputHandler:
                 else:
                     if self.year != y: continue
 
-                if not '-' in self.era or era == 'UL':
-                    for signal in self.signal_names:
-                        if self.background_names is None:
-                            signal_paths[signal].append(os.path.join(INPUT_BASE(era, y), self.region+'-'+self.selection, 'Combined/SingleTree', signal+'.root'))
-                        else:
-                            signal_paths[signal].append(os.path.join(INPUT_BASE(era, y), self.region+'-'+self.selection, 'Signal', signal+'.root'))
+                for signal in self.signal_names:
+                    if self.background_names is None:
+                        #signal_paths[signal].append(os.path.join(INPUT_BASE(era, y), self.region+'-'+self.selection, 'Combined/SingleTree', signal+'.root'))
+                        signal_paths[signal].append(os.path.join(INPUT_BASE(era, y), 'baseline-'+self.selection, 'Combined/SingleTree', signal+'.root'))
+                    else:
+                        #signal_paths[signal].append(os.path.join(INPUT_BASE(era, y), self.region+'-'+self.selection, 'Signal', signal+'.root'))
+                        signal_paths[signal].append(os.path.join(INPUT_BASE(era, y), 'baseline-'+self.selection, 'Signal', signal+'.root'))
                 
-                if '-' in self.era and era == 'UL': continue
-                # if '-' in self.era and era == 'prelegacy' and y != '2018': continue
-
                 if self.background_names is None:
                     background_paths = None
                 else:
                     for bkgr in self.background_names:
                         if bkgr == 'nonprompt':
-                            background_paths[bkgr].append(os.path.join(INPUT_BASE(era, y), self.region+'-'+self.selection, 'Background', 'Combined', 'nonprompt_bkgr.root'))
+                            #background_paths[bkgr].append(os.path.join(INPUT_BASE(era, y), self.region+'-'+self.selection, 'Background', 'Combined', 'nonprompt_bkgr.root'))
+                            background_paths[bkgr].append(os.path.join(INPUT_BASE(era, y), 'baseline-'+self.selection, 'Background', 'Combined', 'nonprompt_bkgr.root'))
                         else:
-                            background_paths[bkgr].append(os.path.join(INPUT_BASE(era, y), self.region+'-'+self.selection, 'Background', bkgr+'.root'))
+                            #background_paths[bkgr].append(os.path.join(INPUT_BASE(era, y), self.region+'-'+self.selection, 'Background', bkgr+'.root'))
+                            background_paths[bkgr].append(os.path.join(INPUT_BASE(era, y), 'baseline-'+self.selection, 'Background', bkgr+'.root'))
 
         self.signal_paths = signal_paths
         self.background_paths = background_paths
@@ -152,20 +157,22 @@ class InputHandler:
         
         in_tree = self.getTree(signal, name=name)
 
-        additional_cut_str = self.getAdditionalCutString(additional_cut_str)
-        nsignal = min(15000, in_tree.Draw("1", "is_signal"+additional_cut_str))
-        nbkgr = min(100000, in_tree.Draw("1", "!is_signal"+additional_cut_str))
+        condition = additional_cut_str if additional_cut_str is not None else signalregion_cuts[self.region]
+
+        condition = self.getAdditionalCutString(condition)
+        nsignal = min(15000, in_tree.Draw("1", "is_signal"+condition))
+        nbkgr = min(100000, in_tree.Draw("1", "!is_signal"+condition))
 
         if self.numbers_not_in_file:
             self.numbers = [int(nsignal*0.6), int(nbkgr*0.6), int(nsignal*0.4), int(nbkgr*0.4)]
 
-        if additional_cut_str != '':
+        if additional_cut_str is not None:
             pruned_string = "".join(i for i in additional_cut_str if i not in "\/:*?<>|& ")
             loader = ROOT.TMVA.DataLoader('data/training/'+self.era+self.year+'/'+self.region+'-'+self.selection+'/'+pruned_string+'/'+signal+'/kBDT')
         else:
             loader = ROOT.TMVA.DataLoader('data/training/'+self.era+self.year+'/'+self.region+'-'+self.selection+'/'+signal+'/kBDT')
-        cuts = ROOT.TCut("is_signal"+additional_cut_str)
-        cutb = ROOT.TCut("!is_signal"+additional_cut_str)
+        cuts = ROOT.TCut("is_signal"+condition)
+        cutb = ROOT.TCut("!is_signal"+condition)
         loader.SetInputTrees(in_tree, cuts, cutb)
         loader.SetWeightExpression("event_weight")
 

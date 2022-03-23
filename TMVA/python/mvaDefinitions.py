@@ -1,7 +1,6 @@
 
 #Each entry should contain name of model, region to be applied, name to write to in chain
 
-
 MVA_dict = {
     'mediummass85100-e' : ('kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3', 'highMassSR', lambda c : c.mediummass85100e ),
     'mediummass85100-mu' : ('kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.3', 'highMassSR', lambda c : c.mediummass85100mu ),

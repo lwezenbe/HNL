@@ -32,41 +32,40 @@ def baseFilterCutBased(chain, new_chain, cutter):
     return True
 
 # Basic cuts every event has to pass
-def baseFilterMVA(chain, new_chain, cutter, for_training=False):
+def baseFilterMVA(chain, new_chain, cutter):
     if not cutter.cut(not fourthFOVeto(chain, new_chain, no_tau=chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
     if not cutter.cut(not threeSameSignVeto(new_chain), 'No three same sign'):        return False
-    if not for_training and not cutter.cut(not bVeto(chain), 'b-veto'):              return False
+    if not cutter.cut(not bVeto(chain), 'b-veto'):              return False
     return True
 
-def passBaseCuts(chain, new_chain, cutter, for_training=False):
+def passBaseCuts(chain, new_chain, cutter):
     if chain.selection == 'AN2017014':
         return baseFilterAN2017(chain, new_chain, cutter)
     elif chain.strategy == 'MVA':
-        return baseFilterMVA(chain, new_chain, cutter, for_training=for_training)
+        return baseFilterMVA(chain, new_chain, cutter)
     else:
         return baseFilterCutBased(chain, new_chain, cutter)
 
 
 #Low mass selection
-def passLowMassSelection(chain, new_chain, is_reco_level, cutter, for_training=False):
-    if not for_training:
-        if not cutter.cut(new_chain.l_pt[l1] < 55, 'l1pt<55'):      return False
-        if not cutter.cut(new_chain.M3l < 80, 'm3l<80'):            return False
-        if is_reco_level:
-            if not cutter.cut(chain._met < 75, 'MET < 75'):             return False
-        else:
-            if not cutter.cut(chain._gen_met < 75, 'MET < 75'):             return False
-        if not cutter.cut(not containsOSSF(new_chain), 'no OSSF'):      return False
+def passLowMassSelection(chain, new_chain, is_reco_level, cutter):
+    if not cutter.cut(new_chain.l_pt[l1] < 55, 'l1pt<55'):      return False
+    if not cutter.cut(new_chain.M3l < 80, 'm3l<80'):            return False
+    if is_reco_level:
+        if not cutter.cut(chain._met < 75, 'MET < 75'):             return False
+    else:
+        if not cutter.cut(chain._gen_met < 75, 'MET < 75'):             return False
+    if not cutter.cut(not containsOSSF(new_chain), 'no OSSF'):      return False
     return True 
 
 #High mass selection
-def passHighMassSelection(chain, new_chain, is_reco_level, cutter, for_training=False):
+def passHighMassSelection(chain, new_chain, is_reco_level, cutter):
     if not cutter.cut(new_chain.l_pt[l1] > 55, 'l1pt>55'):        return False
     if not cutter.cut(new_chain.l_pt[l2] > 15, 'l2pt>15'):        return False
     if not cutter.cut(new_chain.l_pt[l3] > 10, 'l3pt>10'):        return False
     if containsOSSF(new_chain):
         if not cutter.cut(abs(new_chain.MZossf-MZ) > 15, 'M2l_OSSF_Z_veto'):        return False
-        if not for_training and not cutter.cut(abs(new_chain.M3l-MZ) > 15, 'M3l_Z_veto'):        return False 
+        if not cutter.cut(abs(new_chain.M3l-MZ) > 15, 'M3l_Z_veto'):        return False 
         if not cutter.cut(new_chain.minMossf > 5, 'minMossf'): return False
     return True 
 
@@ -80,7 +79,7 @@ def passedFilterTauMixCT(chain, new_chain, is_reco_level, cutter, high_met, b_ve
     if not cutter.cut(not fourthFOVeto(chain, new_chain, no_tau=chain.obj_sel['notau']), 'Fourth FO veto'):        return False 
     if not cutter.cut(not threeSameSignVeto(new_chain), 'No three same sign'):        return False
     if b_veto and not cutter.cut(not bVeto(chain), 'b-veto'):              return False
-    if not cutter.cut(new_chain.l_flavor.count(2) == 2, '2 tau'):                   return False
+    #if not cutter.cut(new_chain.l_flavor.count(2) == 2, '2 tau'):                   return False
     if not cutter.cut(new_chain.l_pt[l1] < 55, 'l1pt<55'):      return False
     if not cutter.cut(new_chain.M3l > 150, 'm3l>150'):            return False
     if not no_met:
