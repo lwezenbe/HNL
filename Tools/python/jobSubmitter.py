@@ -135,7 +135,6 @@ def getArgsStr(arg_list, to_ignore):
     return args_str 
 
 def submitJobs(script, subjob_args, subjob_list, argparser, **kwargs):
-    print subjob_args
     drop_args = kwargs.get('dropArgs', None)
     additional_args = kwargs.get('additionalArgs', None)
     sub_log = kwargs.get('subLog', None)

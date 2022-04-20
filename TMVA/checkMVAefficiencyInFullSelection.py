@@ -147,18 +147,6 @@ if not args.makePlots:
  
     def getMVAdistributions(input_handler, sample_name, channel, region, eras, cut_string, custom_mva_dict):
         is_signal = 'mass' in sample_name
-        #sample_tree = TChain()    
-
-        #if is_signal:
-        #    for sp in input_handler.signal_paths[sample_name]:
-        #        sample_tree.Add(sp+'/nonprompt/'+channel+'/trainingtree')
-        #        sample_tree.Add(sp+'/prompt/'+channel+'/trainingtree')
-        #else:
-        #    for sp in input_handler.background_paths[sample_name]:
-        #        if sample_name == 'nonprompt':
-        #            sample_tree.Add(sp+'/sideband/'+channel+'/trainingtree')
-        #        else:
-        #            sample_tree.Add(sp+'/prompt/'+channel+'/trainingtree')
         
         sample_tree = input_handler.getTree(sample_name if is_signal else input_handler.signal_names[0], name = channel+'/trainingtree', specific_sample = sample_name)
 
@@ -176,7 +164,6 @@ if not args.makePlots:
             path_to_use = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'training',
                                                 eras+'all', region+'-'+args.selection, reduced_cutstring, mva, 'kBDT',
                                                 'weights', 'factory_'+custom_mva_dict[reduced_cutstring_forpath][mva][0]+'.weights.xml')
-            print path_to_use
             readers[mva] = Reader(sample_tree, 'kBDT', mva, region, eras, path_to_weights=path_to_use, cut_string = cut_string)
             list_of_hist[mva] = Histogram(mva, MVA_dict[region][mva][2], ('MVA score', 'Events'),  np.arange(-1., 1.1, 0.1))
             list_of_roc[mva] = ROC(mva, output_name('ROC'), working_points = workingpoints)

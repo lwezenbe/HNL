@@ -9,22 +9,6 @@ signalregion_cuts = {
     'highMassSR' : 'l1_pt>55&&l2_pt>15&&l3_pt>10&&abs(MZossf-91.1876)>15&&abs(M3l-91.1876)>15&&minMossf>5'
 }
 
-# ntrees = ['100', '200', '300']
-# maxdepth = ['2', '3', '4']
-# boosttypes = ['Grad', 'AdaBoost', 'RealAdaBoost']
-# shrinkage = ['0.1', '0.3', '1']
-
-#ntrees = ['25', '50', '75', '100']
-#maxdepth = ['1', '2', '3']
-#boosttypes = ['Grad', 'AdaBoost', 'RealAdaBoost']
-#shrinkage = ['0.1', '0.3', '1']
-
-#ntrees = ['25', '50', '75', '100', '200', '300']
-#maxdepth = ['1', '2', '3', '4']
-#boosttypes = ['Grad', 'AdaBoost', 'RealAdaBoost']
-#shrinkage = ['0.1', '0.3', '1']
-
-
 class InputHandler:
     NTREES = ['25', '50', '75', '150']
     MAXDEPTH = ['2', '4']
@@ -95,19 +79,15 @@ class InputHandler:
                 else:
                     for bkgr in self.background_names:
                         if bkgr == 'nonprompt':
-                            #background_paths[bkgr].append(os.path.join(INPUT_BASE(era, y), self.region+'-'+self.selection, 'Background', 'Combined', 'nonprompt_bkgr.root'))
                             background_paths[bkgr].append(os.path.join(INPUT_BASE(era, y), 'baseline-'+self.selection, 'Background', 'Combined', 'nonprompt_bkgr.root'))
                         else:
-                            #background_paths[bkgr].append(os.path.join(INPUT_BASE(era, y), self.region+'-'+self.selection, 'Background', bkgr+'.root'))
                             background_paths[bkgr].append(os.path.join(INPUT_BASE(era, y), 'baseline-'+self.selection, 'Background', bkgr+'.root'))
                 
                 if 'UL' in self.era and era =='prelegacy': continue
                 for signal in self.signal_names:
                     if self.background_names is None:
-                        #signal_paths[signal].append(os.path.join(INPUT_BASE(era, y), self.region+'-'+self.selection, 'Combined/SingleTree', signal+'.root'))
                         signal_paths[signal].append(os.path.join(INPUT_BASE(era, y), 'baseline-'+self.selection, 'Combined/SingleTree', signal+'.root'))
                     else:
-                        #signal_paths[signal].append(os.path.join(INPUT_BASE(era, y), self.region+'-'+self.selection, 'Signal', signal+'.root'))
                         signal_paths[signal].append(os.path.join(INPUT_BASE(era, y), 'baseline-'+self.selection, 'Signal', signal+'.root'))
                 
 

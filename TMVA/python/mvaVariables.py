@@ -37,7 +37,6 @@ input_variables = {
     'mtOther' : {'type' : 'F', 'var' : lambda c : c.mtOther},
     'mtl1' : {'type' : 'F', 'var' : lambda c : c.mtl1},
     'mtl2' : {'type' : 'F', 'var' : lambda c : c.mtl2},
-    # 'ptConeLeading' : {'type' : 'F', 'var' : lambda c : c.pt_cone[0]},
     'met' : {'type' : 'F', 'var' : lambda c : c._met},
     'metPhi' : {'type' : 'F', 'var' : lambda c : c._metPhi},
     'njets' : {'type' : 'F', 'var' : lambda c : c.njets},
@@ -150,55 +149,6 @@ var_lists = {
                 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
                 'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', 
                 'abs(dPhil1met)', 'abs(dPhil2met)', 'abs(dPhil3met)', 'abs(dPhij1met)', 'abs(dPhij2met)'],
-    #'lowmass-e': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets',
-    #            'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l',
-    #            'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
-    #'lowmass-mu': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets',
-    #            'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
-    #            'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
-    #'lowmass-taulep': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets',
-    #            'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l',
-    #            'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
-    #'lowmass-tauhad': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets',
-    #            'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
-    #            'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
-    #'lowestmass-e': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets',
-    #            'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l',
-    #            'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
-    #'lowestmass-mu': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets',
-    #            'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
-    #            'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
-    #'lowestmass-taulep': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets',
-    #            'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l',
-    #            'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
-    #'lowestmass-tauhad': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets',
-    #            'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
-    #            'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
-#    'lowmass-e': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
-#                'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l',
-#                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
-#    'lowmass-mu': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
-#                'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
-#                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
-#    'lowmass-taulep': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
-#                'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l',
-#                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
-#    'lowmass-tauhad': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
-#                'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
-#                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
-#    'lowestmass-e': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
-#                'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
-#                'dRl1l2', 'dRl1l3', 'dRl2l3', 'dRjl1', 'dRjl2', 'dRjl3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
-#    'lowestmass-mu': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
-#                'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
-#                'dRl1l2', 'dRl1l3', 'dRl2l3', 'dRjl1', 'dRjl2', 'dRjl3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
-#    'lowestmass-taulep': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
-#                'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
-#                'dRl1l2', 'dRl1l3', 'dRl2l3', 'dRjl1', 'dRjl2', 'dRjl3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
-#    'lowestmass-tauhad': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
-#                'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
-#                'dRl1l2', 'dRl1l3', 'dRl2l3', 'dRjl1', 'dRjl2', 'dRjl3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', ],
-
 }
 
 var_to_ignore = {
@@ -214,10 +164,6 @@ def getVariableValue(name):
     return input_variables[name]['var']
 
 def getVariables():
-    #out_dict = {}
-    #for input_var in var_lists[region_name]:
-    #    out_dict[input_var] = {input_variables[input_var]}
-    #return out_dict
     return input_variables.keys()
 
 def getVariableNames(region_name, cut_string = None):

@@ -39,20 +39,6 @@ eras = "-".join(sorted(args.era))
 
 ih = InputHandler(eras, args.year, args.region, args.selection)
 
-# ntrees = ['100', '200', '300']
-# maxdepth = ['2', '3', '4']
-# boosttypes = ['Grad', 'AdaBoost', 'RealAdaBoost']
-# shrinkage = ['0.1', '0.3', '1']
-
-#ntrees = ['25', '50', '75', '100']
-#maxdepth = ['1', '2', '3']
-#boosttypes = ['Grad', 'AdaBoost', 'RealAdaBoost']
-#shrinkage = ['0.1', '0.3', '1']
-
-#ntrees = ['25', '50', '75', '100', '200', '300']
-#maxdepth = ['1', '2', '3', '4']
-#boosttypes = ['Grad', 'AdaBoost', 'RealAdaBoost']
-#shrinkage = ['0.1', '0.3', '1']
 ntrees = ih.NTREES
 maxdepth = ih.MAXDEPTH
 boosttypes = ih.BOOSTTYPES

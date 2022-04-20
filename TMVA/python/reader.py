@@ -151,11 +151,9 @@ def getAllMVAhist(input_handler, channel, region, era, signal_name = None, cut_s
             readers[mva] = Reader(sample_tree, 'kBDT', mva, region, era, path_to_weights=path_to_use)
             list_of_hist[sample_name][mva] = Histogram(mva+'-'+sample_name, MVA_dict[region][mva][2], ('MVA score', 'Events'),  np.arange(-1., 1.1, 0.1))
         nentries = sample_tree.GetEntries()
-        #nentries = 20
         for entry in xrange(nentries):
             progress(entry, nentries)
             sample_tree.GetEntry(entry)
-            # if not cut_string_dict[cut_string](sample_tree): continue
             if not cut_string_dict[region](sample_tree): continue
             for reader in readers:
                 readers[reader].predictAndWriteToChain(sample_tree, trainingnames=True)

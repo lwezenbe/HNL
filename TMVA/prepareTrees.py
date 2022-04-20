@@ -184,7 +184,6 @@ if not args.merge:
         chain.obj_sel['mu_wp'] = 'FO'
         chain.obj_sel['tau_wp'] = 'FO'
         if not event.passedFilter(cutters.getCutter('sideband'), sample.name, ignoreSignalOverlapRemoval=True): continue
-        #if not event.passedFilter(cutters.getCutter('sideband'), sample.name, ignoreSignalOverlapRemoval=True): continue
         is_sideband_event = not all(chain.l_istight)
 
         if len(chain.l_flavor) == chain.l_flavor.count(2): continue

@@ -701,7 +701,6 @@ else:
                             # signal_legendnames.append('HNL '+ sk.split('-')[1] +' m_{N} = '+sk.split('-m')[-1]+ ' GeV')
                             signal_legendnames.append('HNL m_{N}='+sk.split('-m')[-1]+ 'GeV')
 
-                    #if args.includeData == 'signalregion' and not 'Weight' in v:
                     if args.includeData is not None and not 'Weight' in v:
                         observed_hist = list_of_hist[c][v]['data']['signalregion']
                     else:

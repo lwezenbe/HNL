@@ -166,6 +166,4 @@ for card in cards_to_read:
 
     year = args.year[0] if len(args.year) == 1 else 'all'
     p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=False, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', year = year)
-    #p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', year = year, era = args.era)
-    #p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = False, x_log=False, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', year = year, era = args.era)
     p.drawBrazilian(output_dir = destination, ignore_bands = args.dryplot)
