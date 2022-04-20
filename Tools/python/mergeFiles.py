@@ -50,6 +50,20 @@ def mergeSinglePath(path, groups_to_merge=None):
         if len(os.listdir(p)) == 0:
             os.system('rm -r '+p)
 
+#
+def moveToBackup(path):
+    backup_path = os.path.expandvars('/pnfs/iihe/cms/store/user/$USER/HNL/')
+    try:
+        backup_path += path.split('src/HNL/')[1]
+    except:
+        backup_path += path.split('ntuples/HNL/')[1]
+    from HNL.Tools.helpers import makeDirIfNeeded
+    makeDirIfNeeded(backup_path+'/x')
+    #Move
+    all_files = [x for x in glob.glob(path+'/*') if '.txt' in x or '.root' in x]
+    for f in all_files:
+        os.system('mv -f '+f+ ' '+backup_path+'/'+f.split('/')[-1])
+
 from HNL.Tools.jobSubmitter import checkCompletedJobs, submitJobs, cleanJobFiles, checkShouldMerge, disableShouldMerge
 #For now also have argparser in there just to be able to automatically resubmit
 def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False, groups_to_merge=None, additionalArgs=None):
@@ -79,8 +93,10 @@ def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False
 
         cleanJobFiles(argparser, script)
 
+    # First clean up the directory
     for f in paths:
         if '.txt' in f or '.root' in f: continue
+        moveToBackup(f)
         mergeSinglePath(f, groups_to_merge=groups_to_merge)
 
     if not istest: disableShouldMerge(script, argparser, additionalArgs=additionalArgs)

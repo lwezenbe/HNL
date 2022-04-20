@@ -57,8 +57,8 @@ class Cutter():
         f.cd('cutflow')
 
         if self.name:
-            f.mkdir(self.name)
-            f.cd(self.name)
+            f.mkdir('cutflow/'+self.name)
+            f.cd('cutflow/'+self.name)
 
         for cut in self.order_of_cuts:
             self.list_of_cuts[cut].Write()
@@ -71,6 +71,29 @@ class Cutter():
         # Now rerun with real testArea
         if arg_string is not None:
             self.saveCutFlow(original_path, None)
+
+class CutterCollection():
+    
+    def __init__(self, names, chain = None):
+        self.names = names
+        self.chain = chain
+        self.cutters = {}
+        for name in self.names:
+            self.cutters[name] = Cutter(name, chain)
+
+    def cut(self, passed, cut_name, cutter_name = None):
+        if cutter_name is not None:
+            self.cutters[cutter_name].cut(passed, cut_name)
+        else:
+            for name in self.names:
+                self.cutters[name].cut(passed, cut_name)
+
+    def saveCutFlow(self, out_file, arg_string = None):
+        for name in self.names:
+            self.cutters[name].saveCutFlow(out_file, arg_string)
+
+    def getCutter(self, name):
+        return self.cutters[name]
 
 from HNL.Plotting.plot import makeList
 def printCutFlow(in_file_paths, out_file_path, in_file_path_names):

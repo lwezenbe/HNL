@@ -12,9 +12,11 @@ class SearchRegionManager:
             print 'You specified a SR name but it does not correspond to any I know. Will continue with a single search region.'
 
     def getNumberOfSearchRegions(self):
-        if self.name == 'oldAN_lowMass':
+        if self.name == 'lowMassSR':
             return 8
-        elif self.name == 'oldAN_highMass':
+        if self.name == 'lowMassSRloose':
+            return 16
+        elif self.name == 'highMassSR':
             return 25
         else:
             return 1
@@ -45,9 +47,11 @@ class SearchRegionManager:
     # If not, no search regions are made and a single search region label is defined to which all events will be assigned
     #
     def getSearchRegion(self, chain):
-        if self.name == 'oldAN_lowMass':
+        if self.name == 'lowMassSR':
             return getLowMassRegion(chain)
-        elif self.name == 'oldAN_highMass':
+        elif self.name == 'lowMassSRloose':
+            return getLowMassLooseRegion(chain)
+        elif self.name == 'highMassSR':
             return getHighMassRegion(chain)
         else:
             return 1
@@ -56,18 +60,62 @@ class SearchRegionManager:
 # constants and functions
 #
 
-LIST_OF_SR_NAMES = ['oldAN_lowMass', 'oldAN_highMass']
+LIST_OF_SR_NAMES = ['lowMassSR', 'lowMassSRloose', 'highMassSR']
 region_groups = {} 
 
 #
 # List of search region functions
 #
-region_groups['oldAN_lowMass'] = {
+region_groups['lowMassSRloose'] = {
+    'A1' : [1, 2, 3, 4],
+    'B1' : [5, 6, 7, 8],
+    'AB2' : [9, 10, 11, 12, 13, 14, 15, 16]
+}
+def getLowMassLooseRegion(chain):
+    if not chain.hasOSSF:
+        if chain.l_pt[0] < 30:
+            if chain.minMos < 10:
+                return 1
+            elif chain.minMos < 20:
+                return 2
+            elif chain.minMos < 30:
+                return 3
+            else:
+                return 4
+        elif chain.l_pt[0] < 55:
+            if chain.minMos < 10:
+                return 5
+            elif chain.minMos < 20:
+                return 6
+            elif chain.minMos < 30:
+                return 7
+            else:
+                return 8
+    else:
+        if chain.l_pt[0] < 30:
+            if chain.minMos < 10:
+                return 9
+            elif chain.minMos < 20:
+                return 10
+            elif chain.minMos < 30:
+                return 11
+            else:
+                return 12
+        elif chain.l_pt[0] < 55:
+            if chain.minMos < 10:
+                return 13
+            elif chain.minMos < 20:
+                return 14
+            elif chain.minMos < 30:
+                return 15
+            else:
+                return 16
+
+region_groups['lowMassSR'] = {
     'A' : [1, 2, 3, 4],
     'B' : [5, 6, 7, 8]
 }
 def getLowMassRegion(chain):
-    print chain.l_pt, chain.minMos
     if chain.l_pt[0] < 30:
         if chain.minMos < 10:
             return 1
@@ -87,7 +135,7 @@ def getLowMassRegion(chain):
         else:
             return 8
 
-region_groups['oldAN_highMass'] = {
+region_groups['highMassSR'] = {
     'C' : range(1, 17),
     'D' : range(17, 26)
 }
@@ -194,7 +242,7 @@ def plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, region_name, 
         
         draw_ratio = 'errorsOnly' if len(group_signal_hist) > 0 and len(group_bkgr_hist) > 0 else None
         p = Plot(group_signal_hist if len(group_signal_hist) > 0 else None, tex_names, bkgr_hist = group_bkgr_hist if len(group_bkgr_hist) > 0 else None, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, 
-                extra_text = extra_text, color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = draw_ratio)
+                extra_text = extra_text, color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau', syst_hist = 0.1, draw_ratio = draw_ratio)
         p.drawHist(output_dir = out_path, min_cutoff = 1.)
 
         del p, group_signal_hist, group_bkgr_hist
@@ -224,7 +272,7 @@ def plotLowMassRegions(signal_hist, bkgr_hist, tex_names, out_path, extra_text =
 
     draw_ratio = 'errorsOnly' if signal_hist is not None and bkgr_hist is not None else None
     p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'M_{2lOS}^{min} [GeV]', y_name = 'Events', extra_text = extra_text, y_log=True, 
-            color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = draw_ratio)
+            color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau', syst_hist = 0.1, draw_ratio = draw_ratio)
  
     p.drawHist(output_dir = out_path, draw_lines = line_collection, min_cutoff = 0.1, custom_labels = custom_labels)
 
@@ -236,8 +284,19 @@ def plotHighMassRegions(signal_hist, bkgr_hist, tex_names, out_path, extra_text 
     
     draw_ratio = 'errorsOnly' if signal_hist is not None and bkgr_hist is not None else None
     p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text, 
-            color_palette = 'AN2017', color_palette_bkgr = 'AN2017', syst_hist = 0.1, draw_ratio = draw_ratio)
+            color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau', syst_hist = 0.1, draw_ratio = draw_ratio)
     p.drawHist(output_dir = out_path, min_cutoff = 1., bkgr_draw_option="HistText")
+                    
+def plotLowMassRegionsLoose(signal_hist, bkgr_hist, tex_names, out_path, extra_text = None):
+
+    #Plot per grouping
+
+    plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, 'lowMass', extra_text = extra_text)
+    
+    draw_ratio = 'errorsOnly' if signal_hist is not None and bkgr_hist is not None else None
+    p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text, 
+            color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau', syst_hist = 0.1, draw_ratio = draw_ratio)
+    p.drawHist(output_dir = out_path, min_cutoff = 1.)
                     
 class RegionCollection:
 

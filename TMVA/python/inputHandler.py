@@ -4,11 +4,32 @@ import os
 import ROOT
 
 signalregion_cuts = {
-    'lowMassSR' : 'l1_pt<55&&M3l<80&&met<75&&minMossf>0',
+    'lowMassSR' : 'l1_pt<55&&M3l<80&&met<75&&minMossf<0',
+    'lowMassSRloose' : 'l1_pt<55&&M3l<80&&met<75&&abs(MZossf-91.1876)>15',
     'highMassSR' : 'l1_pt>55&&l2_pt>15&&l3_pt>10&&abs(MZossf-91.1876)>15&&abs(M3l-91.1876)>15&&minMossf>5'
 }
 
+# ntrees = ['100', '200', '300']
+# maxdepth = ['2', '3', '4']
+# boosttypes = ['Grad', 'AdaBoost', 'RealAdaBoost']
+# shrinkage = ['0.1', '0.3', '1']
+
+#ntrees = ['25', '50', '75', '100']
+#maxdepth = ['1', '2', '3']
+#boosttypes = ['Grad', 'AdaBoost', 'RealAdaBoost']
+#shrinkage = ['0.1', '0.3', '1']
+
+#ntrees = ['25', '50', '75', '100', '200', '300']
+#maxdepth = ['1', '2', '3', '4']
+#boosttypes = ['Grad', 'AdaBoost', 'RealAdaBoost']
+#shrinkage = ['0.1', '0.3', '1']
+
+
 class InputHandler:
+    NTREES = ['25', '50', '75', '150']
+    MAXDEPTH = ['2', '4']
+    BOOSTTYPES = ['Grad']
+    SHRINKAGE = [ '0.1']
 
     def __init__(self, era, year, region, selection):
         self.in_file = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'InputLists', era+year+'-'+region+'.conf'))
@@ -69,14 +90,6 @@ class InputHandler:
                 else:
                     if self.year != y: continue
 
-                for signal in self.signal_names:
-                    if self.background_names is None:
-                        #signal_paths[signal].append(os.path.join(INPUT_BASE(era, y), self.region+'-'+self.selection, 'Combined/SingleTree', signal+'.root'))
-                        signal_paths[signal].append(os.path.join(INPUT_BASE(era, y), 'baseline-'+self.selection, 'Combined/SingleTree', signal+'.root'))
-                    else:
-                        #signal_paths[signal].append(os.path.join(INPUT_BASE(era, y), self.region+'-'+self.selection, 'Signal', signal+'.root'))
-                        signal_paths[signal].append(os.path.join(INPUT_BASE(era, y), 'baseline-'+self.selection, 'Signal', signal+'.root'))
-                
                 if self.background_names is None:
                     background_paths = None
                 else:
@@ -87,16 +100,28 @@ class InputHandler:
                         else:
                             #background_paths[bkgr].append(os.path.join(INPUT_BASE(era, y), self.region+'-'+self.selection, 'Background', bkgr+'.root'))
                             background_paths[bkgr].append(os.path.join(INPUT_BASE(era, y), 'baseline-'+self.selection, 'Background', bkgr+'.root'))
+                
+                if 'UL' in self.era and era =='prelegacy': continue
+                for signal in self.signal_names:
+                    if self.background_names is None:
+                        #signal_paths[signal].append(os.path.join(INPUT_BASE(era, y), self.region+'-'+self.selection, 'Combined/SingleTree', signal+'.root'))
+                        signal_paths[signal].append(os.path.join(INPUT_BASE(era, y), 'baseline-'+self.selection, 'Combined/SingleTree', signal+'.root'))
+                    else:
+                        #signal_paths[signal].append(os.path.join(INPUT_BASE(era, y), self.region+'-'+self.selection, 'Signal', signal+'.root'))
+                        signal_paths[signal].append(os.path.join(INPUT_BASE(era, y), 'baseline-'+self.selection, 'Signal', signal+'.root'))
+                
 
         self.signal_paths = signal_paths
         self.background_paths = background_paths
 
         return signal_paths, background_paths
 
-    def getTree(self, signal, name='trainingtree', signal_only = False, bkgr_only=False):
+    def getTree(self, signal, name='trainingtree', signal_only = False, bkgr_only=False, specific_sample = None):
+
         in_tree = ROOT.TChain() 
         if not bkgr_only:
             for sub_signal in self.signal_paths[signal]:
+                if specific_sample is not None and signal != specific_sample: continue
                 in_tree.Add(sub_signal+'/prompt/'+name)
                 in_tree.Add(sub_signal+'/nonprompt/'+name)
         if not signal_only:
@@ -104,9 +129,11 @@ class InputHandler:
                 raise RuntimeError("You are trying to make empty trees")
             else:
                 for bn in self.background_names:
+                    if specific_sample is not None and bn != specific_sample: continue
                     for bp in self.background_paths[bn]:
                         if bn == 'nonprompt':
                             in_tree.Add(bp+'/nonprompt/'+name)
+                            #in_tree.Add(bp+'/sideband/'+name)
                         else:
                             in_tree.Add(bp+'/prompt/'+name)  
         return in_tree
@@ -118,7 +145,7 @@ class InputHandler:
         else:
             import uproot
             for bn in self.background_names:
-                all_weights = {'total' : 0., 'max' : 0., 'min' : 99999999999999999999999.}
+                all_weights = {'total' : 0., 'max' : 0., 'min' : 99999999999999999999999., 'avg' : 0}
                 if cut_string is None:
                     #For some reason uproot.concatenate does not work so we have to use this shitty way
                     for bp in self.background_paths[bn]:
@@ -139,10 +166,11 @@ class InputHandler:
                         else:
                             in_tree.Add(bp+'/prompt/'+channel+'/'+name)
                     
-                    all_weights['total'] = in_tree.Draw("1", cut_string)
+                    htemp = ROOT.TH1D('htemp', 'htemp', 300, -50., 50.)
+                    all_weights['total'] = in_tree.Draw("event_weight>>htemp", cut_string)
 
                 print '\t Checking', bn
-                print '\t \t * Total contribution from this background: \t', all_weights['total']
+                print '\t \t * Total contribution from this background: \t', all_weights['total'], 'with weight: \t', htemp.GetMean()
                 if cut_string is None:
                     print '\t \t * Maximum weight from this background: \t', all_weights['max']
                     print '\t \t * Minimum weight from this background: \t', all_weights['min']
@@ -160,7 +188,7 @@ class InputHandler:
         condition = additional_cut_str if additional_cut_str is not None else signalregion_cuts[self.region]
 
         condition = self.getAdditionalCutString(condition)
-        nsignal = min(15000, in_tree.Draw("1", "is_signal"+condition))
+        nsignal = min(20000, in_tree.Draw("1", "is_signal"+condition))
         nbkgr = min(100000, in_tree.Draw("1", "!is_signal"+condition))
 
         if self.numbers_not_in_file:
@@ -170,11 +198,12 @@ class InputHandler:
             pruned_string = "".join(i for i in additional_cut_str if i not in "\/:*?<>|& ")
             loader = ROOT.TMVA.DataLoader('data/training/'+self.era+self.year+'/'+self.region+'-'+self.selection+'/'+pruned_string+'/'+signal+'/kBDT')
         else:
-            loader = ROOT.TMVA.DataLoader('data/training/'+self.era+self.year+'/'+self.region+'-'+self.selection+'/'+signal+'/kBDT')
+            loader = ROOT.TMVA.DataLoader('data/training/'+self.era+self.year+'/'+self.region+'-'+self.selection+'/full/'+signal+'/kBDT')
         cuts = ROOT.TCut("is_signal"+condition)
         cutb = ROOT.TCut("!is_signal"+condition)
         loader.SetInputTrees(in_tree, cuts, cutb)
-        loader.SetWeightExpression("event_weight")
+        #loader.SetWeightExpression("event_weight*fake_weight_{0}".format(self.region))
+        loader.SetWeightExpression("abs(event_weight)")
 
         #Set input variables
         for var in input_variables:

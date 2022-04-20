@@ -40,10 +40,12 @@ ele = 0
 mu = 1
 tau = 2
 
-#TAU_METHOD = 'WeightedMix'
-TAU_METHOD = 'TauFakesDY'
+TAU_METHOD = 'WeightedMix'
+#TAU_METHOD = 'TauFakesDY'
 
-def returnTauFR(tau_method, chain):
+def returnTauFR(tau_method, chain, region = None):
+    if region == None: region = chain.region
+
     if tau_method == 'TauFakesDY':
         return FakeRate('ttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), default_tau_path('DY', chain.era+'-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')]))
     elif tau_method == 'TauFakesTT':
@@ -51,7 +53,7 @@ def returnTauFR(tau_method, chain):
     elif tau_method == 'WeightedMix':
         from HNL.BackgroundEstimation.getTauFakeContributions import getWeights
         return SingleFlavorFakeRateCollection([default_tau_path('DY', chain.era+'-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')]), default_tau_path('TT', chain.era+'-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')])], ['ttl', 'ttl'], ['DY', 'TT'], 
-                                            frac_weights = getWeights(chain.era, chain.year, chain.selection, chain.region), frac_names = ['DY', 'TT'])   
+                                            frac_weights = getWeights(chain.era, chain.year, chain.selection, region), frac_names = ['DY', 'TT'])   
     elif tau_method == 'OSSFsplitMix':
         return SingleFlavorFakeRateCollection([default_tau_path('DY', chain.era+'-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')]), default_tau_path('TT', chain.era+'-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')])], ['ttl', 'ttl'], ['DY', 'TT'], method = 'OSSFsplitMix',
                                             ossf_map = {True : 'DY', False : 'TT'})  
@@ -59,11 +61,12 @@ def returnTauFR(tau_method, chain):
         raise RuntimeError('Unknown method "{}"in fakeRateWeights.py'.format(tau_method))
 
 
-def returnFakeRateCollection(chain):
+def returnFakeRateCollection(chain, tau_method = None, region = None):
     fakerates = {}
     fakerates[ele] = FakeRateEmulator('fakeRate_electron_'+luka_year_dict[str(chain.year)], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_ele_path(chain.era, str(chain.year), data_dict[(chain.is_data, 'light')]))
     fakerates[mu] = FakeRateEmulator('fakeRate_muon_'+luka_year_dict[str(chain.year)], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_mu_path(chain.era, str(chain.year), data_dict[(chain.is_data, 'light')]))
-    fakerates[tau] = returnTauFR(TAU_METHOD, chain)
+    if tau_method is None: tau_method = TAU_METHOD
+    fakerates[tau] = returnTauFR(tau_method, chain, region)
 
     fakerate_collection = FakeRateCollection(chain, fakerates)
 

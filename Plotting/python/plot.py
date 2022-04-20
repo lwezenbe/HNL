@@ -610,7 +610,7 @@ class Plot:
                 for i in xrange(len(self.b)):
                     self.stat_bkgr_errors[i].Draw("E Same")
 
-        self.legend.AddEntry(self.tot_totbkgr_error, 'Total Error' if self.syst_hist is not None else 'Stat. Error')
+            self.legend.AddEntry(self.tot_totbkgr_error, 'Total Error' if self.syst_hist is not None else 'Stat. Error')
 
     def drawHist(self, output_dir = None, normalize_signal = False, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None, 
         custom_labels = None, draw_lines = None, message = None, min_cutoff = None, max_cutoff = None, ref_line = 1., observed_name = 'Data'):
@@ -1158,6 +1158,7 @@ class Plot:
         frame.GetYaxis().SetTitle(self.y_name)
         frame.GetXaxis().SetTitle(self.x_name)
         frame.SetMinimum(0.3*min_y)
+        #frame.SetMaximum(max_y*100)
         frame.SetMaximum(max_y*100)
         frame.GetXaxis().SetLimits(0.95*min(values), 1.05*max(values))
 
@@ -1195,6 +1196,11 @@ class Plot:
         
         if self.y_log:
             self.plotpad.SetLogy()
+            frame.SetMinimum(0.3*min_y)
+            frame.SetMaximum(max_y*100)
+        else:
+            frame.SetMinimum(0.001*min_y)
+            frame.SetMaximum(max_y)
         
         #Create Legend
         self.canvas.cd()

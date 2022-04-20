@@ -62,6 +62,12 @@ class ROC:
         self.misid_numerator = getObjFromFile(path, name + '_misid_numerator')
         self.misid_denominator = getObjFromFile(path, name + '_misid_denominator')
 
+    def add(self, second_roc):
+        self.eff_numerator.add(second_roc.eff_numerator)        
+        self.misid_numerator.add(second_roc.misid_numerator)        
+        self.eff_denominator.add(second_roc.eff_denominator)        
+        self.misid_denominator.add(second_roc.misid_denominator)        
+
     def write(self, append = False):
         append_string = 'recreate'
         if append and isValidRootFile(self.path): append_string = 'update'

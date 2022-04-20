@@ -1,6 +1,6 @@
 import ROOT
 import os
-from HNL.Tools.helpers import rootFileContent, sortByOtherList, progress
+from HNL.Tools.helpers import rootFileContent, sortByOtherList, progress, makeDirIfNeeded
 from HNL.Plotting.plottingTools import extraTextFormat
 
 import argparse
@@ -10,7 +10,7 @@ argParser.add_argument('--era',     action='store',  nargs='*',     default='pre
 argParser.add_argument('--gui',     action='store_true',      default=False,   help='Open GUI at the end')
 argParser.add_argument('--plots',     action='store_true',      default=False,   help='Store plots')
 argParser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', 
-    choices=['baseline', 'lowMassSR', 'highMassSR'])
+    choices=['baseline', 'lowMassSR', 'highMassSR', 'lowMassSRloose'])
 argParser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 argParser.add_argument('--cutString',   action='store', default=None,  help='Additional cutstrings for training')
 args = argParser.parse_args()
@@ -18,7 +18,7 @@ args = argParser.parse_args()
 ROOT.gROOT.SetBatch(True)
 ROOT.gROOT.ProcessLine( "gErrorIgnoreLevel = 1001;")
 
-eras = '-'.join([era for era in args.era])
+eras = "-".join(sorted(args.era))
 
 from HNL.TMVA.inputHandler import InputHandler
 ih = InputHandler(eras, args.year, args.region, args.selection)
@@ -32,7 +32,7 @@ def fillRandGraph(in_graph, npoints):
     new_graph = ROOT.TGraph(npoints)
     npoints_ingraph = in_graph.GetN()
     for x in xrange(1, npoints+1):
-        rand_index = random.randint(0, npoints_ingraph)
+        rand_index = random.randint(0, npoints_ingraph-1)
         new_graph.SetPoint(x, in_graph.GetX()[rand_index], in_graph.GetY()[rand_index])
     return new_graph
 
@@ -41,7 +41,7 @@ for signal in ih.signal_names:
     print 'Processing', signal 
 
     if args.cutString is None:
-        out_file_name = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'training', eras+args.year, args.region+'-'+args.selection, signal, signal+'.root'))
+        out_file_name = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'training', eras+args.year, args.region+'-'+args.selection, 'full', signal, signal+'.root'))
     else:
         out_file_name = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'training', eras+args.year, args.region+'-'+args.selection, 
                                                             "".join(i for i in args.cutString if i not in "\/:*?<>|& "), signal, signal+'.root'))
@@ -56,7 +56,7 @@ for signal in ih.signal_names:
     test_tree_file = uproot.open(out_file_name)
     split_subdir = subdir[0].rsplit('/', 2)[0].split('/')
     if args.cutString is None:
-        test_tree = test_tree_file['data']['training'][split_subdir[3]][split_subdir[4]][split_subdir[5]][split_subdir[6]]['TestTree'].arrays()
+        test_tree = test_tree_file['data']['training'][split_subdir[3]][split_subdir[4]][split_subdir[5]][split_subdir[6]][split_subdir[7]]['TestTree'].arrays()
     else:
         test_tree = test_tree_file['data']['training'][split_subdir[3]][split_subdir[4]][split_subdir[5]][split_subdir[6]][split_subdir[7]]['TestTree'].arrays()
 
@@ -94,7 +94,9 @@ for signal in ih.signal_names:
     mnames.reverse()
     pdf = FPDF()
     for mname in mnames:
-        pdf.add_page()
-        pdf.image(os.path.join(out_file_name.rsplit('/', 1)[0], 'kBDT', 'plots', 'roc_'+mname+'.png'), 50., 50., 100., 100.)
-        pdf.image(os.path.join(out_file_name.rsplit('/', 1)[0], 'kBDT', 'plots', 'overtrain_'+mname+'.png'), 50., 150., 100., 100.)
+        pdf.add_page('L')
+        pdf.image(os.path.join(out_file_name.rsplit('/', 1)[0], 'kBDT', 'plots', 'roc_'+mname+'.png'), 40., 50., 100., 100.)
+        pdf.image(os.path.join(out_file_name.rsplit('/', 1)[0], 'kBDT', 'plots', 'overtrain_'+mname+'.png'), 150., 50., 100., 100.)
     pdf.output(out_file_name.rsplit('.', 1)[0]+".pdf", "F")
+    makeDirIfNeeded('/user/lwezenbe/public_html/HNL/'+out_file_name.split('/HNL/')[1].rsplit('.', 1)[0]+".pdf")
+    pdf.output('/user/lwezenbe/public_html/HNL/'+out_file_name.split('/HNL/')[1].rsplit('.', 1)[0]+".pdf", "F")

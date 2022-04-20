@@ -211,6 +211,10 @@ class Histogram:
         tmp_hist.SetBinError(1, self.hist.GetMeanError())
         return Histogram(tmp_hist)
 
+    def extendWithOtherHistogram(self, second_hist):
+        total_bins = self.hist.GetNBinsX()+second_hist.GetNBinsX()
+
+        tmp_out_histogram = ROOT.TH1D('extended_hist', 'extended_hist', )
 
 def returnSqrt(th1):
     sqrt = th1.Clone('sqrt')

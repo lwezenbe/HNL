@@ -50,11 +50,11 @@ class Reweighter:
         else:
             return 1.
 
-    def getFakeRateWeight(self):
+    def getFakeRateWeight(self, tau_method = None):
         try:
             return self.fakerate_collection.getFakeWeight()
         except:
-            self.fakerate_collection = returnFakeRateCollection(self.sample.chain)
+            self.fakerate_collection = returnFakeRateCollection(self.sample.chain, tau_method = tau_method)
             return self.fakerate_collection.getFakeWeight()
 
     def getBTagWeight(self):
@@ -75,7 +75,7 @@ class Reweighter:
         else:
             return 1.        
 
-    def getTotalWeight(self, sideband=False):
+    def getTotalWeight(self, sideband=False, tau_fake_method = None):
         tot_weight = 1.
         tot_weight *= self.getLumiWeight()
         tot_weight *= self.getPUWeight()
@@ -83,7 +83,7 @@ class Reweighter:
         tot_weight *= self.getTauSF()
         if self.sample.chain.era != 'prelegacy': tot_weight *= self.getBTagWeight() #TODO: reskim of prelegacy samples because _jetSmeared not available
         if sideband:
-            tot_weight *= self.getFakeRateWeight()
+            tot_weight *= self.getFakeRateWeight(tau_method = tau_fake_method)
         #tot_weight *= self.getPrefireWeight()
         return tot_weight
 
