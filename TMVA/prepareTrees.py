@@ -101,13 +101,20 @@ if not args.merge:
     chain.selection = args.selection
     chain.strategy = args.strategy
     chain.analysis = args.analysis
+    chain.region = args.region
 
     reweighter = Reweighter(sample, sample_manager)
+    from HNL.Weights.fakeRateWeights import returnFakeRateCollection
+    fakerates = {
+        'lowMassSR' : returnFakeRateCollection(chain, region = 'lowMassSR'),
+        'lowMassSRloose' : returnFakeRateCollection(chain, region = 'lowMassSRloose'),
+        'highMassSR' : returnFakeRateCollection(chain,region =  'highMassSR'),
+    }
 
     # Import and create cutter to provide cut flow
     #
-    from HNL.EventSelection.cutter import Cutter
-    cutter = Cutter(chain = chain)
+    from HNL.EventSelection.cutter import CutterCollection
+    cutters = CutterCollection(['sideband', 'tight'], chain = chain)
 
     #
     # Create new reduced tree (except if it already exists and overwrite option is not used)
@@ -128,7 +135,7 @@ if not args.merge:
     # Switch off unused branches and create outputTree
     #
     output_tree = {}
-    for prompt_str in ['prompt', 'nonprompt']:
+    for prompt_str in ['prompt', 'nonprompt', 'sideband']:
         output_tree[prompt_str] = {}
         for c in SUPER_CATEGORIES.keys():
             output_tree[prompt_str][c] = ROOT.TTree('trainingtree', 'trainingtree')
@@ -141,10 +148,11 @@ if not args.merge:
     new_branches = []
     new_branches.extend(getAllVariableList())
     new_branches.extend(['is_signal/O', 'event_weight/F', 'HNL_mass/F', 'HNL_lowmass/F', 'HNL_highmass/F', 'eventNb/I', 'entry/I'])
+    new_branches.extend(['fake_weight_lowMassSR/F', 'fake_weight_lowMassSRloose/F', 'fake_weight_highMassSR/F'])
 
     from HNL.Tools.makeBranches import makeBranches
     new_vars = {}
-    for ip, prompt_str in enumerate(['prompt', 'nonprompt']):
+    for ip, prompt_str in enumerate(['prompt', 'nonprompt', 'sideband']):
         new_vars[prompt_str] = {}
         for ic, c in enumerate(SUPER_CATEGORIES.keys()):
             new_vars[prompt_str][c] = makeBranches(output_tree[prompt_str][c], new_branches, already_defined = ic > 0 or ip > 0)
@@ -168,21 +176,17 @@ if not args.merge:
         chain.GetEntry(entry)
         if args.isTest: progress(entry - event_range[0], len(event_range))
     
-        cutter.cut(True, 'Total')
+        cutters.cut(True, 'Total', 'sideband')
 
         event.initEvent()
         # First run sideband for non-prompt
         chain.obj_sel['ele_wp'] = 'FO'
         chain.obj_sel['mu_wp'] = 'FO'
         chain.obj_sel['tau_wp'] = 'FO'
-        if not event.passedFilter(cutter, sample.name, for_training=True): continue
+        if not event.passedFilter(cutters.getCutter('sideband'), sample.name, ignoreSignalOverlapRemoval=True): continue
+        is_sideband_event = not all(chain.l_istight)
+
         if len(chain.l_flavor) == chain.l_flavor.count(2): continue
-
-        #Reset object selection
-        event.resetObjSelection()
-        passes_full_selection = event.passedFilter(cutter, sample.name, for_training=True)
-
-        prompt_str = 'nonprompt' if not passes_full_selection else 'prompt'
 
         category = event.event_category.returnCategory()
         super_cat = [sc for sc in SUPER_CATEGORIES.keys() if category in SUPER_CATEGORIES[sc]]
@@ -190,28 +194,50 @@ if not args.merge:
         nprompt = 0
         for index in chain.l_indices:
             if chain._lIsPrompt[index]: nprompt += 1
-        
-        if prompt_str == 'prompt' and nprompt != nl: continue
+   
+        prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
 
         weight = reweighter.getLumiWeight()
-        if prompt_str == 'nonprompt': weight *= reweighter.getFakeRateWeight()
+
+        chain.weight = weight
+        chain.entry = entry
+        chain.prompt_str = prompt_str
+        chain.is_sideband_event = is_sideband_event
+        def setVariables(outtree, inchain, fakerates):
+            for v in getVariables():
+                setattr(outtree, v, getVariableValue(v)(chain))
+
+            outtree.is_signal = chain.is_signal
+            outtree.HNL_mass = sample.getMass() if chain.is_signal else randrange(10, 800)
+            outtree.HNL_lowmass = sample.getMass() if chain.is_signal else randrange(10, 80)
+            outtree.HNL_highmass = sample.getMass() if chain.is_signal else randrange(80, 800)
+            outtree.event_weight = weight if not chain.is_signal else 1.
+            outtree.eventNb = chain._eventNb
+            outtree.entry = entry
+            if chain.is_sideband_event: 
+                outtree.fake_weight_lowMassSR = fakerates['lowMassSR'].getFakeWeight()
+                outtree.fake_weight_highMassSR = fakerates['highMassSR'].getFakeWeight()
+                outtree.fake_weight_lowMassSRloose = fakerates['lowMassSRloose'].getFakeWeight()
+            else:
+                outtree.fake_weight_lowMassSR = 1.
+                outtree.fake_weight_highMassSR = 1.
+                outtree.fake_weight_lowMassSRloose = 1.
 
         for sc in super_cat:
             #Set Variables
-            for v in getVariables():
-                setattr(new_vars[prompt_str][sc], v, getVariableValue(v)(chain))
+            if is_sideband_event:
+                setVariables(new_vars['sideband'][sc], chain, fakerates)
+                output_tree['sideband'][sc].Fill()
+            else:
+                if prompt_str == 'prompt':
+                    setVariables(new_vars['prompt'][sc], chain, fakerates)    
+                    output_tree['prompt'][sc].Fill()
+                else:
+                    setVariables(new_vars['nonprompt'][sc], chain, fakerates)
+                    output_tree['nonprompt'][sc].Fill()
 
-            new_vars[prompt_str][sc].is_signal = chain.is_signal
-            new_vars[prompt_str][sc].HNL_mass = sample.getMass() if chain.is_signal else randrange(10, 800)
-            new_vars[prompt_str][sc].HNL_lowmass = sample.getMass() if chain.is_signal else randrange(10, 80)
-            new_vars[prompt_str][sc].HNL_highmass = sample.getMass() if chain.is_signal else randrange(80, 800)
-            new_vars[prompt_str][sc].event_weight = weight if not chain.is_signal else 1.
-            new_vars[prompt_str][sc].eventNb = chain._eventNb
-            new_vars[prompt_str][sc].entry = entry
 
-            output_tree[prompt_str][sc].Fill()
-
-    for prompt_str in ['prompt', 'nonprompt']:
+    for prompt_str in ['prompt', 'nonprompt', 'sideband']:
         for c in SUPER_CATEGORIES.keys():
             output_file.cd(prompt_str+'/'+c)
             output_tree[prompt_str][c].Write()
@@ -220,7 +246,7 @@ if not args.merge:
 
     closeLogger(log)
 
-    cutter.saveCutFlow(output_name)
+    cutters.saveCutFlow(output_name)
 
 
 else:
@@ -277,58 +303,20 @@ else:
 
         out_file.Close()
 
-    # def mergeSignalInEqualAmounts(out_name, in_names, amount=10000, first_definition=False):
-    #     num_of_entries = {'tot': {}}
-    #     for in_name in in_names:
-    #         mass = int(in_name.rsplit('/')[-1].split('-m')[-1].split('.')[0])
-    #         num_of_entries[mass] = {}signal_list
-    #         for c in SUPER_CATEGORIES.keys():
-    #             num_of_entries[mass][c] = 0.
-    #             for prompt_str in ['prompt', 'nonprompt']:
-    #                 in_file = uproot.open(in_name)
-    #                 num_of_entries[mass][c] += min(5000, len(in_file[prompt_str][c]['trainingtree']['event_weight']))
-    #     for c in SUPER_CATEGORIES.keys():
-    #         num_of_entries['tot'][c] = 0.
-    #         for ent in num_of_entries.keys():
-    #             if ent == 'tot': continue
-    #             num_of_entries['tot'][c]signal_list
-    #     for prompt_str in ['prompt', 'nonprompt']:
-    #         out_trees[prompt_str] = {}
-    #         new_vars[prompt_str] = {}
-    #         for c in SUPER_CATEGORIES.keys():
-    #             out_file.mkdir(prompt_str+'/'+c)
-    #             chain = ROOT.TChain(prompt_str+'/'+c+'/trainingtree')
-    #             for in_name in in_names:
-    #                 chain.Add(in_name)
-    #             chain.SetBranchStatus('event_weight', 0)
-    #             out_trees[prompt_str][c] = chain.CloneTree(0)
-    #             if chain.GetEntries() > 0: 
-    #                 new_vars[prompt_str][c] = makeBranches(out_trees[prompt_str][c], ['event_weight/F'], already_defined = already_defined)
-    #                 already_defined = True
-
-    #                 for entry in xrange(chain.GetEntries()):
-    #                     chain.GetEntry(entry)
-    #                     new_vars[prompt_str][c].event_weight = num_of_entries['tot'][c]/num_of_entries[chain.HNL_mass][c]
-    #                     out_trees[prompt_str][c].Fill()
-    #                 out_file.cd(prompt_str+'/'+c)
-    #                 out_trees[prompt_str][c].Write()                
-
-
     pnfs_base = os.path.expandvars(os.path.join('/pnfs/iihe/cms/store/user', '$USER', 'skimmedTuples/HNL/'))
 
 
     signal_mergefiles = output_base+'/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Signal'
     background_mergefiles = output_base+'/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Background'
-    background_mergefiles_pnfs = pnfs_base+'/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Background'
-    # merge([signal_mergefiles, background_mergefiles], __file__, jobs, ('sample', 'subJob'), argParser)
-    merge([signal_mergefiles], __file__, jobs, ('sample', 'subJob'), argParser)
+    background_mergefiles_pnfs = pnfs_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Background'
+    merge([signal_mergefiles, background_mergefiles], __file__, jobs, ('sample', 'subJob'), argParser)
 
     local_base = os.path.expandvars(os.path.join('/pnfs/iihe/cms/store/user', '$USER', 'skimmedTuples/HNL/'))
     makeDirIfNeeded(pnfs_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/*')
 
     if not args.isTest:
         os.system('cp -rf '+output_base+'/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Signal ' + pnfs_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/.')
-        # os.system('cp -rf '+output_base+'/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Background ' + pnfs_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/.')
+        os.system('cp -rf '+output_base+'/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Background ' + pnfs_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/.')
 
     combined_dir = lambda base, sd : base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Combined/'+sd
     makeDirIfNeeded(combined_dir(pnfs_base, 'SingleTree')+'/test')
@@ -344,27 +332,27 @@ else:
     }
 
     bkgr_file = lambda bkgr_name : pnfs_base+'TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Background/'+bkgr_name+'.root'
-    all_bkgr_files = bkgr_file('*')
-    nonprompts_of_interest = ['DY', 'TT', 'ttX']
+    all_bkgrs = sample_manager.getOutputs()
+    all_bkgr_files = ' '.join([bkgr_file(b) for b in all_bkgrs if not 'HNL' in b])
+    nonprompts_of_interest = ['XG', 'TT-T+X']
 
-    if args.merge:
 
-        # makeDirIfNeeded(background_mergefiles+'/Combined/x')
-        # os.system('hadd -f ' + background_mergefiles_pnfs+'/Combined/all_bkgr.root '+ all_bkgr_files)
+    makeDirIfNeeded(background_mergefiles_pnfs+'/Combined/x')
+    os.system('hadd -f ' + background_mergefiles_pnfs+'/Combined/all_bkgr.root '+ all_bkgr_files)
 
-        # os.system('hadd -f ' + bkgr_file('Combined/nonprompt_bkgr')+' ' + ' '.join([bkgr_file(n) for n in nonprompts_of_interest]))
+    os.system('hadd -f ' + bkgr_file('Combined/nonprompt_bkgr')+' ' + ' '.join([bkgr_file(n) for n in nonprompts_of_interest]))
 
-        first_pass = True
-        for mass_range in mass_ranges:
-            if mass_range not in ['lowestmass', 'lowmass']: continue
-            # for flavor in ['e', 'mu', 'taulep', 'tauhad']:
-            for flavor in ['taulep', 'tauhad']:
-                all_files_to_merge = []
-                for mass in mass_ranges[mass_range]:
-                    if isValidRootFile(flavor_file[flavor](mass)): all_files_to_merge.append(flavor_file[flavor](mass))
-                mergeSignal(pnfs_base + '/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Signal' +'/'+mass_range+'-'+flavor+'.root', all_files_to_merge, first_pass)
-                first_pass = False
+    first_pass = True
+    for mass_range in mass_ranges:
+        if mass_range not in ['lowestmass', 'lowmass']: continue
+        for flavor in ['e', 'mu', 'taulep', 'tauhad']:
+            all_files_to_merge = []
+            for mass in mass_ranges[mass_range]:
+                if args.year == '2016pre' and mass == 70: continue
+                if isValidRootFile(flavor_file[flavor](mass)): all_files_to_merge.append(flavor_file[flavor](mass))
+            mergeSignal(pnfs_base + '/TMVA/'+args.era+args.year+'/'+args.region+'-'+args.selection+'/Signal' +'/'+mass_range+'-'+flavor+'.root', all_files_to_merge, first_pass)
+            first_pass = False
 
-                # os.system('hadd -f ' + combined_dir(pnfs_base, 'SingleTree')+'/'+mass_range+'-'+flavor+'.root '+signal_mergefiles+'/'+mass_range+'-'+flavor+'.root ' +background_mergefiles+'/Combined/all_bkgr.root ')
+            # os.system('hadd -f ' + combined_dir(pnfs_base, 'SingleTree')+'/'+mass_range+'-'+flavor+'.root '+signal_mergefiles+'/'+mass_range+'-'+flavor+'.root ' +background_mergefiles+'/Combined/all_bkgr.root ')
 
 

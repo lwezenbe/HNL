@@ -430,3 +430,13 @@ def add3Doverflow(hist):
 
     hist.Add(overflow)
     return hist
+
+def isList(item):
+    if isinstance(item, (list,)) or isinstance(item, set): return True
+    return False
+
+def makeList(item):
+    if not isList(item):
+        item = [item]
+    return item
+

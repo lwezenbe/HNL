@@ -201,6 +201,9 @@ def selectFirstTwoJets(chain, new_chain):
             new_chain.j_indices[i] = -1
             new_chain.j_btag[i] = -99.
 
+    new_chain.dphi_j1met = deltaPhi(new_chain.j_phi[0], chain._metPhi) if new_chain.j_indices[0] >= 0 else -1
+    new_chain.dphi_j2met = deltaPhi(new_chain.j_phi[1], chain._metPhi) if new_chain.j_indices[1] >= 0 else -1
+
     return True 
 
 
@@ -413,6 +416,8 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
     new_chain.mindr_l3 = min(new_chain.dr_l1l3, new_chain.dr_l2l3)
     new_chain.maxdr_l3 = max(new_chain.dr_l1l3, new_chain.dr_l2l3)
 
+    new_chain.dphi_l1met = deltaPhi(new_chain.l_phi[0], chain._metPhi)
+    new_chain.dphi_l2met = deltaPhi(new_chain.l_phi[1], chain._metPhi)
     new_chain.dphi_l3met = deltaPhi(new_chain.l_phi[2], chain._metPhi)
 
 def calculateFourLepVariables(chain, new_chain):

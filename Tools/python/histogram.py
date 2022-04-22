@@ -211,7 +211,6 @@ class Histogram:
         tmp_hist.SetBinError(1, self.hist.GetMeanError())
         return Histogram(tmp_hist)
 
-
 def returnSqrt(th1):
     sqrt = th1.Clone('sqrt')
     for xbin in xrange(1, th1.GetSize()-1):                     #GetSize returns nbins + 2 (for overflow and underflow bin)

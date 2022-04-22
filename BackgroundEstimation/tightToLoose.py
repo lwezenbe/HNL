@@ -46,7 +46,7 @@ if args.isTest:
         if args.inData: args.sample = 'Data-'+args.era+args.year
         elif args.flavor == 'e': args.sample = 'QCDEMEnriched-80to120'
         elif args.flavor == 'mu': args.sample = 'QCDmuEnriched-80to120'
-        else:   args.sample = 'DYJetsToLL-M-50'
+        else:   args.sample = 'TTJets-Dilep'
     from HNL.Tools.helpers import generateArgString
     arg_string =  generateArgString(argParser)
 else:

@@ -10,7 +10,7 @@ submission_parser.add_argument('--isChild',  action='store_true', default=False,
 submission_parser.add_argument('--year',     action='store',       default=None,   help='Select year. Enter "all" for all years', required=True)
 submission_parser.add_argument('--era',     action='store',   nargs='*',   default=None, choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?', 
-    choices=['baseline', 'lowMassSR', 'highMassSR'])
+    choices=['baseline', 'lowMassSR', 'lowMassSRloose', 'highMassSR'])
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--signalname',   action='store', default=None,  help='Signal name')
 submission_parser.add_argument('--batchSystem', action='store',         default='foreground',  help='choose batchsystem', choices=['local', 'HTCondor', 'foreground'])
@@ -39,43 +39,37 @@ eras = "-".join(sorted(args.era))
 
 ih = InputHandler(eras, args.year, args.region, args.selection)
 
-# ntrees = ['100', '200', '300']
-# maxdepth = ['2', '3', '4']
-# boosttypes = ['Grad', 'AdaBoost', 'RealAdaBoost']
-# shrinkage = ['0.1', '0.3', '1']
-
-ntrees = ['25', '50', '75', '100']
-maxdepth = ['1', '2', '3']
-boosttypes = ['Grad', 'AdaBoost', 'RealAdaBoost']
-shrinkage = ['0.1', '0.3', '1']
-
-# ntrees = ['25']
-# maxdepth = ['3']
-# boosttypes = ['Grad']
-# shrinkage = [ '1']
+if not args.isTest:
+    ntrees = ih.NTREES
+    maxdepth = ih.MAXDEPTH
+    boosttypes = ih.BOOSTTYPES
+    shrinkage = ih.SHRINKAGE
+else:
+    ntrees = ['100']
+    maxdepth = ['2']
+    boosttypes = ['Grad']
+    shrinkage = ['0.3']
  
-def getOutFileName(signal_name):
-    if args.cutString is None:
-        return os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'training', eras+args.year, 
-                                                            args.region+'-'+args.selection, signal_name, signal_name+'.root'))
-    else:
-        out_cut_str = "".join(i for i in args.cutString if i not in " &\/:*?<>|")
-        return os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'training', eras+args.year, 
+def getOutFileName(eras, signal_name):
+    out_cut_str = "".join(i for i in args.cutString if i not in " &\/:*?<>|") if args.cutString is not None else 'full'
+    return os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'testArea' if args.isTest else '', 'training', eras+args.year, 
                             args.region+'-'+args.selection, out_cut_str, signal_name, signal_name+'.root'))        
 
 
 if not any([args.isChild, args.plots, args.plotDetailedMVA, args.saveTrainings]):
+    if args.isTest: args.batchSystem = 'HTCondor'
     if args.batchSystem != 'foreground': 
         jobs = []
         for signal in ih.signal_names:
             jobs += [(signal, '0')]
         submitJobs(__file__, ('signalname', 'dummy'), jobs, argParser, jobLabel = 'TMVAtrainer'+args.region)
+        exit(0)
     else:
         args.isChild = True
         submitArgs = getSubmitArgs(argParser, args)
         for signal in ih.signal_names:
             if args.signalname is not None and signal != args.signalname: continue
-            command = 'python trainer.py'
+            command = os.path.expandvars('python $CMSSW_BASE/src/HNL/TMVA/trainer.py')
             for arg, value in submitArgs.iteritems():
                 if value == False:
                     continue
@@ -90,8 +84,8 @@ if not any([args.isChild, args.plots, args.plotDetailedMVA, args.saveTrainings])
             if args.isTest or args.checkTreeContent:
                 os.system(command)
             else:
-                makeDirIfNeeded(getOutFileName(signal))
-                os.system(command + ' > '+getOutFileName(signal).split('.root')[0]+'.txt')
+                makeDirIfNeeded(getOutFileName(eras, signal))
+                os.system(command + ' > '+getOutFileName(eras, signal).split('.root')[0]+'.txt')
     exit(0)
 
 #
@@ -119,10 +113,10 @@ if args.checkTreeContent:
     ih.getReportOnBackgrounds(channel=channel, cut_string = args.cutString if args.cutString is not None else "")
 
 if not args.skipTraining:
-    input_var = getVariableList(args.signalname)
+    input_var = getVariableList(args.signalname, args.cutString)
 
-    makeDirIfNeeded(getOutFileName(args.signalname))
-    out_file = ROOT.TFile(getOutFileName(args.signalname), 'RECREATE') 
+    makeDirIfNeeded(getOutFileName(eras, args.signalname))
+    out_file = ROOT.TFile(getOutFileName(eras, args.signalname), 'RECREATE') 
     factory = ROOT.TMVA.Factory("factory", out_file,"")
 
 
@@ -134,7 +128,7 @@ if not args.skipTraining:
         in_tree = ih.getTree(args.signalname, name=name).CloneTree()
         in_tree.Write('backuptree')
 
-    loader = ih.getLoader(args.signalname, input_var, args.cutString)
+    loader = ih.getLoader(args.signalname, input_var, args.cutString, args.isTest)
 
     preselection = ROOT.TCut("")
     # options = ""
@@ -167,41 +161,42 @@ if args.plots:
     for signal in ih.signal_names:
         if args.signalname is not None and signal != args.signalname: continue
         print("Plotting...", signal)
-        starting_dir = os.path.join(getOutFileName(signal).rsplit('/', 1)[0], 'kBDT').split('/TMVA/')[1]
-        print(getOutFileName(signal))
+        starting_dir = os.path.join(getOutFileName(eras, signal).rsplit('/', 1)[0], 'kBDT').split('/TMVA/')[1]
         ROOT.gROOT.SetBatch(True)
-        ROOT.TMVA.variables(starting_dir, getOutFileName(signal))
-        ROOT.TMVA.correlationscatters(starting_dir, getOutFileName(signal))
-        ROOT.TMVA.correlations(starting_dir, getOutFileName(signal))
-        ROOT.TMVA.mvas(starting_dir, getOutFileName(signal))
+        ROOT.TMVA.variables(starting_dir, getOutFileName(eras, signal))
+        ROOT.TMVA.correlationscatters(starting_dir, getOutFileName(eras, signal))
+        ROOT.TMVA.correlations(starting_dir, getOutFileName(eras, signal))
+        ROOT.TMVA.mvas(starting_dir, getOutFileName(eras, signal))
         # ROOT.TMVA.mvas(starting_dir, getOutFileName(signal), 1)
         # ROOT.TMVA.mvas(starting_dir, getOutFileName(signal), 2)
-        ROOT.TMVA.mvas(starting_dir, getOutFileName(signal), 3)
-        ROOT.TMVA.efficiencies(starting_dir, getOutFileName(signal))
+        ROOT.TMVA.mvas(starting_dir, getOutFileName(eras, signal), 3)
+        ROOT.TMVA.efficiencies(starting_dir, getOutFileName(eras, signal))
         # ROOT.TMVA.paracoor(starting_dir, getOutFileName(signal))
         # ROOT.TMVA.bdtcontrolplots(starting_dir, getOutFileName(signal))
 
         ### open gui
         if args.gui:
             if(not ROOT.gROOT.IsBatch()):
-                ROOT.TMVA.TMVAGui(getOutFileName(signal))
+                ROOT.TMVA.TMVAGui(getOutFileName(eras, signal))
             raw_input("Press enter to exit...")
         
 if args.plotDetailedMVA:
     from HNL.TMVA.reader import getAllMVAhist, getNonPromptMVAhist
     from HNL.Plotting.plot import Plot
-    for signal in ih.signal_names:
-        # dict_of_hist = getNonPromptMVAhist(ih, 'NoTau', args.region, eras, cut_string = args.cutString)
-        dict_of_hist = getAllMVAhist(ih, 'NoTau', args.region, eras, cut_string = args.cutString)
 
+    dict_of_hist = {}
+    dict_of_hist['NoTau'] = getAllMVAhist(ih, 'NoTau', args.region, eras, cut_string = args.cutString)
+    dict_of_hist['SingleTau'] = getAllMVAhist(ih, 'SingleTau', args.region, eras, cut_string = args.cutString)
+    for signal in ih.signal_names:
+        channel_of_choice = 'SingleTau' if 'tauhad' in signal else 'NoTau'
         list_of_hist = []
         list_of_names = []
-        for sample in dict_of_hist.keys():
-            list_of_hist.append(dict_of_hist[sample][signal])
+        for sample in dict_of_hist[channel_of_choice].keys():
+            list_of_hist.append(dict_of_hist[channel_of_choice][sample][signal])
             list_of_names.append(sample)
         
-        p = Plot(list_of_hist, list_of_names, signal, "MVA score", "Events", year='all', era='prelegacy', color_palette='Large')
-        p.drawHist(output_dir = getOutFileName(signal).rsplit('/', 1)[0]+'/DetailedPlots', draw_option='Stack')
+        p = Plot(list_of_hist, list_of_names, signal, "MVA score", "Events", year='all', era='UL', color_palette='Large')
+        p.drawHist(output_dir = getOutFileName(eras, signal).rsplit('/', 1)[0]+'/DetailedPlots', draw_option='Stack')
 
 if args.saveTrainings is not None:
     base_folder = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'FinalTrainings', args.saveTrainings)
@@ -225,18 +220,18 @@ if args.saveTrainings is not None:
         info_file.write(' '.join(['region: \t \t', args.region, '\n']))
         info_file.write(' '.join(['selection: \t \t', args.selection, '\n']))
         info_file.write(' '.join(['cut string: \t \t', str(args.cutString), '\n']))
-        info_file.write(' '.join(['training: \t \t', MVA_dict[signal][0], '\n']))
+        info_file.write(' '.join(['training: \t \t', MVA_dict[args.region][signal][0], '\n']))
         info_file.close()
 
         #copy the weights file
-        if args.cutString is None:
-            os.system('scp '+os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'training', 
-                                            eras+'all', args.region+'-'+args.selection, signal, 'kBDT', 
-                                            'weights', 'factory_'+MVA_dict[signal][0]+'.weights.xml ') + ' '
-                            + os.path.join(base_folder, signal+'.xml'))
-        else:
-            os.system('scp '+os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'training', 
-                            eras+'all', args.region+'-'+args.selection, "".join(i for i in args.cutString if i not in "\/:*?<>|& "),
-                            signal, 'kBDT', 'weights', 'factory_'+MVA_dict[signal][0]+'.weights.xml') + ' '
+        os.system('scp '+os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'training', 
+                            eras+'all', args.region+'-'+args.selection, "".join(i for i in args.cutString if i not in "\/:*?<>|& ") if args.cutString is not None else 'full',
+                            signal, 'kBDT', 'weights', 'factory_'+MVA_dict[args.region][signal][0]+'.weights.xml') + ' '
                             + os.path.join(base_folder, signal+'.xml'))
 
+        import json
+        from HNL.TMVA.mvaVariables import getVariableNames
+        input_var = getVariableNames(signal, args.cutString)
+        json_var = json.dumps(input_var)
+        with open(os.path.join(base_folder, signal+'.json'), 'w') as outfile:
+            outfile.write(json_var)

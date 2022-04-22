@@ -1,4 +1,8 @@
 from ROOT import TFile
+
+def cleanName(in_name):
+    return "".join(i for i in in_name if i not in "\/:*?<>|&- ")
+
 class OutputTree(object):
     
     def __init__(self, name, path, branches = None):
@@ -24,6 +28,7 @@ class OutputTree(object):
             self.new_vars = makeBranches(self.tree, branches)
     
     def setTreeVariable(self, var_name, new_value):
+        var_name = cleanName(var_name)
         if self.new_vars is not None:
             setattr(self.new_vars, var_name, new_value)
         else:

@@ -21,15 +21,15 @@ version        = 'v8.0.1'
 # Function to write out a data card, these data cards all contain 1 bin to be clear, readable and flexible
 # and should be combined later on
 #
-def makeDataCard(bin_name, flavor, era, year, obs_yield, sig_name, bkgr_names, selection, strategy, region, sig_yield=None, bkgr_yields= None, shapes=False, coupling_sq = 1e-4):
+def makeDataCard(bin_name, flavor, era, year, obs_yield, sig_name, bkgr_names, selection, region, sig_yield=None, bkgr_yields= None, shapes=False, coupling_sq = 1e-4):
 
     if not shapes and len(bkgr_yields) != len(bkgr_names):
         raise RuntimeError("length of background yields and names is inconsistent")
 
     if not shapes:
-        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'dataCards', era+str(year), '-'.join([strategy, selection]), flavor, sig_name, 'cutAndCount',  bin_name+'.txt')
+        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'dataCards', era+str(year), '-'.join([selection, region]), flavor, sig_name, 'cutAndCount',  bin_name+'.txt')
     else:
-        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'dataCards', era+str(year), '-'.join([strategy, selection]), flavor, sig_name, 'shapes', bin_name+'.txt')
+        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'dataCards', era+str(year), '-'.join([selection, region]), flavor, sig_name, 'shapes', bin_name+'.txt')
     makeDirIfNeeded(out_name)
     out_file = open(out_name, 'w')
 
@@ -39,17 +39,17 @@ def makeDataCard(bin_name, flavor, era, year, obs_yield, sig_name, bkgr_names, s
     out_file.write('kmax    * \n')
     out_file.write('-'*400 + '\n')
     if shapes:
-        shapes_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([strategy, selection, region]), era+str(year), flavor, sig_name, bin_name+'.shapes.root')
+        shapes_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([selection, region]), era+str(year), flavor, sig_name, bin_name+'.shapes.root')
         out_file.write('shapes * * \t' +shapes_path + ' $PROCESS $PROCESS_SYSTEMATIC')
     out_file.write('-'*400 + '\n')
-    out_file.write('bin             '+bin_name+ ' \n')
+    out_file.write('bin             '+bin_name.rsplit('-', 1)[0]+ ' \n')
     if shapes:
         out_file.write('observation     -1 \n')   
         # out_file.write('observation     '+str(obs_yield)+ ' \n') 
     else:
         out_file.write('observation     '+str(obs_yield)+ ' \n')
     out_file.write('-'*400 + '\n')
-    out_file.write(tab(['bin', '']+ [bin_name]*(len(bkgr_names)+1)))
+    out_file.write(tab(['bin', '']+ [bin_name.rsplit('-', 1)[0]]*(len(bkgr_names)+1)))
     out_file.write(tab(['process', '']+ bkgr_names + [sig_name]))
     out_file.write(tab(['process', '']+ [str(i) for i in xrange(1, len(bkgr_names)+1)] + ['0']))
     if shapes:

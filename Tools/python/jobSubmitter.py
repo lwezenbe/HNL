@@ -143,6 +143,15 @@ def submitJobs(script, subjob_args, subjob_list, argparser, **kwargs):
     cores = kwargs.get('cores', 1)
     job_label = kwargs.get('jobLabel', None)
     resubmission = kwargs.get('resubmission', False)
+
+    try:
+        if checkShouldMerge(script, argparser, sub_log, additional_args):
+            can_continue = raw_input('You are about to submit jobs but there seem to be existing files waiting for a merge. Are you sure you want to submit these jobs anyway? (y/n) \n')    
+            if can_continue not in ['y', 'Y']: 
+                print 'Aborting job submission'
+                return
+    except:
+        pass
     
     args         = argparser.parse_args()
     args.isChild = True

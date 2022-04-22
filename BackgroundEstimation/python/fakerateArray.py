@@ -16,7 +16,7 @@ class SingleFlavorFakeRateCollection:
                 subdirs = subdirs.split('/')
             else:
                 subdirs = None
-                on_end = on_end
+                on_end = on
             self.fakerates[cn] = FakeRate(on_end, lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), path, None, subdirs = subdirs)
 
         self.method = method

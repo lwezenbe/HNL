@@ -12,6 +12,8 @@ import json
 cat_dict = {
     'highMassSR' : SUPER_CATEGORIES['SingleTau'],
     'lowMassSR' : SUPER_CATEGORIES['SingleTau'],
+    'lowMassSRloose' : SUPER_CATEGORIES['SingleTau'],
+    'WZCR' : SUPER_CATEGORIES['SingleTau'],
     'MCCT' : [17],
     'DataCT' : [17],
     'TauMixCT' : [17],
@@ -27,13 +29,19 @@ def determineWeights(eras, years, selections, regions, strategy):
     from ROOT import TFile
     from HNL.Tools.helpers import getHistFromTree
     import numpy as np
-    weights = {}
+
+    try:
+        f = open(out_file_path,)
+        weights = json.load(f)
+        f.close()
+    except:
+        weights = {}
     for era in eras:
-        weights[era] = {}
+        if era not in weights.keys():   weights[era] = {}
         for year in years:
-            weights[era][year] = {}
+            if year not in weights[era].keys(): weights[era][year] = {}
             for selection in selections:
-                weights[era][year][selection] = {}
+                if selection not in weights[era][year].keys():  weights[era][year][selection] = {}
                 for region in regions:
                     tt_tot = 0.
                     dy_tot = 0.
@@ -61,14 +69,15 @@ def determineWeights(eras, years, selections, regions, strategy):
 def getWeights(era, year, selection, region):
     f = open(out_file_path,)
     weights = json.load(f)
+    f.close()
     return weights[era][year][selection][region]
 
 
 if __name__ == '__main__':
 
     argParser = argparse.ArgumentParser(description = "Argument parser")
-    argParser.add_argument('--eras',     action='store',      default=['prelegacy'], nargs='*',    help='Select years', choices=['UL', 'prelegacy'])
-    argParser.add_argument('--years',     action='store',      default=['2016', '2017', '2018'], nargs='*',    help='Select years')
+    argParser.add_argument('--eras',     action='store',      default=['UL'], nargs='*',    help='Select years', choices=['UL', 'prelegacy'])
+    argParser.add_argument('--years',     action='store',      default=['2016pre', '2016post', '2017', '2018'], nargs='*',    help='Select years')
     argParser.add_argument('--selections',   action='store', nargs='*', default=['default'],  help='Select the type of selection for objects', 
                                 choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
     argParser.add_argument('--strategy',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])

@@ -22,18 +22,13 @@ class SignalRegionSelector(FilterObject):
 
     # @classmethod
     def passedStandaloneFilter(self, cutter, region, kwargs):
-        for_training = kwargs.get('for_training')
-        if not passBaseCuts(self.chain, self.new_chain, cutter, for_training=for_training): return False
+        if not passBaseCuts(self.chain, self.new_chain, cutter): return False
         if region == 'lowMassSR':
-            return passLowMassSelection(self.chain, self.new_chain, self.is_reco_level, cutter, for_training=for_training)
+            return passLowMassSelection(self.chain, self.new_chain, self.is_reco_level, cutter)
+        elif region == 'lowMassSRloose':
+            return passLowMassSelection(self.chain, self.new_chain, self.is_reco_level, cutter, loose_selection = True)
         elif region == 'highMassSR':
-            return passHighMassSelection(self.chain, self.new_chain, self.is_reco_level, cutter, for_training=for_training)
-        elif region == 'lowMassSRForTraining':
-            return passLowMassSelection(self.chain, self.new_chain, self.is_reco_level, cutter, for_training=True)
-        elif region == 'highMassSRForTraining':
-            return passHighMassSelection(self.chain, self.new_chain, self.is_reco_level, cutter, for_training=True)
-        elif region == 'lowMassTrainingEmulation':
-            return passLowMassSelection(self.chain, self.new_chain, self.is_reco_level, cutter, for_training=True) and self.new_chain.M3l < 80
+            return passHighMassSelection(self.chain, self.new_chain, self.is_reco_level, cutter)
         elif region == 'baseline':
             return True
         else:
