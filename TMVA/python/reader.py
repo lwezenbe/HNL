@@ -50,7 +50,6 @@ class Reader:
             self.reader.AddVariable(v, self.variable_array[v])
 
     def bookMethod(self, era, training_name): 
-        print training_name, self.path_to_weights
         self.reader.BookMVA(training_name, self.path_to_weights)
 
     def predict(self, trainingnames=False):

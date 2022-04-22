@@ -436,7 +436,6 @@ def isList(item):
     return False
 
 def makeList(item):
-    # if not isinstance(item, (list,)) and not isinstance(item, set):
     if not isList(item):
         item = [item]
     return item

@@ -1153,8 +1153,6 @@ class Plot:
         frame.SetMaximum(max_y*100)
         frame.GetXaxis().SetLimits(0.95*min(values), 1.05*max(values))
 
-
-        yellow.GetHistogram().SetMaximum(max_y)
         yellow.SetFillColor(ROOT.kOrange)
         yellow.SetLineColor(ROOT.kOrange)
         yellow.SetFillStyle(1001)
