@@ -70,8 +70,6 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
     
     if len(chain.leptons) != nL:  return False
 
-    tes = TauEnergyScale(chain.era, chain.year, chain.obj_sel['tau_algo'])
-
     if chain is new_chain:
         new_chain.l_pt = [0.0]*nL
         new_chain.l_eta = [0.0]*nL
@@ -102,12 +100,6 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         new_chain.l_istight[i] = isGoodLepton(chain, ptAndIndex[i][1], 'tight')
         if not chain.is_data:
             new_chain.l_isfake[i] = isFakeLepton(chain, ptAndIndex[i][1])
-        
-        # Apply tau energy scale
-        if not chain.is_data and new_chain.l_flavor[i] == 2:
-            tlv = getFourVec(new_chain.l_pt[i], new_chain.l_eta[i], new_chain.l_phi[i], new_chain.l_e[i])
-            new_chain.l_pt[i] *= tes.readES(tlv, chain._tauDecayMode[new_chain.l_indices[i]], chain._tauGenStatus[new_chain.l_indices[i]])
-            new_chain.l_e[i] *= tes.readES(tlv, chain._tauDecayMode[new_chain.l_indices[i]], chain._tauGenStatus[new_chain.l_indices[i]])
 
     return True
 

@@ -1,11 +1,22 @@
 from HNL.Weights.lumiweight import LumiWeight
-from HNL.Weights.puReweighting import PUWeightReaderJSON, getReweightingFunction
+from HNL.Weights.puReweighting import returnPUWeightReader
 from HNL.Weights.bTagWeighter import getReweightingFunction as btagReweighter
-from HNL.Weights.electronSF import ElectronRecoSF
+from HNL.Weights.electronSF import ElectronRecoSFJSON
 from HNL.ObjectSelection.tauSelector import getTauAlgoWP
 from HNL.Weights.fakeRateWeights import returnFakeRateCollection
+import numpy as np
+
+var_weights = { 
+        'lumiWeight':          (lambda c : c.lumiWeight,      np.arange(0., 2., .1),         ('lumi weight', 'Events')), 
+        'puWeight':          (lambda c : c.puWeight,      np.arange(0.8, 1.21, .01),         ('PU weight', 'Events')), 
+        'electronRecoWeight':          (lambda c : c.electronRecoWeight,      np.arange(0.8, 1.21, 0.01),         ('Electron reco weight', 'Events')), 
+        'tauSFWeight':          (lambda c : c.tauSFWeight,      np.arange(0., 2., .1),         ('Tau SF weight', 'Events')), 
+        'btagWeight':          (lambda c : c.btagWeight,      np.arange(0.5, 1.5, .01),         ('btag weight', 'Events')), 
+} 
 
 class Reweighter:
+    
+    WEIGHTS_TO_USE = var_weights.keys()
 
     def __init__(self, sample, sample_manager):
         self.sample = sample
@@ -16,14 +27,11 @@ class Reweighter:
 
         # pu weights
         if not sample.is_data:
-            if self.sample.chain.era != 'prelegacy':
-                self.puReweighting     = PUWeightReaderJSON(sample.chain.era, sample.chain.year)
-            else:
-                self.puReweighting      = getReweightingFunction(sample.chain.era, sample.chain.year, 'central')
+            self.puReweighting      = returnPUWeightReader(sample.chain.era, sample.chain.year)
 
             if self.sample.chain.era != 'prelegacy': self.btagReweighting = btagReweighter('Deep', self.sample.chain.era, self.sample.chain.year, 'loose', self.sample.chain.selection)
 
-            self.electronSF = ElectronRecoSF(self.sample.chain.era, self.sample.chain.year)
+            self.electronSF = ElectronRecoSFJSON(self.sample.chain.era, self.sample.chain.year)
 
             #
             # Tau SF
@@ -35,18 +43,23 @@ class Reweighter:
 
         self.fakerate_collection = None
 
-    def getPrefireWeight(self):
-        return self.sample.chain._prefireWeight
+    def returnBranches(self):
+        return ['{0}/F'.format(weight) for weight in self.WEIGHTS_TO_USE]
+
+    def getPrefireWeight(self, syst = 'nominal'):
+        if syst == 'nominal':
+            return self.sample.chain._prefireWeight
+        if syst == 'up':
+            return self.sample.chain._prefireWeightUp
+        if syst == 'down':
+            return self.sample.chain._prefireWeightDown
 
     def getLumiWeight(self):
         return self.lumiweighter.getLumiWeight()
 
-    def getPUWeight(self):
+    def getPUWeight(self, syst = 'nominal'):
         if not self.sample.is_data:
-            if self.sample.chain.era != 'prelegacy':
-                return self.puReweighting.readValue(self.sample.chain._nTrueInt)
-            else:
-                return self.puReweighting(self.sample.chain._nTrueInt)
+            return self.puReweighting.readValue(self.sample.chain._nTrueInt, syst)
         else:
             return 1.
 
@@ -57,52 +70,49 @@ class Reweighter:
             self.fakerate_collection = returnFakeRateCollection(self.sample.chain, tau_method = tau_method)
             return self.fakerate_collection.getFakeWeight()
 
-    def getBTagWeight(self):
+    def getBTagWeight(self, syst = 'nominal'):
         if not self.sample.is_data and self.sample.chain.is_reco_level and self.sample.chain.era != 'prelegacy':
-            return self.btagReweighting(self.sample.chain)
+            return self.btagReweighting(self.sample.chain, syst)
         else:
             return 1.
 
-    def getElectronRecoSF(self):
+    def getElectronRecoSF(self, syst = 'nominal'):
         if not self.sample.is_data and self.sample.chain.is_reco_level:
-            return self.electronSF.getTotalRecoSF(self.sample.chain)
+            return self.electronSF.getTotalRecoSF(self.sample.chain, syst)
         else:
             return 1.        
 
-    def getTauSF(self):
+    def getTauSF(self, syst = 'nominal'):
         if not self.sample.is_data and self.sample.chain.is_reco_level:
-            return self.tauSF.getTotalSF(self.sample.chain)
+            return self.tauSF.getTotalSF(self.sample.chain, syst)
         else:
             return 1.        
+
+    def returnWeight(self, weight_name, syst = 'nominal'):
+        if weight_name == 'lumiWeight':
+            return self.getLumiWeight()
+        if weight_name == 'puWeight':
+            return self.getPUWeight(syst=syst)
+        if weight_name == 'electronRecoWeight':
+            return self.getElectronRecoSF(syst=syst)
+        if weight_name == 'tauSFWeight':
+            return self.getTauSF(syst=syst)
+        if weight_name == 'btagWeight':
+            return self.getBTagWeight(syst=syst)
+
 
     def getTotalWeight(self, sideband=False, tau_fake_method = None):
         tot_weight = 1.
-        tot_weight *= self.getLumiWeight()
-        tot_weight *= self.getPUWeight()
-        tot_weight *= self.getElectronRecoSF()
-        tot_weight *= self.getTauSF()
-        if self.sample.chain.era != 'prelegacy': tot_weight *= self.getBTagWeight() #TODO: reskim of prelegacy samples because _jetSmeared not available
+        for weight in self.WEIGHTS_TO_USE:
+            tot_weight *= self.returnWeight(weight)
         if sideband:
             tot_weight *= self.getFakeRateWeight(tau_method = tau_fake_method)
         #tot_weight *= self.getPrefireWeight()
         return tot_weight
 
-    def getTestWeight(self, sideband=False):
-        tot_weight = 1.
-        tot_weight *= self.getLumiWeight()
-        tot_weight *= self.getPUWeight()
-        tot_weight *= self.getElectronRecoSF()
-        if self.sample.chain.era != 'prelegacy': tot_weight *= self.getBTagWeight() #TODO: reskim of prelegacy samples because _jetSmeared not available
-        if sideband:
-            tot_weight *= self.getFakeRateWeight()
-        return tot_weight
-    
     def fillTreeWithWeights(self, chain):
-        chain.lumiWeight = self.getLumiWeight()
-        chain.puWeight = self.getPUWeight()
-        chain.electronRecoWeight = self.getElectronRecoSF()
-        chain.tauSFWeight = self.getTauSF()
-        chain.btagWeight = self.getBTagWeight()
+        for weight in self.WEIGHTS_TO_USE:
+            chain.setTreeVariable(weight, self.returnWeight(weight))
 
 if __name__ == '__main__':
     from HNL.Samples.sampleManager import SampleManager

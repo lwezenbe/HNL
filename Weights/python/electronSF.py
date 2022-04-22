@@ -47,7 +47,7 @@ class ElectronRecoSF:
     
     def getSingleRecoSF(self, chain, index):
         eta = chain._lEtaSC[index]
-        pt = chain._lPt[index]
+        pt = chain._lPtCorr[index]
 
         if not eta <= self.e_etaMax: 
             log.warning("Supercluster eta out of bounds: %3.2f (need %3.2f <= eta <=% 3.2f)", eta, self.e_etaMin, self.e_etaMax)
@@ -74,3 +74,50 @@ class ElectronRecoSF:
                 sf *= self.getSingleRecoSF(chain, e)
         
         return sf
+
+class ElectronRecoSFJSON:
+
+    DATA_DIR_JSON = os.path.expandvars('$CMSSW_BASE/src/HNL/Weights/data/jsonpog-integration/POG/EGM')
+
+    YEAR_DICT = {
+        '2016pre' : '2016preVFP',
+        '2016post' : '2016postVFP',
+        '2017' : '2017',
+        '2018' : '2018'
+    }
+
+    UNC_DICT = {
+        'nominal' : 'sf',
+        'up'    : 'sfup',
+        'down'  : 'sfdown'
+    }
+
+    def __init__(self, era, year):
+        from correctionlib._core import CorrectionSet
+        self.year = year
+        sf_dir = os.path.join(self.DATA_DIR_JSON, self.YEAR_DICT[year]+'_'+era, 'electron.json.gz')
+        self.egmjson = CorrectionSet.from_file(sf_dir)
+
+    def getSingleRecoSF(self, chain, index, syst = 'nominal'):
+       
+        eta = chain._lEtaSC[index]
+        pt = chain._lPtCorr[index]
+
+        if pt < 10: pt = 10.
+
+        if pt < 20:
+            return self.egmjson["UL-Electron-ID-SF"].evaluate(self.YEAR_DICT[self.year], self.UNC_DICT[syst], 'RecoBelow20', eta, pt)
+        else:
+            return self.egmjson["UL-Electron-ID-SF"].evaluate(self.YEAR_DICT[self.year], self.UNC_DICT[syst], 'RecoAbove20', eta, pt)
+
+    def getTotalRecoSF(self, chain, syst = 'nominal'):
+        from HNL.ObjectSelection.electronSelector import isGoodElectron
+
+        sf = 1.
+        for e in xrange(chain._nMu, chain._nLight):
+            if isGoodElectron(chain, e, workingpoint='loose'):
+                sf *= self.getSingleRecoSF(chain, e, syst)
+
+        return sf
+ 
+

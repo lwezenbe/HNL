@@ -5,14 +5,6 @@ l2 = 1
 l3 = 2
 l4 = 3
 
-var_weights = {
-        'lumiWeight':          (lambda c : c.lumiWeight,      np.arange(0., 2., .1),         ('lumi weight', 'Events')),
-        'puWeight':          (lambda c : c.puWeight,      np.arange(0.8, 1.21, .01),         ('PU weight', 'Events')),
-        'electronRecoWeight':          (lambda c : c.electronRecoWeight,      np.arange(0.8, 1.21, 0.01),         ('Electron reco weight', 'Events')),
-        'tauSFWeight':          (lambda c : c.tauSFWeight,      np.arange(0., 2., .1),         ('Tau SF weight', 'Events')),
-        'btagWeight':          (lambda c : c.btagWeight,      np.arange(0.5, 1.5, .01),         ('btag weight', 'Events')),
-}
-
 var_gen_3l = {'minMos':        (lambda c : c.minMos,   np.arange(0., 120., 12.),         ('min(M_{OS}) [GeV]', 'Events')),
         'm3l':          (lambda c : c.M3l,      np.arange(0., 240., 5.),         ('M_{3l} [GeV]', 'Events')),
         'ml12':          (lambda c : c.Ml12,      np.arange(0., 240., 5.),         ('M_{l1l2} [GeV]', 'Events')),
@@ -126,8 +118,6 @@ def returnVariables(nl, is_reco, include_mva = None):
         else:
             if nl == 3: var_of_choice = var_gen_3l
             elif nl == 4: var_of_choice = var_gen_4l
-
-        var_of_choice = mergeTwoDictionaries(var_of_choice, var_weights)
 
         if include_mva is not None:
                 from HNL.TMVA.mvaDefinitions import getMVAdict

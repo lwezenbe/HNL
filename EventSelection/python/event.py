@@ -8,8 +8,10 @@ from HNL.Weights.tauEnergyScale import TauEnergyScale
 
 class Event(object):
 
-    def __init__(self, chain, new_chain, is_reco_level=True, **kwargs):
-        self.chain = chain
+    def __init__(self, sample, new_chain, sample_manager, is_reco_level=True, **kwargs):
+        self.sample = sample
+        self.sample_manager = sample_manager
+        self.chain = sample.chain
         self.new_chain = new_chain
 
         self.chain.strategy = kwargs.get('strategy')
@@ -26,22 +28,27 @@ class Event(object):
         self.event_category = EventCategory(self.chain, self.new_chain)
         self.event_selector = EventSelector(self.chain.region, self.chain, self.new_chain, is_reco_level=is_reco_level, event_categorization=self.event_category, additional_options=self.additional_options)
 
-        self.chain.tau_energy_scale = TauEnergyScale(chain.era, chain.year, chain.obj_sel['tau_algo'])
+        self.tau_energy_scale = TauEnergyScale(self.chain.era, self.chain.year, self.chain.obj_sel['tau_algo'])
 
         self.original_object_selection = {k:self.chain.obj_sel[k] for k in self.chain.obj_sel.keys()}
 
-    def initEvent(self, reset_obj_sel = False):
+        from HNL.Weights.reweighter import Reweighter
+        from HNL.Systematics.systematics import Systematics
+        self.reweighter = Reweighter(self.sample, self.sample_manager)
+        self.systematics = Systematics(self.sample, self.reweighter)
+
+    def initEvent(self, reset_obj_sel = False, tau_energy_scale = 'nominal'):
         if reset_obj_sel: self.chain.obj_sel = {k:self.original_object_selection[k] for k in self.chain.obj_sel.keys()} #reset object selection
         self.chain.is_loose_lepton = [None]*self.chain._nL
         self.chain.is_FO_lepton = [None]*self.chain._nL
         self.chain.is_tight_lepton = [None]*self.chain._nL
         self.chain.conecorrection_applied = False
-        self.processLeptons()
+        self.processLeptons(tau_energy_scale)
 
-    def processLeptons(self):
+    def processLeptons(self, tau_energy_scale = 'nominal'):
         self.processMuons()
         self.processElectrons()
-        self.processTaus()
+        self.processTaus(tau_energy_scale)
 
     def processMuons(self):
         for l in xrange(self.chain._nEle, self.chain._nLight):
@@ -55,8 +62,17 @@ class Event(object):
             self.chain.is_FO_lepton[l] = (isGoodLepton(self.chain, l, 'FO'), self.chain.obj_sel['light_algo'])
             self.chain.is_tight_lepton[l] = (isGoodLepton(self.chain, l, 'tight'), self.chain.obj_sel['light_algo'])
 
-    def processTaus(self):
+    def processTaus(self, energy_scale_syst = 'nominal'):
         for l in xrange(self.chain._nLight, self.chain._nL):
+            # First apply energy scale
+            if not self.chain.is_data:
+                from HNL.Tools.helpers import getFourVec
+                tlv = getFourVec(self.chain._lPt[l], self.chain._lEta[l], self.chain._lPhi[l], self.chain._lE[l])
+                es = self.tau_energy_scale.readES(tlv, self.chain._tauDecayMode[l], self.chain._tauGenStatus[l])
+                self.chain._lPt[l] *= es
+                self.chain._lE[l] *= es
+
+
             self.chain.is_loose_lepton[l] = (isGoodLepton(self.chain, l, 'loose'), self.chain.obj_sel['tau_algo'])
             self.chain.is_FO_lepton[l] = (isGoodLepton(self.chain, l, 'FO'), self.chain.obj_sel['tau_algo'])
             self.chain.is_tight_lepton[l] = (isGoodLepton(self.chain, l, 'tight'), self.chain.obj_sel['tau_algo'])

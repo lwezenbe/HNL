@@ -255,6 +255,12 @@ if not args.makePlots and not args.makeDataCards:
             need_sideband = [0,1,2]
 
         #
+        # Load in sample and chain
+        #
+        sample_names.append(sample.name)
+        event = Event(sample, chain, sample_manager, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = year, era = args.era)
+
+        #
         # Prepare output tree
         #
         from HNL.Tools.outputTree import OutputTree
@@ -262,19 +268,15 @@ if not args.makePlots and not args.makeDataCards:
         for v in var.keys():
             branches.extend(['{0}/F'.format(v)])
         branches.extend(['weight/F', 'isprompt/O', 'category/I', 'searchregion/I', 'issideband/O'])
+        branches.extend(event.reweighter.returnBranches())
+        branches.extend(event.systematics.returnBranches())
         output_tree = OutputTree('events', output_name_full, branches = branches)
-
-        #
-        # Load in sample and chain
-        #
-        sample_names.append(sample.name)
-        event = Event(chain, chain, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = year, era = args.era)
 
         #
         # Set event range
         #
         if args.isTest:
-            up_limit = 20000
+            up_limit = 2000
             if len(sample.getEventRange(0)) < up_limit:
                 event_range = sample.getEventRange(0)
             else:
@@ -291,11 +293,6 @@ if not args.makePlots and not args.makeDataCards:
         # Create cutter to provide cut flow
         #
         cutter = Cutter(chain = chain)
-
-        #
-        # Initialize reweighter
-        #
-        reweighter = Reweighter(sample, sample_manager)
 
         #
         # Load in MVA reader if needed
@@ -369,15 +366,16 @@ if not args.makePlots and not args.makeDataCards:
             #
             # Fill tree
             #
-            reweighter.fillTreeWithWeights(chain)
+            event.reweighter.fillTreeWithWeights(output_tree)
             for v in var.keys():
                 output_tree.setTreeVariable(v, var[v][0](chain))
            
-            output_tree.setTreeVariable('weight', reweighter.getTotalWeight(sideband = is_sideband_event, tau_fake_method = 'TauFakesDY' if args.region == 'ConversionCR' else None))
+            output_tree.setTreeVariable('weight', event.reweighter.getTotalWeight(sideband = is_sideband_event, tau_fake_method = 'TauFakesDY' if args.region == 'ConversionCR' else None))
             output_tree.setTreeVariable('isprompt', prompt_str == 'prompt')
             output_tree.setTreeVariable('category', chain.category)
             output_tree.setTreeVariable('searchregion', srm[args.region].getSearchRegion(chain))
             output_tree.setTreeVariable('issideband', is_sideband_event)
+            event.systematics.storeAllSystematicsForShapes(output_tree)
             output_tree.fill()
  
         #

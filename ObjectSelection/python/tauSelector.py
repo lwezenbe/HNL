@@ -156,15 +156,6 @@ tau_DMfinding = {
     'UL' : tau_DMfinding_UL,
 }
 
-def getCorrectedTauPt(chain, index):
-    pt = chain._lPt[index]
-
-    if not chain.is_data:
-        tlv = getFourVec(chain._lPt[index], chain._lEta[index], chain._lPhi[index], chain._lE[index])
-        pt *= chain.tau_energy_scale.readES(tlv, chain._tauDecayMode[index], chain._tauGenStatus[index])
-
-    return pt
-
 #Reference order since the working points are in a dictionary without order
 order_of_workingpoints = { None: 0, 'vvvloose' : 1, 'vvloose' : 2, 'vloose':3, 'loose': 4, 'medium' : 5, 'tight':6, 'vtight': 7, 'vvtight':8, 'vvvtight': 9}
 
@@ -233,10 +224,7 @@ def isCleanFromLightLeptons(chain, index):
 
 def isBaseTau(chain, index):
     if chain._lFlavor[index] != 2:              return False
-    if getattr(chain, 'tau_energy_scale', None) is not None:
-        if getCorrectedTauPt(chain, index) < 20:                  return False
-    else:
-        if chain._lPt[index] < 20:                return False
+    if chain._lPt[index] < 20:                return False
     if chain._lEta[index] > 2.3:                return False
     if abs(chain._dz[index]) >= 0.2:            return False
     if chain._tauDecayMode[index] == 5 or chain._tauDecayMode[index] == 6: return False
@@ -377,7 +365,7 @@ def isJetFakingTau(chain, index):
 def isGeneralTau(chain, index, algo_iso, iso_WP, ele_algo, ele_WP, mu_algo, mu_WP, needDMfinding = True):
     
     if chain._lFlavor[index] != 2:              return False
-    if getCorrectedTauPt(chain, index) < 20:                  return False
+    if chain._lPt[index] < 20:                  return False
     if chain._lEta[index] > 2.3:                return False
     if chain._tauDecayMode[index] == 5 or chain._tauDecayMode[index] == 6: return False
     if algo_iso is not None and not tau_id_WP[chain.era][(algo_iso, iso_WP)](chain)[index]:   return False
