@@ -253,7 +253,7 @@ plotsize = 1-tdrStyle_Left_Margin-tdrStyle_Right_Margin
 
 def plotLowMassRegions(signal_hist, bkgr_hist, tex_names, out_path, extra_text = None):
     #Plot per grouping
-    plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, 'oldAN_lowMass', extra_text=extra_text)
+    plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, 'lowMassSR', extra_text=extra_text)
 
     #
     # All groups in 1 plot
@@ -280,7 +280,7 @@ def plotHighMassRegions(signal_hist, bkgr_hist, tex_names, out_path, extra_text 
 
     #Plot per grouping
 
-    plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, 'oldAN_highMass', extra_text = extra_text)
+    plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, 'highMassSR', extra_text = extra_text)
     
     draw_ratio = 'errorsOnly' if signal_hist is not None and bkgr_hist is not None else None
     p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text, 
@@ -291,7 +291,7 @@ def plotLowMassRegionsLoose(signal_hist, bkgr_hist, tex_names, out_path, extra_t
 
     #Plot per grouping
 
-    plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, 'lowMass', extra_text = extra_text)
+    plotGeneralGroups(signal_hist, bkgr_hist, tex_names, out_path, 'lowMassSRloose', extra_text = extra_text)
     
     draw_ratio = 'errorsOnly' if signal_hist is not None and bkgr_hist is not None else None
     p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text, 

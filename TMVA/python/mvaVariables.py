@@ -44,6 +44,9 @@ input_variables = {
     'l1_charge' : {'type' : 'F', 'var' : lambda c : c.l_charge[0]},
     'l2_charge' : {'type' : 'F', 'var' : lambda c : c.l_charge[1]},
     'l3_charge' : {'type' : 'F', 'var' : lambda c : c.l_charge[2]},
+    'l1_flavor' : {'type' : 'F', 'var' : lambda c : c.l_flavor[0]},
+    'l2_flavor' : {'type' : 'F', 'var' : lambda c : c.l_flavor[1]},
+    'l3_flavor' : {'type' : 'F', 'var' : lambda c : c.l_flavor[2]},
     'l1_pt' : {'type' : 'F', 'var' : lambda c : c.l_pt[0]},
     'l2_pt' : {'type' : 'F', 'var' : lambda c : c.l_pt[1]},
     'l3_pt' : {'type' : 'F', 'var' : lambda c : c.l_pt[2]},
@@ -61,16 +64,16 @@ input_variables = {
     'j2_phi' : {'type' : 'F', 'var' : lambda c : c.j_phi[1]},
     'j1_btag' : {'type' : 'F', 'var' : lambda c : c.j_btag[0]},
     'j2_btag' : {'type' : 'F', 'var' : lambda c : c.j_btag[1]},
-    'abs(dPhij1met)' : {'type' : 'F', 'var' : lambda c : abs(c.dphi_j1met)},
-    'abs(dPhij2met)' : {'type' : 'F', 'var' : lambda c : abs(c.dphi_j2met)},
+    'dPhij1met' : {'type' : 'F', 'var' : lambda c : abs(c.dphi_j1met)},
+    'dPhij2met' : {'type' : 'F', 'var' : lambda c : abs(c.dphi_j2met)},
     'HT' : {'type' : 'F', 'var' : lambda c : c.HT},
     'LT' : {'type' : 'F', 'var' : lambda c : c.LT},
     'dRl1l2' : {'type' : 'F', 'var' : lambda c : c.dr_l1l2},
     'dRl1l3' : {'type' : 'F', 'var' : lambda c : c.dr_l1l3},
     'dRl2l3' : {'type' : 'F', 'var' : lambda c : c.dr_l2l3},
-    'abs(dPhil1met)' : {'type' : 'F', 'var' : lambda c : abs(c.dphi_l1met)},
-    'abs(dPhil2met)' : {'type' : 'F', 'var' : lambda c : abs(c.dphi_l2met)},
-    'abs(dPhil3met)' : {'type' : 'F', 'var' : lambda c : abs(c.dphi_l3met)},
+    'dPhil1met' : {'type' : 'F', 'var' : lambda c : abs(c.dphi_l1met)},
+    'dPhil2met' : {'type' : 'F', 'var' : lambda c : abs(c.dphi_l2met)},
+    'dPhil3met' : {'type' : 'F', 'var' : lambda c : abs(c.dphi_l3met)},
     'dRminl1' : {'type' : 'F', 'var' : lambda c : c.mindr_l1},
     'dRminl2' : {'type' : 'F', 'var' : lambda c : c.mindr_l2},
     'dRminl3' : {'type' : 'F', 'var' : lambda c : c.mindr_l3},
@@ -117,38 +120,36 @@ var_lists = {
                 'dRl1l2', 'dRl1l3', 'dRl2l3', 'dRjl1', 'dRjl2', 'dRjl3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', 'dRmaxMossf'],
     'lowmass-e': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
                 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
-                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', 
-                'abs(dPhil1met)', 'abs(dPhil2met)', 'abs(dPhil3met)', 'abs(dPhij1met)', 'abs(dPhij2met)'],
-                #],
+                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', 'l1_flavor', 'l1_charge', 'l2_flavor', 'l2_charge', 'l3_flavor', 'l3_charge',
+                'dPhil1met', 'dPhil2met', 'dPhil3met', 'dPhij1met', 'dPhij2met'],
     'lowmass-mu': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
                 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
-                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', 
-                'abs(dPhil1met)', 'abs(dPhil2met)', 'abs(dPhil3met)', 'abs(dPhij1met)', 'abs(dPhij2met)'],
-                #],
+                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', 'l1_flavor', 'l1_charge', 'l2_flavor', 'l2_charge', 'l3_flavor', 'l3_charge',
+                'dPhil1met', 'dPhil2met', 'dPhil3met', 'dPhij1met', 'dPhij2met'],
     'lowmass-taulep': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
                 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
-                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos',
-                'abs(dPhil1met)', 'abs(dPhil2met)', 'abs(dPhil3met)', 'abs(dPhij1met)', 'abs(dPhij2met)'],
+                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', 'l1_flavor', 'l1_charge', 'l2_flavor', 'l2_charge', 'l3_flavor', 'l3_charge',
+                'dPhil1met', 'dPhil2met', 'dPhil3met', 'dPhij1met', 'dPhij2met'],
     'lowmass-tauhad': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
                 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
                 'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', 
-                'abs(dPhil1met)', 'abs(dPhil2met)', 'abs(dPhil3met)', 'abs(dPhij1met)', 'abs(dPhij2met)'],
+                'dPhil1met', 'dPhil2met', 'dPhil3met', 'dPhij1met', 'dPhij2met'],
     'lowestmass-e': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
                 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
-                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', 
-                'abs(dPhil1met)', 'abs(dPhil2met)', 'abs(dPhil3met)', 'abs(dPhij1met)', 'abs(dPhij2met)'],
+                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', 'l1_flavor', 'l1_charge', 'l2_flavor', 'l2_charge', 'l3_flavor', 'l3_charge', 
+                'dPhil1met', 'dPhil2met', 'dPhil3met', 'dPhij1met', 'dPhij2met'],
     'lowestmass-mu': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
                 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
-                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', 
-                'abs(dPhil1met)', 'abs(dPhil2met)', 'abs(dPhil3met)', 'abs(dPhij1met)', 'abs(dPhij2met)'],
+                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', 'l1_flavor', 'l1_charge', 'l2_flavor', 'l2_charge', 'l3_flavor', 'l3_charge', 
+                'dPhil1met', 'dPhil2met', 'dPhil3met', 'dPhij1met', 'dPhij2met'],
     'lowestmass-taulep': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
                 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
-                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', 
-                'abs(dPhil1met)', 'abs(dPhil2met)', 'abs(dPhil3met)', 'abs(dPhij1met)', 'abs(dPhij2met)'],
+                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', 'l1_flavor', 'l1_charge', 'l2_flavor', 'l2_charge', 'l3_flavor', 'l3_charge',
+                'dPhil1met', 'dPhil2met', 'dPhil3met', 'dPhij1met', 'dPhij2met'],
     'lowestmass-tauhad': ['M3l', 'minMos', 'mtOther', 'l1_pt', 'l2_pt', 'l3_pt', 'l1_eta', 'l2_eta', 'l3_eta', 'met', 'njets', 
                 'l1_phi', 'l2_phi', 'l3_phi', 'HT', 'LT', 'MT3l', 'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
-                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos', 
-                'abs(dPhil1met)', 'abs(dPhil2met)', 'abs(dPhil3met)', 'abs(dPhij1met)', 'abs(dPhij2met)'],
+                'dRl1l2', 'dRl1l3', 'dRl2l3', 'Ml1l2', 'Ml1l3', 'Ml2l3', 'dRminMos',
+                'dPhil1met', 'dPhil2met', 'dPhil3met', 'dPhij1met', 'dPhij2met'],
 }
 
 var_to_ignore = {
@@ -161,7 +162,11 @@ var_to_ignore = {
 }
 
 def getVariableValue(name):
-    return input_variables[name]['var']
+    #For now this is a fix (there's already abs in the variable) and this should be removed as soon as we have the new trainings
+    if 'abs' in name:
+        return input_variables[name.replace('abs(', '').replace(')', '')]['var']
+    else:
+        return input_variables[name]['var']
 
 def getVariables():
     return input_variables.keys()

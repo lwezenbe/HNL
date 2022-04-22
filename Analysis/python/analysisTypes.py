@@ -130,9 +130,9 @@ def returnVariables(nl, is_reco, include_mva = None):
         var_of_choice = mergeTwoDictionaries(var_of_choice, var_weights)
 
         if include_mva is not None:
-                from HNL.TMVA.mvaDefinitions import MVA_dict,listAvailableMVAs
-                # var_of_choice = mergeTwoDictionaries(var_of_choice, var_mva)
-                for k in listAvailableMVAs(include_mva):
+                from HNL.TMVA.mvaDefinitions import getMVAdict
+                MVA_dict = getMVAdict(include_mva)
+                for k in MVA_dict[include_mva].keys():
                         var_of_choice[cleanName(k)] = (MVA_dict[include_mva][k][2],   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events'))
         
         return var_of_choice
@@ -149,6 +149,8 @@ signal_couplingsquaredinsample = {
         'e' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:10e-4, 40:1e-4, 50:1e-4,  60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4,  120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4,  400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4,  600:1e-4,  800:1e-4, 900:1e-4, 1000:1e-4, 1200:1e-4, 1500:1e-4 },
         'mu' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:1e-4, 40:1e-4, 50:1e-4,  60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4,  120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4,  400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4,  600:1e-4,  800:1e-4, 900:1e-4, 1000:1e-4, 1200:1e-4, 1500:1e-4},
 }
+
+final_signal_regions = ['lowMassSR', 'highMassSR']
 
 if __name__ == '__main__':
         print returnVariables(3, True, True)['mva']

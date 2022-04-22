@@ -5,15 +5,16 @@ import ROOT
 
 signalregion_cuts = {
     'lowMassSR' : 'l1_pt<55&&M3l<80&&met<75&&minMossf<0',
-    'lowMassSRloose' : 'l1_pt<55&&M3l<80&&met<75&&abs(MZossf-91.1876)>15',
-    'highMassSR' : 'l1_pt>55&&l2_pt>15&&l3_pt>10&&abs(MZossf-91.1876)>15&&abs(M3l-91.1876)>15&&minMossf>5'
+    'lowMassSRloose' : 'l1_pt<55&&M3l<80&&met<75&&abs(MZossf-91.1876)>15&&minMossf>5',
+    #'lowMassSRloose' : 'l1_pt<55&&M3l<80&&met<75&&abs(MZossf-91.1876)>15',
+    'highMassSR' : 'l1_pt>55&&l2_pt>15&&l3_pt>10&&abs(MZossf-91.1876)>15&&abs(M3l-91.1876)>15&&(minMossf<0||minMossf>5)'
 }
 
 class InputHandler:
-    NTREES = ['25', '50', '75', '150']
-    MAXDEPTH = ['2', '4']
+    NTREES = ['25', '50', '75', '100', '150', '200', '300', '400']
+    MAXDEPTH = ['2', '3', '4']
     BOOSTTYPES = ['Grad']
-    SHRINKAGE = [ '0.1']
+    SHRINKAGE = [ '0.1', '0.3', '1.']
 
     def __init__(self, era, year, region, selection):
         self.in_file = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'InputLists', era+year+'-'+region+'.conf'))

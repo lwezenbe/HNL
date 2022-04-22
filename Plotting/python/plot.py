@@ -18,15 +18,7 @@ def generalSettings(paintformat = "4.2f"):
     ROOT.gErrorIgnoreLevel = ROOT.kWarning
     ROOT.TGaxis.SetMaxDigits(2)
 
-def isList(item):
-    if isinstance(item, (list,)) or isinstance(item, set): return True
-    return False
-
-def makeList(item):
-    # if not isinstance(item, (list,)) and not isinstance(item, set):
-    if not isList(item):
-        item = [item]
-    return item
+from HNL.Tools.helpers import isList, makeList 
 
 import HNL.Tools.histogram
 from  HNL.Tools.histogram import returnSqrt
@@ -1158,11 +1150,11 @@ class Plot:
         frame.GetYaxis().SetTitle(self.y_name)
         frame.GetXaxis().SetTitle(self.x_name)
         frame.SetMinimum(0.3*min_y)
-        #frame.SetMaximum(max_y*100)
         frame.SetMaximum(max_y*100)
         frame.GetXaxis().SetLimits(0.95*min(values), 1.05*max(values))
 
 
+        yellow.GetHistogram().SetMaximum(max_y)
         yellow.SetFillColor(ROOT.kOrange)
         yellow.SetLineColor(ROOT.kOrange)
         yellow.SetFillStyle(1001)

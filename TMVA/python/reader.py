@@ -9,18 +9,6 @@ ctypes = {
     'I' : 'i'
 }
 
-#prelegacy choices
-# MVA_of_choice = {
-#     'high_e' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=3-shrinkage=0.1',
-#     'high_mu' : 'kBDT-boostType=Grad-ntrees=100-maxdepth=4-shrinkage=0.1',
-#     'high_tau' : 'kBDT-boostType=Grad-ntrees=100-maxdepth=4-shrinkage=0.1',
-#     'low_e' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=2-shrinkage=0.3',
-#     'low_mu' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=4-shrinkage=0.1',
-#     'low_tau' : 'kBDT-boostType=RealAdaBoost-ntrees=100-maxdepth=2-shrinkage=0.1',
-#     # 'low_tau' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=2-shrinkage=0.1',
-#     # 'HNL-e-m200' : 'kBDT-boostType=Grad-ntrees=200-maxdepth=3-shrinkage=0.1',
-# }
-
 DEFAULT_PATH_TO_WEIGHTS = lambda era, region, signalname: os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'TMVA', 'data', 'FinalTrainings', era, region, signalname+'.xml')
 
 
@@ -30,15 +18,26 @@ class Reader:
         self.reader = ROOT.TMVA.Reader("Silent")
         self.chain = chain
         self.method_name = method_name
+        from HNL.Analysis.analysisTypes import final_signal_regions
         self.region = region
         self.name_to_book = name_to_book
         self.path_to_weights = path_to_weights if path_to_weights is not None else DEFAULT_PATH_TO_WEIGHTS(era, region, name_to_book)
         if not os.path.isfile(self.path_to_weights):
             raise RuntimeError("Invalid path to weights: {0}".format(self.path_to_weights))
-        self.variables = getVariableNames(name_to_book, cut_string)
+        self.default_path_used = path_to_weights is None
+        self.loadVariableNames(cut_string)
         self.variable_array = self.initializeArrays()
         self.initializeVariables(name_to_book)
         self.bookMethod(era, name_to_book)
+
+    def loadVariableNames(self, cut_string):
+        if self.default_path_used:
+            import json
+            with open(self.path_to_weights.split('.')[0]+'.json') as infile:
+                self.variables = json.load(infile)
+                self.variables = [a.encode('ascii','ignore') for a in self.variables]
+        else:
+            self.variables = getVariableNames(self.name_to_book, cut_string)
 
     def initializeArrays(self):
         arrays = {}
@@ -51,6 +50,7 @@ class Reader:
             self.reader.AddVariable(v, self.variable_array[v])
 
     def bookMethod(self, era, training_name): 
+        print training_name, self.path_to_weights
         self.reader.BookMVA(training_name, self.path_to_weights)
 
     def predict(self, trainingnames=False):
@@ -75,14 +75,25 @@ from HNL.TMVA.mvaDefinitions import listAvailableMVAs
 class ReaderArray:
 
     def __init__(self, chain, method_name, region, era, names_to_book = None, custom_mva_dict = None):
-        self.names_to_book = listAvailableMVAs(region, custom_dict = custom_mva_dict) if names_to_book is None else names_to_book
+        from HNL.TMVA.mvaDefinitions import MVA_dict
+        from HNL.Analysis.analysisTypes import final_signal_regions
+        if region not in MVA_dict.keys():
+            regions = [x for x in final_signal_regions]
+        else:
+            regions = [region]
+        self.names_to_book = {}
+        for reg in regions:
+            self.names_to_book[reg] = listAvailableMVAs(reg, custom_dict = custom_mva_dict) if names_to_book is None else names_to_book
         self.readers = {}
-        for name in self.names_to_book:
-            self.readers[name] = Reader(chain, method_name, name, region, era)
+        for reg in self.names_to_book.keys():
+            self.readers[reg] = {}
+            for name in self.names_to_book[reg]:
+                self.readers[reg][name] = Reader(chain, method_name, name, reg, era)
 
     def predictAndWriteAll(self, chain, trainingnames=False):
-        for reader in self.readers:
-            self.readers[reader].predictAndWriteToChain(chain, trainingnames)
+        for reg in self.readers.keys():
+            for reader in self.readers[reg]:
+                self.readers[reg][reader].predictAndWriteToChain(chain, trainingnames)
 
 #
 # Testing code

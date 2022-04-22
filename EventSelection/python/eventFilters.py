@@ -58,7 +58,9 @@ def passLowMassSelection(chain, new_chain, is_reco_level, cutter, loose_selectio
     if not loose_selection:
         if not cutter.cut(not containsOSSF(new_chain), 'no OSSF'):      return False
     else:
-        if containsOSSF(new_chain) and not cutter.cut(abs(new_chain.MZossf-MZ) > 15, 'M2l_OSSF_Z_veto'):        return False
+        if containsOSSF(new_chain):
+            if not cutter.cut(abs(new_chain.MZossf-MZ) > 15, 'M2l_OSSF_Z_veto'):        return False
+            if not cutter.cut(new_chain.minMossf > 5, 'minMossf'): return False
     return True 
 
 #High mass selection

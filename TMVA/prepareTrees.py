@@ -303,43 +303,6 @@ else:
 
         out_file.Close()
 
-    # def mergeSignalInEqualAmounts(out_name, in_names, amount=10000, first_definition=False):
-    #     num_of_entries = {'tot': {}}
-    #     for in_name in in_names:
-    #         mass = int(in_name.rsplit('/')[-1].split('-m')[-1].split('.')[0])
-    #         num_of_entries[mass] = {}signal_list
-    #         for c in SUPER_CATEGORIES.keys():
-    #             num_of_entries[mass][c] = 0.
-    #             for prompt_str in ['prompt', 'nonprompt']:
-    #                 in_file = uproot.open(in_name)
-    #                 num_of_entries[mass][c] += min(5000, len(in_file[prompt_str][c]['trainingtree']['event_weight']))
-    #     for c in SUPER_CATEGORIES.keys():
-    #         num_of_entries['tot'][c] = 0.
-    #         for ent in num_of_entries.keys():
-    #             if ent == 'tot': continue
-    #             num_of_entries['tot'][c]signal_list
-    #     for prompt_str in ['prompt', 'nonprompt']:
-    #         out_trees[prompt_str] = {}
-    #         new_vars[prompt_str] = {}
-    #         for c in SUPER_CATEGORIES.keys():
-    #             out_file.mkdir(prompt_str+'/'+c)
-    #             chain = ROOT.TChain(prompt_str+'/'+c+'/trainingtree')
-    #             for in_name in in_names:
-    #                 chain.Add(in_name)
-    #             chain.SetBranchStatus('event_weight', 0)
-    #             out_trees[prompt_str][c] = chain.CloneTree(0)
-    #             if chain.GetEntries() > 0: 
-    #                 new_vars[prompt_str][c] = makeBranches(out_trees[prompt_str][c], ['event_weight/F'], already_defined = already_defined)
-    #                 already_defined = True
-
-    #                 for entry in xrange(chain.GetEntries()):
-    #                     chain.GetEntry(entry)
-    #                     new_vars[prompt_str][c].event_weight = num_of_entries['tot'][c]/num_of_entries[chain.HNL_mass][c]
-    #                     out_trees[prompt_str][c].Fill()
-    #                 out_file.cd(prompt_str+'/'+c)
-    #                 out_trees[prompt_str][c].Write()                
-
-
     pnfs_base = os.path.expandvars(os.path.join('/pnfs/iihe/cms/store/user', '$USER', 'skimmedTuples/HNL/'))
 
 

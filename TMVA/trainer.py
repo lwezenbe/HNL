@@ -110,7 +110,6 @@ if args.checkTreeContent:
 
 if not args.skipTraining:
     input_var = getVariableList(args.signalname, args.cutString)
-    print input_var
 
     makeDirIfNeeded(getOutFileName(eras, args.signalname))
     out_file = ROOT.TFile(getOutFileName(eras, args.signalname), 'RECREATE') 
@@ -226,3 +225,9 @@ if args.saveTrainings is not None:
                             signal, 'kBDT', 'weights', 'factory_'+MVA_dict[args.region][signal][0]+'.weights.xml') + ' '
                             + os.path.join(base_folder, signal+'.xml'))
 
+        import json
+        from HNL.TMVA.mvaVariables import getVariableNames
+        input_var = getVariableNames(signal, args.cutString)
+        json_var = json.dumps(input_var)
+        with open(os.path.join(base_folder, signal+'.json'), 'w') as outfile:
+            outfile.write(json_var)

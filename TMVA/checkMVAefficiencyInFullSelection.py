@@ -55,7 +55,7 @@ output_base = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA
 cut_string_dict = {
     None : lambda c:True,
     'lowMassSR' : lambda c: c.M3l<80 and c.l1_pt < 55 and c.met < 75 and c.minMossf < 0,
-    'lowMassSRloose' : lambda c: c.M3l<80 and c.l1_pt < 55 and c.met < 75 and abs(c.MZossf-91) > 15,
+    'lowMassSRloose' : lambda c: c.M3l<80 and c.l1_pt < 55 and c.met < 75 and abs(c.MZossf-91) > 15 and c.minMossf > 5,
 }
 
 
@@ -71,14 +71,14 @@ custom_mva_dicts['full'] = {
 'lowmass-taulep' : ('kBDT-boostType=AdaBoost-ntrees=200-maxdepth=3-shrinkage=0.1', 'lowMassSR', lambda c : c.lowmasstaulep ),
 }
 custom_mva_dicts['fullloose'] = {
-    'lowestmass-e' : ('kBDT-boostType=Grad-ntrees=100-maxdepth=4-shrinkage=0.3', 'lowMassSR', lambda c : c.lowestmasse ),
-    'lowestmass-mu' : ('kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.1', 'lowMassSR', lambda c : c.lowestmassmu ),
-    'lowestmass-tauhad' : ('kBDT-boostType=Grad-ntrees=100-maxdepth=4-shrinkage=0.3', 'lowMassSR', lambda c : c.lowestmasstauhad ),
-    'lowestmass-taulep' : ('kBDT-boostType=Grad-ntrees=300-maxdepth=2-shrinkage=0.3', 'lowMassSR', lambda c : c.lowestmasstaulep ),
-    'lowmass-e' : ('kBDT-boostType=Grad-ntrees=300-maxdepth=4-shrinkage=0.1', 'lowMassSR', lambda c : c.lowmasse ),
-    'lowmass-mu' : ('kBDT-boostType=Grad-ntrees=200-maxdepth=4-shrinkage=0.1', 'lowMassSR', lambda c : c.lowmassmu ),
-    'lowmass-tauhad' : ('kBDT-boostType=AdaBoost-ntrees=75-maxdepth=3-shrinkage=0.1', 'lowMassSR', lambda c : c.lowmasstauhad ),
-    'lowmass-taulep' : ('kBDT-boostType=AdaBoost-ntrees=200-maxdepth=3-shrinkage=0.1', 'lowMassSR', lambda c : c.lowmasstaulep ),
+    'lowestmass-e' : ('kBDT-boostType=Grad-ntrees=150-maxdepth=2-shrinkage=1.', 'lowMassSR', lambda c : c.lowestmasse ),
+    'lowestmass-mu' : ('kBDT-boostType=Grad-ntrees=400-maxdepth=4-shrinkage=0.1', 'lowMassSR', lambda c : c.lowestmassmu ),
+    'lowestmass-tauhad' : ('kBDT-boostType=Grad-ntrees=75-maxdepth=2-shrinkage=0.1', 'lowMassSR', lambda c : c.lowestmasstauhad ),
+    'lowestmass-taulep' : ('kBDT-boostType=Grad-ntrees=150-maxdepth=4-shrinkage=0.3', 'lowMassSR', lambda c : c.lowestmasstaulep ),
+    'lowmass-e' : ('kBDT-boostType=Grad-ntrees=300-maxdepth=3-shrinkage=0.1', 'lowMassSR', lambda c : c.lowmasse ),
+    'lowmass-mu' : ('kBDT-boostType=Grad-ntrees=75-maxdepth=4-shrinkage=0.3', 'lowMassSR', lambda c : c.lowmassmu ),
+    'lowmass-tauhad' : ('kBDT-boostType=Grad-ntrees=50-maxdepth=2-shrinkage=0.1', 'lowMassSR', lambda c : c.lowmasstauhad ),
+    'lowmass-taulep' : ('kBDT-boostType=Grad-ntrees=25-maxdepth=4-shrinkage=0.3', 'lowMassSR', lambda c : c.lowmasstaulep ),
 }
 custom_mva_dicts['M3l80met75minMossf0'] =  {
 'lowmass-e' : ('kBDT-boostType=RealAdaBoost-ntrees=100-maxdepth=3-shrinkage=0.3', 'lowMassSR', lambda c : c.lowmasse ),
