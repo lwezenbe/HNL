@@ -174,11 +174,24 @@ def getAllMVAhist(input_handler, channel, region, era, signal_name = None, cut_s
 
 if __name__ == '__main__':
     # in_file = ROOT.TFile('/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/2016/TMVA/Background/DYJetsToLL-M-50.root')
-    in_file = ROOT.TFile('/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/2016/TMVA/Signal/HNL-e-m200.root')
-    c = in_file.Get('trainingtree')
-    reader = Reader(c, 'high_e', 'kBDT')
+    #in_file = ROOT.TFile('/pnfs/iihe/cms/store/user/lwezenbe/skimmedTuples/HNL/TMVA/UL2017/highMassSR-default/Signal/HNL-mu-m700.root')
+    in_file = ROOT.TFile('/pnfs/iihe/cms/store/user/lwezenbe/skimmedTuples/HNL/default/UL2017/Reco/HeavyNeutrino_trilepton_M-800_V-0p01_mu_NLO_TuneCP5_13TeV-madgraph-pythia8.root')
+    c = in_file.Get('blackJackAndHookers/blackJackAndHookersTree')
+    from HNL.Tools.logger import getLogger, closeLogger
+    log = getLogger('INFO')
 
-    for entry in xrange(100):
+    from HNL.EventSelection.cutter import Cutter
+    cutter = Cutter(chain = c)
+
+    from HNL.EventSelection.event import Event    
+    event = Event(c, c, is_reco_level=True, selection='default', strategy='MVA', region='baseline', analysis='HNL', year = '2017', era = 'UL')
+    reader = ReaderArray(c, 'kBDT', 'highMassSR', 'UL')
+
+    for entry in xrange(1000):
         c.GetEntry(entry)
-        print entry, reader.predict()
-    
+        c.is_data = False
+        event.initEvent()
+        if not event.passedFilter(cutter, 'HNL-mu-m800'): continue
+        reader.predictAndWriteAll(c)
+
+    closeLogger(log)

@@ -157,7 +157,7 @@ class InputHandler:
                     print '\t \t * Minimum weight from this background: \t', all_weights['min']
                 print ''
 
-    def getLoader(self, signal, input_variables, additional_cut_str = None):
+    def getLoader(self, signal, input_variables, additional_cut_str = None, is_test = False):
 
         if 'had' in signal :
             name = 'SingleTau/trainingtree'
@@ -175,11 +175,8 @@ class InputHandler:
         if self.numbers_not_in_file:
             self.numbers = [int(nsignal*0.6), int(nbkgr*0.6), int(nsignal*0.4), int(nbkgr*0.4)]
 
-        if additional_cut_str is not None:
-            pruned_string = "".join(i for i in additional_cut_str if i not in "\/:*?<>|& ")
-            loader = ROOT.TMVA.DataLoader('data/training/'+self.era+self.year+'/'+self.region+'-'+self.selection+'/'+pruned_string+'/'+signal+'/kBDT')
-        else:
-            loader = ROOT.TMVA.DataLoader('data/training/'+self.era+self.year+'/'+self.region+'-'+self.selection+'/full/'+signal+'/kBDT')
+        pruned_string = "".join(i for i in additional_cut_str if i not in "\/:*?<>|& ") if additional_cut_str is not None else 'full'
+        loader = ROOT.TMVA.DataLoader(os.path.expandvars(os.path.join('TMVA' if args.isTest else '', 'data','testArea' if is_test else '', 'training', self.era+self.year, self.region+'-'+self.selection, pruned_string, signal, 'kBDT')))
         cuts = ROOT.TCut("is_signal"+condition)
         cutb = ROOT.TCut("!is_signal"+condition)
         loader.SetInputTrees(in_tree, cuts, cutb)
@@ -201,5 +198,5 @@ class InputHandler:
         return additional_cut_str
 
 if __name__ == '__main__':
-    ih = InputHandler('all', 'baseline')
+    ih = InputHandler('UL', 'all', 'highMassSR', 'default')
     print(ih.numbers, ih.signal_names, ih.background_names)

@@ -39,33 +39,37 @@ eras = "-".join(sorted(args.era))
 
 ih = InputHandler(eras, args.year, args.region, args.selection)
 
-ntrees = ih.NTREES
-maxdepth = ih.MAXDEPTH
-boosttypes = ih.BOOSTTYPES
-shrinkage = ih.SHRINKAGE
+if not args.isTest:
+    ntrees = ih.NTREES
+    maxdepth = ih.MAXDEPTH
+    boosttypes = ih.BOOSTTYPES
+    shrinkage = ih.SHRINKAGE
+else:
+    ntrees = ['100']
+    maxdepth = ['2']
+    boosttypes = ['Grad']
+    shrinkage = ['0.3']
  
 def getOutFileName(eras, signal_name):
-    if args.cutString is None:
-        return os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'training', eras+args.year, 
-                                                            args.region+'-'+args.selection, 'full', signal_name, signal_name+'.root'))
-    else:
-        out_cut_str = "".join(i for i in args.cutString if i not in " &\/:*?<>|")
-        return os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'training', eras+args.year, 
+    out_cut_str = "".join(i for i in args.cutString if i not in " &\/:*?<>|") if args.cutString is not None else 'full'
+    return os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'TMVA', 'data', 'testArea' if args.isTest else '', 'training', eras+args.year, 
                             args.region+'-'+args.selection, out_cut_str, signal_name, signal_name+'.root'))        
 
 
 if not any([args.isChild, args.plots, args.plotDetailedMVA, args.saveTrainings]):
+    if args.isTest: args.batchSystem = 'HTCondor'
     if args.batchSystem != 'foreground': 
         jobs = []
         for signal in ih.signal_names:
             jobs += [(signal, '0')]
         submitJobs(__file__, ('signalname', 'dummy'), jobs, argParser, jobLabel = 'TMVAtrainer'+args.region)
+        exit(0)
     else:
         args.isChild = True
         submitArgs = getSubmitArgs(argParser, args)
         for signal in ih.signal_names:
             if args.signalname is not None and signal != args.signalname: continue
-            command = 'python trainer.py'
+            command = os.path.expandvars('python $CMSSW_BASE/src/HNL/TMVA/trainer.py')
             for arg, value in submitArgs.iteritems():
                 if value == False:
                     continue
@@ -124,7 +128,7 @@ if not args.skipTraining:
         in_tree = ih.getTree(args.signalname, name=name).CloneTree()
         in_tree.Write('backuptree')
 
-    loader = ih.getLoader(args.signalname, input_var, args.cutString)
+    loader = ih.getLoader(args.signalname, input_var, args.cutString, args.isTest)
 
     preselection = ROOT.TCut("")
     # options = ""
