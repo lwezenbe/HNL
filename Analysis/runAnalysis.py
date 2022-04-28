@@ -276,7 +276,7 @@ if not args.makePlots and not args.makeDataCards:
         # Set event range
         #
         if args.isTest:
-            up_limit = 2000
+            up_limit = 20000
             if len(sample.getEventRange(0)) < up_limit:
                 event_range = sample.getEventRange(0)
             else:
@@ -471,7 +471,16 @@ else:
         # Create variable distributions
         #
 
-        def createVariableDistributions(categories_dict, var_dict, signal, background, data, sample_manager, additional_condition = None):
+        def createSingleVariableDistributions(tree, vname, hname, bins, condition, include_systematics = False):
+            out_dict = {}
+            out_dict['nominal'] = Histogram(tree.getHistFromTree(vname, hname, bins, condition))
+            if include_systematics:
+                from HNL.Systematics.systematics import returnWeightShapes
+                out_dict.update(returnWeightShapes(tree, vname, hname, bins, condition))
+            return out_dict 
+
+        #TODO: remove split_tau_signal after we can do tau signal cleaning (aka gen info becomes available)
+        def createVariableDistributions(categories_dict, var_dict, signal, background, data, sample_manager, additional_condition = None, split_tau_signal = False, include_systematics = False):
             if additional_condition is None:
                 additional_condition = ''
             else:
@@ -492,19 +501,38 @@ else:
                 print "Loading signal histograms"
                 for isignal, s in enumerate(signal_list):
                     progress(isignal, len(signal_list))
-                    intree = OutputTree('events', s+'/variables.root')
                     sample_name = s.split('/')[-1]
                     sample_mass = float(sample_name.split('-m')[-1])
 
-                    for c, cc in zip(categories_to_use, category_conditions): 
-                        for v in var_dict.keys():
-                            tmp_list_of_hist[c][v]['signal'][sample_name] = Histogram(intree.getHistFromTree(v, str(c)+'-'+v+'-'+sample_name, var_dict[v][1], '('+cc+'&&!issideband)'+additional_condition))
+                    from HNL.Tools.helpers import isValidRootFile
+                    check_split_tau = all([isValidRootFile(s+'/variables-HNL-{0}-m{1}.root'.format(x, int(sample_mass))) for x in ['taulep', 'tauhad']])
+                    if not split_tau_signal or not check_split_tau:
+                        intree = OutputTree('events', s+'/variables.root')
 
-                            coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
-                            tmp_list_of_hist[c][v]['signal'][sample_name].hist.Scale(coupling_squared/signal_couplingsquaredinsample[args.flavor][sample_mass])
+                        for c, cc in zip(categories_to_use, category_conditions): 
+                            for v in var_dict.keys():
+                                tmp_list_of_hist[c][v]['signal'][sample_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+sample_name, var_dict[v][1], '('+cc+'&&!issideband)'+additional_condition, include_systematics)
 
-                            # if args.rescaleSignal is not None:
-                            #    tmp_list_of_hist[c][v]['signal'][sample_name].hist.Scale(args.rescaleSignal/(args.coupling**2))
+                                coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
+                                for syst in tmp_list_of_hist[c][v]['signal'][sample_name].keys():
+                                    tmp_list_of_hist[c][v]['signal'][sample_name][syst].hist.Scale(coupling_squared/signal_couplingsquaredinsample[args.flavor][sample_mass])
+
+                                # if args.rescaleSignal is not None:
+                                #    tmp_list_of_hist[c][v]['signal'][sample_name].hist.Scale(args.rescaleSignal/(args.coupling**2))
+                    else:
+                        for tausig in ['taulep', 'tauhad']:
+        
+                            sample_name = 'HNL-{0}-m{1}'.format(tausig, int(sample_mass))
+                            intree = OutputTree('events', s+'/variables-{0}.root'.format(sample_name))
+
+                            for c, cc in zip(categories_to_use, category_conditions):
+                                for v in var_dict.keys():
+                                    tmp_list_of_hist[c][v]['signal'][sample_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+sample_name, var_dict[v][1], '('+cc+'&&!issideband)'+additional_condition, include_systematics)
+                                    
+                                    coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
+                                    for syst in tmp_list_of_hist[c][v]['signal'][sample_name].keys():
+                                        tmp_list_of_hist[c][v]['signal'][sample_name][syst].hist.Scale(coupling_squared/signal_couplingsquaredinsample[args.flavor][sample_mass])
+ 
                 print '\n'
 
             if args.includeData is not None:
@@ -514,16 +542,11 @@ else:
                     for v in var_dict:
                         intree = OutputTree('events', data_list[0]+'/variables.root')
                         if args.includeData == 'includeSideband': 
-                            tmp_list_of_hist[c][v]['data']['sideband'] = Histogram(intree.getHistFromTree(v, str(c)+'-'+v+'-'+'-Data-sideband', var_dict[v][1], '('+cc+'&&issideband)'+additional_condition))
-                        tmp_list_of_hist[c][v]['data']['signalregion'] = Histogram(intree.getHistFromTree(v, str(c)+'-'+v+'-'+'-Data-signalregion', var_dict[v][1], '('+cc+'&&!issideband)'+additional_condition))
+                            tmp_list_of_hist[c][v]['data']['sideband'] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+'-Data-sideband', var_dict[v][1], '('+cc+'&&issideband)'+additional_condition, include_systematics)
+                        tmp_list_of_hist[c][v]['data']['signalregion'] = {'nominal' : Histogram(intree.getHistFromTree(v, str(c)+'-'+v+'-'+'-Data-signalregion', var_dict[v][1], '('+cc+'&&!issideband)'+additional_condition))}
 
             if not args.signalOnly:
                 print "Loading background histograms"
-                for c in categories_to_use: 
-                    for v in var_dict.keys():   
-                        for b in background:
-                            tmp_list_of_hist[c][v]['bkgr'][b] = Histogram(b+v+str(c), var_dict[v][0], var_dict[v][2], var_dict[v][1])
-
                 for ib, b in enumerate(background):
                     progress(ib, len(background))
                     if not args.individualSamples:
@@ -532,22 +555,27 @@ else:
  
                         for c, cc in zip(categories_to_use, category_conditions):
                             for iv, v in enumerate(var_dict.keys()):  
-                                tmp_list_of_hist[c][v]['bkgr'][b] = Histogram(intree.getHistFromTree(v, 'tmp_'+b+v+str(c)+'p', var_dict[v][1], '('+cc+'&&isprompt&&!issideband)'+additional_condition))
+                                tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p', var_dict[v][1], '('+cc+'&&isprompt&&!issideband)'+additional_condition, include_systematics)
                                            
                                 if args.includeData != 'includeSideband':
-                                    tmp_hist = Histogram(intree.getHistFromTree(v, 'tmp_'+b+v+str(c)+'np', var_dict[v][1], '('+cc+'&&!isprompt&&!issideband)'+additional_condition))
-                                    tmp_list_of_hist[c][v]['bkgr']['non-prompt'].add(tmp_hist)
+                                    tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np', var_dict[v][1], '('+cc+'&&!isprompt&&!issideband)'+additional_condition, include_systematics)
+                                    if 'non-prompt' not in tmp_list_of_hist[c][v]['bkgr'].keys():
+                                        tmp_list_of_hist[c][v]['bkgr']['non-prompt'] = tmp_hist
+                                    else:
+                                        for syst in tmp_list_of_hist[c][v]['bkgr']['non-prompt'].keys():
+                                            tmp_list_of_hist[c][v]['bkgr']['non-prompt'][syst].add(tmp_hist[syst])
                                     del(tmp_hist)
                     else:
                         intree = OutputTree('events', getOutputName('bkgr', year)+'/'+sample_manager.output_dict[b]+'/variables-'+b+'.root')                       
                         for c, cc in zip(categories_to_use, category_conditions):
                             for iv, v in enumerate(var_dict.keys()):
-                                tmp_list_of_hist[c][v]['bkgr'][b] = Histogram(intree.getHistFromTree(v, 'tmp_'+b+v+str(c)+'t', var_dict[v][1], '('+cc+'&&!issideband)'+additional_condition))
+                                tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'t', var_dict[v][1], '('+cc+'&&!issideband)'+additional_condition, include_systematics)
 
                 if args.includeData == 'includeSideband':
                     for c, cc in zip(categories_to_use, category_conditions):
                         for iv, v in enumerate(var_dict.keys()):
-                            tmp_list_of_hist[c][v]['bkgr']['non-prompt'] = tmp_list_of_hist[c][v]['data']['sideband']
+                            for k in tmp_list_of_hist[c][v]['data']['sideband'].keys():
+                                tmp_list_of_hist[c][v]['bkgr']['non-prompt'] = tmp_list_of_hist[c][v]['data']['sideband']
 
             return tmp_list_of_hist
         
@@ -561,7 +589,7 @@ else:
         from HNL.Plotting.plot import Plot
         from HNL.Plotting.plottingTools import extraTextFormat
         from HNL.Tools.helpers import makePathTimeStamped
-        from HNL.TMVA.mvaVariables import getNameFromMass
+        from HNL.TMVA.mvaVariables import getAllRelevantNames
 
 
         if args.makeDataCards:
@@ -576,12 +604,17 @@ else:
                 var_for_datacard = {}
                 var_for_datacard['searchregion'] = (lambda c : c.searchregion, np.arange(srm[args.region].getGroupValues(sr)[0]-0.5, srm[args.region].getGroupValues(sr)[-1]+1.5, 1.), ('Search Region', 'Events'))
                 if args.strategy == 'MVA':
-                    list_of_mvas = [x for x in {getNameFromMass(sample_mass)+args.flavor for sample_mass in args.masses}]
+                    set_of_mvas = set()
+                    for sample_mass in args.masses:
+                        for mva in getAllRelevantNames(sample_mass, args.flavor):
+                            set_of_mvas.add(mva)
+                    
+                    list_of_mvas = [x for x in set_of_mvas]
                     for mva in list_of_mvas:
                         var_for_datacard[mva] = [x for x in var[mva]]
 
-                hist_for_datacard = createVariableDistributions(category_dict[args.categoriesToPlot], var_for_datacard, signal_list, background_collection, data_list, sample_manager, '||'.join(['searchregion=={0}'.format(x) for x in srm[args.region].getGroupValues(sr)]))
-                    
+                hist_for_datacard = createVariableDistributions(category_dict[args.categoriesToPlot], var_for_datacard, signal_list, background_collection, data_list, sample_manager, '||'.join(['searchregion=={0}'.format(x) for x in srm[args.region].getGroupValues(sr)]), split_tau_signal = True, include_systematics = True)
+                   
                 for ac in category_dict[args.categoriesToPlot][0]:
                     for s in signal_list:
                         sample_name = s.split('/')[-1]
@@ -593,17 +626,32 @@ else:
                             out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([args.selection, args.region]), 
                                                     args.era+str(year), args.flavor, sample_name, bin_name+'.shapes.root')
                             makeDirIfNeeded(out_path)
-                            hist_for_datacard[ac][v]['signal'][sample_name].write(out_path, write_name=sample_name)
+                            try:
+                                if 'HNL-tau' in sample_name:
+                                    if ac == 'NoTau': sample_name = sample_name.replace('tau', 'taulep')
+                                    else: sample_name = sample_name.replace('tau', 'tauhad')
+                                    hist_for_datacard[ac][v]['signal'][sample_name]['nominal']
+                            except:
+                                sample_name = 'HNL-tau-m{0}'.format(int(sample_mass))
+                            hist_for_datacard[ac][v]['signal'][sample_name]['nominal'].write(out_path, write_name='HNL-{0}-m{1}'.format(args.flavor, int(sample_mass)), subdirs = [bin_name.rsplit('-', 1)[0]])
+                            for syst in hist_for_datacard[ac][v]['signal'][sample_name].keys():
+                                if syst == 'nominal': continue
+                                hist_for_datacard[ac][v]['signal'][sample_name][syst].write(out_path, write_name='HNL-{0}-m{1}'.format(args.flavor, int(sample_mass)), subdirs = [bin_name.rsplit('-', 1)[0]+syst], append=True)
                             bkgr_names = []
                             for ib, b in enumerate(background_collection):
                                 bkgr_name = b.split('/')[-1]
-                                if hist_for_datacard[ac][v]['bkgr'][bkgr_name].hist.GetSumOfWeights() > 0:
-                                    hist_for_datacard[ac][v]['bkgr'][bkgr_name].write(out_path, write_name=bkgr_name, append=True)
+                                if hist_for_datacard[ac][v]['bkgr'][bkgr_name]['nominal'].hist.GetSumOfWeights() > 0:
+                                    hist_for_datacard[ac][v]['bkgr'][bkgr_name]['nominal'].write(out_path, write_name=bkgr_name, subdirs = [bin_name.rsplit('-', 1)[0]], append=True)
+                                    for syst in hist_for_datacard[ac][v]['bkgr'][bkgr_name].keys():
+                                        if syst == 'nominal': continue
+                                        hist_for_datacard[ac][v]['bkgr'][bkgr_name][syst].write(out_path, write_name=bkgr_name, subdirs = [bin_name.rsplit('-', 1)[0]+syst], append=True)
                                     bkgr_names.append(bkgr_name)
                             
-                            data_hist_tmp = hist_for_datacard[ac][v]['signal'][sample_name].clone('Ditau')
-                            data_hist_tmp.write(out_path, write_name='data_obs', append=True)
+                            data_hist_tmp = hist_for_datacard[ac][v]['signal'][sample_name]['nominal'].clone('Ditau')
+                            data_hist_tmp.write(out_path, write_name='data_obs', append=True, subdirs = [bin_name.rsplit('-', 1)[0]])
                             coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
+                            if 'HNL-tau' in sample_name:
+                                sample_name = 'HNL-tau-m{0}'.format(int(sample_mass))
                             makeDataCard(bin_name, args.flavor, args.era, year, 0, sample_name, bkgr_names, args.selection, args.region, v, sr, shapes=True, coupling_sq = coupling_squared)
 
         if args.makePlots:
@@ -611,8 +659,8 @@ else:
             list_of_hist = createVariableDistributions(category_dict[args.categoriesToPlot], var, signal_list, background_collection, data_list, sample_manager)
 
 
-            def selectNMostContributingHist(hist_dict, n):
-                yield_dict = {x : hist_dict[x].getHist().GetSumOfWeights() for x in hist_dict.keys()}
+            def selectNMostContributingHist(hist_dict, n, syst = 'nominal'):
+                yield_dict = {x : hist_dict[x][syst].getHist().GetSumOfWeights() for x in hist_dict.keys()}
                 no_other = False
                 if n > len(yield_dict.keys()): 
                     n = len(yield_dict.keys())
@@ -621,13 +669,13 @@ else:
                 hist_to_return = []
                 names_to_return = []
                 for (name, y) in sorted_yields[:n+1]:
-                    hist_to_return.append(hist_dict[name])
+                    hist_to_return.append(hist_dict[name][syst])
                     names_to_return.append(name)
                 
                 if not no_other:
                     other_hist = hist_dict[sorted_yields[n+1][0]].clone('other_hist')
                     for (name, y) in sorted_yields[n+2:]:
-                        other_hist.add(hist_dict[name])
+                        other_hist.add(hist_dict[name][syst])
 
                     hist_to_return.append(other_hist)
                     names_to_return.append('Other')
@@ -682,7 +730,7 @@ else:
                             bkgr_hist, bkgr_legendnames = selectNMostContributingHist(list_of_hist[c][v]['bkgr'], 7)
                         else:
                             for bk in list_of_hist[c][v]['bkgr'].keys():
-                                bkgr_hist.append(list_of_hist[c][v]['bkgr'][bk])
+                                bkgr_hist.append(list_of_hist[c][v]['bkgr'][bk]['nominal'])
                                 bkgr_legendnames.append(bk)
                 
                     # Make list of signal histograms for the plot object
@@ -692,7 +740,7 @@ else:
                     else:
                         signal_hist = []
                         for sk in list_of_hist[c][v]['signal'].keys():
-                            signal_hist.append(list_of_hist[c][v]['signal'][sk])
+                            signal_hist.append(list_of_hist[c][v]['signal'][sk]['nominal'])
                             # if 'filtered' in sk:
                             #     signal_legendnames.append('HNL m_{N} = 30 GeV w Pythia filter')
                             # else:
@@ -700,7 +748,7 @@ else:
                             signal_legendnames.append('HNL m_{N}='+sk.split('-m')[-1]+ 'GeV')
 
                     if args.includeData is not None and not 'Weight' in v:
-                        observed_hist = list_of_hist[c][v]['data']['signalregion']
+                        observed_hist = list_of_hist[c][v]['data']['signalregion']['nominal']
                     else:
                         observed_hist = None
 
@@ -783,12 +831,12 @@ else:
                                 bkgr_hist = selectNMostContributingHist(list_of_hist_forbar[c]['searchregion']['bkgr'], 7)[0][-1]
                                 hist_to_plot[i_sample].SetBinContent(i+1, bkgr_hist.getHist().GetSumOfWeights()) 
                             else:
-                                hist_to_plot[i_sample].SetBinContent(i+1, list_of_hist_forbar[c]['searchregion']['bkgr'][sample_name].getHist().GetSumOfWeights()) 
+                                hist_to_plot[i_sample].SetBinContent(i+1, list_of_hist_forbar[c]['searchregion']['bkgr'][sample_name]['nominal'].getHist().GetSumOfWeights()) 
 
                     if args.includeData == 'signalregion':
                         observed_hist = TH1D('data'+supercat, 'data'+supercat, len(grouped_categories[supercat]), 0, len(grouped_categories[supercat]))
                         for i, c in enumerate(grouped_categories[supercat]):
-                            observed_hist.SetBinContent(i+1, list_of_hist_forbar[c]['searchregion']['data']['signalregion'].getHist().GetSumOfWeights()) 
+                            observed_hist.SetBinContent(i+1, list_of_hist_forbar[c]['searchregion']['data']['signalregion']['nominal'].getHist().GetSumOfWeights()) 
                     else:
                         observed_hist = None
 
@@ -808,7 +856,7 @@ else:
                         hist_to_plot.append(TH1D(sample_name, sample_name, len(grouped_categories[supercat]), 0, len(grouped_categories[supercat])))
                         hist_names.append(sample_name)
                         for i, c in enumerate(grouped_categories[supercat]):
-                            hist_to_plot[sn].SetBinContent(i+1, list_of_hist_forbar[c]['searchregion']['signal'][sample_name].getHist().GetSumOfWeights()) 
+                            hist_to_plot[sn].SetBinContent(i+1, list_of_hist_forbar[c]['searchregion']['signal'][sample_name]['nominal'].getHist().GetSumOfWeights()) 
                     x_names = [CATEGORY_TEX_NAMES[n] for n in grouped_categories[supercat]]
                     p = Plot(hist_to_plot, hist_names, name = 'Events-bar-signal-'+supercat+'-'+args.flavor, x_name = x_names, y_name = 'Events', y_log=True)
                     p.drawBarChart(output_dir = os.path.join(output_dir, 'Yields', 'BarCharts'), parallel_bins=True)
@@ -817,13 +865,13 @@ else:
             example_sample = background_collection[0]
             for i, c in enumerate(sorted(category_dict[args.categoriesToPlot][0])):
 
-                n_filled_hist = len([v for v in background_collection if list_of_hist[c]['searchregion']['bkgr'][v].getHist().GetSumOfWeights() > 0])    #Remove hist with 0 events, they will otherwise crash the plotting code
+                n_filled_hist = len([v for v in background_collection if list_of_hist[c]['searchregion']['bkgr'][v]['nominal'].getHist().GetSumOfWeights() > 0])    #Remove hist with 0 events, they will otherwise crash the plotting code
                 if n_filled_hist == 0: continue
                 hist_to_plot_pie = TH1D(str(c)+'_pie', str(c), n_filled_hist, 0, n_filled_hist)
                 sample_names = []
                 j = 1
                 for s in background_collection:
-                    fill_val = list_of_hist[c]['searchregion']['bkgr'][s].getHist().GetSumOfWeights()
+                    fill_val = list_of_hist[c]['searchregion']['bkgr'][s]['nominal'].getHist().GetSumOfWeights()
                     if fill_val > 0:
                         hist_to_plot_pie.SetBinContent(j, fill_val)
                         sample_names.append(s)

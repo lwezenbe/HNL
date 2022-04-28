@@ -9,6 +9,9 @@ def getRegionFromMass(mass):
 
 data_card_base = lambda era, year, selection, mass, flavor : os.path.join(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/dataCards'), era+year, selection+'-'+getRegionFromMass(mass), flavor)
 
+combined_final_states = {
+    'MaxOneTau' : ['NoTau', 'SingleTau']
+}
 
 class SingleYearDatacardManager:
     
@@ -31,7 +34,12 @@ class SingleYearDatacardManager:
     def getMVAName(self, sr, final_state, signal_name):
         mass_point = self.getHNLmass(signal_name)
         from HNL.TMVA.mvaVariables import getNameFromMass
-        return sr+'-'+final_state+'-'+getNameFromMass(mass_point)+self.flavor
+        if self.flavor != 'tau':
+            return sr+'-'+final_state+'-'+getNameFromMass(mass_point)+self.flavor
+        elif final_state == 'NoTau':
+            return sr+'-'+final_state+'-'+getNameFromMass(mass_point)+'taulep'
+        else:
+            return sr+'-'+final_state+'-'+getNameFromMass(mass_point)+'tauhad'
         
     def getStandardDatacardName(self, sr, final_state, signal_name, custom_strategy = None):
         if custom_strategy is None: custom_strategy = self.strategy
@@ -68,10 +76,16 @@ class SingleYearDatacardManager:
                 return self.getStandardDatacardList(signal_name, final_state, 'cutbased') 
 
     def getSingleSignalDatacardList(self, signal_name, final_state):
-        if self.strategy == 'custom':
-            return self.getCustomDatacardList(signal_name, final_state)
+        if final_state in combined_final_states.keys():
+            total_list = []
+            for fs in combined_final_states[final_state]:
+                total_list.extend(self.getSingleSignalDatacardList(signal_name, fs))
+            return total_list
         else:
-            return self.getStandardDatacardList(signal_name, final_state)
+            if self.strategy == 'custom':
+                return self.getCustomDatacardList(signal_name, final_state)
+            else:
+                return self.getStandardDatacardList(signal_name, final_state)
                  
 
     def mergeDatacards(self, signal_name, in_card_names, out_card_name, initial_merge = False):

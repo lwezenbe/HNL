@@ -233,11 +233,11 @@ if not args.makePlots:
     from HNL.EventSelection.event import ClosureTestEvent
     if args.isCheck:
         if args.flavorToTest == ['tau']:
-            event =  ClosureTestEvent(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.region, flavors_of_interest=args.flavorToTest, in_data=args.inData, analysis=args.analysis, year=args.year, era = args.era) 
+            event =  ClosureTestEvent(sample, chain, sample_manger, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.region, flavors_of_interest=args.flavorToTest, in_data=args.inData, analysis=args.analysis, year=args.year, era = args.era) 
         else:
             raise RuntimeError("Wrong input for flavorToTest with isCheck arg on: "+str(args.flavorToTest))
     else:
-        event =  ClosureTestEvent(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.region, flavors_of_interest=args.flavorToTest, in_data=args.inData, analysis=args.analysis, year=args.year, era = args.era) 
+        event =  ClosureTestEvent(sample, chain, sample_manager, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.region, flavors_of_interest=args.flavorToTest, in_data=args.inData, analysis=args.analysis, year=args.year, era = args.era) 
 
     #
     # Get luminosity weight

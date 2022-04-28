@@ -192,7 +192,7 @@ if not args.makePlots:
     #
     # Define event selection
     #
-    event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=region_to_select, analysis = args.analysis, year = args.year, era = args.era)    
+    event = Event(sample, chain, sample_manager, is_reco_level=True, selection=args.selection, strategy='MVA', region=region_to_select, analysis = args.analysis, year = args.year, era = args.era)    
 
     #
     # Create fake rate objects

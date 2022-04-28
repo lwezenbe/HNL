@@ -55,7 +55,7 @@ class OutputTree(object):
         else:
             raise RuntimeError("Tree in reading mode, you can not change input vars")
 
-    def getHistFromTree(self, vname, hname, bins, condition = None):
+    def getHistFromTree(self, vname, hname, bins, condition = None, weight = 'weight'):
         dim = 1
         if '-' in vname:
             vname = ":".join(reversed(vname.split('-')))
@@ -73,18 +73,18 @@ class OutputTree(object):
         else:
             raise RuntimeError("Currently no support for 3 dimensional plots")
 
-        weight = ''
+        final_weight = ''
         if 'Weight' in vname:
             if condition is not None:
-                weight = '('+condition+')*lumiWeight'
+                final_weight = '('+condition+')*lumiWeight'
             else:
-                weight = 'lumiWeight'
+                final_weight = 'lumiWeight'
         else:
             if condition is not None:
-                weight = '('+condition+')*weight'
+                final_weight = '('+condition+')*'+weight
             else:
-                weight = 'weight'
-        self.tree.Draw(vname+">>"+hname, weight)
+                final_weight = weight
+        self.tree.Draw(vname+">>"+hname, final_weight)
         if not htmp: return None
         ROOT.gDirectory.cd('PyROOT:/')
         res = htmp.Clone()

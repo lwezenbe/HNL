@@ -24,6 +24,15 @@ def getNameFromMass(mass):
             return k
     return None
 
+def getAllRelevantNames(mass, flavor):
+    relevant_flavors = {
+        'e' : ['e'],
+        'mu' : ['mu'],
+        'tau' : ['taulep', 'tauhad']
+    }
+   
+    return [getNameFromMass(mass)+fl for fl in relevant_flavors[flavor]]
+
 input_variables = {
     'M3l' : {'type' : 'F', 'var' : lambda c : c.M3l},
     'MT3l' : {'type' : 'F', 'var' : lambda c : c.mt3},

@@ -1,5 +1,6 @@
 
-
+import os
+json_location = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Systematics', 'data', 'systematics.json'))
 
 class Systematics:
     DICT_OF_FLATUNCERTAINTIES = {
@@ -46,3 +47,82 @@ class Systematics:
             if syst in self.reweighter.WEIGHTS_TO_USE:
                 self.storeFullWeightSystematics(syst, output_tree)   
 
+class SystematicJSONreader:
+
+    def __init__(self):
+        import json
+        with open(json_location, 'r') as f:
+            self.json_data = json.load(f)
+
+    def isActive(self, syst):
+        return self.json_data[syst]['Activate']
+
+    def getType(self, syst):
+        return self.json_data[syst]['Type']
+
+    def getGeneral(self, syst_type):
+        return [k for k in self.json_data.keys() if self.getType(k) == syst_type and self.isActive(k)]
+
+    def getFlats(self):
+        return self.getGeneral("flat")
+
+    def getWeights(self):
+        return self.getGeneral("weight")
+
+    def getAllSources(self):
+        return self.getFlats()+self.getWeights()
+
+    def getProcesses(self, syst):
+        return self.json_data[syst]['Processes']
+    
+    def filterProcesses(self, syst, background_names, sig_name, prompt_from_sideband=True):
+        raw_processes = self.getProcesses(syst)
+        if raw_processes == '*':
+            return background_names + [sig_name]
+        elif raw_processes == 'MC':
+            return [x for x in background_names if x != 'non-prompt'] + [sig_name] if prompt_from_sideband else background_names + [sig_name]
+        else:
+            return raw_processes
+        
+    def getFinalStates(self, syst):
+        return self.json_data[syst]['FinalStates']
+
+    def filterFinalStates(self, syst):
+        fs = self.getFinalStates(syst)
+        if fs == '*':
+            from HNL.EventSelection.eventCategorization import SUPER_CATEGORIES
+            return SUPER_CATEGORIES.keys()
+        else:
+            return fs
+
+    def getValue(self, syst):
+        return self.json_data[syst]['Value']
+
+def insertSystematics(out_file, bkgr_names, sig_name, bin_name):
+    
+    reader = SystematicJSONreader()
+    from HNL.Tools.helpers import tab
+
+    for syst in reader.getAllSources():
+        out_str = [syst, 'lnN' if syst in reader.getFlats() else 'shape']
+        for proc in bkgr_names + [sig_name]:
+            if not any([x in bin_name for x in reader.filterFinalStates(syst)]) or proc not in reader.filterProcesses(syst, bkgr_names, sig_name):
+                out_str += ['-']
+            else:
+                out_str += [reader.getValue(syst)]
+        
+        out_file.write(tab(out_str))        
+         
+def returnWeightShapes(tree, vname, hname, bins, condition):
+    reader = SystematicJSONreader()
+    all_weights = reader.getWeights()
+    out_dict = {}
+    from HNL.Tools.histogram import Histogram
+    for weight in all_weights:
+        for syst in ['Up', 'Down']:
+            out_dict[weight+syst] = Histogram(tree.getHistFromTree(vname, hname + weight + syst, bins, condition, weight = weight+syst))
+    return out_dict     
+
+if __name__ == '__main__':
+    sr = SystematicJSONreader()
+    print [sr.getValue(syst) for syst in sr.getFlats()]

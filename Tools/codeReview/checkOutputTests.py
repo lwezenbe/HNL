@@ -190,6 +190,7 @@ def compareFiles(f, withinerrors=False):
     for hn in list_of_hist_names:
         obj = loadObjects(f, hn)
         if isinstance(obj, str):
+            everything_clear = False
             out_file.write(hn+': '+obj+'\n')
             faulty_hn.append('\t ' +hn+': '+obj+'\n')
             continue

@@ -91,10 +91,10 @@ class Event(object):
 class ClosureTestEvent(Event):
     flavor_dict = {'tau' : 2, 'ele' : 0, 'mu' : 1}
 
-    def __init__(self, chain, new_chain, strategy, region, selection, flavors_of_interest, in_data, analysis, year, era, is_reco_level = True):
+    def __init__(self, sample, new_chain, sample_manager, strategy, region, selection, flavors_of_interest, in_data, analysis, year, era, is_reco_level = True):
         self.flavors_of_interest = flavors_of_interest
         self.translated_flavors_of_interest = [self.flavor_dict[i] for i in self.flavors_of_interest]
-        super(ClosureTestEvent, self).__init__(chain, new_chain, is_reco_level, strategy=strategy, region=region, selection=selection, analysis=analysis, year=year, era=era, additional_options={'fake_flavors' : self.translated_flavors_of_interest})
+        super(ClosureTestEvent, self).__init__(sample, new_chain, sample_manager, is_reco_level, strategy=strategy, region=region, selection=selection, analysis=analysis, year=year, era=era, additional_options={'fake_flavors' : self.translated_flavors_of_interest})
         self.in_data = in_data
         if self.flavors_of_interest is None: 
             raise RuntimeError('Input for ClosureTestMC for flavors_of_interest is None')

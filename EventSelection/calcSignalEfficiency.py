@@ -17,7 +17,7 @@ argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
 submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
-submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
+submission_parser.add_argument('--era',     action='store',       default='UL', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -227,7 +227,7 @@ if not args.makePlots:
     from HNL.EventSelection.event import Event
     if args.region == 'mix':
         region_to_select = 'lowMassSR' if chain.HNLmass <= 80 else 'highMassSR'
-        event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=region_to_select, analysis=args.analysis, year = args.year, era = args.era)
+        event = Event(sample, chain, sample_manager, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=region_to_select, analysis=args.analysis, year = args.year, era = args.era)
     else:
         event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = args.year, era = args.era)
 
