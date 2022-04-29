@@ -46,9 +46,9 @@ class WZCRfilter(FilterObject):
         from HNL.EventSelection.eventFilters import passedFilterWZCR, passedFilterWZCRewkino
         if not self.initEvent(cutter, sideband=kwargs.get('sideband', None)):                                                 return False
         if self.chain.analysis != 'ewkino':
-            if not passedFilterWZCR(self.chain, self.new_chain, is_reco_level = self.is_reco_level, cutter = cutter):                    return False
+            if not passedFilterWZCR(self.chain, self.new_chain, cutter = cutter):                    return False
         else:
-            if not passedFilterWZCRewkino(self.chain, self.new_chain, is_reco_level = self.is_reco_level, cutter = cutter):                    return False
+            if not passedFilterWZCRewkino(self.chain, self.new_chain, cutter = cutter):                    return False
         return True
 
 class ConversionCRfilter(FilterObject):
@@ -309,6 +309,6 @@ class TauMixCTfilter(FilterObject):
     def passedFilter(self, cutter, kwargs={}):
         if not self.initEvent(cutter, sideband=kwargs.get('sideband', None)):                                return False
         from HNL.EventSelection.eventFilters import passedFilterTauMixCT
-        return passedFilterTauMixCT(self.chain, self.new_chain, self.is_reco_level, cutter, high_met = self.high_met, b_veto = self.b_veto, no_met = self.no_met)
+        return passedFilterTauMixCT(self.chain, self.new_chain, cutter, high_met = self.high_met, b_veto = self.b_veto, no_met = self.no_met)
 
 

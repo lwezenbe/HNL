@@ -4,9 +4,19 @@ from HNL.ObjectSelection.leptonSelector import isGoodLepton
 #
 #       Defines jet WP and b-tagging
 #
-def getSmearedJetPt(chain, index):
+def getJetPt(chain, index):
+    syst = chain.obj_sel['systematic']
     if chain.era != 'prelegacy':
-        return chain._jetSmearedPt[index]
+        if syst == 'JECUp':
+            return chain._jetSmearedPt_JECUp[index]
+        elif syst == 'JECDown':
+            return chain._jetSmearedPt_JECDown[index]
+        elif syst == 'JERUp':
+            return chain._jetSmearedPt_JERUp[index]
+        elif syst == 'JERDown':
+            return chain._jetSmearedPt_JERDown[index]
+        else:
+            return chain._jetSmearedPt[index]
     else:
         return chain._jetPt[index]  #smearedpt temporarily not available in prelegacy skims
 
@@ -19,7 +29,7 @@ def isCleanFromLeptons(chain, index, wp):
     return True
 
 def isGoodJetAN2017014(chain, index, cleaned = 'loose'):
-    if getSmearedJetPt(chain, index) < 25:        return False
+    if getJetPt(chain, index) < 25:        return False
     if abs(chain._jetEta[index]) > 2.4: return False
     if chain.year != '2018':
         if not chain._jetIsLoose[index]:    return False
@@ -29,32 +39,31 @@ def isGoodJetAN2017014(chain, index, cleaned = 'loose'):
     return True
 
 def isGoodJetHNL(chain, index, cleaned = 'loose'):
-    if getSmearedJetPt(chain, index) < 25:        return False
+    if getJetPt(chain, index) < 25:        return False
     if abs(chain._jetEta[index]) > 2.4: return False
     if not chain._jetIsTight[index]:    return False
     if cleaned is not None and not isCleanFromLeptons(chain, index, cleaned):       return False
     return True
 
 def isGoodJetHNLLowPt(chain, index, cleaned = 'loose'):
-    if getSmearedJetPt(chain, index) < 25:        return False
+    if getJetPt(chain, index) < 25:        return False
     if abs(chain._jetEta[index]) > 2.4: return False
     if not chain._jetIsTight[index]:    return False
     if cleaned is not None and not isCleanFromLeptons(chain, index, cleaned):       return False
     return True
 
 def isGoodJetTTT(chain, index, cleaned = 'loose'):
-    if getSmearedJetPt(chain, index) < 30:        return False
-    # if chain._jetPt[index] < 30:        return False
+    if getJetPt(chain, index) < 30:        return False
     if abs(chain._jetEta[index]) > 2.4: return False
     if not chain._jetIsTight[index]:    return False
     if cleaned is not None and not isCleanFromLeptons(chain, index, cleaned):       return False
     return True
 
 def isGoodJetLuka(chain, index, cleaned = 'loose'):
-    if getSmearedJetPt(chain, index) < 25:                                                    return False
+    if getJetPt(chain, index) < 25:                                                    return False
     if abs(chain._jetEta[index]) > 5.:                                              return False
     if not chain._jetIsTight[index]:                                                return False
-    if 2.7 < abs(chain._jetEta[index]) < 3 and chain._jetPt[index] < 60:            return False
+    if 2.7 < abs(chain._jetEta[index]) < 3 and getJetPt(chain, index) < 60:            return False
     if cleaned is not None and not isCleanFromLeptons(chain, index, cleaned):       return False
     return True
 
@@ -234,3 +243,16 @@ def isGoodBJet(chain, index, wp, selection = None):
         return isTightBJet(chain, index, selection)
     else:
         raise RuntimeError("Unknown working point for jets")
+
+def getMET(chain):
+    syst = chain.obj_sel['systematic']
+    if chain.is_reco_level:
+        if syst == 'JECUp':
+            return chain._met_JECUp, chain._metPhi_JECUp
+        elif syst == 'JECDown':
+            return chain._met_JECDown, chain._metPhi_JECDown
+        else:
+            return chain._met, chain._metPhi
+    else:
+        return chain._gen_met, chain._gen_metPhi
+    

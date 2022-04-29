@@ -22,7 +22,7 @@ def isValidRootFile(fname):
 def getObjFromFile(fname, hname):
     assert isValidRootFile(fname)
 
-    if 'pnfs' in fname: fname = 'root://maite.iihe.ac.be/'+ fname         #faster for pnfs file
+#    if 'pnfs' in fname: fname = 'root://maite.iihe.ac.be/'+ fname         #faster for pnfs file
     try:
         f = ROOT.TFile.Open(fname)
         f.cd()

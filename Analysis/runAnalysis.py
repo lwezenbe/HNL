@@ -29,6 +29,7 @@ submission_parser.add_argument('--includeData',   action='store', default=None, 
 submission_parser.add_argument('--logLevel',  action='store', default='INFO',  help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 submission_parser.add_argument('--skimLevel',  action='store', default='Reco',  choices=['noskim', 'Reco', 'RecoGeneral', 'auto'])
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
+submission_parser.add_argument('--systematics',  action='store',      default='nominal',               help='Choose level of systematics.', choices = ['nominal', 'limited', 'full'])
 submission_parser.add_argument('--tag',  action='store',      default=None,               help='Tag with additional information for the output', choices = ['TauFakes', 'sidebandInMC'])
 
 
@@ -247,7 +248,7 @@ if not args.makePlots and not args.makeDataCards:
     # Set event range
     #
     if args.isTest:
-        up_limit = 2000
+        up_limit = 20000 if args.systematics != 'full' else 2000
         if len(sample.getEventRange(0)) < up_limit:
             event_range = sample.getEventRange(0)
         else:
@@ -382,7 +383,9 @@ if not args.makePlots and not args.makeDataCards:
    
     from HNL.Systematics.systematics import SystematicJSONreader
     sjr = SystematicJSONreader()
-    for syst in ['nominal'] + sjr.getReruns(year, True): 
+    syst_to_run = ['nominal']
+    if args.systematics == 'full': syst_to_run += sjr.getReruns(year, True)
+    for syst in syst_to_run: 
         print 'Running {0}'.format(syst)
         runEventLoop(chain, output_name_full, syst)
     

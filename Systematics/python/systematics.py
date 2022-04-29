@@ -114,6 +114,7 @@ class SystematicJSONreader:
 
 def prepareForRerunSyst(chain, event, systematic = 'nominal'):
     event.chain.obj_sel['systematic'] = systematic
+    event.original_object_selection['systematic'] = systematic
     return event
 
 def insertSystematics(out_file, bkgr_names, sig_name, bin_name, year):

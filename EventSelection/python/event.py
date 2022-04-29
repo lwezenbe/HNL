@@ -45,6 +45,9 @@ class Event(object):
         self.chain.conecorrection_applied = False
         self.processLeptons(tau_energy_scale)
 
+        from HNL.ObjectSelection.jetSelector import getMET
+        self.chain.met, self.chain.metPhi = getMET(self.chain)
+
     def processLeptons(self, tau_energy_scale = 'nominal'):
         self.processMuons()
         self.processElectrons()

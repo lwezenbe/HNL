@@ -233,7 +233,7 @@ if not args.makePlots:
             passed = isGoodLepton(chain, chain.l_indices[fake_index], 'tight')
             fakerate.setTreeVariable('weight', reweighter.getTotalWeight())
 
-        fakerate.setTreeVariable('met', chain._met)
+        fakerate.setTreeVariable('met', chain.met)
         fakerate.setTreeVariable('l_pt', chain.l_pt[fake_index])
         fakerate.setTreeVariable('l_eta', chain.l_eta[fake_index])
         fakerate.setTreeVariable('l_decaymode', chain._tauDecayMode[chain.l_indices[fake_index]])

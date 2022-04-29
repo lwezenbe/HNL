@@ -111,8 +111,8 @@ class Sample(object):
         assert len(self.list_of_files) > 0 and isValidRootFile(self.list_of_files[0])
 
         for f in self.list_of_files:
-            if 'pnfs' in f:
-                f = 'root://maite.iihe.ac.be/'+f
+#            if 'pnfs' in f:
+#                f = 'root://maite.iihe.ac.be/'+f
             self.chain.Add(f)
         
         if not self.is_data and needhcount:   
