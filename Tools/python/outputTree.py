@@ -3,15 +3,15 @@ from ROOT import TFile
 def cleanName(in_name):
     return "".join(i for i in in_name if i not in "\/:*?<>|&- ")
 
+from HNL.Tools.helpers import isValidRootFile
 class OutputTree(object):
     
-    def __init__(self, name, path, branches = None):
+    def __init__(self, name, path, branches = None, branches_already_defined = False):
         self.name = name
         self.path = path
 
         from ROOT import TTree, gDirectory
         if branches is None:
-            from HNL.Tools.helpers import isValidRootFile
             if not isValidRootFile(self.path):
                 raise RuntimeError("No valid root file at path: {0} \n Please specify branches to create a new tree".format(self.path))
             
@@ -25,7 +25,7 @@ class OutputTree(object):
             self.tree = TTree(name, name)
 
             from HNL.Tools.makeBranches import makeBranches
-            self.new_vars = makeBranches(self.tree, branches)
+            self.new_vars = makeBranches(self.tree, branches, branches_already_defined)
     
     def setTreeVariable(self, var_name, new_value):
         var_name = cleanName(var_name)
@@ -41,11 +41,13 @@ class OutputTree(object):
         else:
             raise RuntimeError("Tree in reading mode, you can not change input vars")
 
-    def write(self, is_test = None):
+    def write(self, is_test = None, append = False):
+        append_string = 'recreate'
+        if append and isValidRootFile(self.path): append_string = 'update'
         if self.new_vars is not None:
             from HNL.Tools.helpers import makeDirIfNeeded
             makeDirIfNeeded(self.path)
-            out_file = TFile(self.path, 'recreate')
+            out_file = TFile(self.path, append_string)
             self.tree.Write()
             out_file.Write()
             out_file.Close()

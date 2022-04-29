@@ -112,17 +112,18 @@ else:
 #
 # Prepare jobs
 #
-jobs = {}
-for year in args.year:
-    jobs[year] = []
-    sample_manager = getSampleManager(year)
-
-    for sample_name in sample_manager.sample_names:
-        if args.includeData is None and 'Data' in sample_name: continue
-        sample = sample_manager.getSample(sample_name)
-        if args.sample and args.sample != sample.name: continue
-        for njob in xrange(sample.returnSplitJobs()): 
-            jobs[year] += [(sample.name, str(njob), None)]
+if not args.isTest:
+    jobs = {}
+    for year in args.year:
+        jobs[year] = []
+        sample_manager = getSampleManager(year)
+    
+        for sample_name in sample_manager.sample_names:
+            if args.includeData is None and 'Data' in sample_name: continue
+            sample = sample_manager.getSample(sample_name)
+            if args.sample and args.sample != sample.name: continue
+            for njob in xrange(sample.returnSplitJobs()): 
+                jobs[year] += [(sample.name, str(njob), None)]
 
 #
 # Submit subjobs
@@ -171,20 +172,8 @@ reco_or_gen_str = 'reco' if not args.genLevel else 'gen'
 # Extra imports for dividing by region
 #
 from HNL.EventSelection.searchRegions import SearchRegionManager
-regions = []
 srm = {}
-if args.region == 'lowMassSR':
-    regions.append('lowMassSR')
-    srm['lowMassSR'] = SearchRegionManager('lowMassSR')
-elif args.region == 'lowMassSRloose':
-    regions.append('lowMassSRloose')
-    srm['lowMassSRloose'] = SearchRegionManager('lowMassSRloose')
-elif args.region == 'highMassSR':
-    regions.append('highMassSR')
-    srm['highMassSR'] = SearchRegionManager('highMassSR')
-else:
-    regions.append(args.region)
-    srm[args.region] = SearchRegionManager(args.region)
+srm[args.region] = SearchRegionManager(args.region)
 
 def getOutputName(st, y, tag=None):
     translated_tag = '' if tag is None else '-'+tag
@@ -204,60 +193,79 @@ if not args.makePlots and not args.makeDataCards:
     sample_manager = getSampleManager(year)
 
     #Start a loop over samples
-    sample_names = []
-    for sample in sample_manager.sample_list:
+    sample = sample_manager.getSample(args.sample)
 
-        #
-        # Do not run over samples that we dont need
-        #
-        if args.sample and sample.name != args.sample: continue
-        if sample.name not in sample_manager.sample_names: continue
-        
-        #
-        # Initialize chain
-        #
-        chain = sample.initTree(needhcount=False)
-        if args.includeData is None and chain.is_data: continue
+    #
+    # Do not run over samples that we dont need
+    #
+    if sample.name not in sample_manager.sample_names: 
+        raise RuntimeError("sample not defined in sample_manager list")
+    
+    #
+    # Initialize chain
+    #
+    chain = sample.initTree(needhcount=False)
+    if args.includeData is None and chain.is_data: exit(0)
 
-        #
-        # Define output name
-        #
-        subjobAppendix = '_subJob' + args.subJob if args.subJob else ''
-        
-        is_signal = 'HNL' in sample.name
-        if chain.is_data:
-            signal_str = 'data'
-            sample_output_name = sample.output
+
+    #
+    # Define output name
+    #
+    subjobAppendix = '_subJob' + args.subJob if args.subJob else ''
+    
+    is_signal = 'HNL' in sample.name
+    if chain.is_data:
+        signal_str = 'data'
+        sample_output_name = sample.output
+    else:
+        signal_str = 'signal' if is_signal else 'bkgr'
+        sample_output_name = sample.output
+
+
+    if args.signalOnly and args.genLevel:       output_name_full = os.path.join(getOutputName(signal_str, year, args.tag), 'signalOrdering', sample_output_name)
+    else:      output_name_full = os.path.join(getOutputName(signal_str, year, args.tag), sample_output_name) 
+
+
+    if args.isChild:
+        output_name_full += '/tmp_'+sample_output_name+ '/'+sample.name+'_'
+    else:
+        output_name_full += '/'
+            
+    write_name = 'variables'
+    output_name_full += write_name+subjobAppendix+ '.root'
+
+    #
+    # Check if we need to run the sideband
+    #
+    need_sideband = None
+    if chain.is_data and args.includeData == 'includeSideband':
+        need_sideband = [0,1,2]
+    elif not chain.is_data and args.tag == 'sidebandInMC':
+        need_sideband = [0,1,2]
+
+    #
+    # Set event range
+    #
+    if args.isTest:
+        up_limit = 2000
+        if len(sample.getEventRange(0)) < up_limit:
+            event_range = sample.getEventRange(0)
         else:
-            signal_str = 'signal' if is_signal else 'bkgr'
-            sample_output_name = sample.output
+            event_range = xrange(up_limit)
+    else:
+        event_range = sample.getEventRange(args.subJob)
 
 
-        if args.signalOnly and args.genLevel:       output_name_full = os.path.join(getOutputName(signal_str, year, args.tag), 'signalOrdering', sample_output_name)
-        else:      output_name_full = os.path.join(getOutputName(signal_str, year, args.tag), sample_output_name) 
+    #
+    # Skip HNL masses that were not defined
+    #
+    if args.masses is not None and chain.HNLmass not in args.masses: exit(0)
 
-
-        if args.isChild:
-            output_name_full += '/tmp_'+sample_output_name+ '/'+sample.name+'_'
-        else:
-            output_name_full += '/'
-                
-        write_name = 'variables'
-        output_name_full += write_name+subjobAppendix+ '.root'
-
-        #
-        # Check if we need to run the sideband
-        #
-        need_sideband = None
-        if chain.is_data and args.includeData == 'includeSideband':
-            need_sideband = [0,1,2]
-        elif not chain.is_data and args.tag == 'sidebandInMC':
-            need_sideband = [0,1,2]
+    def runEventLoop(chain, output_name, systematic='nominal'):
 
         #
         # Load in sample and chain
         #
-        sample_names.append(sample.name)
         event = Event(sample, chain, sample_manager, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = year, era = args.era)
 
         #
@@ -270,35 +278,22 @@ if not args.makePlots and not args.makeDataCards:
         branches.extend(['weight/F', 'isprompt/O', 'category/I', 'searchregion/I', 'issideband/O'])
         branches.extend(event.reweighter.returnBranches())
         branches.extend(event.systematics.returnBranches())
-        output_tree = OutputTree('events', output_name_full, branches = branches)
+        output_tree = OutputTree('events_{0}'.format(systematic), output_name_full, branches = branches, branches_already_defined = systematic != 'nominal')
 
-        #
-        # Set event range
-        #
-        if args.isTest:
-            up_limit = 20000
-            if len(sample.getEventRange(0)) < up_limit:
-                event_range = sample.getEventRange(0)
-            else:
-                event_range = xrange(up_limit)
-        else:
-            event_range = sample.getEventRange(args.subJob)
-
-        #
-        # Skip HNL masses that were not defined
-        #
-        if args.masses is not None and chain.HNLmass not in args.masses: continue
 
         #
         # Create cutter to provide cut flow
         #
-        cutter = Cutter(chain = chain)
+        cutter = Cutter(name = systematic, chain = chain)
 
         #
         # Load in MVA reader if needed
         #
         if args.strategy == 'MVA':
             tmva = ReaderArray(chain, 'kBDT', args.region, args.era)
+
+        from HNL.Systematics.systematics import prepareForRerunSyst
+        event = prepareForRerunSyst(chain, event, systematic)
 
         #
         # Loop over all events
@@ -381,10 +376,16 @@ if not args.makePlots and not args.makeDataCards:
         #
         # Save histograms
         #
-        output_tree.write(is_test = arg_string if args.isTest else None)
+        output_tree.write(is_test = arg_string if args.isTest else None, append = systematic != 'nominal')
         
-        cutter.saveCutFlow(output_name_full, arg_string = arg_string if args.isTest else None)
-        
+        cutter.saveCutFlow(output_name, arg_string = arg_string if args.isTest else None)
+   
+    from HNL.Systematics.systematics import SystematicJSONreader
+    sjr = SystematicJSONreader()
+    for syst in ['nominal'] + sjr.getReruns(year, True): 
+        print 'Running {0}'.format(syst)
+        runEventLoop(chain, output_name_full, syst)
+    
     closeLogger(log)
 
 #If the option to not run over the events again is made, load in the already created histograms here

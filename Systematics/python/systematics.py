@@ -60,17 +60,31 @@ class SystematicJSONreader:
     def getType(self, syst):
         return self.json_data[syst]['Type']
 
-    def getGeneral(self, syst_type):
-        return [k for k in self.json_data.keys() if self.getType(k) == syst_type and self.isActive(k)]
+    def getYear(self, syst):
+        return self.json_data[syst]['Year']
 
-    def getFlats(self):
-        return self.getGeneral("flat")
+    def getGeneral(self, syst_type, year, split_syst=False):
+        if not split_syst:
+            return [k for k in self.json_data.keys() if self.getType(k) == syst_type and self.isActive(k) and year in self.getYear(k)]
+        else:
+            final_list = []
+            for k in self.json_data.keys():
+                if self.getType(k) != syst_type or not self.isActive(k) or year not in self.getYear(k): continue
+                final_list.append(k+'Up')
+                final_list.append(k+'Down')
+            return final_list
 
-    def getWeights(self):
-        return self.getGeneral("weight")
+    def getFlats(self, year):
+        return self.getGeneral("flat", year)
 
-    def getAllSources(self):
-        return self.getFlats()+self.getWeights()
+    def getWeights(self, year):
+        return self.getGeneral("weight", year)
+
+    def getReruns(self, year, split_syst = False):
+        return self.getGeneral("rerun", year, split_syst)
+    
+    def getAllSources(self, year):
+        return self.getFlats(year)+self.getWeights(year)
 
     def getProcesses(self, syst):
         return self.json_data[syst]['Processes']
@@ -98,7 +112,11 @@ class SystematicJSONreader:
     def getValue(self, syst):
         return self.json_data[syst]['Value']
 
-def insertSystematics(out_file, bkgr_names, sig_name, bin_name):
+def prepareForRerunSyst(chain, event, systematic = 'nominal'):
+    event.chain.obj_sel['systematic'] = systematic
+    return event
+
+def insertSystematics(out_file, bkgr_names, sig_name, bin_name, year):
     
     reader = SystematicJSONreader()
     from HNL.Tools.helpers import tab
