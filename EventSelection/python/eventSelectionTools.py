@@ -51,11 +51,12 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
 
     collection = chain._nL if not chain.obj_sel['notau'] else chain._nLight
     chain.leptons = []
+    from HNL.ObjectSelection.electronSelector import getElectronPt, getElectronE
 
     for l in xrange(collection):
         if chain._lFlavor[l] == 0: 
             workingpoint = chain.obj_sel['ele_wp']
-            pt_to_use = chain._lPtCorr[l]
+            pt_to_use = getElectronPt(chain, l)
         elif chain._lFlavor[l] == 1: 
             workingpoint = chain.obj_sel['mu_wp']
             pt_to_use = chain._lPt[l]
@@ -94,7 +95,7 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         new_chain.l_pt[i] = ptAndIndex[i][0]
         new_chain.l_eta[i] = chain._lEta[ptAndIndex[i][1]]
         new_chain.l_phi[i] = chain._lPhi[ptAndIndex[i][1]]
-        new_chain.l_e[i] = chain._lECorr[ptAndIndex[i][1]] if new_chain.l_flavor[i] < 1 else chain._lE[ptAndIndex[i][1]]
+        new_chain.l_e[i] = getElectronE(chain, ptAndIndex[i][1]) if new_chain.l_flavor[i] < 1 else chain._lE[ptAndIndex[i][1]]
         new_chain.l_charge[i] = chain._lCharge[ptAndIndex[i][1]]
         new_chain.l_isFO[i] = isGoodLepton(chain, ptAndIndex[i][1], 'FO')
         new_chain.l_istight[i] = isGoodLepton(chain, ptAndIndex[i][1], 'tight')
@@ -173,7 +174,8 @@ def selectFirstTwoJets(chain, new_chain):
         new_chain.j_indices = [0.0]*2
         new_chain.j_btag = [0.0]*2
 
-    chain.jets = [(chain._jetPt[j], j) for j in xrange(chain._nJets) if isGoodJet(chain, j)]
+    from HNL.ObjectSelection.jetSelector import getJetPt
+    chain.jets = [(getJetPt(chain, j), j) for j in xrange(chain._nJets) if isGoodJet(chain, j)]
 
     ptAndIndex = sorted(chain.jets, reverse=True, key = getSortKey)
  
@@ -582,9 +584,10 @@ def massDiff(m1, m2):
 
 def calcHT(chain, new_chain):
     HT = 0.
+    from HNL.ObjectSelection.jetSelector import getJetPt
     for jet in xrange(chain._nJets):
         if not isGoodJet(chain, jet):    continue 
-        HT += chain._jetPt[jet]
+        HT += getJetPt(chain, jet)
     return HT
 
 def calcLT(chain, new_chain, is_reco_level = True):
@@ -755,16 +758,17 @@ def calculateKinematicVariables(chain, new_chain, is_reco_level = True):
     chain.maxMsssf = (lVec[max_sssf[0]]+lVec[max_sssf[1]]).M() if all(max_sssf) else 0  
 
     #MTother
-    chain.index_other = [item for item in new_chain.l_indices if item not in min_os][0]   
+    chain.index_other = [item for item in range(3) if item not in min_os][0]   
 
     #TODO: Seems like there must be a better way to do this
-    new_chain.mtOther = np.sqrt(2*chain.met*chain._lPt[chain.index_other]*(1-np.cos(deltaPhi(chain._lPhi[chain.index_other], chain.metPhi))))
+    new_chain.mtOther = np.sqrt(2*chain.met*new_chain.l_pt[chain.index_other]*(1-np.cos(deltaPhi(new_chain.l_phi[chain.index_other], chain.metPhi))))
     if is_reco_level:    
         
         #ptCone
         new_chain.pt_cone = []
-        for l in xrange(chain._nLight):
-            new_chain.pt_cone.append(chain._lPt[l]*(1+max(0., chain._miniIso[l]-0.4))) #TODO: is this the correct definition?
+        for il, l in xrange(chain.l_flavor):
+            if l < 2:
+                new_chain.pt_cone.append(new_chain.l_pt[il]*(1+max(0., chain._miniIso[new_chain.l_indices[il]]-0.4))) #TODO: is this the correct definition?
 
    
     #calculate #jets and #bjets

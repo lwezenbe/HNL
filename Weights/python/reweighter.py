@@ -3,6 +3,8 @@ from HNL.Weights.puReweighting import returnPUWeightReader
 from HNL.Weights.bTagWeighter import getReweightingFunction as btagReweighter
 from HNL.Weights.electronSF import ElectronRecoSFJSON
 from HNL.ObjectSelection.tauSelector import getTauAlgoWP
+from HNL.ObjectSelection.muonSelector import checkMuonWP
+from HNL.ObjectSelection.electronSelector import checkElectronWP
 from HNL.Weights.fakeRateWeights import returnFakeRateCollection
 import numpy as np
 
@@ -11,6 +13,8 @@ var_weights = {
         'puWeight':          (lambda c : c.puWeight,      np.arange(0.8, 1.21, .01),         ('PU weight', 'Events')), 
         'electronRecoWeight':          (lambda c : c.electronRecoWeight,      np.arange(0.8, 1.21, 0.01),         ('Electron reco weight', 'Events')), 
         'tauSFWeight':          (lambda c : c.tauSFWeight,      np.arange(0., 2., .1),         ('Tau SF weight', 'Events')), 
+        'muonIDSFWeight':          (lambda c : c.muonIDSFWeight,      np.arange(0.75, 1.26, .01),         ('Muon SF weight', 'Events')), 
+        'electronIDSFWeight':          (lambda c : c.electronIDSFWeight,      np.arange(0.75, 1.26, .01),         ('Electron SF weight', 'Events')), 
         'btagWeight':          (lambda c : c.btagWeight,      np.arange(0.5, 1.5, .01),         ('btag weight', 'Events')), 
 } 
 
@@ -31,7 +35,7 @@ class Reweighter:
 
             if self.sample.chain.era != 'prelegacy': self.btagReweighting = btagReweighter('Deep', self.sample.chain.era, self.sample.chain.year, 'loose', self.sample.chain.selection)
 
-            self.electronSF = ElectronRecoSFJSON(self.sample.chain.era, self.sample.chain.year)
+            self.electronRecoSF = ElectronRecoSFJSON(self.sample.chain.era, self.sample.chain.year)
 
             #
             # Tau SF
@@ -39,6 +43,14 @@ class Reweighter:
             from HNL.Weights.tauSF import TauSF
             tau_algo, tau_wp = getTauAlgoWP(self.sample.chain)
             self.tauSF = TauSF(sample.chain.era, sample.chain.year, tau_algo, tau_wp[0], tau_wp[1], tau_wp[2])
+            
+            from HNL.Weights.leptonSF import MuonIDSF
+            muon_wp = checkMuonWP(self.sample.chain, None)
+            self.muonSF = MuonIDSF(sample.chain.era, sample.chain.year, muon_wp)
+            
+            from HNL.Weights.leptonSF import ElectronIDSF
+            electron_wp = checkElectronWP(self.sample.chain, None)
+            self.electronIDSF = ElectronIDSF(sample.chain.era, sample.chain.year, electron_wp)
 
 
         self.fakerate_collection = None
@@ -78,7 +90,7 @@ class Reweighter:
 
     def getElectronRecoSF(self, syst = 'nominal'):
         if not self.sample.is_data and self.sample.chain.is_reco_level:
-            return self.electronSF.getTotalRecoSF(self.sample.chain, syst)
+            return self.electronRecoSF.getTotalRecoSF(self.sample.chain, syst)
         else:
             return 1.        
 
@@ -88,6 +100,18 @@ class Reweighter:
         else:
             return 1.        
 
+    def getMuonSF(self, syst = 'nominal'):
+        if not self.sample.is_data and self.sample.chain.is_reco_level:
+            return self.muonSF.getTotalSF(self.sample.chain, syst)
+        else:
+            return 1.        
+    
+    def getElectronIDSF(self, syst = 'nominal'):
+        if not self.sample.is_data and self.sample.chain.is_reco_level:
+            return self.electronIDSF.getTotalSF(self.sample.chain, syst)
+        else:
+            return 1.        
+        
     def returnWeight(self, weight_name, syst = 'nominal'):
         if weight_name == 'lumiWeight':
             return self.getLumiWeight()
@@ -97,6 +121,10 @@ class Reweighter:
             return self.getElectronRecoSF(syst=syst)
         if weight_name == 'tauSFWeight':
             return self.getTauSF(syst=syst)
+        if weight_name == 'muonIDSFWeight':
+            return self.getMuonSF(syst=syst)
+        if weight_name == 'electronIDSFWeight':
+            return self.getElectronIDSF(syst=syst)
         if weight_name == 'btagWeight':
             return self.getBTagWeight(syst=syst)
 

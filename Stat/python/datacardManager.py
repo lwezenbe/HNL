@@ -34,9 +34,10 @@ class SingleYearDatacardManager:
     def getMVAName(self, sr, final_state, signal_name):
         mass_point = self.getHNLmass(signal_name)
         from HNL.TMVA.mvaVariables import getNameFromMass
+        from HNL.EventSelection.eventCategorization import getAllAnalysisCategoriesFromSuper
         if self.flavor != 'tau':
             return sr+'-'+final_state+'-'+getNameFromMass(mass_point)+self.flavor
-        elif final_state == 'NoTau':
+        elif final_state == 'NoTau' or final_state in getAllAnalysisCategoriesFromSuper('NoTau'):
             return sr+'-'+final_state+'-'+getNameFromMass(mass_point)+'taulep'
         else:
             return sr+'-'+final_state+'-'+getNameFromMass(mass_point)+'tauhad'
@@ -65,27 +66,44 @@ class SingleYearDatacardManager:
         return output_list
 
     # Highly specified function to be used after all tests
-    def getCustomDatacardList(self, signal_name, final_state):
-        if 'HNL' in signal_name:
-            mass_point = self.getHNLmass(signal_name)
-            if mass_point <= 80:
-                return [self.getCutbasedName('A1', final_state), self.getCutbasedName('B1', final_state), self.getMVAName('AB2', final_state, signal_name)]
-            elif mass_point <= 400:
-                return self.getStandardDatacardList(signal_name, final_state, 'MVA')
-            else:
-                return self.getStandardDatacardList(signal_name, final_state, 'cutbased') 
+    def getCustomDatacardList(self, signal_name, final_state, lod, strategy):
+        if lod == 'analysis':
+            from HNL.EventSelection.eventCategorization import getAllAnalysisCategoriesFromSuper
+            all_cat = getAllAnalysisCategoriesFromSuper(final_state)
+            out_cards = []
+            for c in all_cat:
+                out_cards.extend(self.getCustomDatacardList(signal_name, c, 'super', strategy))
+            return out_cards
+        elif lod == 'super':
+            if 'HNL' in signal_name:
+                if strategy == 'custom':
+                    mass_point = self.getHNLmass(signal_name)
+                    if mass_point <= 80:
+                        if final_state == 'OneTau-OSSF':
+                            return [self.getMVAName('C', final_state, signal_name), self.getMVAName('D', final_state, signal_name)]
+                        elif final_state == 'OneTau-OF' or final_state == 'OneTau-SSSF':
+                            return [self.getCutbasedName('A', final_state), self.getCutbasedName('B', final_state)]
+                        else:
+                            return [self.getCutbasedName('A', final_state), self.getCutbasedName('B', final_state), self.getMVAName('C', final_state, signal_name), self.getMVAName('D', final_state, signal_name)]
+                    elif mass_point <= 400:
+                        return self.getStandardDatacardList(signal_name, final_state, 'MVA')
+                    else:
+                        return self.getStandardDatacardList(signal_name, final_state, 'cutbased') 
+                elif strategy == 'cutbased':
+                    return self.getStandardDatacardList(signal_name, final_state, 'cutbased')
+                elif strategy == 'MVA':
+                    return self.getStandardDatacardList(signal_name, final_state, 'MVA')
+        else:
+            raise RuntimeError('Unknown lod: {0}'.format(lod))
 
-    def getSingleSignalDatacardList(self, signal_name, final_state):
+    def getSingleSignalDatacardList(self, signal_name, final_state, lod, strategy):
         if final_state in combined_final_states.keys():
             total_list = []
             for fs in combined_final_states[final_state]:
-                total_list.extend(self.getSingleSignalDatacardList(signal_name, fs))
+                total_list.extend(self.getSingleSignalDatacardList(signal_name, fs, lod, strategy))
             return total_list
         else:
-            if self.strategy == 'custom':
-                return self.getCustomDatacardList(signal_name, final_state)
-            else:
-                return self.getStandardDatacardList(signal_name, final_state)
+            return self.getCustomDatacardList(signal_name, final_state, lod, strategy)
                  
 
     def mergeDatacards(self, signal_name, in_card_names, out_card_name, initial_merge = False):
@@ -94,8 +112,8 @@ class SingleYearDatacardManager:
         from HNL.Stat.combineTools import runCombineCommand
         runCombineCommand('combineCards.py '+' '.join([self.getDatacardPath(signal_name, ic, define_strategy = not initial_merge) for ic in in_card_names])+' > '+self.getDatacardPath(signal_name, out_card_name))
  
-    def initializeCards(self, signal_name, final_state):
-        cards_to_merge = self.getSingleSignalDatacardList(signal_name, final_state)
+    def initializeCards(self, signal_name, final_state, lod, strategy = 'custom'):
+        cards_to_merge = self.getSingleSignalDatacardList(signal_name, final_state, lod, strategy)
         self.mergeDatacards(signal_name, cards_to_merge, final_state, initial_merge = True)
 
 class DatacardManager:
@@ -121,9 +139,9 @@ class DatacardManager:
             from HNL.Stat.combineTools import runCombineCommand
             runCombineCommand('combineCards.py '+' '.join([sm.getDatacardPath(signal_name, card_name) for sm in self.singleyear_managers])+' > '+out_path)
 
-    def prepareAllCards(self, signal_name, final_state):
+    def prepareAllCards(self, signal_name, final_state, lod, strategy = 'cutbased'):
         for iyear, year in enumerate(self.years):
-            self.singleyear_managers[iyear].initializeCards(signal_name, final_state)
+            self.singleyear_managers[iyear].initializeCards(signal_name, final_state, lod, strategy)
 
         self.mergeYears(signal_name, final_state)
 

@@ -30,8 +30,11 @@ def getAllRelevantNames(mass, flavor):
         'mu' : ['mu'],
         'tau' : ['taulep', 'tauhad']
     }
-   
-    return [getNameFromMass(mass)+fl for fl in relevant_flavors[flavor]]
+ 
+    from HNL.TMVA.mvaDefinitions import getMVAdict
+    from HNL.Stat.datacardManager import getRegionFromMass
+    region = getRegionFromMass(mass)
+    return [getNameFromMass(mass)+fl for fl in relevant_flavors[flavor] if getNameFromMass(mass)+'-'+fl in getMVAdict(region)[region].keys()]
 
 input_variables = {
     'M3l' : {'type' : 'F', 'var' : lambda c : c.M3l},

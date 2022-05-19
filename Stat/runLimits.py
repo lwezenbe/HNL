@@ -15,6 +15,7 @@ submission_parser.add_argument('--selection',   action='store', default='default
 submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA', 'custom'])
 submission_parser.add_argument('--datacard', action='store', default='', type=str,  help='What type of analysis do you want to run?', choices=['MaxOneTau', 'Combined', 'Ditau', 'NoTau', 'SingleTau', 'TauFinalStates'])
 submission_parser.add_argument('--compareToCards',   type=str, nargs='*',  help='Compare to a specific card if it exists. If you want different selection use "selection/card" otherwise just "card"')
+submission_parser.add_argument('--lod',   type=str,  help='"Level of detail": Describes how binned you want you analysis categories to be.', choices = ['analysis', 'super'])
 submission_parser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
 submission_parser.add_argument('--tag', type = str, default=None,  help='Add a file with a message in the plotting folder')
 argParser.add_argument('--dryplot', action='store_true', default=False,  help='Add a file with a message in the plotting folder')
@@ -29,6 +30,7 @@ from numpy import sqrt
 
 def runAsymptoticLimit(card_manager, signal_name, cardname):
     datacard = card_manager.getDatacardPath(signal_name, cardname)
+    print datacard
 
     output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname
     if args.tag is not None: output_folder += '-'+args.tag
@@ -63,7 +65,7 @@ if not args.useExistingLimits:
             if not datacard_manager.checkMassAvailability(mass): continue
             print '\x1b[6;30;42m', 'Processing mN =', str(mass), 'GeV', '\x1b[0m'
             signal_name = 'HNL-'+args.flavor+'-m'+str(mass)
-            datacard_manager.prepareAllCards(signal_name, card)
+            datacard_manager.prepareAllCards(signal_name, card, args.lod, args.strategy)
 
             if args.asymptotic: runAsymptoticLimit(datacard_manager, signal_name, card)
             else:
@@ -74,7 +76,8 @@ compare_dict = {
     'cutbased-AN2017014': 'Replicated AN2017014 selection',
     'cutbased-default': 'Search regions',
     'cutbased-leptonMVAtop': 'top lepton MVA',
-    'MVA-default': 'BDT'
+    'MVA-default': 'BDT',
+    'custom-default' : ''
 }
 
 asymptotic_str = 'asymptotic' if args.asymptotic else ''
@@ -133,13 +136,17 @@ for card in cards_to_read:
             compare_graphs[sname + ' ' +cname+ ' ' + era] = getObjFromFile(file_name, 'expected_central')
 
     if args.flavor == 'e':
-        observed_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsElectronMixing.root'), 'observed_promptDecays')
+        #observed_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsElectronMixing.root'), 'observed_promptDecays')
+        observed_AN = None
         expected_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsElectronMixing.root'), 'expected_central')
-        tex_names = ['observed (EXO-17-012)', 'expected (EXO-17-012)']
+    #    tex_names = ['observed (EXO-17-012)', 'expected (EXO-17-012)']
+        tex_names = ['expected (EXO-17-012)']
     elif args.flavor == 'mu':
-        observed_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsMuonMixing.root'), 'observed_promptDecays')
+        #observed_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsMuonMixing.root'), 'observed_promptDecays')
+        observed_AN = None
         expected_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsMuonMixing.root'), 'expected_central')
-        tex_names = ['observed (EXO-17-012)', 'expected (EXO-17-012)']
+        #tex_names = ['observed (EXO-17-012)', 'expected (EXO-17-012)']
+        tex_names = ['expected (EXO-17-012)']
     else:
         observed_AN = None
         expected_AN = None
@@ -152,7 +159,8 @@ for card in cards_to_read:
     if (observed_AN is None and expected_AN is None) or args.dryplot:
         bkgr_hist = None
     else:
-        bkgr_hist = [observed_AN, expected_AN]
+        #bkgr_hist = [observed_AN, expected_AN]
+        bkgr_hist = [expected_AN]
 
     if args.compareToCards is not None:
         for compare_key in compare_graphs.keys():
@@ -164,6 +172,12 @@ for card in cards_to_read:
                 bkgr_hist.append(compare_graphs[compare_key])
                 tex_names.append(compare_era+ ' ' +compare_dict[compare_sel] + ' ' +compare_reg)
 
-    year = args.year[0] if len(args.year) == 1 else 'all'
-    p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=False, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', year = year)
+    if len(args.year) == 1:
+        year = args.year[0]
+    elif all(['2016' in y for y in args.year]):
+        year = '2016'
+    else:
+        year = 'all'
+    
+    p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=False, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', era = 'UL', year = year)
     p.drawBrazilian(output_dir = destination, ignore_bands = args.dryplot)

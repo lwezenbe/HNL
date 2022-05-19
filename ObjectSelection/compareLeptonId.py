@@ -68,7 +68,6 @@ else:
 #
 from HNL.Samples.sampleManager import SampleManager
 sample_manager = SampleManager(args.era, args.year, 'noskim', 'ObjectSelection/compareLeptonIdList_'+args.era+str(args.year))
-# sample_manager = SampleManager(args.era, args.year, 'noskim', 'ObjectSelection/compareTauIdList_'+args.era+str(args.year))
 
 #
 # Submit Jobs
@@ -228,7 +227,7 @@ if not args.makePlots:
 
         for lepton in xrange(chain._nL):
             if chain._lFlavor[lepton] != FLAVOR_DICT[args.flavor]:  continue
-            if chain._lFlavor[lepton] != FLAVOR_DICT['tau'] and not isBaseLepton(chain, lepton):                     continue
+            if chain._lFlavor[lepton] != FLAVOR_DICT['tau'] and not isBaseLepton(chain, lepton, syst = 'nominal'):                     continue
 
             chain.l_pt = chain._lPt[lepton]
             chain.l_eta = chain._lEta[lepton]   
@@ -242,7 +241,7 @@ if not args.makePlots:
                 if chain._lIsPrompt[lepton]:
                     passed_tot = []
                     for wp in algos[algo]:
-                        passed = isGoodLeptonGeneral(chain, lepton, algo = algo, workingpoint = wp)
+                        passed = isGoodLeptonGeneral(chain, lepton, algo = algo, workingpoint = wp, syst = 'nominal')
                         passed_tot.append(passed)
                         for v in list_of_var_hist['efficiency'][algo].keys():
                             list_of_var_hist['efficiency'][algo][v][wp].fill(chain, 1., passed)
@@ -252,7 +251,7 @@ if not args.makePlots:
                 else:
                     passed_tot = []
                     for wp in algos[algo]:
-                        passed = isGoodLeptonGeneral(chain, lepton, algo = algo, workingpoint = wp)
+                        passed = isGoodLeptonGeneral(chain, lepton, algo = algo, workingpoint = wp, syst = 'nominal')
                         for v in list_of_var_hist['fakerate'][algo].keys():
                             list_of_var_hist['fakerate'][algo][v][wp].fill(chain, 1., passed)
                         passed_tot.append(passed)

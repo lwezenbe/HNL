@@ -119,5 +119,3 @@ class ElectronRecoSFJSON:
                 sf *= self.getSingleRecoSF(chain, e, syst)
 
         return sf
- 
-

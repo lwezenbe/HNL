@@ -142,27 +142,63 @@ DETAILED_CATEGORIES_TO_USE = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 # Accompanying function to filter more easily than messing around with these dictionaries
 #
 SUPER_CATEGORIES = {
-    'Ditau': [1, 2, 3, 4], 
+#    'Ditau': [1, 2, 3, 4], 
     'SingleTau' : [5, 6, 7, 8, 9], 
     'NoTau' : [11, 12, 13, 14, 15, 16], 
-    'Total': [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16], 
-    'TauFinalStates': [1, 2, 3, 4, 5, 6, 7, 8, 9],
-    'Other': [17]
+#    'Total': [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16], 
+#    'TauFinalStates': [1, 2, 3, 4, 5, 6, 7, 8, 9],
+#    'Other': [17]
     }
-mutual_exclusive_supercategories = ['Ditau', 'SingleTau', 'NoTau']
+#mutual_exclusive_supercategories = ['Ditau', 'SingleTau', 'NoTau']
+mutual_exclusive_supercategories = ['SingleTau', 'NoTau']
 
 ANALYSIS_CATEGORIES = {
-    'Ditau': [1, 2, 3, 4], 
-    'SingleTau-OS': [6, 8], 
-    'Single-Tau-SS': [5, 7], 
-    'EEE': [11], 
-    'MuMuMu': [12], 
-    'EEMu': [13, 14], 
-    'EMuMu': [15, 16], 
+#    'Ditau': [1, 2, 3, 4], 
+    'OneTau-OSSF': [6, 8],
+    'OneTau-OF' : [9],
+    'OneTau-SSSF': [5, 7], 
+#    'EEE': [11], 
+#    'MuMuMu': [12], 
+#    'EEMu': [13, 14], 
+#    'EMuMu': [15, 16], 
     'EEE-Mu': [11, 13, 14], 
     'MuMuMu-E': [12, 15, 16], 
-    'Other':[9, 10, 17]
+#    'Other':[9, 10, 17]
     }
+
+ANALYSIS_CATEGORIES_TEX = {
+    'OneTau-OSSF'       : 'l^{+}l^{-}#tau_{h}',
+    'OneTau-OF'         : 'e#mu#tau_{h}',
+    'OneTau-SSSF'       : 'l^{#pm}l^{#pm}#tau_{h}',
+    'EEE-Mu'            : 'eee/#mu',
+    'MuMuMu-E'          : '#mu#mu#mu/e'
+}
+mutual_exclusive_analysiscategories = ['OneTau-OSSF', 'OneTau-SSSF', 'OneTau-OF', 'EEE-Mu', 'MuMuMu-E']
+#mutual_exclusive_analysiscategories = ['EEE-Mu', 'MuMuMu-E']
+
+def translateCategories(in_cat):
+    if in_cat in SUPER_CATEGORIES.keys():
+        return in_cat
+    elif in_cat in ANALYSIS_CATEGORIES.keys():
+        det_cat = ANALYSIS_CATEGORIES[in_cat]
+        for mut_ex_sup in mutual_exclusive_supercategories:
+            correct_cat = True
+            for dc in det_cat:
+                if dc not in SUPER_CATEGORIES[mut_ex_sup]: 
+                    correct_cat = False
+                    break
+            if correct_cat: return mut_ex_sup
+        return None
+    else:
+        raise RuntimeError("Unknown category")
+
+def getAllAnalysisCategoriesFromSuper(super_cat):
+    out_cat = []
+    for an_cat in mutual_exclusive_analysiscategories:
+        if translateCategories(an_cat) == super_cat: out_cat.append(an_cat)
+    return out_cat
+            
+
 #TODO: This category is a bit dodgy, because it is used in trigger calc but it is quite fragile. If the categories dont give the same output when given as input to returnCategoryTriggers, weird things will happen in that code
 TRIGGER_CATEGORIES = {
     # 'TauTauE': [1, 2], 

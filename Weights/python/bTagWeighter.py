@@ -114,11 +114,25 @@ class ScaleFactorReaderJSON:
         self.algo = algo_dict[algo]
         self.workingpoint = self.WORKINGPOINT_DICT[workingpoint]
 
+    def getUncName(self, unc):
+        if unc == 'nominal':
+            return 'central'
+        elif 'correlatedup' in unc:
+            return 'up_correlated'
+        elif 'correlateddown' in unc:
+            return 'down_correlated'
+        elif 'up' in unc:
+            return 'up'
+        elif 'down' in unc:
+            return 'down'
+        else:
+            raise RuntimeError("Invalid uncertainty name in btag weights")
+
     def readValue(self, flavor, pt, eta, syst = 'nominal'):
         if flavor in ['b', 'c']:
-            return self.btvjson[self.algo+'_comb'].evaluate(self.UNC_DICT[syst], self.workingpoint, self.FLAVOR_DICT[flavor], abs(eta), pt)
+            return self.btvjson[self.algo+'_comb'].evaluate(self.getUncName(syst), self.workingpoint, self.FLAVOR_DICT[flavor], abs(eta), pt)
         else:
-            return self.btvjson[self.algo+'_incl'].evaluate(self.UNC_DICT[syst], self.workingpoint, self.FLAVOR_DICT[flavor], abs(eta), pt)
+            return self.btvjson[self.algo+'_incl'].evaluate(self.getUncName(syst), self.workingpoint, self.FLAVOR_DICT[flavor], abs(eta), pt)
 
 
 #Define a functio that returns a reweighting-function according to the data 
@@ -146,7 +160,11 @@ def getReweightingFunction(algo, era, year, workingpoint, selection):
         p_data = 1.
         for j in xrange(chain._nJets):
             if not isGoodBJet(chain, j, 'base'): continue
+
             from HNL.ObjectSelection.bTagWP import passBtag, getFlavor
+            if 'light' in syst and getFlavor(chain, j) != 'other':      continue
+            if 'bc' in syst and getFlavor(chain, j) == 'other':         continue  
+
             if passBtag(chain, j, workingpoint, algo):
                 p_mc *= eff_mc[getFlavor(chain, j)].evaluateEfficiency(chain, index = j)
                 p_data *= sf_reader.readValue(getFlavor(chain, j), chain._jetSmearedPt[j], chain._jetEta[j], syst)*eff_mc[getFlavor(chain, j)].evaluateEfficiency(chain, index = j)

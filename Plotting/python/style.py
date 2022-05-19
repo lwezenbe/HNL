@@ -142,6 +142,7 @@ def getHistDidar(index):
     else:               return ROOT.kBlack
 
 def getHNLColor(name):
+    if '700' in name:   return TColor.GetColor("#9A4C95")
     if '600' in name:   return TColor.GetColor("#0000bd")
     if '500' in name:   return TColor.GetColor("#262626")
     if '400' in name:   return TColor.GetColor("#5d0016")

@@ -127,7 +127,7 @@ def passedFilterWZCRewkino(chain, new_chain, cutter):
 
 def passedFilterConversionCR(chain, new_chain, cutter):
     if not cutter.cut(containsOSSF(chain), 'OSSF present'):         return False
-    if not cutter.cut(abs(new_chain.M3l-MZ) < 15, 'M3l_onZ'):       return False 
+    if not cutter.cut(abs(new_chain.M3l-MZ) < 10, 'M3l_onZ'):       return False 
     if not cutter.cut(chain.MZossf < 75, 'Mll < 75'):               return False
     if chain.selection == 'AN2017014' and not cutter.cut(passesPtCutsAN2017014(chain), 'pt_cuts'):     return False 
     if not cutter.cut(not bVeto(chain), 'b-veto'):                 return False
