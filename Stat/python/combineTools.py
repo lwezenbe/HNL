@@ -21,7 +21,7 @@ version        = 'v8.0.1'
 # Function to write out a data card, these data cards all contain 1 bin to be clear, readable and flexible
 # and should be combined later on
 #
-def makeDataCard(bin_name, flavor, era, year, obs_yield, sig_name, bkgr_names, selection, region, sig_yield=None, bkgr_yields= None, shapes=False, coupling_sq = 1e-4):
+def makeDataCard(bin_name, flavor, era, year, obs_yield, sig_name, bkgr_names, selection, region, final_state, nonprompt_from_sideband = True, sig_yield=None, bkgr_yields= None, shapes=False, coupling_sq = 1e-4):
 
     if not shapes and len(bkgr_yields) != len(bkgr_names):
         raise RuntimeError("length of background yields and names is inconsistent")
@@ -40,7 +40,7 @@ def makeDataCard(bin_name, flavor, era, year, obs_yield, sig_name, bkgr_names, s
     out_file.write('-'*400 + '\n')
     if shapes:
         shapes_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([selection, region]), era+str(year), flavor, sig_name, bin_name+'.shapes.root')
-        out_file.write('shapes * * \t' +shapes_path + ' $PROCESS $PROCESS_SYSTEMATIC')
+        out_file.write('shapes * * \t' +shapes_path + ' $CHANNEL/$PROCESS $CHANNEL$SYSTEMATIC/$PROCESS \n')
     out_file.write('-'*400 + '\n')
     out_file.write('bin             '+bin_name.rsplit('-', 1)[0]+ ' \n')
     if shapes:
@@ -59,7 +59,9 @@ def makeDataCard(bin_name, flavor, era, year, obs_yield, sig_name, bkgr_names, s
     out_file.write('-'*400 + '\n')
 
     # For now no systematics, just lumi as example
-    out_file.write(tab(['lumi_13TeV', 'lnN']+ [1.025]*(len(bkgr_names)+1)))
+    from HNL.Systematics.systematics import insertSystematics
+    insertSystematics(out_file, bkgr_names, sig_name, year, final_state, datadriven_processes = ['non-prompt'] if nonprompt_from_sideband else None)
+    #out_file.write(tab(['lumi_13TeV', 'lnN']+ [1.025]*(len(bkgr_names)+1)))
 
 
     #autoMCstats

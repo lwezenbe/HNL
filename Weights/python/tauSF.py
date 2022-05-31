@@ -28,6 +28,12 @@ WPLIB = {'vvvloose': 'VVVLoose',
             'vvtight': 'VVTight'
 }
 
+UNC_LIB = {
+    'nominal' : None,
+    'up' : 'Up',
+    'down' : 'Down'
+}
+
 class TauSF:
     
     def __init__(self, era, year, algorithm, wp_iso, wp_e, wp_mu):
@@ -36,20 +42,20 @@ class TauSF:
         # self.sftool_mu = TauIDSFTool(YEARLIB[era+year], MULIB[getCorrespondingLightLepDiscr(algorithm)[1]],  WPLIB[wp_mu])
         self.sftool_mu = TauIDSFTool(YEARLIB['prelegacy'+year.split('p')[0]], MULIB[getCorrespondingLightLepDiscr(algorithm)[1]],  WPLIB[wp_mu]) #For now use the prelegacy as advised by TauPOG
 
-    def getSF(self, chain, index):
+    def getSF(self, chain, index, syst = 'nominal'):
         if chain._tauGenStatus[index] == 1 or chain._tauGenStatus[index] == 3:
-            return self.sftool_e.getSFvsEta(chain._lEta[index], chain._tauGenStatus[index])
+            return self.sftool_e.getSFvsEta(chain._lEta[index], chain._tauGenStatus[index], unc = UNC_LIB[syst])
         elif chain._tauGenStatus[index] == 2 or chain._tauGenStatus[index] == 4:
-            return self.sftool_mu.getSFvsEta(chain._lEta[index], chain._tauGenStatus[index])
+            return self.sftool_mu.getSFvsEta(chain._lEta[index], chain._tauGenStatus[index], unc = UNC_LIB[syst])
         elif chain._tauGenStatus[index] == 5:
-            return self.sftool_iso.getSFvsPT(chain._lPt[index], chain._tauGenStatus[index])
+            return self.sftool_iso.getSFvsPT(chain._lPt[index], chain._tauGenStatus[index], unc = UNC_LIB[syst])
         else:
             return 1.
 
-    def getTotalSF(self, chain):
+    def getTotalSF(self, chain, syst = 'nominal'):
         total_sf = 1.
         for l in chain.l_indices:
-            if chain._lFlavor[l] == 2: total_sf *= self.getSF(chain, l)
+            if chain._lFlavor[l] == 2: total_sf *= self.getSF(chain, l, syst)
         return total_sf
 
 if __name__ == "__main__":

@@ -134,7 +134,7 @@ def printSelections(in_file_path, out_file_path):
 
 from HNL.Plotting.plot import Plot
 import ROOT
-def plotCutFlow(in_file_paths, out_file_path, in_file_path_names, ignore_weights=False, output_name = None):
+def plotCutFlow(in_file_paths, out_file_path, in_file_path_names, ignore_weights=False, output_name = None, subdir = None):
     in_file_paths = makeList(in_file_paths)
     in_file_path_names = makeList(in_file_path_names)
     if len(in_file_paths) != len(in_file_path_names):
@@ -147,7 +147,8 @@ def plotCutFlow(in_file_paths, out_file_path, in_file_path_names, ignore_weights
     #If one input file, plot keys on x
     if len(in_file_paths) == 1:
         in_file = TFile(in_file_paths[0], 'read')
-        key_names = [k[0] for k in rootFileContent(in_file, starting_dir = 'cutflow')]
+        subdir = 'cutflow' if subdir is None else 'cutflow/'+subdir
+        key_names = [k[0] for k in rootFileContent(in_file, starting_dir = subdir)]
         in_file.Close()
         list_of_cut_hist.append(ROOT.TH1D('cutflow', 'cutflow', len(key_names), 0, len(key_names)))
         for i, k in enumerate(key_names):

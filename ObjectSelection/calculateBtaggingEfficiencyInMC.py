@@ -201,5 +201,5 @@ else:
         for workingpoint in workingpoints:
             for flavor in flavors:
                 efficiency = Efficiency('btag_efficiencies', lambda c, i: (c._jetSmearedPt[i], c._jetEta[i]), ('p_{T} [GeV]', '|#eta|'), base_path_in+'/events.root', bins=None, subdirs = [algo, flavor, workingpoint])
-                p = Plot(signal_hist = efficiency.getEfficiency(), name = 'b-tag-efficiency', year = args.year, era = args.era, x_log=True, y_log = True)
+                p = Plot(signal_hist = efficiency.getEfficiency(), name = 'b-tag-efficiency', year = args.year, era = args.era, x_log=True, y_log = False)
                 p.draw2D(output_dir = base_path_out, names = ['-'.join([algo, workingpoint, flavor])])     

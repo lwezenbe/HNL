@@ -23,13 +23,19 @@ from HNL.Tools.helpers import isList, makeList
 import HNL.Tools.histogram
 from  HNL.Tools.histogram import returnSqrt
 def getHistList(item):
+    to_return = None
     if item is None or item == [] or (isList(item) and not isinstance(item[0], HNL.Tools.histogram.Histogram)) or (not isList(item) and not isinstance(item, HNL.Tools.histogram.Histogram)):
-        return item
+        to_return = item
     else:
         try:
-            return [h.getHist() for h in item]
+            to_return = [h.getHist() for h in item]
         except:
-            return item.getHist()
+            to_return = item.getHist()
+
+    if isList(to_return):
+        return [x for x in to_return]
+    else:
+        return to_return
     
 #
 # Define class
@@ -72,7 +78,7 @@ class Plot:
 
         self.observed = getHistList(observed_hist)
 
-        self.syst_hist = syst_hist
+        self.syst_hist = getHistList(syst_hist)
 
         self.hs = None  #hist stack
 
@@ -126,18 +132,27 @@ class Plot:
             self.tot_totbkgr_error = self.stat_totbkgr_error.Clone('Total Error on background')
 
             if self.syst_hist is not None:
-                syst_factor = self.syst_hist
-                #If the syst_hist is not a histogram but a float it will make a hist with systematic unc == float
-                if isinstance(self.syst_hist, float):
-                    self.syst_hist = self.stat_totbkgr_error.Clone('Systematic Error on background')
-                    for b in xrange(1, self.syst_hist.GetNbinsX()+1):
-                        self.syst_hist.SetBinError(b, syst_factor * self.syst_hist.GetBinContent(b))
+                if isList(self.syst_hist):
+                    self.syst_totbkgr_error = self.syst_hist[0].Clone('syst_totbgkr_error')
+                    for b in xrange(1, self.syst_totbkgr_error.GetNbinsX()+1):
+                        for s in self.syst_hist[1:]:
+                            self.syst_totbkgr_error.SetBinError(b, np.sqrt(self.syst_totbkgr_error.GetBinError(b)** 2 + s.GetBinError(b) ** 2))
 
-                if self.syst_hist:
-                    for b in xrange(1, self.tot_totbkgr_error.GetNbinsX()+1):
-                        bin_stat_error = self.stat_totbkgr_error.GetBinError(b)
-                        bin_syst_error = self.syst_hist.GetBinError(b)
-                        self.tot_totbkgr_error.SetBinError(b, np.sqrt(bin_stat_error ** 2 + bin_syst_error ** 2))
+                else:
+                    #If the syst_hist is not a histogram but a float it will make a hist with systematic unc == float
+                    if isinstance(self.syst_hist, float):
+                        syst_factor = self.syst_hist
+                        self.syst_totbkgr_error = self.stat_totbkgr_error.Clone('Systematic Error on background')
+                        for b in xrange(1, self.syst_totbkgr_error.GetNbinsX()+1):
+                            self.syst_totbkgr_error.SetBinError(b, syst_factor * self.syst_totbkgr_error.GetBinContent(b))
+            else:
+                self.syst_totbkgr_error = None
+
+            if self.syst_totbkgr_error is not None:
+                for b in xrange(1, self.tot_totbkgr_error.GetNbinsX()+1):
+                    bin_stat_error = self.stat_totbkgr_error.GetBinError(b)
+                    bin_syst_error = self.syst_totbkgr_error.GetBinError(b)
+                    self.tot_totbkgr_error.SetBinError(b, np.sqrt(bin_stat_error ** 2 + bin_syst_error ** 2))
 
     def setAxisLog(self, is2D = False, stacked = True, min_cutoff = None, max_cutoff = None):
 
@@ -163,8 +178,8 @@ class Plot:
                         to_check_max += [k for k in self.b]
 
             # self.overall_max = max([pt.getOverallMaximum(to_check_max), 1])
-            self.overall_max = max([pt.getOverallMaximum(to_check_max, syst_hist = self.syst_hist)])
-            self.overall_min = pt.getOverallMinimum(to_check_min, zero_not_allowed=True, syst_hist = self.syst_hist)
+            self.overall_max = max([pt.getOverallMaximum(to_check_max, syst_hist = self.tot_totbkgr_error)])
+            self.overall_min = pt.getOverallMinimum(to_check_min, zero_not_allowed=True, syst_hist = self.tot_totbkgr_error)
 
             if self.x_log:
                 self.plotpad.SetLogx()
@@ -272,7 +287,11 @@ class Plot:
                     if last_y_pos is None:
                         extra_text_y_pos = last_corrected_y_pos - correction_term
                     else: extra_text_y_pos = last_y_pos - correction_term
-                
+                elif extra_text_y_pos == 'last':
+                    if last_y_pos is None:
+                        extra_text_y_pos = last_corrected_y_pos
+                    else: extra_text_y_pos = last_y_pos
+               
                 extra_text.SetNDC()
                 extra_text.SetTextAlign(info[4])
                 extra_text.SetTextSize(extra_text_size)
@@ -345,7 +364,7 @@ class Plot:
             ytitle = 'S/B'
 
        #Draw errors
-        self.stat_err = self.tot_totbkgr_error.Clone('stat bkgr')
+        self.stat_err = self.stat_totbkgr_error.Clone('stat bkgr')
         self.tot_err = self.tot_totbkgr_error.Clone('tot bkgr')
         for b in xrange(1, self.stat_err.GetNbinsX()+1):
             self.stat_err.SetBinContent(b, 1.)
@@ -604,7 +623,7 @@ class Plot:
 
             self.legend.AddEntry(self.tot_totbkgr_error, 'Total Error' if self.syst_hist is not None else 'Stat. Error')
 
-    def drawHist(self, output_dir = None, normalize_signal = False, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None, 
+    def drawHist(self, output_dir = None, normalize_signal = None, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None, 
         custom_labels = None, draw_lines = None, message = None, min_cutoff = None, max_cutoff = None, ref_line = 1., observed_name = 'Data'):
 
         #
@@ -637,6 +656,8 @@ class Plot:
 
         if draw_option == 'Stack' and len(self.b) > 0:
             raise RuntimeError('The "Stack" option for signal is meant to be used when there is no background. In case of background, input the hist to stack as background.')
+
+          
         
         #
         # Set Signal Histogram Styles
@@ -749,6 +770,23 @@ class Plot:
         #
         tmp_draw_option = draw_option.split('E')[-1]
 
+        if normalize_signal == 'med':
+            median_index = int(len(self.s)/2)
+            denom_normalize_weight = self.s[median_index].GetSumOfWeights()
+            if denom_normalize_weight <= 0.:
+                for temp_s in self.s:
+                    if temp_s.GetSumOfWeights() > 0:
+                        denom_normalize_weight = temp_s.GetSumOfWeights()
+                        break
+
+            if denom_normalize_weight > 0.:
+                if len(self.b) == 0:
+                    normalize_signal = self.s[0].GetSumOfWeights()/denom_normalize_weight
+                else:
+                    normalize_signal = self.total_b.GetSumOfWeights()/denom_normalize_weight
+            else:
+                normalize_signal = None
+
         if draw_option == "Stack":
             self.hs.Draw("Hist")                                           #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
             if self.draw_ratio is not None or self.draw_significance: 
@@ -756,7 +794,7 @@ class Plot:
         else:
             for ih, h in enumerate(self.s):
                 if h.GetSumOfWeights() == 0: continue
-                if normalize_signal:
+                if normalize_signal == 'bkgr':
                     if len(self.b) == 0:
                         # raise RuntimeError("Trying to normalize a signal to a nonexisting background in drawHist")
                         #Normalize everything to the first histogram
@@ -764,12 +802,24 @@ class Plot:
                             h.Scale(self.s[0].GetSumOfWeights()/h.GetSumOfWeights())
                     else:
                         h.Scale(self.total_b.GetSumOfWeights()/h.GetSumOfWeights())
-
+                elif isinstance(normalize_signal, int) or isinstance(normalize_signal, float):
+                    h.Scale(normalize_signal)
+ 
                 if(self.s.index(h) == 0 and self.b is None):
                     h.Draw(tmp_draw_option)
                 else:
                     h.Draw(tmp_draw_option+'Same')
 
+        if normalize_signal == 'bkgr':
+            if self.extra_text is None: self.extra_text = []
+            self.extra_text.append(pt.extraTextFormat('Scaled to background yield'))          
+        elif isinstance(normalize_signal, int) or isinstance(normalize_signal, float):
+            if self.extra_text is None: self.extra_text = []
+            if normalize_signal >= 1.:
+                self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0}'.format(int(normalize_signal))))          
+            else:
+                self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0:.3g}'.format(normalize_signal)))          
+        
         self.drawErrors(draw_option, bkgr_draw_option)
 
         #Draw observed
@@ -909,7 +959,6 @@ class Plot:
             h.SetTitle(';'+self.x_name+';'+self.y_name) 
             h.Draw(option)
             if names is not None:
-                print ih, names, names[ih], output_dir
                 output_name = output_dir +'/'+names[ih] #Not using name here because loop over things with different names
             else:
                 output_name = output_dir +'/'+h.GetName() #Not using name here because loop over things with different names
@@ -1037,6 +1086,7 @@ class Plot:
                     hist.Draw('BSame')
             self.s[0].SetTitle(title)
 
+        self.drawErrors('Stack', 'Stack')
         self.setAxisLog(stacked = not parallel_bins)
         if not parallel_bins:
             self.hs.Draw('B')                                                        

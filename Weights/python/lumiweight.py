@@ -40,12 +40,15 @@ class LumiWeight:
 
         #self.total_hcount = 1.
 
-    def getLumiWeight(self):
+    def getLumiWeight(self, rerun_chain = None):
         if self.sample.is_data:
             return 1.
-        else:
+        elif rerun_chain is None:
             self.lumi_weight = self.sample.chain._weight*(self.sample.xsec*LUMINOSITY_MAP[self.sample.chain.era+self.sample.chain.year])/self.total_hcount
             return self.lumi_weight 
+        else:
+            self.lumi_weight = rerun_chain.original_weight * (rerun_chain.lumiWeight/abs(rerun_chain.lumiWeight))*(self.sample.xsec*LUMINOSITY_MAP[self.sample.chain.era+self.sample.chain.year])/self.total_hcount
+            return self.lumi_weight
 
 if __name__ == '__main__':
     from HNL.Samples.sampleManager import SampleManager

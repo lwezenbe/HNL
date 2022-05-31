@@ -49,6 +49,21 @@ def getReweightingFunction(era, year, variation='central', useMC=None):
         return histoData.GetBinContent(histoData.FindBin(nTrueInt))/mcProfile.GetBinContent(mcProfile.FindBin(nTrueInt))
     return reweightingFunc
 
+class PUWeightReaderPrelegacy:
+    def __init__(self, era, year):
+        self.nominal_pu = getReweightingFunction(era, year, variation='central')
+        self.up_pu = getReweightingFunction(era, year, variation='up')
+        self.down_pu = getReweightingFunction(era, year, variation='down')
+
+    def readValue(self, ntrueint, syst = 'nominal'):
+        if syst == 'nominal':
+            return self.nominal_pu(ntrueint)
+        elif syst == 'up':
+            return self.up_pu(ntrueint)
+        elif syst == 'down':
+            return self.down_pu(ntrueint)
+        else:
+            raise RuntimeError('Unknown PU syst: {0}'.format(syst))
 
 class PUWeightReaderJSON:
 
@@ -77,6 +92,12 @@ class PUWeightReaderJSON:
     def readValue(self, ntrueint, syst = 'nominal'):
         #return self.pujson[self.name].evaluate(syst, ntrueint)
         return self.pujson[self.name].evaluate(ntrueint, syst)
+
+def returnPUWeightReader(era, year):
+    if era == 'prelegacy':
+        return PUWeightReaderPrelegacy(era, year)
+    else:
+        return PUWeightReaderJSON(era, year)
 
 if __name__ == '__main__':
     from HNL.Samples.sample import createSampleList, getSampleFromList

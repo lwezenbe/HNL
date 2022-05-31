@@ -223,7 +223,7 @@ if not args.checkLogs:
     from HNL.EventSelection.eventSelectionTools import selectLeptonsGeneral, selectGenLeptonsGeneral, translateForTraining
     from HNL.EventSelection.event import Event
     if args.region is not None:
-        event = Event(chain, new_vars, is_reco_level=not args.genSkim, selection=args.skimSelection, strategy=args.strategy, region=args.region, year = args.year, era = args.era, analysis = args.analysis)
+        event = Event(sample, new_vars, sample_manager, is_reco_level=not args.genSkim, selection=args.skimSelection, strategy=args.strategy, region=args.region, year = args.year, era = args.era, analysis = args.analysis)
         chain.selection = args.skimSelection
         chain.region = args.region
         chain.strategy = 'MVA' if args.region != 'AN2017014' else 'cutbased'

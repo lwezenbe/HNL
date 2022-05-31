@@ -5,10 +5,11 @@ default_tau_wp = 'tight'
 default_ele_wp = 'tight'
 default_mu_wp = 'tight'
 default_analysis = 'HNL'
+default_systematic = 'nominal'
 
 def objectSelectionCollection(tau_algo = default_tau_algo, light_algo = default_light_algo, 
         tau_wp = default_tau_wp, ele_wp = default_ele_wp, mu_wp = default_mu_wp, notau = False, 
-        analysis = default_analysis, jet_algo = default_jet_selection):
+        analysis = default_analysis, jet_algo = default_jet_selection, systematic = default_systematic):
     object_selection_collection = {}
     object_selection_collection["tau_algo"] = tau_algo
     object_selection_collection["light_algo"] = light_algo
@@ -18,6 +19,7 @@ def objectSelectionCollection(tau_algo = default_tau_algo, light_algo = default_
     object_selection_collection["mu_wp"] = mu_wp
     object_selection_collection["notau"] = notau
     object_selection_collection["analysis"] = analysis
+    object_selection_collection["systematic"] = systematic
 
     return object_selection_collection
 

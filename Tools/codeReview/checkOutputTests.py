@@ -99,6 +99,9 @@ def compareTrees(tree_prev, tree_latest, withinerrors=False):
                 continue
             else:
                 changed_branches.append('\t {0}: \t {1} +- {2} \t ---> \t {3} +- {4}'.format(b.GetName(), mean_prev, err_prev, mean_latest, err_latest))
+
+        ROOT.gDirectory.Clear()
+    
     if len(changed_branches) == 0:
         return None
     else:
@@ -187,9 +190,11 @@ def compareFiles(f, withinerrors=False):
     out_file = open(out_file_name, 'w')
     everything_clear = True
     faulty_hn = []
+    
     for hn in list_of_hist_names:
         obj = loadObjects(f, hn)
         if isinstance(obj, str):
+            everything_clear = False
             out_file.write(hn+': '+obj+'\n')
             faulty_hn.append('\t ' +hn+': '+obj+'\n')
             continue
@@ -206,6 +211,8 @@ def compareFiles(f, withinerrors=False):
                 if not isinstance(obj_prev, TTree): plotComparison(f, hn)
             except:
                 pass
+
+        del obj_prev, obj_latest
 
     if everything_clear:
         out_file.write("EVERYTHING CLEAR")

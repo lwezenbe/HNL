@@ -24,6 +24,18 @@ def getNameFromMass(mass):
             return k
     return None
 
+def getAllRelevantNames(mass, flavor):
+    relevant_flavors = {
+        'e' : ['e'],
+        'mu' : ['mu'],
+        'tau' : ['taulep', 'tauhad']
+    }
+ 
+    from HNL.TMVA.mvaDefinitions import getMVAdict
+    from HNL.Stat.datacardManager import getRegionFromMass
+    region = getRegionFromMass(mass)
+    return [getNameFromMass(mass)+fl for fl in relevant_flavors[flavor] if getNameFromMass(mass)+'-'+fl in getMVAdict(region)[region].keys()]
+
 input_variables = {
     'M3l' : {'type' : 'F', 'var' : lambda c : c.M3l},
     'MT3l' : {'type' : 'F', 'var' : lambda c : c.mt3},
@@ -37,8 +49,8 @@ input_variables = {
     'mtOther' : {'type' : 'F', 'var' : lambda c : c.mtOther},
     'mtl1' : {'type' : 'F', 'var' : lambda c : c.mtl1},
     'mtl2' : {'type' : 'F', 'var' : lambda c : c.mtl2},
-    'met' : {'type' : 'F', 'var' : lambda c : c._met},
-    'metPhi' : {'type' : 'F', 'var' : lambda c : c._metPhi},
+    'met' : {'type' : 'F', 'var' : lambda c : c.met},
+    'metPhi' : {'type' : 'F', 'var' : lambda c : c.metPhi},
     'njets' : {'type' : 'F', 'var' : lambda c : c.njets},
     'nbjets' : {'type' : 'F', 'var' : lambda c : c.nbjets},
     'l1_charge' : {'type' : 'F', 'var' : lambda c : c.l_charge[0]},

@@ -12,6 +12,13 @@ def isGoodGenLepton(chain, index):
     else:
         return False
 
+
+def getLeptonPt(chain, index):
+    if chain._lFlavor[index] == 0:
+        from HNL.ObjectSelection.electronSelector import getElectronPt
+        return getElectronPt(chain, index)
+    else:
+        return chain._lPt[index]
 #
 # Selector for light leptons
 #
@@ -42,17 +49,17 @@ def isGoodLepton(chain, index, workingpoint = None):
 #
 # general functions for lepton ID comparison
 #
-def isGoodLightLeptonGeneral(chain, index, workingpoint = None, algo = None):
+def isGoodLightLeptonGeneral(chain, index, workingpoint = None, algo = None, syst = None):
     if chain._lFlavor[index] == 0:
-        return isGoodElectron(chain, index, workingpoint=workingpoint, algo=algo)
+        return isGoodElectron(chain, index, workingpoint=workingpoint, algo=algo, syst=syst)
     elif chain._lFlavor[index] == 1:
         return isGoodMuon(chain, index, workingpoint=workingpoint, algo=algo)
     else:
         return False
 
-def isGoodLeptonGeneral(chain, index, workingpoint = None, algo = None):
+def isGoodLeptonGeneral(chain, index, workingpoint = None, algo = None, syst = None):
     if chain._lFlavor[index] == 0:
-        return isGoodElectron(chain, index, workingpoint=workingpoint, algo=algo)
+        return isGoodElectron(chain, index, workingpoint=workingpoint, algo=algo, syst=syst)
     elif chain._lFlavor[index] == 1:
         return isGoodMuon(chain, index, workingpoint=workingpoint, algo=algo)
     elif chain._lFlavor[index] == 2:
@@ -89,11 +96,11 @@ FLAVOR_DICT = {
     'tau'   :   2
 }
 
-def isBaseLepton(chain, index):
+def isBaseLepton(chain, index, syst = None):
     from HNL.ObjectSelection.tauSelector import isBaseTau
     from HNL.ObjectSelection.electronSelector import isBaseElectron
     from HNL.ObjectSelection.muonSelector import isBaseMuon
 
-    if chain._lFlavor[index] == 0: return isBaseElectron(chain, index)
+    if chain._lFlavor[index] == 0: return isBaseElectron(chain, index, syst)
     if chain._lFlavor[index] == 1: return isBaseMuon(chain, index)
     if chain._lFlavor[index] == 2: return isBaseTau(chain, index)    

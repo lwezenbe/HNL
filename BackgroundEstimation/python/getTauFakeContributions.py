@@ -14,6 +14,8 @@ cat_dict = {
     'lowMassSR' : SUPER_CATEGORIES['SingleTau'],
     'lowMassSRloose' : SUPER_CATEGORIES['SingleTau'],
     'WZCR' : SUPER_CATEGORIES['SingleTau'],
+    'ConversionCR' : SUPER_CATEGORIES['SingleTau'],
+    'ZZCR' : [17],
     'MCCT' : [17],
     'DataCT' : [17],
     'TauMixCT' : [17],
@@ -48,15 +50,17 @@ def determineWeights(eras, years, selections, regions, strategy):
                     for c in cat_dict[region]:
                         for tt_c in TT_contributions:
                             infile = TFile(in_file_path(era, year, selection, region, tt_c, strategy), 'read')
-                            intree = infile.Get('events')
+                            intree = infile.Get('events_nominal')
                             tmp_tt_hist = getHistFromTree(intree, 'searchregion', tt_c, np.arange(0., 2., 1.), '(!isprompt)')
                             tt_tot += tmp_tt_hist.GetSumOfWeights()
                             infile.Close()
 
                         for dy_c in DY_contributions:
+                            print in_file_path(era, year, selection, region, tt_c, strategy)
                             infile = TFile(in_file_path(era, year, selection, region, dy_c, strategy), 'read')
-                            intree = infile.Get('events')
+                            intree = infile.Get('events_nominal')
                             tmp_dy_hist = getHistFromTree(intree, 'searchregion', dy_c, np.arange(0., 2., 1.), '(!isprompt)')
+                            print dy_tot, tmp_dy_hist.GetSumOfWeights()
                             dy_tot += tmp_dy_hist.GetSumOfWeights()
                             infile.Close()
                     weights[era][year][selection][region] = {'DY' : dy_tot/(tt_tot+dy_tot), 'TT' : tt_tot/(tt_tot+dy_tot)}            

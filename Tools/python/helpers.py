@@ -22,7 +22,7 @@ def isValidRootFile(fname):
 def getObjFromFile(fname, hname):
     assert isValidRootFile(fname)
 
-    if 'pnfs' in fname: fname = 'root://maite.iihe.ac.be/'+ fname         #faster for pnfs file
+#    if 'pnfs' in fname: fname = 'root://maite.iihe.ac.be/'+ fname         #faster for pnfs file
     try:
         f = ROOT.TFile.Open(fname)
         f.cd()
@@ -37,22 +37,15 @@ def getObjFromFile(fname, hname):
     finally:
         f.Close()
 
-def getHistFromTree(tree, vname, hname, bins, condition):
+def getHistFromTree(tree, vname, hname, bins, condition, weight = 'weight'):
     ROOT.gROOT.SetBatch(True)
     # print ROOT.gROOT.pwd()
 
     htmp = ROOT.TH1D(hname, hname, len(bins)-1, bins)
-    #tree.Draw(vname+">>"+hname, condition+'*weight')
-    #tree.Draw(vname+">>"+hname, condition+'*lumiWeight')
     if 'Weight' in vname: 
         tree.Draw(vname+">>"+hname, condition+'*lumiWeight')
     else:
-        tree.Draw(vname+">>"+hname, condition+'*weight')
-        #tree.Draw(vname+">>"+hname, condition+'*lumiWeight')
-        #tree.Draw(vname+">>"+hname, condition+'*lumiWeight*electronRecoWeight')
-        #tree.Draw(vname+">>"+hname, condition+'*lumiWeight*electronRecoWeight*puWeight')
-        #tree.Draw(vname+">>"+hname, condition+'*lumiWeight*electronRecoWeight*btagWeight')
-        #tree.Draw(vname+">>"+hname, condition+'*lumiWeight*electronRecoWeight*btagWeight*puWeight')
+        tree.Draw(vname+">>"+hname, condition+'*'+weight)
     if not htmp: return None
     ROOT.gDirectory.cd('PyROOT:/')
     res = htmp.Clone()

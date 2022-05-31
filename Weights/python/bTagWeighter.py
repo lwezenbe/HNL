@@ -101,6 +101,12 @@ class ScaleFactorReaderJSON:
         'c' : 4
     }
 
+    UNC_DICT = {
+        'nominal' : 'central',
+        'up' : 'up_correlated',
+        'down' : 'down_correlated'
+    }
+
     def __init__(self, algo, era, year, workingpoint):
         from correctionlib._core import CorrectionSet
         sf_dir = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Weights', 'data', 'btagging', 'JSON', era+year, 'btagging.json.gz')
@@ -108,15 +114,29 @@ class ScaleFactorReaderJSON:
         self.algo = algo_dict[algo]
         self.workingpoint = self.WORKINGPOINT_DICT[workingpoint]
 
-    def readValue(self, flavor, pt, eta, syst = 'central'):
-        if flavor in ['b', 'c']:
-            return self.btvjson[self.algo+'_comb'].evaluate(syst, self.workingpoint, self.FLAVOR_DICT[flavor], abs(eta), pt)
+    def getUncName(self, unc):
+        if unc == 'nominal':
+            return 'central'
+        elif 'correlatedup' in unc:
+            return 'up_correlated'
+        elif 'correlateddown' in unc:
+            return 'down_correlated'
+        elif 'up' in unc:
+            return 'up'
+        elif 'down' in unc:
+            return 'down'
         else:
-            return self.btvjson[self.algo+'_incl'].evaluate(syst, self.workingpoint, self.FLAVOR_DICT[flavor], abs(eta), pt)
+            raise RuntimeError("Invalid uncertainty name in btag weights")
+
+    def readValue(self, flavor, pt, eta, syst = 'nominal'):
+        if flavor in ['b', 'c']:
+            return self.btvjson[self.algo+'_comb'].evaluate(self.getUncName(syst), self.workingpoint, self.FLAVOR_DICT[flavor], abs(eta), pt)
+        else:
+            return self.btvjson[self.algo+'_incl'].evaluate(self.getUncName(syst), self.workingpoint, self.FLAVOR_DICT[flavor], abs(eta), pt)
 
 
 #Define a functio that returns a reweighting-function according to the data 
-def getReweightingFunction(algo, era, year, workingpoint, selection, variation='central'):
+def getReweightingFunction(algo, era, year, workingpoint, selection):
 
     if era == 'UL':
         sf_reader = ScaleFactorReaderJSON(algo, era, year, workingpoint)
@@ -135,18 +155,22 @@ def getReweightingFunction(algo, era, year, workingpoint, selection, variation='
 
     # Define reweightingFunc
     from HNL.ObjectSelection.jetSelector import isGoodBJet
-    def reweightingFunc(chain):
+    def reweightingFunc(chain, syst = 'nominal'):
         p_mc = 1.
         p_data = 1.
         for j in xrange(chain._nJets):
             if not isGoodBJet(chain, j, 'base'): continue
+
             from HNL.ObjectSelection.bTagWP import passBtag, getFlavor
+            if 'light' in syst and getFlavor(chain, j) != 'other':      continue
+            if 'bc' in syst and getFlavor(chain, j) == 'other':         continue  
+
             if passBtag(chain, j, workingpoint, algo):
                 p_mc *= eff_mc[getFlavor(chain, j)].evaluateEfficiency(chain, index = j)
-                p_data *= sf_reader.readValue(getFlavor(chain, j), chain._jetSmearedPt[j], chain._jetEta[j])*eff_mc[getFlavor(chain, j)].evaluateEfficiency(chain, index = j)
+                p_data *= sf_reader.readValue(getFlavor(chain, j), chain._jetSmearedPt[j], chain._jetEta[j], syst)*eff_mc[getFlavor(chain, j)].evaluateEfficiency(chain, index = j)
             else:
                 p_mc *= 1. - eff_mc[getFlavor(chain, j)].evaluateEfficiency(chain, index = j)
-                p_data *= 1. - (sf_reader.readValue(getFlavor(chain, j), chain._jetSmearedPt[j], chain._jetEta[j])* eff_mc[getFlavor(chain, j)].evaluateEfficiency(chain, index = j))
+                p_data *= 1. - (sf_reader.readValue(getFlavor(chain, j), chain._jetSmearedPt[j], chain._jetEta[j], syst)* eff_mc[getFlavor(chain, j)].evaluateEfficiency(chain, index = j))
         return p_data/p_mc
 
     return reweightingFunc

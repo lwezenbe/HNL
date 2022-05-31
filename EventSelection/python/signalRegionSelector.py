@@ -7,7 +7,7 @@ from HNL.EventSelection.eventFilters import passBaseCuts, passLowMassSelection, 
 
 class SignalRegionSelector(FilterObject):
 
-    def __init__(self, region, chain, new_chain, is_reco_level=True, event_categorization = None):
+    def __init__(self, region, chain, new_chain, is_reco_level = True, event_categorization = None):
         super(SignalRegionSelector, self).__init__(region, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
 
 
@@ -24,11 +24,11 @@ class SignalRegionSelector(FilterObject):
     def passedStandaloneFilter(self, cutter, region, kwargs):
         if not passBaseCuts(self.chain, self.new_chain, cutter): return False
         if region == 'lowMassSR':
-            return passLowMassSelection(self.chain, self.new_chain, self.is_reco_level, cutter)
+            return passLowMassSelection(self.chain, self.new_chain, cutter)
         elif region == 'lowMassSRloose':
-            return passLowMassSelection(self.chain, self.new_chain, self.is_reco_level, cutter, loose_selection = True)
+            return passLowMassSelection(self.chain, self.new_chain, cutter, loose_selection = True)
         elif region == 'highMassSR':
-            return passHighMassSelection(self.chain, self.new_chain, self.is_reco_level, cutter)
+            return passHighMassSelection(self.chain, self.new_chain, cutter)
         elif region == 'baseline':
             return True
         else:

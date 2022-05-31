@@ -170,7 +170,7 @@ if not args.merge:
     from HNL.EventSelection.event import Event
 
     #prepare object  and event selection
-    event =  Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = args.year, era = args.era)
+    event =  Event(sample, chain, sample_manager, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = args.year, era = args.era)
 
     for entry in event_range:
         chain.GetEntry(entry)

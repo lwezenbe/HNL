@@ -184,7 +184,7 @@ if __name__ == '__main__':
     cutter = Cutter(chain = c)
 
     from HNL.EventSelection.event import Event    
-    event = Event(c, c, is_reco_level=True, selection='default', strategy='MVA', region='baseline', analysis='HNL', year = '2017', era = 'UL')
+    event = Event(sample, c, is_reco_level=True, selection='default', strategy='MVA', region='baseline', analysis='HNL', year = '2017', era = 'UL')
     reader = ReaderArray(c, 'kBDT', 'highMassSR', 'UL')
 
     for entry in xrange(1000):

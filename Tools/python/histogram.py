@@ -211,6 +211,16 @@ class Histogram:
         tmp_hist.SetBinError(1, self.hist.GetMeanError())
         return Histogram(tmp_hist)
 
+    def replaceZeroBins(self):
+        nbinsx = self.hist.GetNbinsX() 
+        nbinsy = self.hist.GetNbinsY() if self.isTH2 else 1
+        nbinsz = self.hist.GetNbinsZ() if self.isTH3 else 1
+        for bx in xrange(1, nbinsx+1):
+            for by in xrange(1, nbinsy+1):
+                for bz in xrange(1, nbinsz+1):
+                    if self.hist.GetBinContent(bx, by, bz) <= 0.0: self.hist.SetBinContent(bx, by, bz, 1e-7)
+        
+
 def returnSqrt(th1):
     sqrt = th1.Clone('sqrt')
     for xbin in xrange(1, th1.GetSize()-1):                     #GetSize returns nbins + 2 (for overflow and underflow bin)

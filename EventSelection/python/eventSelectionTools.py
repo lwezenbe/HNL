@@ -51,11 +51,12 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
 
     collection = chain._nL if not chain.obj_sel['notau'] else chain._nLight
     chain.leptons = []
+    from HNL.ObjectSelection.electronSelector import getElectronPt, getElectronE
 
     for l in xrange(collection):
         if chain._lFlavor[l] == 0: 
             workingpoint = chain.obj_sel['ele_wp']
-            pt_to_use = chain._lPtCorr[l]
+            pt_to_use = getElectronPt(chain, l)
         elif chain._lFlavor[l] == 1: 
             workingpoint = chain.obj_sel['mu_wp']
             pt_to_use = chain._lPt[l]
@@ -69,8 +70,6 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
             chain.leptons.append((pt_to_use, l)) 
     
     if len(chain.leptons) != nL:  return False
-
-    tes = TauEnergyScale(chain.era, chain.year, chain.obj_sel['tau_algo'])
 
     if chain is new_chain:
         new_chain.l_pt = [0.0]*nL
@@ -96,18 +95,12 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         new_chain.l_pt[i] = ptAndIndex[i][0]
         new_chain.l_eta[i] = chain._lEta[ptAndIndex[i][1]]
         new_chain.l_phi[i] = chain._lPhi[ptAndIndex[i][1]]
-        new_chain.l_e[i] = chain._lECorr[ptAndIndex[i][1]] if new_chain.l_flavor[i] < 1 else chain._lE[ptAndIndex[i][1]]
+        new_chain.l_e[i] = getElectronE(chain, ptAndIndex[i][1]) if new_chain.l_flavor[i] < 1 else chain._lE[ptAndIndex[i][1]]
         new_chain.l_charge[i] = chain._lCharge[ptAndIndex[i][1]]
         new_chain.l_isFO[i] = isGoodLepton(chain, ptAndIndex[i][1], 'FO')
         new_chain.l_istight[i] = isGoodLepton(chain, ptAndIndex[i][1], 'tight')
         if not chain.is_data:
             new_chain.l_isfake[i] = isFakeLepton(chain, ptAndIndex[i][1])
-        
-        # Apply tau energy scale
-        if not chain.is_data and new_chain.l_flavor[i] == 2:
-            tlv = getFourVec(new_chain.l_pt[i], new_chain.l_eta[i], new_chain.l_phi[i], new_chain.l_e[i])
-            new_chain.l_pt[i] *= tes.readES(tlv, chain._tauDecayMode[new_chain.l_indices[i]], chain._tauGenStatus[new_chain.l_indices[i]])
-            new_chain.l_e[i] *= tes.readES(tlv, chain._tauDecayMode[new_chain.l_indices[i]], chain._tauGenStatus[new_chain.l_indices[i]])
 
     return True
 
@@ -181,7 +174,8 @@ def selectFirstTwoJets(chain, new_chain):
         new_chain.j_indices = [0.0]*2
         new_chain.j_btag = [0.0]*2
 
-    chain.jets = [(chain._jetPt[j], j) for j in xrange(chain._nJets) if isGoodJet(chain, j)]
+    from HNL.ObjectSelection.jetSelector import getJetPt
+    chain.jets = [(getJetPt(chain, j), j) for j in xrange(chain._nJets) if isGoodJet(chain, j)]
 
     ptAndIndex = sorted(chain.jets, reverse=True, key = getSortKey)
  
@@ -201,8 +195,8 @@ def selectFirstTwoJets(chain, new_chain):
             new_chain.j_indices[i] = -1
             new_chain.j_btag[i] = -99.
 
-    new_chain.dphi_j1met = deltaPhi(new_chain.j_phi[0], chain._metPhi) if new_chain.j_indices[0] >= 0 else -1
-    new_chain.dphi_j2met = deltaPhi(new_chain.j_phi[1], chain._metPhi) if new_chain.j_indices[1] >= 0 else -1
+    new_chain.dphi_j1met = deltaPhi(new_chain.j_phi[0], chain.metPhi) if new_chain.j_indices[0] >= 0 else -1
+    new_chain.dphi_j2met = deltaPhi(new_chain.j_phi[1], chain.metPhi) if new_chain.j_indices[1] >= 0 else -1
 
     return True 
 
@@ -260,10 +254,7 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
     l1Vec = getFourVec(new_chain.l_pt[l1], new_chain.l_eta[l1], new_chain.l_phi[l1], new_chain.l_e[l1])
     l2Vec = getFourVec(new_chain.l_pt[l2], new_chain.l_eta[l2], new_chain.l_phi[l2], new_chain.l_e[l2])
     l3Vec = getFourVec(new_chain.l_pt[l3], new_chain.l_eta[l3], new_chain.l_phi[l3], new_chain.l_e[l3])
-    if is_reco_level:
-        metVec = getFourVec(chain._met, 0., chain._metPhi, chain._met)
-    else:
-        metVec = getFourVec(chain._gen_met, 0., chain._gen_metPhi, chain._gen_met)
+    metVec = getFourVec(chain.met, 0., chain.metPhi, chain.met)
     lVec = [l1Vec, l2Vec, l3Vec]
 
     #M3l
@@ -275,14 +266,9 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
     new_chain.Ml13 = (l1Vec+l3Vec).M()
 
     #All mt's
-    if is_reco_level:    
-        new_chain.mtl1 = np.sqrt(2*chain._met*new_chain.l_pt[l1]*(1-np.cos(deltaPhi(new_chain.l_phi[l1], chain._metPhi))))
-        new_chain.mtl2 = np.sqrt(2*chain._met*new_chain.l_pt[l2]*(1-np.cos(deltaPhi(new_chain.l_phi[l2], chain._metPhi))))
-        new_chain.mtl3 = np.sqrt(2*chain._met*new_chain.l_pt[l3]*(1-np.cos(deltaPhi(new_chain.l_phi[l3], chain._metPhi))))
-    else:
-        new_chain.mtl1 = np.sqrt(2*chain._gen_met*new_chain.l_pt[l1]*(1-np.cos(deltaPhi(new_chain.l_phi[l1], chain._gen_metPhi))))
-        new_chain.mtl2 = np.sqrt(2*chain._gen_met*new_chain.l_pt[l2]*(1-np.cos(deltaPhi(new_chain.l_phi[l2], chain._gen_metPhi))))
-        new_chain.mtl3 = np.sqrt(2*chain._gen_met*new_chain.l_pt[l3]*(1-np.cos(deltaPhi(new_chain.l_phi[l3], chain._gen_metPhi))))
+    new_chain.mtl1 = np.sqrt(2*chain.met*new_chain.l_pt[l1]*(1-np.cos(deltaPhi(new_chain.l_phi[l1], chain.metPhi))))
+    new_chain.mtl2 = np.sqrt(2*chain.met*new_chain.l_pt[l2]*(1-np.cos(deltaPhi(new_chain.l_phi[l2], chain.metPhi))))
+    new_chain.mtl3 = np.sqrt(2*chain.met*new_chain.l_pt[l3]*(1-np.cos(deltaPhi(new_chain.l_phi[l3], chain.metPhi))))
 
     #
     # Get OS, OSSF, SS, SSSF variables
@@ -364,28 +350,18 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
     chain.index_nonZossf = [item for item in [0, 1, 2] if item not in z_ossf][0] if z_ossf is not None else None
 
     if chain.index_other is not None:
-        if is_reco_level:    
-            new_chain.mtOther = np.sqrt(2*chain._met*new_chain.l_pt[chain.index_other]*(1-np.cos(deltaPhi(new_chain.l_phi[chain.index_other], chain._metPhi))))
-            leading_os = min_os[0] if new_chain.l_pt[min_os[0]] > new_chain.l_pt[min_os[1]] else min_os[1]
-            subleading_os = min_os[0] if new_chain.l_pt[min_os[0]] < new_chain.l_pt[min_os[1]] else min_os[1]
-            new_chain.mtl1os = np.sqrt(2*chain._met*new_chain.l_pt[leading_os]*(1-np.cos(deltaPhi(new_chain.l_phi[leading_os], chain._metPhi))))
-            new_chain.mtl2os = np.sqrt(2*chain._met*new_chain.l_pt[subleading_os]*(1-np.cos(deltaPhi(new_chain.l_phi[subleading_os], chain._metPhi))))
-        else:
-            new_chain.mtOther = np.sqrt(2*chain._gen_met*new_chain.l_pt[chain.index_other]*(1-np.cos(deltaPhi(new_chain.l_phi[chain.index_other], chain._gen_metPhi))))
-            leading_os = min_os[0] if new_chain.l_pt[min_os[0]] > new_chain.l_pt[min_os[1]] else min_os[1]
-            subleading_os = min_os[0] if new_chain.l_pt[min_os[0]] < new_chain.l_pt[min_os[1]] else min_os[1]
-            new_chain.mtl1os = np.sqrt(2*chain._gen_met*new_chain.l_pt[leading_os]*(1-np.cos(deltaPhi(new_chain.l_phi[leading_os], chain._gen_metPhi))))
-            new_chain.mtl2os = np.sqrt(2*chain._gen_met*new_chain.l_pt[subleading_os]*(1-np.cos(deltaPhi(new_chain.l_phi[subleading_os], chain._gen_metPhi))))
+        new_chain.mtOther = np.sqrt(2*chain.met*new_chain.l_pt[chain.index_other]*(1-np.cos(deltaPhi(new_chain.l_phi[chain.index_other], chain.metPhi))))
+        leading_os = min_os[0] if new_chain.l_pt[min_os[0]] > new_chain.l_pt[min_os[1]] else min_os[1]
+        subleading_os = min_os[0] if new_chain.l_pt[min_os[0]] < new_chain.l_pt[min_os[1]] else min_os[1]
+        new_chain.mtl1os = np.sqrt(2*chain.met*new_chain.l_pt[leading_os]*(1-np.cos(deltaPhi(new_chain.l_phi[leading_os], chain.metPhi))))
+        new_chain.mtl2os = np.sqrt(2*chain.met*new_chain.l_pt[subleading_os]*(1-np.cos(deltaPhi(new_chain.l_phi[subleading_os], chain.metPhi))))
     else:
         new_chain.mtOther = -1
         new_chain.mtl1os = -1
         new_chain.mtl2os = -1
 
     if chain.index_nonZossf is not None:
-        if is_reco_level:    
-            new_chain.mtNonZossf = np.sqrt(2*chain._met*new_chain.l_pt[chain.index_nonZossf]*(1-np.cos(deltaPhi(new_chain.l_phi[chain.index_nonZossf], chain._metPhi))))
-        else:
-            new_chain.mtNonZossf = np.sqrt(2*chain._gen_met*new_chain.l_pt[chain.index_nonZossf]*(1-np.cos(deltaPhi(new_chain.l_phi[chain.index_nonZossf], chain._gen_metPhi))))
+        new_chain.mtNonZossf = np.sqrt(2*chain.met*new_chain.l_pt[chain.index_nonZossf]*(1-np.cos(deltaPhi(new_chain.l_phi[chain.index_nonZossf], chain.metPhi))))
     else:
         new_chain.mtNonZossf = -1
 
@@ -416,9 +392,9 @@ def calculateThreeLepVariables(chain, new_chain, is_reco_level = True):
     new_chain.mindr_l3 = min(new_chain.dr_l1l3, new_chain.dr_l2l3)
     new_chain.maxdr_l3 = max(new_chain.dr_l1l3, new_chain.dr_l2l3)
 
-    new_chain.dphi_l1met = deltaPhi(new_chain.l_phi[0], chain._metPhi)
-    new_chain.dphi_l2met = deltaPhi(new_chain.l_phi[1], chain._metPhi)
-    new_chain.dphi_l3met = deltaPhi(new_chain.l_phi[2], chain._metPhi)
+    new_chain.dphi_l1met = deltaPhi(new_chain.l_phi[0], chain.metPhi)
+    new_chain.dphi_l2met = deltaPhi(new_chain.l_phi[1], chain.metPhi)
+    new_chain.dphi_l3met = deltaPhi(new_chain.l_phi[2], chain.metPhi)
 
 def calculateFourLepVariables(chain, new_chain):
     l1Vec = getFourVec(new_chain.l_pt[l1], new_chain.l_eta[l1], new_chain.l_phi[l1], new_chain.l_e[l1])
@@ -608,17 +584,17 @@ def massDiff(m1, m2):
 
 def calcHT(chain, new_chain):
     HT = 0.
+    from HNL.ObjectSelection.jetSelector import getJetPt
     for jet in xrange(chain._nJets):
         if not isGoodJet(chain, jet):    continue 
-        HT += chain._jetPt[jet]
+        HT += getJetPt(chain, jet)
     return HT
 
 def calcLT(chain, new_chain, is_reco_level = True):
     LT = 0.
     for lep in xrange(len(new_chain.l_indices)):
         LT += new_chain.l_pt[lep]
-    if is_reco_level:   LT += chain._met
-    else:               LT += chain._gen_met
+    LT += chain.met
     return LT
 
 #
@@ -687,7 +663,7 @@ def lowMassCuts(chain, new_chain, cutter):
     calculateKinematicVariables(chain, new_chain)
     if not cutter.cut(new_chain.l_pt[l1] < 55, 'l1pt<55'):      return False
     if not cutter.cut(new_chain.M3l < 80, 'm3l<80'):            return False
-    if not cutter.cut(chain._met < 75, 'MET < 75'):             return False
+    if not cutter.cut(chain.met < 75, 'MET < 75'):             return False
     if not cutter.cut(not containsOSSF(chain), 'no OSSF'):      return False
     return True 
 
@@ -782,23 +758,18 @@ def calculateKinematicVariables(chain, new_chain, is_reco_level = True):
     chain.maxMsssf = (lVec[max_sssf[0]]+lVec[max_sssf[1]]).M() if all(max_sssf) else 0  
 
     #MTother
-    chain.index_other = [item for item in new_chain.l_indices if item not in min_os][0]   
+    chain.index_other = [item for item in range(3) if item not in min_os][0]   
 
     #TODO: Seems like there must be a better way to do this
+    new_chain.mtOther = np.sqrt(2*chain.met*new_chain.l_pt[chain.index_other]*(1-np.cos(deltaPhi(new_chain.l_phi[chain.index_other], chain.metPhi))))
     if is_reco_level:    
-        new_chain.mtOther = np.sqrt(2*chain._met*chain._lPt[chain.index_other]*(1-np.cos(deltaPhi(chain._lPhi[chain.index_other], chain._metPhi))))
         
         #ptCone
         new_chain.pt_cone = []
-        for l in xrange(chain._nLight):
-            new_chain.pt_cone.append(chain._lPt[l]*(1+max(0., chain._miniIso[l]-0.4))) #TODO: is this the correct definition?
+        for il, l in xrange(chain.l_flavor):
+            if l < 2:
+                new_chain.pt_cone.append(new_chain.l_pt[il]*(1+max(0., chain._miniIso[new_chain.l_indices[il]]-0.4))) #TODO: is this the correct definition?
 
-    else:
-        new_chain.mtOther = np.sqrt(2*chain._gen_met*chain._gen_lPt[chain.index_other]*(1-np.cos(deltaPhi(chain._gen_lPhi[chain.index_other], chain._gen_metPhi))))
-        # #ptCone
-        # new_chain.pt_cone = []
-        # for l in xrange(chain._nLight):
-        #     new_chain.pt_cone.append(chain._lPt[l]) #TODO: is this the correct definition?
    
     #calculate #jets and #bjets
     new_chain.njets = selectJets(chain)

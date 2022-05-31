@@ -192,7 +192,7 @@ if not args.makePlots:
     #
     # Define event selection
     #
-    event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy='MVA', region=region_to_select, analysis = args.analysis, year = args.year, era = args.era)    
+    event = Event(sample, chain, sample_manager, is_reco_level=True, selection=args.selection, strategy='MVA', region=region_to_select, analysis = args.analysis, year = args.year, era = args.era)    
 
     #
     # Create fake rate objects
@@ -233,7 +233,7 @@ if not args.makePlots:
             passed = isGoodLepton(chain, chain.l_indices[fake_index], 'tight')
             fakerate.setTreeVariable('weight', reweighter.getTotalWeight())
 
-        fakerate.setTreeVariable('met', chain._met)
+        fakerate.setTreeVariable('met', chain.met)
         fakerate.setTreeVariable('l_pt', chain.l_pt[fake_index])
         fakerate.setTreeVariable('l_eta', chain.l_eta[fake_index])
         fakerate.setTreeVariable('l_decaymode', chain._tauDecayMode[chain.l_indices[fake_index]])

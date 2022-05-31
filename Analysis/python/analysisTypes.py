@@ -5,14 +5,6 @@ l2 = 1
 l3 = 2
 l4 = 3
 
-var_weights = {
-        'lumiWeight':          (lambda c : c.lumiWeight,      np.arange(0., 2., .1),         ('lumi weight', 'Events')),
-        'puWeight':          (lambda c : c.puWeight,      np.arange(0.8, 1.21, .01),         ('PU weight', 'Events')),
-        'electronRecoWeight':          (lambda c : c.electronRecoWeight,      np.arange(0.8, 1.21, 0.01),         ('Electron reco weight', 'Events')),
-        'tauSFWeight':          (lambda c : c.tauSFWeight,      np.arange(0., 2., .1),         ('Tau SF weight', 'Events')),
-        'btagWeight':          (lambda c : c.btagWeight,      np.arange(0.5, 1.5, .01),         ('btag weight', 'Events')),
-}
-
 var_gen_3l = {'minMos':        (lambda c : c.minMos,   np.arange(0., 120., 12.),         ('min(M_{OS}) [GeV]', 'Events')),
         'm3l':          (lambda c : c.M3l,      np.arange(0., 240., 5.),         ('M_{3l} [GeV]', 'Events')),
         'ml12':          (lambda c : c.Ml12,      np.arange(0., 240., 5.),         ('M_{l1l2} [GeV]', 'Events')),
@@ -35,11 +27,14 @@ var_gen_3l = {'minMos':        (lambda c : c.minMos,   np.arange(0., 120., 12.),
         }
 
 var_reco_3l = {
-        'minMos':        (lambda c : c.minMos,   np.arange(0., 160., 10.),         ('min(M_{OS}) [GeV]', 'Events')),
-        'm3l':          (lambda c : c.M3l,      np.arange(0., 240., 15.),         ('M_{3l} [GeV]', 'Events')),
-        'met':          (lambda c : c._met,     np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
-        'mtOther':      (lambda c : c.mtOther,  np.arange(0., 300., 15.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
-        'l1pt':      (lambda c : c.l_pt[0],       np.arange(0., 300., 15.),       ('p_{T} (l1) [GeV]', 'Events')),
+        'minMos':        (lambda c : c.minMos,   np.arange(0., 210., 10.),         ('min(M_{OS}) [GeV]', 'Events')),
+        #'minMos':        (lambda c : c.minMos,   np.arange(0., 65., 5.),         ('min(M_{OS}) [GeV]', 'Events')),
+        'm3l':          (lambda c : c.M3l,      np.arange(0., 315., 15.),         ('M_{3l} [GeV]', 'Events')),
+        #'met':          (lambda c : c.met,     np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
+        'mtOther':      (lambda c : c.mtOther,  np.arange(0., 365., 15.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
+        #'mtOther':      (lambda c : c.mtOther,  np.arange(0., 155., 5.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
+        #'l1pt':      (lambda c : c.l_pt[0],       np.arange(0., 300., 15.),       ('p_{T} (l1) [GeV]', 'Events')),
+        'l1pt':      (lambda c : c.l_pt[0],       np.arange(10., 65., 5.),       ('p_{T} (l1) [GeV]', 'Events')),
         'l2pt':      (lambda c : c.l_pt[1],       np.arange(0., 200., 10.),       ('p_{T} (l2) [GeV]', 'Events')),
         'l3pt':      (lambda c : c.l_pt[2],       np.arange(0., 150., 5.),       ('p_{T} (l3) [GeV]', 'Events')),
         'j1pt':      (lambda c : c.j_pt[0],       np.arange(0., 300., 15.),       ('p_{T} (j1) [GeV]', 'Events')),
@@ -56,7 +51,6 @@ var_reco_3l = {
         'j2phi':      (lambda c : c.j_phi[1],       np.arange(-2.5, 3.0, 0.5),       ('#phi (j2)', 'Events')),
         'NJet':      (lambda c : c.njets,       np.arange(0., 12., 1.),       ('#Jets', 'Events')),
         'NbJet':      (lambda c : c.nbjets,       np.arange(0., 12., 1.),       ('#B Jets', 'Events')),
-        #'drminOS':      (lambda c : c.dr_minOS,       np.arange(0., 5.5, .25),       ('#Delta R(min(OS))', 'Events')),
         'mt3':   (lambda c : c.mt3,      np.arange(0., 315., 15.),         ('M_{T}(3l) [GeV]', 'Events')),
         'LT':   (lambda c : c.LT,      np.arange(0., 915., 15.),         ('L_{T} [GeV]', 'Events')),
         'HT':   (lambda c : c.HT,      np.arange(0., 915., 15.),         ('H_{T} [GeV]', 'Events')),
@@ -69,12 +63,31 @@ var_reco_3l = {
         #'mtnonossf':          (lambda c : c.mtNonZossf,      np.arange(0., 240., 5.),         ('M_{ll,Z} [GeV]', 'Events')),
         'NJet':      (lambda c : c.njets,       np.arange(0., 12., 1.),       ('#Jets', 'Events')),
         'NbJet':      (lambda c : c.nbjets,       np.arange(0., 12., 1.),       ('#B Jets', 'Events')),
+        #
+        'maxMossf':   (lambda c : c.maxMossf,      np.arange(0., 75., 5.),         ('max(M_{OSSF}) [GeV]', 'Events')),
+        'ml1l2':   (lambda c : c.Ml12,      np.arange(0., 75., 5.),         ('M_{l1l2} [GeV]', 'Events')),
+        'ml1l3':   (lambda c : c.Ml13,      np.arange(0., 75., 5.),         ('M_{l1l3} [GeV]', 'Events')),
+        'ml2l3':   (lambda c : c.Ml23,      np.arange(0., 75., 5.),         ('M_{l2l3} [GeV]', 'Events')),
+        'drl1l2':      (lambda c : c.dr_l1l2,       np.arange(0., 5.5, .25),       ('#Delta R(l1,l2)', 'Events')),
+        'drl1l3':      (lambda c : c.dr_l1l3,       np.arange(0., 5.5, .25),       ('#Delta R(l1,l3)', 'Events')),
+        'drl2l3':      (lambda c : c.dr_l2l3,       np.arange(0., 5.5, .25),       ('#Delta R(l2,l3)', 'Events')),
+        'drl1j':      (lambda c : c.dr_closestJet[0],       np.arange(0., 5.5, .25),       ('#Delta R(l1,j)', 'Events')),
+        'drl2j':      (lambda c : c.dr_closestJet[1],       np.arange(0., 5.5, .25),       ('#Delta R(l2,j)', 'Events')),
+        'drl3j':      (lambda c : c.dr_closestJet[2],       np.arange(0., 5.5, .25),       ('#Delta R(l3,j)', 'Events')),
+        'drminOS':      (lambda c : c.dr_minOS,       np.arange(0., 5.5, .25),       ('#Delta R(min(OS))', 'Events')),
+        'drmaxossf':      (lambda c : c.dr_maxOSSF,       np.arange(0., 5.5, .25),       ('#Delta R(max(OSSF))', 'Events')),
+        'dphil1met':      (lambda c : abs(c.dphi_l1met),       np.arange(0., 3.5, .25),       ('#Delta #phi(l1,met)', 'Events')),
+        'dphil2met':      (lambda c : abs(c.dphi_l2met),       np.arange(0., 3.5, .25),       ('#Delta #phi(l2,met)', 'Events')),
+        'dphil3met':      (lambda c : abs(c.dphi_l3met),       np.arange(0., 3.5, .25),       ('#Delta #phi(l3,met)', 'Events')),
+        'dphij1met':      (lambda c : abs(c.dphi_j1met),       np.arange(0., 3.5, .25),       ('#Delta #phi(j1,met)', 'Events')),
+        'dphij2met':      (lambda c : abs(c.dphi_j2met),       np.arange(0., 3.5, .25),       ('#Delta #phi(j2,met)', 'Events')),
+
     }
 
 var_reco_4l = {
         'minMos':        (lambda c : c.minMos,   np.arange(0., 240., 12.),         ('min(M_{OS}) [GeV]', 'Events')),
         'm4l':          (lambda c : c.M4l,      np.arange(0., 303., 3.),         ('M_{4l} [GeV]', 'Events')),
-        'met':          (lambda c : c._met,     np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
+        'met':          (lambda c : c.met,     np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
         'l1pt':      (lambda c : c.l_pt[0],       np.arange(0., 300., 15.),       ('p_{T} (l1) [GeV]', 'Events')),
         'l2pt':      (lambda c : c.l_pt[1],       np.arange(0., 300., 15.),       ('p_{T} (l2) [GeV]', 'Events')),
         'l3pt':      (lambda c : c.l_pt[2],       np.arange(0., 300., 15.),       ('p_{T} (l3) [GeV]', 'Events')),
@@ -126,8 +139,6 @@ def returnVariables(nl, is_reco, include_mva = None):
         else:
             if nl == 3: var_of_choice = var_gen_3l
             elif nl == 4: var_of_choice = var_gen_4l
-
-        var_of_choice = mergeTwoDictionaries(var_of_choice, var_weights)
 
         if include_mva is not None:
                 from HNL.TMVA.mvaDefinitions import getMVAdict

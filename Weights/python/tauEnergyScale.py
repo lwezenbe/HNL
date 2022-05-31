@@ -28,6 +28,12 @@ YEARLIB_FES = {'prelegacy2016' : '2016Legacy',
 ALGOLIB = {'HNL' : 'DeepTau2017v2p1VSjet',
             'ewkino'  :  'MVAoldDM2017v2' }
 
+UNC_LIB = {
+    'nominal' : None,
+    'up' : 'Up',
+    'down' : 'Down'
+}
+
 class TauEnergyScale:
     
     def __init__(self, era, year, algorithm):
@@ -46,16 +52,17 @@ class TauEnergyScale:
         return tlv
 
     #tlv is four vector to correct
-    def readES(self, tlv, dm, genmatch):
+    def readES(self, tlv, dm, genmatch, syst = 'nominal'):
         if genmatch == 1 or genmatch == 3:
             if dm == 0 or dm == 1:
-                return self.tfestool.getFES(tlv.Eta(), dm, genmatch)
+                return self.tfestool.getFES(tlv.Eta(), dm, genmatch, UNC_LIB[syst])
             else:
                 return 1.
         elif genmatch == 5:
-            return self.testool.getTES(tlv.Pt(), dm, genmatch)
+            return self.testool.getTES(tlv.Pt(), dm, genmatch, UNC_LIB[syst])
         else:
             return 1.
+    
 
 if __name__ == "__main__":
     #TODO: test needs to be finished
