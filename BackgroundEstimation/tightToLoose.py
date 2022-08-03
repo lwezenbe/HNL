@@ -171,8 +171,8 @@ if not args.makePlots:
     #
     # Import and create cutter to provide cut flow
     #
-    from HNL.EventSelection.cutter import Cutter
-    cutter = Cutter(chain = chain)
+    from HNL.EventSelection.bitCutter import Cutter
+    cutter = Cutter(name = 'FR', chain = chain, categories = 'auto')
 
     #
     # Set range of events to process

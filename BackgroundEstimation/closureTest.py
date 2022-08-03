@@ -119,8 +119,9 @@ else:
     var = {
             'minMos':               (lambda c : c.minMos,       np.arange(0., 160., 10.),         ('min(M_{OS}) [GeV]', 'Events')),
             'm3l':                  (lambda c : c.M3l,          np.arange(0., 240., 15.),         ('M_{3l} [GeV]', 'Events')),
-            # 'met':                  (lambda c : c._met,         np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
-            'met':                  (lambda c : c._met,         np.arange(0., 90., 3.),         ('p_{T}^{miss} [GeV]', 'Events')),
+            'met':                  (lambda c : c._met,         np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
+            #'met':                  (lambda c : c._met,         np.arange(0., 90., 3.),         ('p_{T}^{miss} [GeV]', 'Events')),
+            #'met':                  (lambda c : c._met,         np.arange(50., 123., 3.),         ('p_{T}^{miss} [GeV]', 'Events')),
             'mtOther':              (lambda c : c.mtOther,      np.arange(0., 300., 15.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
             #'ptFakes':              (lambda c, i : c.l_pt[i],         np.arange(0., 300., 15.),       ('p_{T} [GeV]', 'Events')),
             #'etaFakes':             (lambda c, i : c.l_eta[i],        np.arange(-2.5, 3.0, 0.5),       ('#eta', 'Events')),
@@ -219,8 +220,8 @@ if not args.makePlots:
     #
     # Import and create cutter to provide cut flow
     #
-    from HNL.EventSelection.cutter import Cutter
-    cutter = Cutter(chain = chain)
+    from HNL.EventSelection.bitCutter import Cutter
+    cutter = Cutter(name = 'closure', chain = chain, categories = 'auto')
 
     if args.isTest:
         max_events = 20000
@@ -264,7 +265,7 @@ if not args.makePlots:
                 #fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('DY'), subdirs = ['total'])
                 fakerate[2] = FakeRate.getFakeRateFromTree('ttl', base_path_tau('DY'), "l_pt-abs(l_eta)", bins, var = lambda c, i: [c.l_pt[i], abs(c.l_eta[i])])
         elif args.application == 'TauFakesTT':
-            fakerate[2] = FakeRate('tauttl', lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), base_path_tau('TT'), subdirs = ['total'])
+            fakerate[2] = FakeRate.getFakeRateFromTree('ttl', base_path_tau('TT'), "l_pt-abs(l_eta)", bins, var = lambda c, i: [c.l_pt[i], abs(c.l_eta[i])])
         elif args.application == 'WeightedMix':
             fakerate[2] = SingleFlavorFakeRateCollection([base_path_tau('DY'), base_path_tau('TT')], ['total/tauttl', 'total/tauttl'], ['DY', 'TT'], 
                                                             frac_weights = getWeights(args.era, args.year, args.selection, args.region), frac_names = ['DY', 'TT'])   

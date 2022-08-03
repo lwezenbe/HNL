@@ -113,8 +113,8 @@ if not args.merge:
 
     # Import and create cutter to provide cut flow
     #
-    from HNL.EventSelection.cutter import CutterCollection
-    cutters = CutterCollection(['sideband', 'tight'], chain = chain)
+    from HNL.EventSelection.bitCutter import CutterCollection
+    cutters = CutterCollection(['sideband', 'tight'], chain = chain, categories = 'auto')
 
     #
     # Create new reduced tree (except if it already exists and overwrite option is not used)

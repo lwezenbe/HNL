@@ -108,8 +108,8 @@ if not args.checkLogs:
     #
     # Import and create cutter to provide cut flow
     #
-    from HNL.EventSelection.cutter import Cutter
-    cutter = Cutter(chain = chain)
+    from HNL.EventSelection.bitCutter import Cutter
+    cutter = Cutter(name='skim', chain = chain, categories = 'auto')
 
     #
     # Get lumiweight
@@ -153,11 +153,10 @@ if not args.checkLogs:
     #
     if args.region is None:
         delete_branches = ['lhe', 'Lhe', 'ttg', '_ph']
-        delete_branches = ['ttg', '_ph']
         if args.reprocess: delete_branches += ['lumiweight']
         #delete_branches.extend(['HLT']) #TODO: For now using pass_trigger, this may need to change
         delete_branches.extend(['tauPOG*2015', 'tau*MvaNew']) #Outdated tau
-        delete_branches.extend(['lMuon', 'prefire'])
+        #delete_branches.extend(['lMuon', 'prefire'])
         #delete_branches.extend(['_met'])
         delete_branches.extend(['jetNeutral', 'jetCharged', 'jetHF'])
         for i in delete_branches:        chain.SetBranchStatus("*"+i+"*", 0)
@@ -182,7 +181,6 @@ if not args.checkLogs:
         new_branches.extend(['dRl1l2/F', 'dRl1l3/F', 'dRl2l3/F', 'dRminl1/F', 'dRminl2/F', 'dRminl3/F', 'dRmaxl1/F', 'dRmaxl2/F', 'dRmaxl3/F'])
         new_branches.extend(['dRminMos/F', 'dRmaxMos/F', 'dRminMss/F', 'dRmaxMss/F', 'dRminMossf/F', 'dRmaxMossf/F'])
         # new_branches.extend(['l1/I', 'l2/I', 'l3/I', 'index_other/I'])
-        new_branches.extend(['l_pt[3]/F', 'l_eta[3]/F', 'l_phi[3]/F', 'l_e[3]/F', 'l_charge[3]/F', 'l_flavor[3]/I', 'l_indices[3]/I', 'l_isFO[3]/O', 'l_istight[3]/O', 'l_isfake[3]/O'])
         new_branches.extend(['j_pt[2]/F', 'j_eta[2]/F', 'j_phi[2]/F', 'j_e[2]/F', 'j_indices[2]/I', 'j_btag[2]/F'])
         new_branches.extend(['l1_pt/F', 'l2_pt/F', 'l3_pt/F'])
         new_branches.extend(['l1_eta/F', 'l2_eta/F', 'l3_eta/F'])
@@ -190,6 +188,7 @@ if not args.checkLogs:
         new_branches.extend(['l1_charge/F', 'l2_charge/F', 'l3_charge/F'])
         new_branches.extend(['event_category/I'])
         new_branches.extend(['njets/I', 'nbjets/I'])
+        new_branches.extend(['l_pt[3]/F', 'l_eta[3]/F', 'l_phi[3]/F', 'l_e[3]/F', 'l_charge[3]/F', 'l_flavor[3]/I', 'l_indices[3]/I', 'l_isFO[3]/O', 'l_istight[3]/O', 'l_isfake[3]/O'])
 
     from HNL.Tools.makeBranches import makeBranches
     new_vars = makeBranches(output_tree, new_branches)
@@ -211,26 +210,23 @@ if not args.checkLogs:
         chain.era = args.era
         chain.analysis = args.analysis
         if args.skimSelection == 'Old':
-            chain.obj_sel = objectSelectionCollection('HNL', 'cutbased', 'loose', 'loose', 'loose', True, analysis=args.analysis)
+            obj_sel = objectSelectionCollection('HNL', 'cutbased', 'loose', 'loose', 'loose', True, analysis=args.analysis)
         elif args.skimSelection in ['Luka']:
-            chain.obj_sel = objectSelectionCollection('HNL', 'Luka', 'loose', 'loose', 'loose', False, analysis=args.analysis)
+            obj_sel = objectSelectionCollection('HNL', 'Luka', 'loose', 'loose', 'loose', False, analysis=args.analysis)
         elif args.skimSelection == 'TTT':
-            chain.obj_sel = objectSelectionCollection('HNL', 'TTT', 'loose', 'loose', 'loose', False, analysis=args.analysis)
+            obj_sel = objectSelectionCollection('HNL', 'TTT', 'loose', 'loose', 'loose', False, analysis=args.analysis)
         else:
-            chain.obj_sel = objectSelectionCollection('HNL', 'HNL', 'loose', 'loose', 'loose', False, analysis=args.analysis)
+            obj_sel = objectSelectionCollection('HNL', 'HNL', 'loose', 'loose', 'loose', False, analysis=args.analysis)
 
     from HNL.Tools.helpers import progress
     from HNL.EventSelection.eventSelectionTools import selectLeptonsGeneral, selectGenLeptonsGeneral, translateForTraining
     from HNL.EventSelection.event import Event
-    if args.region is not None:
-        event = Event(sample, new_vars, sample_manager, is_reco_level=not args.genSkim, selection=args.skimSelection, strategy=args.strategy, region=args.region, year = args.year, era = args.era, analysis = args.analysis)
-        chain.selection = args.skimSelection
-        chain.region = args.region
-        chain.strategy = 'MVA' if args.region != 'AN2017014' else 'cutbased'
-
-    
-    from HNL.Weights.tauEnergyScale import TauEnergyScale
-    chain.tau_energy_scale = TauEnergyScale(chain.era, chain.year, chain.obj_sel['tau_algo'])
+    #if args.region is not None:
+    if args.region is None:
+        event = Event(sample, new_vars, sample_manager, is_reco_level=not args.genSkim, selection=args.skimSelection, strategy=args.strategy, region=args.region if args.region is not None else 'NoSelection', year = args.year, era = args.era, analysis = args.analysis, obj_sel = obj_sel)
+    else:
+        event = Event(sample, new_vars, sample_manager, is_reco_level=not args.genSkim, selection=args.skimSelection, strategy=args.strategy, region=args.region if args.region is not None else 'NoSelection', year = args.year, era = args.era, analysis = args.analysis)
+    chain.strategy = 'MVA' if args.region != 'AN2017014' else 'cutbased'
 
     for entry in event_range:
 
@@ -240,8 +236,11 @@ if not args.checkLogs:
     
         cutter.cut(True, 'Total')
 
+        event.initEvent()
         if args.region is None:
-            if args.genSkim:
+            
+            #initiate event but dont yet select
+            if args.genSkim:        
                 selectGenLeptonsGeneral(chain, chain, 3)
             else:
                 selectLeptonsGeneral(chain, chain, 3, cutter = cutter)
@@ -254,7 +253,6 @@ if not args.checkLogs:
             new_vars.lumiweight = lw.getLumiWeight()
 
         else:
-            event.initEvent()
             if not event.passedFilter(cutter, sample.name): continue
             translateForTraining(new_vars)
 
