@@ -22,10 +22,12 @@ def isValidRootFile(fname):
 def getObjFromFile(fname, hname):
     assert isValidRootFile(fname)
 
-#    if 'pnfs' in fname: fname = 'root://maite.iihe.ac.be/'+ fname         #faster for pnfs file
+    #print 'inside', fname, hname
+    #if 'pnfs' in fname: fname = 'root://maite.iihe.ac.be/'+ fname         #faster for pnfs file
     try:
         f = ROOT.TFile.Open(fname)
         f.cd()
+        x = f.Get(hname.split('/')[0])
         htmp = f.Get(hname)
         if not htmp: return None
         ROOT.gDirectory.cd('PyROOT:/')

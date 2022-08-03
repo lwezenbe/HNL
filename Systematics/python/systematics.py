@@ -138,6 +138,9 @@ class SystematicJSONreader:
         else:
             return self.json_data[syst]['Value']
 
+    def getDescription(self, syst, year):
+        return self.json_data[syst]['Description']
+
 def prepareForRerunSyst(chain, event, systematic = 'nominal'):
     event.chain.obj_sel['systematic'] = systematic
     event.original_object_selection['systematic'] = systematic

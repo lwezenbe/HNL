@@ -24,10 +24,11 @@ relExtraDY = 1.2
 
 extraOverCmsTextSize  = 0.76
 
-lumi_13TeV = {'prelegacy2016': "35.9 fb^{-1}", 'UL2016pre' : "19.52 fb^{-1}", 'UL2016post' : "16.81 fb^{-1}", 'UL2016' : '36.34 fb^{-1}',
+lumi_13TeV = {'prelegacy2016': "35.9 fb^{-1}", 'UL2016pre' : "19.5 fb^{-1}", 'UL2016post' : "16.81 fb^{-1}", 'UL2016' : '36.32 fb^{-1}', 'UL2016pre-2016post' : '36.32 fb^{-1}',
                 'prelegacy2017': "41.5 fb^{-1}", 'UL2017': "41.48 fb^{-1}",
                 'prelegacy2018': "59.7 fb^{-1}", 'UL2018': "59.83 fb^{-1}", 
-                'prelegacyall': "137.1 fb^{-1}", 'ULall': "137.6 fb^{-1}"}
+                'prelegacyall': "137.1 fb^{-1}", 'ULall': "137.6 fb^{-1}",
+                'UL2016pre-2016post-2017-2018' : "137.6 fb^{-1}"}
 # lumi_8TeV  = "19.7 fb^{-1}" 
 # lumi_7TeV  = "5.1 fb^{-1}"
 # lumi_sqrtS = ""

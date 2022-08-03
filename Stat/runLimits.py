@@ -132,7 +132,8 @@ for card in cards_to_read:
             #         file_list.append(None)
             #     else:
             #         file_list.append(file_name[0])
-            file_name  = out_path_base('Combined', era+year_to_read, sname, cname, tag) +'/limits.root'       
+            era_to_read = era if '201' in era else era+year_to_read
+            file_name  = out_path_base('Combined', era_to_read, sname, cname, tag) +'/limits.root'       
             compare_graphs[sname + ' ' +cname+ ' ' + era] = getObjFromFile(file_name, 'expected_central')
 
     if args.flavor == 'e':
@@ -179,5 +180,5 @@ for card in cards_to_read:
     else:
         year = 'all'
     
-    p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=False, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', era = 'UL', year = year)
+    p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', era = 'UL', year = year)
     p.drawBrazilian(output_dir = destination, ignore_bands = args.dryplot)
