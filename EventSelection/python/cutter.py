@@ -24,6 +24,7 @@ class Cutter():
                     weight = 1.
             else:
                 weight = 1.
+            print weight
             self.list_of_cuts[cut_name].Fill(.5, weight)
             return True
         return False
@@ -96,8 +97,8 @@ class CutterCollection():
         return self.cutters[name]
 
 from HNL.Plotting.plot import makeList
-def printCutFlow(in_file_paths, out_file_path, in_file_path_names):
-    print in_file_path_names
+def printCutFlow(in_file_paths, out_file_path, in_file_path_names, subdir = None):
+    subdir = 'cutflow' if subdir is None else 'cutflow/'+subdir
     in_file_paths = makeList(in_file_paths)
     in_file_path_names = makeList(in_file_path_names)
     if len(in_file_paths) != len(in_file_path_names):
@@ -107,13 +108,15 @@ def printCutFlow(in_file_paths, out_file_path, in_file_path_names):
     list_of_cut_values = {}
     for ifp, ifpn in zip(in_file_paths, in_file_path_names):
         in_file = TFile(ifp)
-        key_names = [k[0] for k in rootFileContent(in_file, '/', starting_dir = 'cutflow')]
+        key_names = [k[0] for k in rootFileContent(in_file, '/', starting_dir = subdir)]
         in_file.Close()
         list_of_cut_values[ifpn] = {}
         for k in key_names:
             list_of_cut_values[ifpn][k] = getObjFromFile(ifp, 'cutflow/'+k).GetSumOfWeights()
 
-    out_file = open(out_file_path, 'w')
+    from HNL.Tools.helpers import makeDirIfNeeded
+    makeDirIfNeeded(out_file_path+'/cutflowtable.txt')
+    out_file = open(out_file_path+'/cutflowtable.txt', 'w')
     out_file.write(' \t \t ' + '\t'.join(in_file_path_names) + '\n')
     for k in key_names:
         out_file.write(k.split('/')[-1] +'\t \t ' + '\t'.join([str(list_of_cut_values[n][k]) for n in in_file_path_names]) + '\n')
@@ -144,10 +147,10 @@ def plotCutFlow(in_file_paths, out_file_path, in_file_path_names, ignore_weights
     list_of_cut_hist = []
     tex_names = []
     x_name = []
+    subdir = 'cutflow' if subdir is None else 'cutflow/'+subdir
     #If one input file, plot keys on x
     if len(in_file_paths) == 1:
         in_file = TFile(in_file_paths[0], 'read')
-        subdir = 'cutflow' if subdir is None else 'cutflow/'+subdir
         key_names = [k[0] for k in rootFileContent(in_file, starting_dir = subdir)]
         in_file.Close()
         list_of_cut_hist.append(ROOT.TH1D('cutflow', 'cutflow', len(key_names), 0, len(key_names)))
@@ -161,13 +164,12 @@ def plotCutFlow(in_file_paths, out_file_path, in_file_path_names, ignore_weights
     #Plot samples on x
     else:
         in_file = TFile(in_file_paths[0])
-        key_names = [k[0] for k in rootFileContent(in_file, starting_dir='cutflow')]
+        key_names = [k[0] for k in rootFileContent(in_file, starting_dir = subdir)]
         in_file.Close()
         for j, k in enumerate(key_names):
             list_of_cut_hist.append(ROOT.TH1D('cutflow_'+k, 'cutflow_'+k, len(in_file_paths), 0, len(in_file_paths)))
             for i, ifp in enumerate(in_file_paths):
                 if ignore_weights:
-                    print ifp, k
                     list_of_cut_hist[j].SetBinContent(i+1, getObjFromFile(ifp, k).GetEntries())
                 else:
                     list_of_cut_hist[j].SetBinContent(i+1, getObjFromFile(ifp, k).GetSumOfWeights())

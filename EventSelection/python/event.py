@@ -23,9 +23,11 @@ class Event(object):
         self.additional_options = kwargs.get('additional_options', None)
         self.chain.is_reco_level = is_reco_level
 
-        self.chain.obj_sel = getObjectSelection(self.chain.selection)
+        self.chain.obj_sel = kwargs.get('obj_sel', getObjectSelection(self.chain.selection))
 
         self.event_category = EventCategory(self.chain, self.new_chain)
+        self.chain.category = None
+        self.chain.weight = None
         self.event_selector = EventSelector(self.chain.region, self.chain, self.new_chain, is_reco_level=is_reco_level, event_categorization=self.event_category, additional_options=self.additional_options)
 
         self.tau_energy_scale = TauEnergyScale(self.chain.era, self.chain.year, self.chain.obj_sel['tau_algo'])
@@ -39,6 +41,8 @@ class Event(object):
 
     def initEvent(self, reset_obj_sel = False, tau_energy_scale = 'nominal'):
         if reset_obj_sel: self.chain.obj_sel = {k:self.original_object_selection[k] for k in self.chain.obj_sel.keys()} #reset object selection
+        self.chain.category = None
+        self.chain.weight = None
         self.chain.is_loose_lepton = [None]*self.chain._nL
         self.chain.is_FO_lepton = [None]*self.chain._nL
         self.chain.is_tight_lepton = [None]*self.chain._nL
@@ -81,7 +85,8 @@ class Event(object):
             self.chain.is_tight_lepton[l] = (isGoodLepton(self.chain, l, 'tight'), self.chain.obj_sel['tau_algo'])
 
     def passedFilter(self, cutter, sample_name, **kwargs):
-        passed =  self.event_selector.passedFilter(cutter, sample_name, self.event_category, kwargs)
+        if kwargs.get('calculate_weights', False): kwargs['reweighter'] = self.reweighter
+        passed =  self.event_selector.passedFilter(cutter, sample_name, kwargs)
         if passed:
             self.chain.category = self.event_category.returnCategory()
             self.chain.detailed_category = self.event_category.returnDetailedCategory()
@@ -151,7 +156,7 @@ class ClosureTestEvent(Event):
                 return True
 
     def passedFilter(self, cutter, sample_name, **kwargs):
-        passed =  self.event_selector.passedFilter(cutter, sample_name, self.event_category, kwargs)
+        passed =  self.event_selector.passedFilter(cutter, sample_name, kwargs)
         if not passed: return False
         applyConeCorrection(self.chain, self.new_chain)
 

@@ -11,8 +11,8 @@ class SignalRegionSelector(FilterObject):
         super(SignalRegionSelector, self).__init__(region, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
 
 
-    def initEvent(self, cutter, sideband = None):
-        return super(SignalRegionSelector, self).initEvent(3, cutter, sort_leptons = True, sideband = sideband)
+    def initEvent(self, cutter, kwargs={}):
+        return super(SignalRegionSelector, self).initEvent(3, cutter, sort_leptons = True, kwargs=kwargs)
         if self.ec is not None: self.chain.category = self.ec.returnCategory()
         return True
 
@@ -35,13 +35,12 @@ class SignalRegionSelector(FilterObject):
             raise RuntimeError("Unknown signal region: "+region)
 
     def passedFilter(self, cutter, kwargs):
-        sideband=kwargs.get('sideband', None)
         manually_blinded = kwargs.get('manually_blinded', False)
 
         if self.chain.is_data and sideband is None and not manually_blinded:
             raise RuntimeError("\033[93m Running this would mean unblinding. Make sure you dont store the results. \033[0m")
 
-        if not self.initEvent(cutter, sideband=sideband): return False
+        if not self.initEvent(cutter, kwargs=kwargs): return False
 
         # if not self.is_reco_level:  return True #It has passed the basic selection
 

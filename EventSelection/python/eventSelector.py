@@ -11,7 +11,10 @@ class FilterObject(object):
         self.is_reco_level = is_reco_level
         self.ec = event_categorization
 
-    def initEvent(self, nL, cutter, sort_leptons, sideband = None):
+    def initEvent(self, nL, cutter, sort_leptons, kwargs={}):
+        sideband = kwargs.get('sideband', None) 
+        offline_thresholds = kwargs.get('offline_thresholds', True)       
+
         if sideband is not None:
             self.chain.obj_sel['tau_wp'] = 'FO'
             self.chain.obj_sel['ele_wp'] = 'FO'
@@ -21,6 +24,18 @@ class FilterObject(object):
             if not cutter.cut(selectLeptonsGeneral(self.chain, self.new_chain, nL, cutter=cutter, sort_leptons = sort_leptons), 'select leptons'): return False
         else:
             if not cutter.cut(selectGenLeptonsGeneral(self.chain, self.new_chain, nL, cutter=cutter), 'select leptons'): return False
+
+        self.chain.category = self.ec.returnCategory()
+        self.chain.detailed_category = self.ec.returnDetailedCategory()
+        reweighter = kwargs.get('reweighter')
+        if kwargs.get('calculate_weights', False) and reweighter is not None:
+            self.chain.weight = reweighter.getTotalWeight(sideband = sideband, tau_fake_method = 'TauFakesDY' if self.region == 'ZZCR' else None)
+        else:
+            self.chain.weight = None
+
+        from HNL.Triggers.triggerSelection import passOfflineThresholds
+        if offline_thresholds and not cutter.cut(passOfflineThresholds(self.chain, self.new_chain, self.chain.analysis), "Pass offline thresholds"): 
+            return False
 
         #If sideband, only select events where not all 3 leptons are tight
         if sideband is not None:
@@ -32,7 +47,7 @@ class FilterObject(object):
             if nfail < 1: return False
 
         calculateEventVariables(self.chain, self.new_chain, nL, is_reco_level=self.is_reco_level)
-        self.chain.category = max(cat.CATEGORIES)
+        #self.chain.category = max(cat.CATEGORIES)
         return True
 
 
@@ -52,11 +67,11 @@ class EventSelector:
         if self.name in signal_regions:
             self.selector = SignalRegionSelector(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
         elif self.name == 'trilepton':
-            self.selector = GeneralTrileptonFilter(name, chain, new_chain, is_reco_level = is_reco_level)
+            self.selector = GeneralTrileptonFilter(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
         elif self.name == 'ZZCR':
-            self.selector = ZZCRfilter(name, chain, new_chain, is_reco_level = is_reco_level)
+            self.selector = ZZCRfilter(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
         elif self.name == 'WZCR':
-            self.selector = WZCRfilter(name, chain, new_chain, is_reco_level = is_reco_level)
+            self.selector = WZCRfilter(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
         elif self.name == 'ConversionCR':
             self.selector = ConversionCRfilter(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
         elif self.name == 'TauFakesDY':
@@ -126,7 +141,7 @@ class EventSelector:
         else:
             return True
 
-    def passedFilter(self, cutter, sample_name, event_category, kwargs={}):
+    def passedFilter(self, cutter, sample_name, kwargs={}):
         if not self.removeOverlapDYandZG(sample_name, cutter): return False
 
         ignoreSignalOverlapRemoval = kwargs.get('ignoreSignalOverlapRemoval', False)
@@ -136,20 +151,12 @@ class EventSelector:
 
         #Triggers
         from HNL.Triggers.triggerSelection import passTriggers
-        if not cutter.cut(passTriggers(self.chain, analysis=self.chain.analysis), 'pass_triggers'): return False 
+        ignore_triggers = kwargs.get('ignore_triggers', False)
+        if not ignore_triggers and not cutter.cut(passTriggers(self.chain, analysis=self.chain.analysis), 'pass_triggers'): return False 
 
         if self.name != 'NoSelection':
             passed = self.selector.passedFilter(cutter, kwargs)
             if not passed: return False
-
-            # This info is needed for offline thresholds
-            self.chain.category = event_category.returnCategory()
-            self.chain.detailed_category = event_category.returnDetailedCategory()
-
-            from HNL.Triggers.triggerSelection import passOfflineThresholds
-            offline_thresholds = kwargs.get('offline_thresholds', True)
-            if offline_thresholds and not cutter.cut(passOfflineThresholds(self.chain, self.new_chain, self.chain.analysis), "Pass offline thresholds"): 
-                return False
             return True
         else:
             return True
