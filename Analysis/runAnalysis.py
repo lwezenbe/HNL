@@ -32,7 +32,6 @@ submission_parser.add_argument('--customList',  action='store',      default=Non
 submission_parser.add_argument('--systematics',  action='store',      default='nominal',               help='Choose level of systematics.', choices = ['nominal', 'limited', 'full'])
 submission_parser.add_argument('--tag',  action='store',      default=None,               help='Tag with additional information for the output, e.g. TauFakes, sidebandInMC')
 
-
 argParser.add_argument('--makePlots',   action='store_true',    default=False,  help='Use existing root files to make the plots')
 argParser.add_argument('--showCuts',   action='store_true',     default=False,  help='Show what the pt cuts were for the category in the plots')
 argParser.add_argument('--individualSamples',   action='store_true', default=False,  help='plot each input sample separately')
@@ -47,7 +46,6 @@ argParser.add_argument('--categoriesToPlot',   action='store',     default='supe
 argParser.add_argument('--additionalCondition',   action='store',     default=None,  help='Additional condition for selection')
 argParser.add_argument('--ignoreSystematics',   action='store_true',     default=False,  help='ignore systematics in plots')
 argParser.add_argument('--combineYears',   action='store_true',     default=False,  help='combine all years specified in year arg in plots')
-
 
 args = argParser.parse_args()
 
@@ -480,8 +478,8 @@ else:
         } 
         
         #Add entry for the search regions in the var dictionary
-#        from HNL.Weights.reweighter import var_weights
-#        var.update(var_weights)
+        from HNL.Weights.reweighter import var_weights
+        var.update(var_weights)
         var['searchregion'] = (lambda c : c.searchregion, np.arange(0.5, srm[args.region].getNumberOfSearchRegions()+1.5, 1.), ('Search Region', 'Events'))
 
         # Custom Var that you can create from existing var (i.e. 2D plots)
@@ -627,9 +625,7 @@ else:
 
                 if args.includeData == 'includeSideband':
                     for c, cc in zip(categories_to_use, category_conditions):
-                 #       if c != 'NoTau': continue
                         for iv, v in enumerate(var_dict.keys()):
-                            #for k in tmp_list_of_hist[c][v]['data']['sideband'].keys():
                             tmp_list_of_hist[c][v]['bkgr']['non-prompt'] = tmp_list_of_hist[c][v]['data']['sideband']
 
             return tmp_list_of_hist

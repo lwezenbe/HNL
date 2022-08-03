@@ -137,7 +137,6 @@ if not args.makePlots:
     #
     if not args.isChild:
         from HNL.Tools.jobSubmitter import submitJobs
-        print 'submitting'
         for year in jobs.keys():
             submitJobs(__file__, ('sample', 'subJob'), jobs[year], argParser, jobLabel = 'calcTriggerEff-NEW', additionalArgs=[('year', year)])
         exit(0)
@@ -152,30 +151,25 @@ if not args.makePlots:
     # Load in sample and chain
     #
     sample = sample_manager.getSample(args.sample)
-    print 'sample loaded'
     chain = sample.initTree(needhcount = False)
-    print 'chain initialized'
     chain.HNLmass = sample.getMass()
     chain.year = year
     chain.era = args.era
     chain.region = args.region
     chain.analysis = args.analysis
     chain.selection = args.selection
-    print 'chain filled'
     
     #
     # Initialize reweighter
     #
     from HNL.Weights.reweighter import Reweighter
     reweighter = Reweighter(sample, sample_manager)
-    print 'reweighter in place'
 
     #
     # Import and create cutter to provide cut flow
     #
     from HNL.EventSelection.cutter import Cutter
     cutter = Cutter(chain = chain)
-    print 'cutter ready'
 
     #
     # Set range of events to process
@@ -186,20 +180,17 @@ if not args.makePlots:
         event_range = xrange(max_events)
     else:
         event_range = sample.getEventRange(args.subJob)   
-    print 'range set'
 
     branches = []
     for v in ['l1pt', 'l1eta', 'l2pt', 'l2eta', 'l3pt', 'l3eta', 'weight', 'category']:
         branches.extend(['{0}/F'.format(v)])
     efficiency = EfficiencyTree('trigger_efficiency', getOutputName(year, sample.output), branches)
-    print 'efficiency tree created'
 
     #
     # Define event selection
     #
     from HNL.EventSelection.event import Event
     event = Event(sample, chain, sample_manager, is_reco_level=True, selection=args.selection, strategy='MVA', region=args.region, analysis=args.analysis, year = year, era = args.era)    
-    print 'event object loaded in'
 
     #
     # Loop over all events
