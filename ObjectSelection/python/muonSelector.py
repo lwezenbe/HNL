@@ -269,6 +269,46 @@ def isTightMuonLuka(chain, index):
     if chain._leptonMvaTOP[index] <= 0.4:   return False 
     return True
 
+def isFOMuonHNLULv1(chain, index):
+    if getattr(chain, 'is_loose_lepton', None) is not None and chain.is_loose_lepton[index] is not None and chain.is_loose_lepton[index][1] in ['Luka', 'HNL']:
+        if not chain.is_loose_lepton[index][0]: return False
+    else:
+        if not isLooseMuonLuka(chain, index):        return False
+    if chain._lPtCorr[index] <= 10: return False
+    if chain._leptonMvaTOPUL[index] <= 0.64:
+        if chain._ptRatio[index] < 0.45:        return False
+        if '2016' in chain.year:
+            if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutMuon(chain, index, 20., 0.02, 40., 0.015): return False 
+        else:
+            if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutMuon(chain, index, 20., 0.025, 40., 0.015): return False 
+    return True
+
+def isTightMuonHNLULv1(chain, index):
+    if getattr(chain, 'is_FO_lepton', None) is not None and chain.is_FO_lepton[index] is not None and chain.is_FO_lepton[index][1] in ['Luka', 'HNL']:
+        if not chain.is_FO_lepton[index][0]: return False
+    else:
+        if not isFOMuonHNLULv1(chain, index):        return False
+    if chain._lPtCorr[index] <= 10: return False
+    if chain._leptonMvaTOPUL[index] <= 0.64:   return False 
+    return True
+
+def isFOMuonHNLULv1base(chain, index):
+    if getattr(chain, 'is_loose_lepton', None) is not None and chain.is_loose_lepton[index] is not None and chain.is_loose_lepton[index][1] in ['Luka', 'HNL']:
+        if not chain.is_loose_lepton[index][0]: return False
+    else:
+        if not isLooseMuonLuka(chain, index):        return False
+    if chain._lPtCorr[index] <= 10: return False
+    return True
+
+def isTightMuonHNLULv1base(chain, index):
+    if getattr(chain, 'is_FO_lepton', None) is not None and chain.is_FO_lepton[index] is not None and chain.is_FO_lepton[index][1] in ['Luka', 'HNL']:
+        if not chain.is_FO_lepton[index][0]: return False
+    else:
+        if not isFOMuonHNLULv1base(chain, index):        return False
+    if chain._lPtCorr[index] <= 10: return False
+    if chain._leptonMvaTOPUL[index] <= 0.64:   return False 
+    return True
+
 #
 # General function for selecting muons
 #
@@ -278,7 +318,9 @@ def isLooseMuon(chain, index, algo):
     elif algo == 'leptonMVAtZq':        return isLooseMuontZq(chain, index)
     elif algo == 'leptonMVAtop':        return isLooseMuonTop(chain, index)
     elif algo == 'TTT':                 return isLooseMuonTTT(chain, index)
-    elif algo == 'tZq' or algo == 'HNL':                return isLooseMuonLuka(chain, index)
+    elif algo == 'tZq' or algo == 'HNL' or algo == 'HNLprelegacy':                return isLooseMuonLuka(chain, index)
+    elif algo == 'HNLULv1':                return isLooseMuonLuka(chain, index)
+    elif algo == 'HNLULv1base':                return isLooseMuonLuka(chain, index)
     elif algo == 'ewkino':              return isLooseMuonEwkino(chain, index)
     else:
         print 'Wrong input for "algo" in isLooseMuon'
@@ -290,7 +332,9 @@ def isFOMuon(chain, index, algo):
     elif algo == 'leptonMVAtZq':        return isFOMuontZq(chain, index)
     elif algo == 'leptonMVAtop':        return isFOMuonTop(chain, index)
     elif algo == 'TTT':                 return isFOMuonTTT(chain, index)
-    elif algo == 'tZq' or algo == 'HNL':                return isFOMuonLuka(chain, index)
+    elif algo == 'tZq' or algo == 'HNL' or algo == 'HNLprelegacy':                return isFOMuonLuka(chain, index)
+    elif algo == 'HNLULv1':                return isFOMuonHNLULv1(chain, index)
+    elif algo == 'HNLULv1base':                return isFOMuonHNLULv1base(chain, index)
     elif algo == 'ewkino':              return isFOMuonEwkino(chain, index)
     else:
         print 'Wrong input for "algo" in isFOMuon'
@@ -302,7 +346,9 @@ def isTightMuon(chain, index, algo):
     elif algo == 'leptonMVAtZq':        return isTightMuontZq(chain, index)
     elif algo == 'leptonMVAtop':        return isTightMuonTop(chain, index)
     elif algo == 'TTT':                 return isTightMuonTTT(chain, index)
-    elif algo == 'tZq' or algo == 'HNL':                return isTightMuonLuka(chain, index)
+    elif algo == 'tZq' or algo == 'HNL' or algo == 'HNLprelegacy':                return isTightMuonLuka(chain, index)
+    elif algo == 'HNLULv1':                return isTightMuonHNLULv1(chain, index)
+    elif algo == 'HNLULv1base':                return isTightMuonHNLULv1base(chain, index)
     elif algo == 'ewkino':              return isTightMuonEwkino(chain, index)
     else:
         print 'Wrong input for "algo" in isTightMuon'

@@ -14,7 +14,7 @@ argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
 submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
-submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
+submission_parser.add_argument('--era',     action='store',       default='UL', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -55,8 +55,9 @@ else:
 #
 if args.flavor in ['e', 'mu']:
     algos = {'cutbased': ['loose', 'FO', 'tight'],
-            'leptonMVAtop' : ['loose', 'FO', 'tight'],
-            'HNL' : ['loose', 'FO', 'tight'], 
+            'HNLprelegacy' : ['loose', 'FO', 'tight'],
+            'HNLULv1' : ['loose', 'FO', 'tight'], 
+            'HNLULv1base' : ['loose', 'FO', 'tight'], 
             }
 else:
     algos = {'ewkino': ['loose', 'FO', 'tight'],
@@ -75,7 +76,8 @@ sample_manager = SampleManager(args.era, args.year, 'noskim', 'ObjectSelection/c
 jobs = []
 for sample_name in sample_manager.sample_names:
     sample = sample_manager.getSample(sample_name)
-    for njob in xrange(sample.returnSplitJobs()):
+    #for njob in xrange(sample.returnSplitJobs()):
+    for njob in xrange(300):
         jobs += [(sample.name, str(njob))]
 
 if not args.isChild and not args.makePlots:

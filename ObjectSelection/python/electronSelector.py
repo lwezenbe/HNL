@@ -44,7 +44,7 @@ def isGoodGenElectron(chain, index):
 def isBaseElectron(chain, index, syst = None):
     if getElectronPt(chain, index, syst) <= 5.:                  return False
     if abs(chain._lEta[index]) >= 2.5:          return False
-    if 1.44 < abs(chain._lEta[index]) < 1.57:   return False
+    if 1.444 < abs(chain._lEta[index]) < 1.567:   return False
     return True 
 
 #
@@ -492,8 +492,8 @@ def isTightElectronLuka(chain, index, syst = None):
 def isLooseElectronHNL(chain, index, syst = None):
     if chain._lFlavor[index] != 0:              return False
     if not isCleanFromMuons(chain, index):      return False
-    if getElectronPt(chain, index, syst) < 5: return False
-    if abs(chain._lEta[index]) > 2.5: return False
+    if getElectronPt(chain, index, syst) < 7:   return False
+    if abs(chain._lEta[index]) > 2.5:           return False
     if abs(chain._dxy[index]) >= 0.05:          return False
     if abs(chain._dz[index]) >= 0.1:            return False
     if chain._miniIso[index] >= 0.4:            return False
@@ -531,6 +531,50 @@ def isTightElectronHNL(chain, index, syst = None):
     return True
 
 
+def isFOElectronHNLULv1base(chain, index, syst = None):
+    if getattr(chain, 'is_loose_lepton', None) is not None and chain.is_loose_lepton[index] is not None and chain.is_loose_lepton[index][1] == 'HNL':
+        if not chain.is_loose_lepton[index][0]: return False
+    else:
+        if not isLooseElectronHNL(chain, index, syst):      return False
+    if getElectronPt(chain, index, syst) <= 10: return False
+    return True
+
+def isTightElectronHNLULv1base(chain, index, syst = None):
+    if getattr(chain, 'is_FO_lepton', None) is not None and chain.is_FO_lepton[index] is not None and chain.is_FO_lepton[index][1] == 'HNL':
+        if not chain.is_FO_lepton[index][0]: return False
+    else:
+        if not isFOElectronHNLULv1base(chain, index, syst):      return False
+    if chain._leptonMvaTOPUL[index] <= 0.64: return False        
+    return True
+
+def isFOElectronHNLULv1(chain, index, syst = None):
+    if getattr(chain, 'is_loose_lepton', None) is not None and chain.is_loose_lepton[index] is not None and chain.is_loose_lepton[index][1] == 'HNL':
+        if not chain.is_loose_lepton[index][0]: return False
+    else:
+        if not isLooseElectronHNL(chain, index, syst):      return False
+    if getElectronPt(chain, index, syst) <= 10: return False
+    if chain._lElectronHOverE[index] >= 0.10:    return False
+    if chain._lElectronEInvMinusPInv[index] <= -0.04:    return False
+    if not chain._lElectronPassConvVeto[index]: return False
+    #Barrel
+    if abs(chain._lEtaSC[index]) <= 1.479:
+        if chain._lElectronSigmaIetaIeta[index] >= 0.011:    return False
+    #endcap
+    else:
+        if chain._lElectronSigmaIetaIeta[index] >= 0.03:    return False
+    if chain._leptonMvaTOPUL[index] <= 0.64:
+        if not chain._lElectronPassMVAFall17NoIsoWPLoose[index]: return False
+        if chain._ptRatio[index] < 0.5:     return False
+        if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) > 0.5: return False
+    return True
+
+def isTightElectronHNLULv1(chain, index, syst = None):
+    if getattr(chain, 'is_FO_lepton', None) is not None and chain.is_FO_lepton[index] is not None and chain.is_FO_lepton[index][1] == 'HNL':
+        if not chain.is_FO_lepton[index][0]: return False
+    else:
+        if not isFOElectronHNLULv1(chain, index, syst):      return False
+    if chain._leptonMvaTOPUL[index] <= 0.64: return False        
+    return True
 #
 # General functions for selection
 #
@@ -541,7 +585,8 @@ def isLooseElectron(chain, index, algo, syst = None):
     elif algo == 'leptonMVAtop':        return isLooseElectronTop(chain, index, syst)
     elif algo == 'TTT':                 return isLooseElectronTTT(chain, index, syst)
     elif algo == 'tZq':                 return isLooseElectronLuka(chain, index, syst)
-    elif algo == 'HNL':                 return isLooseElectronHNL(chain, index, syst)
+    #elif algo == 'HNL':                 return isLooseElectronHNL(chain, index, syst)
+    elif 'HNL' in algo:                 return isLooseElectronHNL(chain, index, syst)
     elif algo == 'ewkino':              return isLooseElectronEwkino(chain, index, syst)
     else:
         print 'Wrong input for "algo" in isLooseElectron'
@@ -554,7 +599,9 @@ def isFOElectron(chain, index, algo, syst = None):
     elif algo == 'leptonMVAtop':        return isFOElectronTop(chain, index, syst)
     elif algo == 'TTT':                 return isFOElectronTTT(chain, index, syst)
     elif algo == 'tZq':                return isFOElectronLuka(chain, index, syst)
-    elif algo == 'HNL':                return isFOElectronHNL(chain, index, syst)
+    elif algo == 'HNL' or algo == 'HNLprelegacy':                return isFOElectronHNL(chain, index, syst)
+    elif algo == 'HNLULv1base':                return isFOElectronHNLULv1base(chain, index, syst)
+    elif algo == 'HNLULv1':                return isFOElectronHNLULv1(chain, index, syst)
     elif algo == 'ewkino':              return isFOElectronEwkino(chain, index, syst)
     else:
         print 'Wrong input for "algo" in isFOElectron'
@@ -567,7 +614,9 @@ def isTightElectron(chain, index, algo, syst = None):
     elif algo == 'leptonMVAtop':        return isTightElectronTop(chain, index, syst)
     elif algo == 'TTT':                 return isTightElectronTTT(chain, index, syst)
     elif algo == 'tZq':                 return isTightElectronLuka(chain, index, syst)
-    elif algo == 'HNL':                 return isTightElectronHNL(chain, index, syst)
+    elif algo == 'HNL' or algo == 'HNLprelegacy':                 return isTightElectronHNL(chain, index, syst)
+    elif algo == 'HNLULv1base':                 return isTightElectronHNLULv1base(chain, index, syst)
+    elif algo == 'HNLULv1':                 return isTightElectronHNLULv1(chain, index, syst)
     elif algo == 'ewkino':              return isTightElectronEwkino(chain, index, syst)
     else:
         print 'Wrong input for "algo" in isTightElectron'
