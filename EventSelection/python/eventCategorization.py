@@ -146,19 +146,20 @@ SUPER_CATEGORIES = {
     'SingleTau' : [5, 6, 7, 8, 9], 
     'NoTau' : [11, 12, 13, 14, 15, 16], 
 #    'Total': [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16], 
-#    'TauFinalStates': [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    'TauFinalStates': [1, 2, 3, 4, 5, 6, 7, 8, 9],
 #    'Other': [17]
     }
 SUPER_CATEGORIES_TEX = {
-#    'Ditau': [1, 2, 3, 4], 
+#    'Ditau': '1 light lep + 2#tau_{h}', 
     'SingleTau' : '2 light lep + #tau_{h}', 
     'NoTau' : '3 light lep', 
 #    'Total': [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16], 
-#    'TauFinalStates': [1, 2, 3, 4, 5, 6, 7, 8, 9],
-#    'Other': [17]
+    'TauFinalStates': '>= 1 #tau_{h}',
+#    'Other': '4 leptons'
     }
-#mutual_exclusive_supercategories = ['Ditau', 'SingleTau', 'NoTau']
+#mutual_exclusive_supercategories = ['Ditau', 'SingleTau', 'NoTau', 'Other']
 mutual_exclusive_supercategories = ['SingleTau', 'NoTau']
+#mutual_exclusive_supercategories = ['Other']
 
 ANALYSIS_CATEGORIES = {
 #    'Ditau': [1, 2, 3, 4], 

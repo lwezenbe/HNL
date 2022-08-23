@@ -13,7 +13,7 @@ submission_parser = argParser.add_argument_group('submission', 'Arguments for su
 submission_parser.add_argument('--flavor', action='store',  help='flavor for which to run fake rate measurement', choices=['tau', 'e', 'mu'])
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
 submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
-submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
+submission_parser.add_argument('--era',     action='store',       default='UL', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')

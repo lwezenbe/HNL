@@ -29,7 +29,7 @@ class Sample(object):
         if self.path.endswith('.root'):
             self.list_of_files         = [self.path]
         else:
-            self.list_of_files         = sorted(glob.glob(self.path + '/*/*/*.root'))
+            self.list_of_files         = sorted(glob.glob(self.path + '*/*/*/*.root'))
 
   
     #
@@ -62,7 +62,7 @@ class Sample(object):
             if self.path.endswith('.root'):
                 tot_size = self.fileSize(self.path)
             else:
-                for f in glob.glob(self.path + '/*/*/*.root'):
+                for f in glob.glob(self.path + '*/*/*/*.root'):
                     tot_size += self.fileSize(f)
                 if tot_size == 0: 
                     print "No file loaded, check the input path of "+self.name+" again."
@@ -101,7 +101,7 @@ class Sample(object):
             return hcounter
         else:
             hcounter = None
-            listOfFiles                 = glob.glob(sub_path + '/*/*/*.root')
+            listOfFiles                 = glob.glob(sub_path + '*/*/*/*.root')
             for f in listOfFiles:
                 if hcounter is None:     
                     hcounter = self.getHist(name, f)
@@ -115,7 +115,8 @@ class Sample(object):
     def initTree(self, needhcount=False):
 
         self.chain              = ROOT.TChain('blackJackAndHookers/blackJackAndHookersTree')
-    
+   
+        print self.list_of_files[0] 
         assert len(self.list_of_files) > 0 and isValidRootFile(self.list_of_files[0])
 
         for f in self.list_of_files:
@@ -305,16 +306,18 @@ if __name__ == "__main__":
     from HNL.Tools.logger import getLogger, closeLogger
     log = getLogger('INFO')
 
-    in_file_path = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Samples', 'InputFiles', 'sampleList_UL2017_noskim.conf'))
+    in_file_path = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Samples', 'InputFiles', 'sampleList_UL2016pre_noskim.conf'))
     sample_list = createSampleList(in_file_path)
-    sample = getSampleFromList(sample_list, 'DYJetsToLL-M-10to50')
-    chain = sample.initTree(needhcount = True)
+    sample = getSampleFromList(sample_list, 'DoubleMuon-Run2016D')
+    chain = sample.initTree(needhcount = False)
     log.info('Running test data')        
     # log.info('file size: ', '90.4 expected', str(sample.fileSize('/pnfs/iihe/cms/store/user/wverbeke/heavyNeutrino/DYJetsToLL_M-10to50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/crab_MiniAOD2016v3-v2_singlelepton_MC_2016_v2/191227_182847/0000/singlelep_1.root')) +' observed')
     # log.info('hCounter: ', ' 2.05023673303e+12 expected', str(sample.hcount) + ' observed')
     # log.info('calcSplitJobs: ', '25 expected', str(sample.split_jobs) + ' observed')
     # log.info('event_range', len(sample.getEventRange(0)))
     log.info(getListOfSampleNames(in_file_path))
-    log.info(getListOfPathsWithSameOutput(in_file_path, 'DYJetsToLL-M-10to50'))
+    #for sf in sample.list_of_files:
+    #    log.info(sf)
+#    log.info(getListOfPathsWithSameOutput(in_file_path, 'DYJetsToLL-M-10to50'))
 
     closeLogger(log)

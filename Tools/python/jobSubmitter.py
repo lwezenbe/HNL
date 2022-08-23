@@ -107,7 +107,7 @@ def cleanJobFiles(argparser, script, sub_log = None):
 
 from HNL.Tools.logger import clearLogs
 import json
-def getSubmitArgs(argparser, args, dropArgs=None, additionalArgs = None):
+def getSubmitArgs(argparser, args, dropArgs=None, additionalArgs = None, man_changed_args = None, include_all_groups = False):
     #changedArgs looks at all the arguments you gave in the original command. The getattr() skips things like args.sample and so on that have a default of None here but will add those anyway
     #when looping over the subjobs in the zip(subJobArgs, subJob) 
     arg_groups = {}
@@ -115,8 +115,17 @@ def getSubmitArgs(argparser, args, dropArgs=None, additionalArgs = None):
         group_dict = {a.dest:getattr(args,a.dest,None) for a in group._group_actions}
         arg_groups[group.title] = argparse.Namespace(**group_dict)
 
-    changedArgs  = [arg for arg in vars(arg_groups['submission']) if getattr(arg_groups['submission'], arg) and argparser.get_default(arg) != getattr(arg_groups['submission'], arg)]
-    submitArgs   = {arg: getattr(arg_groups['submission'], arg) for arg in changedArgs if (not dropArgs or arg not in dropArgs)}
+    if not include_all_groups:
+        arg_to_use = arg_groups['submission']
+    else:
+        arg_to_use = args    
+
+    if man_changed_args is not None:
+        for mca in man_changed_args.keys():
+            setattr(arg_to_use, mca, man_changed_args[mca])
+
+    changedArgs  = [arg for arg in vars(arg_to_use) if getattr(arg_to_use, arg) and argparser.get_default(arg) != getattr(arg_to_use, arg)]
+    submitArgs   = {arg: getattr(arg_to_use, arg) for arg in changedArgs if (not dropArgs or arg not in dropArgs)}
     if additionalArgs is not None:
         for additional_arg in additionalArgs:
             submitArgs[additional_arg[0]] = additional_arg[1]
@@ -143,9 +152,11 @@ def submitJobs(script, subjob_args, subjob_list, argparser, **kwargs):
     cores = kwargs.get('cores', 1)
     job_label = kwargs.get('jobLabel', None)
     resubmission = kwargs.get('resubmission', False)
+    man_changed_args = kwargs.get('man_changed_args', None)
+    include_all_groups = kwargs.get('include_all_groups', False)
 
     try:
-        if checkShouldMerge(script, argparser, sub_log, additional_args):
+        if checkShouldMerge(script, argparser, sub_log, additional_args, man_changed_args = man_changed_args):
             can_continue = raw_input('You are about to submit jobs but there seem to be existing files waiting for a merge. Are you sure you want to submit these jobs anyway? (y/n) \n')    
             if can_continue not in ['y', 'Y']: 
                 print 'Aborting job submission'
@@ -160,7 +171,7 @@ def submitJobs(script, subjob_args, subjob_list, argparser, **kwargs):
     if resubmission and 'skimmer' in script and not args.overwrite:
         ignore_overwrite = True
         args.overwrite = True
-    submit_args   = getSubmitArgs(argparser, args, drop_args, additional_args)
+    submit_args   = getSubmitArgs(argparser, args, drop_args, additional_args, man_changed_args = man_changed_args, include_all_groups = include_all_groups)
     if resubmission and 'skimmer' in script and ignore_overwrite:
         arg_string = getArgsStr(submit_args, to_ignore=['isChild', 'overwrite'])
     else:
@@ -250,12 +261,16 @@ def checkCompletedJobs(script, subJobList, argparser, subLog = None, additionalA
         print "All jobs completed successfully!"
         return None
 
-def checkShouldMerge(script, argparser, subLog = None, additionalArgs=None):
+def checkShouldMerge(script, argparser, subLog = None, additionalArgs=None, man_changed_args = None, full_path = None):
     args = argparser.parse_args()
-    submitArgs   = getSubmitArgs(argparser, args, additionalArgs=additionalArgs)
-    arg_string = getArgsStr(submitArgs, to_ignore=['isChild'])
+    submitArgs   = getSubmitArgs(argparser, args, additionalArgs=additionalArgs, man_changed_args = man_changed_args)
+    arg_string = getArgsStr(submitArgs, to_ignore=['isChild', 'subJob'])
 
-    path_to_check = os.path.join('log', 'Merge', os.path.basename(script).split('.')[0]+(('-'+subLog) if subLog else ''), arg_string, 'shouldMerge.txt')
+    if full_path is None:
+        path_to_check = os.path.join('log', 'Merge', os.path.basename(script).split('.')[0]+(('-'+subLog) if subLog else ''), arg_string, 'shouldMerge.txt')
+    else:
+        path_to_check = os.path.join(full_path, 'log', 'Merge', os.path.basename(script).split('.')[0]+(('-'+subLog) if subLog else ''), arg_string, 'shouldMerge.txt')
+    
     with open(path_to_check) as f:
         first_line = f.readline()
 

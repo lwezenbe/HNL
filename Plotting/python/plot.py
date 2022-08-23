@@ -365,7 +365,7 @@ class Plot:
             r.SetMarkerColor(r.GetLineColor())
 
         if self.observed is not None:
-            ytitle = 'obs./pred.'
+            ytitle = 'Obs./Pred.'
         else:
             ytitle = 'S/B'
 
@@ -396,8 +396,10 @@ class Plot:
         # self.tot_err.SetMinimum(0.3)
         # self.tot_err.SetMaximum(1.7)
         self.tot_err.SetMinimum(0.)
-        #self.tot_err.SetMaximum(2.)
-        self.tot_err.SetMaximum(max(2., 1.3*pt.getOverallMaximum(ratios, include_error=False)))
+        if just_errors:
+            self.tot_err.SetMaximum(2.)
+        else:
+            self.tot_err.SetMaximum(max(2., min(6, 1.3*pt.getOverallMaximum(ratios, include_error=False))))
         # self.tot_err.GetXaxis().SetRangeUser(15., 900.)
         self.tot_err.GetXaxis().SetTitleSize(.18)
         self.tot_err.GetYaxis().SetTitleSize(.18)
@@ -416,7 +418,6 @@ class Plot:
             if custom_labels is not None:
                 for i, n in enumerate(custom_labels):
                     self.tot_err.GetXaxis().SetBinLabel(i+1, n)
-
 
         self.tot_err.Draw("E2")
         self.stat_err.Draw("E2Same")
@@ -437,7 +438,7 @@ class Plot:
         self.line.SetLineWidth(1)
         self.line.SetLineStyle(3)
 
-        draw_text = 'EPSame'
+        draw_text = 'EPSame0'
         if self.draw_ratio == 'text': draw_text += 'Text'
         if not just_errors and len(ratios) > 0:
             for r in ratios:
@@ -570,7 +571,6 @@ class Plot:
             central_destination =  '/user/lwezenbe/private/Backup/'+cmssw_version+'/'
             central_destination += '/'.join([comp for comp in destination_components[index_for_php+1:]])
             makeDirIfNeeded(central_destination)    
-
 
 
         self.canvas.SaveAs(destination + ".pdf")

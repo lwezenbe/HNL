@@ -139,6 +139,7 @@ class CutterCollection():
 
 from HNL.Plotting.plot import makeList
 def printCutFlow(in_file_paths, out_file_path, subdir = None, ignore_weights = False, categories = ['all'], group_backgrounds = True):
+    print in_file_paths
     subdir = 'cutflow' if subdir is None else 'cutflow/'+subdir
     in_file_path_names = in_file_paths.keys()
 
@@ -174,9 +175,17 @@ def printCutFlow(in_file_paths, out_file_path, subdir = None, ignore_weights = F
         else:
             ifp_to_use = ifp
         if ifp_to_use not in list_of_cut_values.keys(): list_of_cut_values[ifp_to_use] = []
+
+        if not is_bkgr and not ignore_weights:
+            flavor = ifp.split('HNL-')[-1].split('-m')[0]
+            if 'tau' in flavor: flavor = 'tau'
+            mass = int(ifp.split('-m')[-1])
+            from HNL.Analysis.analysisTypes import signal_couplingsquared, signal_couplingsquaredinsample
+
         for ic, c in enumerate(categories):
             for isfp, sfp in enumerate(in_file_paths[ifp]):
                 tmp_hist = getObjFromFile(sfp, subdir+'/'+weight_string+'_cutflow_'+c)
+                if not is_bkgr and not ignore_weights: tmp_hist.Scale(signal_couplingsquared[flavor][mass]/signal_couplingsquaredinsample[flavor][mass])
                 for icut, cut in enumerate(cut_names):
                     if ic == 0 and isfp == 0:
                         list_of_cut_values[ifp_to_use].append(0.)

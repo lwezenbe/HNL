@@ -66,11 +66,10 @@ def moveToBackup(path):
 
 from HNL.Tools.jobSubmitter import checkCompletedJobs, submitJobs, cleanJobFiles, checkShouldMerge, disableShouldMerge
 #For now also have argparser in there just to be able to automatically resubmit
-def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False, groups_to_merge=None, additionalArgs=None):
+def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False, groups_to_merge=None, additionalArgs=None, man_changed_args = None, full_path = None):
 
     try:
-        if not istest and not checkShouldMerge(script, argparser, additionalArgs=additionalArgs):
-            print checkShouldMerge(script, argparser, additionalArgs=additionalArgs)
+        if not istest and not checkShouldMerge(script, argparser, additionalArgs=additionalArgs, man_changed_args = man_changed_args, full_path = full_path):
             print "Nothing to merge"
             return
     except:
@@ -86,7 +85,7 @@ def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False
                 should_resubmit = raw_input("Would you like to resubmit the failed jobs? (y/n) \n")
                 if should_resubmit == 'y' or should_resubmit == 'Y':
                     print 'resubmitting:'
-                    submitJobs(script, subjobargs, failed_jobs, argparser, resubmission=True, jobLabel = "-".join([script.split('.')[0], 'resubmission']))
+                    submitJobs(script, subjobargs, failed_jobs, argparser, resubmission=True, jobLabel = "-".join([script.split('.')[0], 'resubmission']), man_changed_args = man_changed_args)
                 else:
                     pass    
                 if should_resubmit != 'skip': exit(0)

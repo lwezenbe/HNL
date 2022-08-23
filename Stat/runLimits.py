@@ -5,7 +5,7 @@ import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--year',     action='store', nargs='*',       default=None,   help='Select year', required=True)
-submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
+submission_parser.add_argument('--era',     action='store',       default='UL', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
 submission_parser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
 submission_parser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
 submission_parser.add_argument('--asymptotic',   action='store_true', default=False,  help='Use the -M AsymptoticLimits option in Combine')

@@ -80,37 +80,26 @@ def mergeLargeFile(merge_file):
 skim_selection_string = args.skimSelection if args.region is None else args.skimSelection+'/'+args.region 
 pnfs_base = os.path.join('/pnfs/iihe/cms/store/user', os.path.expandvars('$USER'), 'skimmedTuples/HNL', skim_selection_string, args.era+args.year, args.skimName)
 pnfs_backup_base = os.path.join('/pnfs/iihe/cms/store/user', os.path.expandvars('$USER'), 'skimmedTuples/HNL/Backup', skim_selection_string, args.era+args.year, args.skimName)
-if not args.batchSystem == 'HTCondor':
-    pnfs_base = 'srm://maite.iihe.ac.be:8443'+pnfs_base
-    pnfs_backup_base = 'srm://maite.iihe.ac.be:8443'+pnfs_backup_base
+#if not args.batchSystem == 'HTCondor':
+#    pnfs_base = 'srm://maite.iihe.ac.be:8443'+pnfs_base
+#    pnfs_backup_base = 'srm://maite.iihe.ac.be:8443'+pnfs_backup_base
 
 #Merges subfiles if needed
-if args.batchSystem != 'HTCondor':
-    merge_files = glob.glob('/storage_mnt/storage/user/'+os.path.expandvars('$USER')+'/public/ntuples/HNL/'+skim_selection_string+'/'+args.era+args.year+'/'+args.skimName+'/tmp*')
-else:
-    merge_files = glob.glob(pnfs_base+'/tmp*')
+merge_files = glob.glob(pnfs_base+'/tmp*')
 merge_files = sorted(merge_files)
 
-if args.batchSystem != 'HTCondor':
-    os.system('gfal-mkdir '+pnfs_base)
-    os.system('gfal-mkdir '+pnfs_backup_base)
-else:
-    makeDirIfNeeded(pnfs_base)
-    makeDirIfNeeded(pnfs_backup_base)
+makeDirIfNeeded(pnfs_base)
+makeDirIfNeeded(pnfs_backup_base)
 
 for mf in merge_files:
     if 'Data' in mf: continue
+    print mf
     path, name = mf.rsplit('/', 1)
     new_name = name.split('_', 1)[1]+'.root'
 
     if not args.isTest:
-        if args.batchSystem != 'HTCondor':
-            os.system('gfal-rm '+pnfs_backup_base+'/'+new_name)
-            os.system('gfal-copy '+pnfs_base+'/'+new_name+' '+pnfs_backup_base+'/'+new_name)
-            os.system('gfal-rm '+pnfs_base+'/'+new_name)
-        else:
-            if isValidRootFile(pnfs_base+'/'+new_name):
-                os.system('scp '+pnfs_base+'/'+new_name + ' '+ pnfs_backup_base+'/'+new_name)
+        if isValidRootFile(pnfs_base+'/'+new_name):
+            os.system('scp '+pnfs_base+'/'+new_name + ' '+ pnfs_backup_base+'/'+new_name)
 
     sub_files = glob.glob(mf+'/*')
     tot_size = 0
@@ -123,8 +112,3 @@ for mf in merge_files:
     #     mergeSmallFile(mf)
         
     mergeSmallFile(mf)
-
-    if args.batchSystem != 'HTCondor' and not args.isTest:
-        #Move to pnfs once it is merged locally
-        os.system('gfal-copy file://'+path+'/'+new_name+' '+pnfs_base+'/'+new_name)
-        os.system('rm '+path+'/'+new_name)
