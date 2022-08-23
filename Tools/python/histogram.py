@@ -48,13 +48,11 @@ class Histogram:
 
             if self.isTH2:
                 self.hist = ROOT.TH2D(self.name, self.name, len(self.bins[0])-1, self.bins[0], len(self.bins[1])-1, self.bins[1])
-                self.hist.Sumw2()
             elif self.isTH3:
                 self.hist = ROOT.TH3D(self.name, self.name, len(self.bins[0])-1, self.bins[0], len(self.bins[1])-1, self.bins[1], len(self.bins[2])-1, self.bins[2])
-                self.hist.Sumw2()
             else:
                 self.hist = ROOT.TH1D(self.name, self.name, len(self.bins)-1, self.bins)
-                self.hist.Sumw2()
+            self.hist.Sumw2()
             try:
                 self.hist.SetXTitle(self.var_tex[0])
                 self.hist.SetYTitle(self.var_tex[1])
@@ -63,6 +61,7 @@ class Histogram:
         else:
             print "Incorrect input for Histogram"
             exit(0)
+        
         
         try:
             self.overflow = overflow['overflow']

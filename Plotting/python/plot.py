@@ -138,13 +138,15 @@ class Plot:
                         for s in self.syst_hist[1:]:
                             self.syst_totbkgr_error.SetBinError(b, np.sqrt(self.syst_totbkgr_error.GetBinError(b)** 2 + s.GetBinError(b) ** 2))
 
-                else:
-                    #If the syst_hist is not a histogram but a float it will make a hist with systematic unc == float
-                    if isinstance(self.syst_hist, float):
+                #If the syst_hist is not a histogram but a float it will make a hist with systematic unc == float
+                elif isinstance(self.syst_hist, float):
                         syst_factor = self.syst_hist
                         self.syst_totbkgr_error = self.stat_totbkgr_error.Clone('Systematic Error on background')
                         for b in xrange(1, self.syst_totbkgr_error.GetNbinsX()+1):
                             self.syst_totbkgr_error.SetBinError(b, syst_factor * self.syst_totbkgr_error.GetBinContent(b))
+                else:
+                    self.syst_totbkgr_error = None
+                
             else:
                 self.syst_totbkgr_error = None
 
@@ -166,7 +168,11 @@ class Plot:
             #
             # Calculate range
             #
-            to_check_min = [j for j in self.s] if len(self.s) > 0 else [j for j in self.b]
+            to_check_min = []
+            if len(self.s) > 0:
+                to_check_min.extend([j for j in self.s])
+            if len(self.b) > 0:
+                to_check_min.extend([j for j in self.b])
             if stacked and (self.b is None or len(self.b) == 0) and self.total_s is not None:
                 to_check_max = [self.total_s]
             else:
@@ -178,8 +184,8 @@ class Plot:
                         to_check_max += [k for k in self.b]
 
             # self.overall_max = max([pt.getOverallMaximum(to_check_max), 1])
-            self.overall_max = max([pt.getOverallMaximum(to_check_max, syst_hist = self.tot_totbkgr_error)])
-            self.overall_min = pt.getOverallMinimum(to_check_min, zero_not_allowed=True, syst_hist = self.tot_totbkgr_error)
+            self.overall_max = max([pt.getOverallMaximum(to_check_max, syst_hist = self.tot_totbkgr_error if len(self.b)>0 else None)])
+            self.overall_min = pt.getOverallMinimum(to_check_min, zero_not_allowed=True, syst_hist = self.tot_totbkgr_error if len(self.b) > 0 else None)
 
             if self.x_log:
                 self.plotpad.SetLogx()
@@ -390,8 +396,8 @@ class Plot:
         # self.tot_err.SetMinimum(0.3)
         # self.tot_err.SetMaximum(1.7)
         self.tot_err.SetMinimum(0.)
-        self.tot_err.SetMaximum(2.)
-        # self.tot_err.SetMaximum(max(2., 1.3*pt.getOverallMaximum(ratios, include_error=False)))
+        #self.tot_err.SetMaximum(2.)
+        self.tot_err.SetMaximum(max(2., 1.3*pt.getOverallMaximum(ratios, include_error=False)))
         # self.tot_err.GetXaxis().SetRangeUser(15., 900.)
         self.tot_err.GetXaxis().SetTitleSize(.18)
         self.tot_err.GetYaxis().SetTitleSize(.18)

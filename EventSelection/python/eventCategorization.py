@@ -149,6 +149,14 @@ SUPER_CATEGORIES = {
 #    'TauFinalStates': [1, 2, 3, 4, 5, 6, 7, 8, 9],
 #    'Other': [17]
     }
+SUPER_CATEGORIES_TEX = {
+#    'Ditau': [1, 2, 3, 4], 
+    'SingleTau' : '2 light lep + #tau_{h}', 
+    'NoTau' : '3 light lep', 
+#    'Total': [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16], 
+#    'TauFinalStates': [1, 2, 3, 4, 5, 6, 7, 8, 9],
+#    'Other': [17]
+    }
 #mutual_exclusive_supercategories = ['Ditau', 'SingleTau', 'NoTau']
 mutual_exclusive_supercategories = ['SingleTau', 'NoTau']
 

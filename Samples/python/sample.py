@@ -76,6 +76,15 @@ class Sample(object):
     def returnSplitJobs(self):
         if isinstance(self.split_jobs, str) and 'Calc' in self.split_jobs:
             self.split_jobs = self.calcSplitJobs(self.split_jobs)
+        elif isinstance(self.split_jobs, str):
+            tmp_split_jobs = 1
+            if '*' in self.split_jobs:
+                for comp in self.split_jobs.split('*'):
+                    tmp_split_jobs *= int(comp)
+            else:
+                tmp_split_jobs = int(self.split_jobs)
+            self.split_jobs = tmp_split_jobs
+            print self.split_jobs
         return self.split_jobs
 
     #
@@ -105,7 +114,6 @@ class Sample(object):
     #
     def initTree(self, needhcount=False):
 
-        self.split_jobs         = self.returnSplitJobs()
         self.chain              = ROOT.TChain('blackJackAndHookers/blackJackAndHookersTree')
     
         assert len(self.list_of_files) > 0 and isValidRootFile(self.list_of_files[0])
@@ -126,6 +134,7 @@ class Sample(object):
     #   Returns the range of event numbers considered in the specified subjob
     #
     def getEventRange(self, subjob):
+        self.split_jobs         = self.returnSplitJobs()
         limits = [entry*self.chain.GetEntries()/self.split_jobs for entry in range(self.split_jobs)] + [self.chain.GetEntries()]
         return xrange(limits[int(subjob)], limits[int(subjob)+1])
 

@@ -175,8 +175,10 @@ def getAllMVAhist(input_handler, channel, region, era, signal_name = None, cut_s
 if __name__ == '__main__':
     # in_file = ROOT.TFile('/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/2016/TMVA/Background/DYJetsToLL-M-50.root')
     #in_file = ROOT.TFile('/pnfs/iihe/cms/store/user/lwezenbe/skimmedTuples/HNL/TMVA/UL2017/highMassSR-default/Signal/HNL-mu-m700.root')
-    in_file = ROOT.TFile('/pnfs/iihe/cms/store/user/lwezenbe/skimmedTuples/HNL/default/UL2017/Reco/HeavyNeutrino_trilepton_M-800_V-0p01_mu_NLO_TuneCP5_13TeV-madgraph-pythia8.root')
-    c = in_file.Get('blackJackAndHookers/blackJackAndHookersTree')
+    from HNL.Samples.sample import Sample
+    sample = Sample('HNL-mu-m800', '/pnfs/iihe/cms/store/user/lwezenbe/skimmedTuples/HNL/default/UL2017/Reco/HeavyNeutrino_trilepton_M-800_V-0p01_mu_NLO_TuneCP5_13TeV-madgraph-pythia8.root', 'HNL-mu-m800', 'Calc', '1.')
+    c = sample.initTree()
+
     from HNL.Tools.logger import getLogger, closeLogger
     log = getLogger('INFO')
 

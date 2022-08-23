@@ -6,7 +6,8 @@
             "FinalStates"   : "*",
             "Processes"     : "MC",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
-            "Activate"     : true
+            "Activate"     : true,
+            "Description"   : "Luminosity"
         },
     "luminosity1718" :
         {
@@ -16,7 +17,8 @@
             "Processes"     : "MC",
             "Year"          : ["2017", "2018"],
             "Activate"     : true,
-            "Correlated"    : true
+            "Correlated"    : true,
+            "Description"   : "Luminosity"
         },
     "luminosityAllYears" :
         {
@@ -26,7 +28,8 @@
             "Processes"     : "MC",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
             "Activate"     : true,
-            "Correlated"    : true
+            "Correlated"    : true,
+            "Description"   : "Luminosity"
         },
     "triggerStat" :
         {
@@ -35,7 +38,8 @@
             "FinalStates"   : "*",
             "Processes"     : "MC",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
-            "Activate"     : true
+            "Activate"     : true,
+            "Description"   : "Triggers"
         },
     "triggerSyst" :
         {
@@ -44,7 +48,8 @@
             "FinalStates"   : "*",
             "Processes"     : "MC",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
-            "Activate"     : true
+            "Activate"     : true,
+            "Description"   : "Triggers"
         },
      "WZnorm" :
         {
@@ -53,7 +58,8 @@
             "FinalStates"   : "*",
             "Processes"     : "WZ",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
-            "Activate"     : true
+            "Activate"     : true,
+            "Description"   : "WZnorm"
         },
      "ZZnorm" :
         {
@@ -62,7 +68,8 @@
             "FinalStates"   : "*",
             "Processes"     : "ZZ-H",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
-            "Activate"     : true
+            "Activate"     : true,
+            "Description"   : "ZZnorm"
         },
      "Conversionnorm" :
         {
@@ -71,7 +78,8 @@
             "FinalStates"   : "*",
             "Processes"     : "XG",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
-            "Activate"     : true
+            "Activate"     : true,
+            "Description"   : "Conversionnorm"
         },
     "nonpromptTau" :
         {
@@ -80,7 +88,8 @@
             "FinalStates"   : ["SingleTau", "Ditau"],
             "Processes"     : "non-prompt",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
-            "Activate"     : true
+            "Activate"     : true,
+            "Description"   : "nonprompt tau"
         },
     "nonpromptLightlep" :
         {
@@ -89,7 +98,8 @@
             "FinalStates"   : "*",
             "Processes"     : "non-prompt",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
-            "Activate"     : true
+            "Activate"     : true,
+            "Description"   : "nonprompt light lep"
         },
     "puWeight"  :
         {
@@ -98,7 +108,8 @@
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
-            "Activate"          : true
+            "Activate"          : true,
+            "Description"   : "Pileup"
         },
     "electronIDSFWeight_stat"  :
         {
@@ -107,7 +118,8 @@
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
-            "Activate"          : true
+            "Activate"          : true,
+            "Description"   : "Electron efficiency"
         },
     "electronIDSFWeight_syst"  :
         {
@@ -116,7 +128,8 @@
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
-            "Activate"          : true
+            "Activate"          : true,
+            "Description"   : "Electron efficiency"
         },
     "muonIDSFWeight_stat"  :
         {
@@ -125,7 +138,8 @@
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
-            "Activate"          : true
+            "Activate"          : true,
+            "Description"   : "Muon efficiency"
         },
     "muonIDSFWeight_syst"  :
         {
@@ -134,7 +148,8 @@
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
-            "Activate"          : true
+            "Activate"          : true,
+            "Description"   : "Muon efficiency"
         },
     "tauSFWeight"  :
         {
@@ -143,7 +158,8 @@
             "FinalStates"       : ["SingleTau", "Ditau"],
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
-            "Activate"          : true
+            "Activate"          : true,
+            "Description"   : "Tau efficiency"
         },
     "electronRecoWeight"  :
         {
@@ -152,7 +168,8 @@
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
-            "Activate"          : true
+            "Activate"          : true,
+            "Description"   : "Electron reconstruction efficiency"
         },
     "btagWeight_lightcorrelated"  :
         {
@@ -162,7 +179,8 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : true,
-            "Correlated"    : true
+            "Correlated"    : true,
+            "Description"   : "b tagging efficiency"
         },
     "btagWeight_bccorrelated"  :
         {
@@ -172,7 +190,8 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : true,
-            "Correlated"    : true
+            "Correlated"    : true,
+            "Description"   : "b tagging efficiency"
         },
     "btagWeight_light"  :
         {
@@ -181,7 +200,8 @@
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
-            "Activate"          : true
+            "Activate"          : true,
+            "Description"   : "b tagging efficiency"
         },
     "btagWeight_bc"  :
         {
@@ -190,7 +210,8 @@
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
-            "Activate"          : true
+            "Activate"          : true,
+            "Description"   : "b tagging efficiency"
         },
     "JEC"  :
         {
@@ -200,7 +221,8 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : true,
-            "Correlated"    : true
+            "Correlated"    : true,
+            "Description"   : "Jet Energy Corrections"
         },
     "JER"  :
         {
@@ -209,7 +231,8 @@
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
-            "Activate"          : true
+            "Activate"          : true,
+            "Description"   : "Jet Energy Resolution"
         }
 
 }

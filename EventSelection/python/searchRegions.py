@@ -323,7 +323,8 @@ def plotLowMassRegions(signal_hist, bkgr_hist, tex_names, out_path, year, era, e
     p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'M_{2lOS}^{min} [GeV]', y_name = 'Events', extra_text = extra_text, y_log=True, 
             color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau', syst_hist = 0.1, draw_ratio = draw_ratio, year = year, era = era)
  
-    p.drawHist(output_dir = out_path, draw_lines = line_collection, min_cutoff = 0.1, custom_labels = custom_labels, normalize_signal = 'med')
+    #p.drawHist(output_dir = out_path, draw_lines = line_collection, min_cutoff = 0.1, custom_labels = custom_labels, normalize_signal = 'med')
+    p.drawHist(output_dir = out_path, draw_lines = line_collection, min_cutoff = 0.1, custom_labels = custom_labels, normalize_signal = 'bkgr')
 
 def plotHighMassRegions(signal_hist, bkgr_hist, tex_names, out_path, year, era, extra_text = None):
 
@@ -346,7 +347,8 @@ def plotLowMassRegionsLoose(signal_hist, bkgr_hist, tex_names, out_path, year, e
     draw_ratio = 'errorsOnly' if signal_hist is not None and bkgr_hist is not None else None
     p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text,
             color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau', syst_hist = 0.1, draw_ratio = draw_ratio, year = year, era = era)
-    p.drawHist(output_dir = out_path, min_cutoff = 1., normalize_signal = 'med')
+    #p.drawHist(output_dir = out_path, min_cutoff = 1., normalize_signal = 'med')
+    p.drawHist(output_dir = out_path, min_cutoff = 1., normalize_signal = 'bkgr')
     
     #
     # A and B in 1 plot

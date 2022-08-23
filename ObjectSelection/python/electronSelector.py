@@ -44,6 +44,7 @@ def isGoodGenElectron(chain, index):
 def isBaseElectron(chain, index, syst = None):
     if getElectronPt(chain, index, syst) <= 5.:                  return False
     if abs(chain._lEta[index]) >= 2.5:          return False
+    if 1.44 < abs(chain._lEta[index]) < 1.57:   return False
     return True 
 
 #
