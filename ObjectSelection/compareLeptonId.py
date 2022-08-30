@@ -53,11 +53,16 @@ else:
 # If you want to add a new algorithm, add a line below
 # Make sure all algo keys and WP have a corresponding entry in HNL.ObjectSelection.tauSelector
 #
+#if args.flavor in ['e', 'mu']:
+#    algos = {'cutbased': ['loose', 'FO', 'tight'],
+#            'HNLprelegacy' : ['loose', 'FO', 'tight'],
+#            'HNLULv1' : ['loose', 'FO', 'tight'], 
+#            'HNLULv1base' : ['loose', 'FO', 'tight'], 
+#            }
 if args.flavor in ['e', 'mu']:
     algos = {'cutbased': ['loose', 'FO', 'tight'],
-            'HNLprelegacy' : ['loose', 'FO', 'tight'],
-            'HNLULv1' : ['loose', 'FO', 'tight'], 
-            'HNLULv1base' : ['loose', 'FO', 'tight'], 
+            'leptonMVAtop' : ['loose', 'FO', 'tight'],
+            'HNL' : ['loose', 'FO', 'tight'], 
             }
 else:
     algos = {'ewkino': ['loose', 'FO', 'tight'],

@@ -2,7 +2,8 @@ import ROOT
 import glob, os
 from HNL.Tools.helpers import makeDirIfNeeded, progress
 
-list_of_datafiles = ['SingleMuon', 'SingleElectron', 'DoubleMuon', 'DoubleEG', 'MuonEG']
+list_of_datafiles =  {'signal' : ['SingleMuon', 'SingleElectron', 'DoubleMuon', 'DoubleEG', 'MuonEG'],
+                        'reference' : ['JetHT', 'MET', 'HTMHT']}
 
 
 import argparse
@@ -20,10 +21,10 @@ submission_parser.add_argument('--dryRun',   action='store_true', default=False,
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
 submission_parser.add_argument('--region',   action='store', default=None,  help='Choose the selection region', 
     choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
+submission_parser.add_argument('--infiles',   action='store', default=None,  help='Choose the input files to run over', choices = ['signal', 'reference'])
 
 
 args = argParser.parse_args()
-
 
 if not args.isChild:
     abort_script = raw_input("Did you check if all log files are ok? (y/n) \n")
@@ -42,13 +43,13 @@ if args.batchSystem == 'Cream02':
     output_folder = '/storage_mnt/storage/user/lwezenbe/public/ntuples/HNL/'+args.skimSelection+'/'+args.era+args.year+ '/' + args.skimName +'/tmp_DataFiltered'
 else:
     pnfs_base =  os.path.join('/pnfs/iihe/cms/store/user', os.path.expandvars('$USER'), 'skimmedTuples/HNL', args.skimSelection, args.era+args.year, args.skimName)
-    input_folder = pnfs_base +'/tmp_Data'
-    output_folder = pnfs_base +'/tmp_DataFiltered'
+    output_folder = pnfs_base +'/tmp_Data_{0}'.format(args.infiles)
 makeDirIfNeeded(output_folder+'/x')
 
 event_information_set = set()
 
-file_list =  glob.glob(input_folder+'/*.root')
+file_list = [pnfs_base+'/{0}.root'.format(infile) for infile in list_of_datafiles[args.infiles]]
+print file_list
 for i, sub_f_name in enumerate(file_list):
     progress(i, len(file_list))
 
@@ -82,4 +83,4 @@ for i, sub_f_name in enumerate(file_list):
     if not args.isTest:
         output_file.Close()
 
-os.system('hadd -f '+output_folder+'/../Data_'+args.era+args.year+'.root '+output_folder + '/*.root')
+os.system('hadd -f '+output_folder+'/../Data_'+args.era+args.year+'_'+args.infiles+'.root '+output_folder + '/*.root')

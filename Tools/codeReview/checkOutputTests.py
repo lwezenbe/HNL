@@ -207,10 +207,10 @@ def compareFiles(f, withinerrors=False):
             everything_clear = False
             out_file.write(hn+': '+test_result+'\n')
             faulty_hn.append('\t ' +hn+': '+test_result+'\n')
-            try:
-                if not isinstance(obj_prev, TTree): plotComparison(f, hn)
-            except:
-                pass
+#            try:
+#                if not isinstance(obj_prev, TTree): plotComparison(f, hn)
+#            except:
+#                pass
 
         del obj_prev, obj_latest
 

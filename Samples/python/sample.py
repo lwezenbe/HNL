@@ -30,8 +30,7 @@ class Sample(object):
             self.list_of_files         = [self.path]
         else:
             self.list_of_files         = sorted(glob.glob(self.path + '*/*/*/*.root'))
-
-  
+ 
     #
     #   Return the file size of the file at the path location in MB
     #
@@ -84,7 +83,6 @@ class Sample(object):
             else:
                 tmp_split_jobs = int(self.split_jobs)
             self.split_jobs = tmp_split_jobs
-            print self.split_jobs
         return self.split_jobs
 
     #
@@ -115,8 +113,7 @@ class Sample(object):
     def initTree(self, needhcount=False):
 
         self.chain              = ROOT.TChain('blackJackAndHookers/blackJackAndHookersTree')
-   
-        print self.list_of_files[0] 
+  
         assert len(self.list_of_files) > 0 and isValidRootFile(self.list_of_files[0])
 
         for f in self.list_of_files:

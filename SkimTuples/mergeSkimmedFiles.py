@@ -18,6 +18,7 @@ submission_parser.add_argument('--subJob',   action='store',      default=None, 
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
 submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
+submission_parser.add_argument('--backupName',   action='store', default=None,  help='Give backup a name for special cases')
 submission_parser.add_argument('--region',   action='store', default=None,  help='Choose the selection region', 
     choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
 
@@ -39,7 +40,7 @@ def mergeSmallFile(merge_file):
     path, name = merge_file.rsplit('/', 1)
     if not args.isTest:
         os.system('hadd -f -v '+path+'/'+name.split('_', 1)[1]+'.root '+merge_file+'/*root')
-        os.system('rm -r -f '+ merge_file)
+#        os.system('rm -r -f '+ merge_file)
     else:
         makeDirIfNeeded(path+'/testArea/'+name.split('_', 1)[1]+'.root')
         os.system('hadd -f -v '+path+'/testArea/'+name.split('_', 1)[1]+'.root '+merge_file+'/*root')
@@ -79,7 +80,7 @@ def mergeLargeFile(merge_file):
 
 skim_selection_string = args.skimSelection if args.region is None else args.skimSelection+'/'+args.region 
 pnfs_base = os.path.join('/pnfs/iihe/cms/store/user', os.path.expandvars('$USER'), 'skimmedTuples/HNL', skim_selection_string, args.era+args.year, args.skimName)
-pnfs_backup_base = os.path.join('/pnfs/iihe/cms/store/user', os.path.expandvars('$USER'), 'skimmedTuples/HNL/Backup', skim_selection_string, args.era+args.year, args.skimName)
+pnfs_backup_base = os.path.join('/pnfs/iihe/cms/store/user', os.path.expandvars('$USER'), 'skimmedTuples/HNL/Backup', skim_selection_string, args.era+args.year, args.skimName, args.backupName if args.backupName is not None else '')
 #if not args.batchSystem == 'HTCondor':
 #    pnfs_base = 'srm://maite.iihe.ac.be:8443'+pnfs_base
 #    pnfs_backup_base = 'srm://maite.iihe.ac.be:8443'+pnfs_backup_base
@@ -88,27 +89,28 @@ pnfs_backup_base = os.path.join('/pnfs/iihe/cms/store/user', os.path.expandvars(
 merge_files = glob.glob(pnfs_base+'/tmp*')
 merge_files = sorted(merge_files)
 
-makeDirIfNeeded(pnfs_base)
-makeDirIfNeeded(pnfs_backup_base)
+makeDirIfNeeded(pnfs_base+'/x')
+makeDirIfNeeded(pnfs_backup_base+'/x')
 
 for mf in merge_files:
-    if 'Data' in mf: continue
-    print mf
     path, name = mf.rsplit('/', 1)
     new_name = name.split('_', 1)[1]+'.root'
 
     if not args.isTest:
         if isValidRootFile(pnfs_base+'/'+new_name):
+    #        continue
+            if isValidRootFile(pnfs_backup_base+'/'+new_name):
+                os.system('rm -f '+ pnfs_backup_base+'/'+new_name)
             os.system('scp '+pnfs_base+'/'+new_name + ' '+ pnfs_backup_base+'/'+new_name)
-
+    
     sub_files = glob.glob(mf+'/*')
     tot_size = 0
     for sf in sub_files:
         tot_size += fileSize(sf)
     
-    # if tot_size > 1000:
-    #     mergeLargeFile(mf)
-    # else:
-    #     mergeSmallFile(mf)
+#    if tot_size > 1000:
+#        mergeLargeFile(mf)
+#    else:
+#        mergeSmallFile(mf)
         
     mergeSmallFile(mf)

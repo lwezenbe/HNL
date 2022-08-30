@@ -382,12 +382,13 @@ if not args.makePlots and not args.makeDataCards:
                         #For taufakes we're only interested in FO tau to make the prompt consideration
                         if args.tag == 'TauFakes':
                             if chain._lIsPrompt[index] or chain._lFlavor[index] < 2 or chain.l_istight[i]: nprompt += 1
-                        if args.tag == 'TauFakePurity':
+                        elif args.tag == 'TauFakePurity':
                             if chain._lIsPrompt[index] or chain._lFlavor[index] < 2: nprompt += 1
                         else:            
                             if not args.genLevel and chain._lIsPrompt[index]: nprompt += 1
                             elif args.genLevel and chain._gen_lIsPrompt[index]: nprompt += 1
-                    
+                   
+                    print nprompt, nprompt == nl 
                     prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
                     if args.tag == 'TauFakePurity':
                         chain.istight = all([chain.l_istight[l] for l in range(nl) if chain.l_flavor[l] == 2])

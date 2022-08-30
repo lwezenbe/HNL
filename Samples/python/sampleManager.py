@@ -11,6 +11,7 @@ import os
 ALLOWED_SKIMS = ['noskim', 'Reco', 'RecoGeneral', 'auto']
 BASE_PATH = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Samples', 'InputFiles')
 LAMBDA_PATH = lambda era, year, skim : os.path.join(BASE_PATH, '_'.join(['sampleList', era + year, skim+'.conf']))
+LAMBDA_PATH_TEST = lambda era, year, skim : os.path.join(BASE_PATH, '_'.join(['sampleList', era + year, skim+'_backup.conf']))
 
 ERA_DICT = {
     'prelegacy': ['2016', '2017', '2018'],

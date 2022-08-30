@@ -48,7 +48,7 @@ if args.isTest:
 #
 from HNL.Samples.sampleManager import SampleManager
 file_list = 'Skimmer/skimlist_{0}{1}'.format(args.era, args.year) if args.customList is None else args.customList
-if args.isTest: file_list = 'fulllist_{0}{1}'.format(args.era, args.year)
+#if args.isTest: file_list = 'fulllist_{0}{1}'.format(args.era, args.year)
 gen_name = 'Reco' if not args.genSkim else 'Gen'
 if args.region is None and not args.reprocess:
     sample_manager = SampleManager(args.era, args.year, 'noskim', file_list, need_skim_samples=True)
@@ -121,7 +121,7 @@ if not args.checkLogs:
     #
     from HNL.Tools.helpers import isValidRootFile, makeDirIfNeeded
     if sample.is_data:
-        output_file_name = 'Data'
+        output_file_name = sample.output
     elif args.region is not None or args.reprocess: 
         output_file_name = sample.path.split('/')[-1].rsplit('.', 1)[0]
     else:
@@ -222,7 +222,7 @@ if not args.checkLogs:
     from HNL.EventSelection.event import Event
     #if args.region is not None:
     if args.region is None:
-        event = Event(sample, new_vars, sample_manager, is_reco_level=not args.genSkim, selection=args.skimSelection, strategy=args.strategy, region=args.region if args.region is not None else 'NoSelection', year = args.year, era = args.era, analysis = args.analysis, obj_sel = obj_sel)
+        event = Event(sample, new_vars, sample_manager, is_reco_level=not args.genSkim, selection=args.skimSelection, strategy=args.strategy, region=args.region if args.region is not None else 'NoSelection', year = args.year, era = args.era, analysis = args.analysis, obj_sel = obj_sel, additional_options = {'for_skim':True})
     else:
         event = Event(sample, new_vars, sample_manager, is_reco_level=not args.genSkim, selection=args.skimSelection, strategy=args.strategy, region=args.region if args.region is not None else 'NoSelection', year = args.year, era = args.era, analysis = args.analysis)
     chain.strategy = 'MVA' if args.region != 'AN2017014' else 'cutbased'

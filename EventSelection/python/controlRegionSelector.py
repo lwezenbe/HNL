@@ -146,6 +146,7 @@ class LightLepFakeEnrichedTT(FilterObject):
     
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None, additional_args = None):
         super(LightLepFakeEnrichedTT, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
+        self.use_default_objects = additional_args.get('tightwp', False) if additional_args is not None else False
         self.fake_flavors = additional_args.get('fake_flavors', [0, 1]) if additional_args is not None else [0, 1]
         self.chain.obj_sel['notau'] = True
 
@@ -162,8 +163,9 @@ from HNL.ObjectSelection.leptonSelector import isGoodLepton, isFakeLepton
 from HNL.EventSelection.eventSelectionTools import selectJets
 #Orthogonal due to selection of exactly 1 lepton
 class LightLeptonFakeMeasurementRegion(FilterObject):
-    def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None):
+    def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None, additional_args = None):
         super(LightLeptonFakeMeasurementRegion, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
+        self.use_default_objects = additional_args.get('tightwp', False) if additional_args is not None else False
         self.chain.obj_sel['ele_wp'] = 'loose'
         self.chain.obj_sel['mu_wp'] = 'loose'
         self.chain.obj_sel['notau'] = True

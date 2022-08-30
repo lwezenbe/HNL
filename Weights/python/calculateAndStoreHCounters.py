@@ -13,12 +13,15 @@ submission_parser.add_argument('--year',     action='store', nargs='*',       de
 submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--sample',   action='store',            default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',            default=None,   help='The number of the subjob for this sample')
-submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
+submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02', 'None'])
 submission_parser.add_argument('--dryRun',   action='store_true',       default=False,  help='do not launch subjobs, only show them')
 submission_parser.add_argument('--isTest',   action='store_true',       default=False,  help='Run a small test')
 
 argParser.add_argument('--merge', action='store_true', default=False)
 args = argParser.parse_args()
+
+if args.batchSystem == 'None' and args.sample is None: 
+    raise RuntimeError("Select specific sample please")
 
 if args.isTest:
     if args.year is None: args.year = ['2017']
@@ -27,7 +30,7 @@ if args.isTest:
     args.isChild = True
 
 def getSampleManager(y):
-    sm = SampleManager(args.era, y, 'noskim', 'fulllist_'+args.era+y, skim_selection=None, region=None)
+    sm = SampleManager(args.era, y, 'noskim', 'Skimmer/skimlist_'+args.era+y, skim_selection=None, region=None)
     return sm
 
 #
@@ -37,15 +40,15 @@ jobs = {}
 for year in args.year:
     jobs[year] = []
     sample_manager = getSampleManager(year)
-
     for sample_name in sample_manager.sample_names:
+        if args.sample is not None and sample_name != args.sample: continue
         for njob in xrange(1): 
             jobs[year] += [(sample_name, str(njob))]
 
 #
 # Submit subjobs
 #
-if not args.isChild and not args.merge: 
+if not args.isChild and not args.merge and args.batchSystem != 'None': 
     from HNL.Tools.jobSubmitter import submitJobs, checkShouldMerge
     # if not args.dryRun and checkShouldMerge(__file__, argParser):
     #     raise RuntimeError("Already existing files available. You would be overwriting")
