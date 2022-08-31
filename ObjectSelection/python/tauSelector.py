@@ -238,9 +238,8 @@ def isLooseTauHNL(chain, index):
     if not isBaseTau(chain, index): return False
     if not tau_DMfinding[chain.era]['deeptauVSjets'](chain)[index]:   return False
     if not tau_id_WP[chain.era][('deeptauVSjets', 'vvvloose')](chain)[index]:   return False
-    wp = 'loose' if chain.year != '2016pre' else 'tight'
-    if not passedElectronDiscr(chain, index, 'deeptauVSjets', wp): return False
-    if not passedMuonDiscr(chain, index, 'deeptauVSjets', wp): return False
+    if not passedElectronDiscr(chain, index, 'deeptauVSjets', 'loose'): return False
+    if not passedMuonDiscr(chain, index, 'deeptauVSjets', 'tight'): return False
     return True
 
 def isFOTauHNL(chain, index):
