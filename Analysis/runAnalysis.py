@@ -388,7 +388,6 @@ if not args.makePlots and not args.makeDataCards:
                             if not args.genLevel and chain._lIsPrompt[index]: nprompt += 1
                             elif args.genLevel and chain._gen_lIsPrompt[index]: nprompt += 1
                    
-                    print nprompt, nprompt == nl 
                     prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
                     if args.tag == 'TauFakePurity':
                         chain.istight = all([chain.l_istight[l] for l in range(nl) if chain.l_flavor[l] == 2])
