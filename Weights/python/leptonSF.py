@@ -55,18 +55,13 @@ class LeptonIDSF(object):
 class ElectronIDSF(LeptonIDSF):
 
     working_point_dict = {
-        'loose' : 'VLoose',
-        'FO'    : 'VLoose',
-        'tight' : 'Medium'
+        'loose' : {'prelegacy' : 'VLoose', 'UL' : 'VLoose'},
+        'FO'    : {'prelegacy' : 'VLoose', 'UL' : 'Tight'},
+        'tight' : {'prelegacy' : 'Medium', 'UL' : 'Tight'}
     }
 
     def __init__(self, era, year, working_point):
-        if era == 'UL':
-            #tmp prelegacy
-            if '2016' in year: year = '2016'
-            root_file_location = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Weights', 'data', 'IDSF', 'Electron', 'prelegacy', year, 'passingLeptonMva'+self.working_point_dict[working_point], 'egammaEffi.txt_EGM2D.root'))
-        else:
-            root_file_location = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Weights', 'data', 'IDSF', 'Electron', 'prelegacy', year, 'passingLeptonMva'+self.working_point_dict[working_point], 'egammaEffi.txt_EGM2D.root'))
+        root_file_location = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Weights', 'data', 'IDSF', 'Electron', era, year, 'passingLeptonMva'+self.working_point_dict[working_point][era], 'egammaEffi.txt_EGM2D.root'))
         from HNL.Tools.helpers import getObjFromFile
         self.sf_hist = getObjFromFile(root_file_location, 'EGamma_SF2D')
         self.stat_hist = getObjFromFile(root_file_location, 'stat')
@@ -79,22 +74,23 @@ class ElectronIDSF(LeptonIDSF):
 class MuonIDSF(LeptonIDSF):
 
     working_point_dict = {
-        'loose' : 'VLoose',
-        'FO'    : 'Loose',
-        'tight' : 'Medium040'
+        'loose' : {'prelegacy' : 'VLoose', 'UL' : 'VLoose'},
+        'FO'    : {'prelegacy' : 'Loose', 'UL' : 'Medium'},
+        'tight' : {'prelegacy' : 'Medium040', 'UL' : 'Medium'}
     }
 
     def __init__(self, era, year, working_point):
-        if era == 'UL':
-            #tmp prelegacy
-            if '2016' in year: year = '2016'
-            root_file_location = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Weights', 'data', 'IDSF', 'Muon', 'prelegacy', year, self.working_point_dict[working_point], 'muonTOPLeptonMVA{0}{1}.root'.format(self.working_point_dict[working_point], year)))
-        else:
-            root_file_location = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Weights', 'data', 'IDSF', 'Muon', 'prelegacy', year, self.working_point_dict[working_point], 'muonTOPLeptonMVA{0}{1}.root'.format(self.working_point_dict[working_point], year)))
         from HNL.Tools.helpers import getObjFromFile
-        self.sf_hist = getObjFromFile(root_file_location, 'SF')
-        self.stat_hist = getObjFromFile(root_file_location, 'SFTotStat')
-        self.syst_hist = getObjFromFile(root_file_location, 'SFTotSys')
+        if era == 'UL':
+            root_file_location = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Weights', 'data', 'IDSF', 'Muon', era, year, 'NUM_LeptonMva{0}_DEN_TrackerMuons/NUM_LeptonMva{0}_DEN_TrackerMuons_abseta_pt.root'.format(self.working_point_dict[working_point][era])))
+            self.sf_hist = getObjFromFile(root_file_location, 'NUM_LeptonMva{0}_DEN_TrackerMuons_abseta_pt'.format(self.working_point_dict[working_point][era]))
+            self.stat_hist = getObjFromFile(root_file_location, 'NUM_LeptonMva{0}_DEN_TrackerMuons_abseta_pt_combined_syst'.format(self.working_point_dict[working_point][era]))
+            self.syst_hist = getObjFromFile(root_file_location, 'NUM_LeptonMva{0}_DEN_TrackerMuons_abseta_pt_stat'.format(self.working_point_dict[working_point][era]))
+        else:
+            root_file_location = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Weights', 'data', 'IDSF', 'Muon', era, year, self.working_point_dict[working_point][era], 'muonTOPLeptonMVA{0}{1}.root'.format(self.working_point_dict[working_point][era], year)))
+            self.sf_hist = getObjFromFile(root_file_location, 'SF')
+            self.stat_hist = getObjFromFile(root_file_location, 'SFTotStat')
+            self.syst_hist = getObjFromFile(root_file_location, 'SFTotSys')
         super(MuonIDSF, self).__init__(self.sf_hist)
 
     def getTotalSF(self, chain, syst = 'nominal'):

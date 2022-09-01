@@ -16,6 +16,7 @@ var_weights = {
         'muonIDSFWeight':          (lambda c : c.muonIDSFWeight,      np.arange(0.75, 1.26, .01),         ('Muon SF weight', 'Events')), 
         'electronIDSFWeight':          (lambda c : c.electronIDSFWeight,      np.arange(0.75, 1.26, .01),         ('Electron SF weight', 'Events')), 
         'btagWeight':          (lambda c : c.btagWeight,      np.arange(0.5, 1.5, .01),         ('btag weight', 'Events')), 
+        'prefireWeight':          (lambda c : c.prefireWeight,      np.arange(0.5, 1.5, .01),         ('btag weight', 'Events')), 
 } 
 
 class Reweighter:
@@ -59,12 +60,15 @@ class Reweighter:
         return ['{0}/F'.format(weight) for weight in self.WEIGHTS_TO_USE]
 
     def getPrefireWeight(self, syst = 'nominal'):
-        if syst == 'nominal':
-            return self.sample.chain._prefireWeight
-        if syst == 'up':
-            return self.sample.chain._prefireWeightUp
-        if syst == 'down':
-            return self.sample.chain._prefireWeightDown
+        if not self.sample.is_data and self.sample.chain.is_reco_level:
+            if syst == 'nominal':
+                return self.sample.chain._prefireWeight
+            if syst == 'up':
+                return self.sample.chain._prefireWeightUp
+            if syst == 'down':
+                return self.sample.chain._prefireWeightDown
+        else:
+            return 1.
 
     def getLumiWeight(self):
         return self.lumiweighter.getLumiWeight()
@@ -127,6 +131,8 @@ class Reweighter:
             return self.getElectronIDSF(syst=syst)
         if weight_name == 'btagWeight':
             return self.getBTagWeight(syst=syst)
+        if weight_name == 'prefireWeight':
+            return self.getPrefireWeight(syst=syst)
 
 
     def getTotalWeight(self, sideband=False, tau_fake_method = None):
