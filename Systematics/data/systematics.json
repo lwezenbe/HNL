@@ -49,6 +49,7 @@
             "Processes"     : "MC",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
             "Activate"     : true,
+            "Correlated"    : true,
             "Description"   : "Triggers"
         },
      "WZnorm" :
@@ -59,6 +60,7 @@
             "Processes"     : "WZ",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
             "Activate"     : true,
+            "Correlated"    : true,
             "Description"   : "WZnorm"
         },
      "ZZnorm" :
@@ -69,6 +71,7 @@
             "Processes"     : "ZZ-H",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
             "Activate"     : true,
+            "Correlated"    : true,
             "Description"   : "ZZnorm"
         },
      "Conversionnorm" :
@@ -79,6 +82,7 @@
             "Processes"     : "XG",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
             "Activate"     : true,
+            "Correlated"    : true,
             "Description"   : "Conversionnorm"
         },
     "nonpromptTau" :
@@ -109,6 +113,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : true,
+            "Correlated"    : true,
             "Description"   : "Pileup"
         },
     "electronIDSFWeight_stat"  :
@@ -129,6 +134,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
+            "Correlated"    : true,
             "Description"   : "Electron efficiency"
         },
     "muonIDSFWeight_stat"  :
@@ -149,6 +155,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
+            "Correlated"    : true,
             "Description"   : "Muon efficiency"
         },
     "tauSFWeight"  :
@@ -179,6 +186,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : true,
+            "Correlated"    : true,
             "Description"   : "Prefire Weight"
         },
     "btagWeight_lightcorrelated"  :

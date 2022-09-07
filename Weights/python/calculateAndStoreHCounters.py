@@ -20,9 +20,6 @@ submission_parser.add_argument('--isTest',   action='store_true',       default=
 argParser.add_argument('--merge', action='store_true', default=False)
 args = argParser.parse_args()
 
-if args.batchSystem == 'None' and args.sample is None: 
-    raise RuntimeError("Select specific sample please")
-
 if args.isTest:
     if args.year is None: args.year = ['2017']
     if args.era is None: args.era = 'UL'
@@ -61,17 +58,24 @@ import os
 year = args.year[0]
 import json
 if not args.merge:
-    output_file = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Weights', 'data', 'hcounters', args.era+year, 'tmp_'+args.era+year, 'hcounter-'+args.sample+'.json'))
+    if args.sample is not None:
+        output_file = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Weights', 'data', 'hcounters', args.era+year, 'tmp_'+args.era+year, 'hcounter-'+args.sample+'.json'))
+    else:
+        output_file = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Weights', 'data', 'hcounters', args.era+year, 'tmp_'+args.era+year, 'hcounter.json'))
     from HNL.Tools.helpers import makeDirIfNeeded
     makeDirIfNeeded(output_file)
     
     sample_manager = getSampleManager(year)
-    sample = sample_manager.getSample(args.sample)
-    chain = sample.initTree()
-    
-    lw = LumiWeight(sample, sample_manager, recalculate=True)
     hcounter = {}
-    hcounter[sample.name] = lw.total_hcount
+    for sample_name in sample_manager.sample_names:
+        if args.sample is not None and sample.name != args.sample: continue
+        print sample_name
+        sample = sample_manager.getSample(sample_name)
+        if sample.is_data: continue
+        chain = sample.initTree()
+    
+        lw = LumiWeight(sample, sample_manager, recalculate=True)
+        hcounter[sample.name] = lw.total_hcount
     
 
 else:

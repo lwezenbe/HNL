@@ -13,6 +13,7 @@ submission_parser.add_argument('--year',     action='store',      default=None, 
 submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--skimSelection',  action='store',      default='default',               help='Name of the selection.')
 submission_parser.add_argument('--skimName',  action='store',      default='Reco',               help='Name of the skim.')
+submission_parser.add_argument('--sample',  action='store',      default=None,               help='Name of the skim.')
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
@@ -67,8 +68,8 @@ def mergeLargeFile(merge_file):
     for j, file_list in enumerate(split_list):
         if not args.isTest:
             os.system('hadd -f -v '+path+'/'+name+ '/tmp_batches/batch_'+str(j)+ '.root '+' '.join(file_list))
-            for f in file_list:
-                os.system('rm '+f)
+#            for f in file_list:
+#                os.system('rm '+f)
         else:
             os.system('hadd -f -v '+path+'/testArea/'+name+ '/tmp_batches/batch_'+str(j)+ '.root '+' '.join(file_list))
 
@@ -76,7 +77,7 @@ def mergeLargeFile(merge_file):
         os.system('hadd -f -v '+path+'/testArea/'+name.split('_', 1)[1]+'.root '+path+'/testArea/'+name+ '/tmp_batches/*root')
     else:
         os.system('hadd -f -v '+path+'/'+name.split('_', 1)[1]+'.root '+path+'/'+name+ '/tmp_batches/*root')
-        # os.system('rm -rf '+path+'/'+name)
+        os.system('rm -rf '+path+'/'+name+'/tmp_batches')
 
 skim_selection_string = args.skimSelection if args.region is None else args.skimSelection+'/'+args.region 
 pnfs_base = os.path.join('/pnfs/iihe/cms/store/user', os.path.expandvars('$USER'), 'skimmedTuples/HNL', skim_selection_string, args.era+args.year, args.skimName)
@@ -86,7 +87,8 @@ pnfs_backup_base = os.path.join('/pnfs/iihe/cms/store/user', os.path.expandvars(
 #    pnfs_backup_base = 'srm://maite.iihe.ac.be:8443'+pnfs_backup_base
 
 #Merges subfiles if needed
-merge_files = glob.glob(pnfs_base+'/tmp*')
+sample_name = '*' if args.sample is None else args.sample
+merge_files = glob.glob(pnfs_base+'/tmp_'+sample_name+'*')
 merge_files = sorted(merge_files)
 
 makeDirIfNeeded(pnfs_base+'/x')
@@ -96,7 +98,7 @@ for mf in merge_files:
     path, name = mf.rsplit('/', 1)
     new_name = name.split('_', 1)[1]+'.root'
 
-    if not args.isTest:
+    if not args.isTest and args.backupName != 'nobackup':
         if isValidRootFile(pnfs_base+'/'+new_name):
     #        continue
             if isValidRootFile(pnfs_backup_base+'/'+new_name):
@@ -108,9 +110,9 @@ for mf in merge_files:
     for sf in sub_files:
         tot_size += fileSize(sf)
     
-#    if tot_size > 1000:
-#        mergeLargeFile(mf)
-#    else:
-#        mergeSmallFile(mf)
+    #if tot_size > 1000:
+    #    mergeLargeFile(mf)
+    #else:
+    #    mergeSmallFile(mf)
         
     mergeSmallFile(mf)

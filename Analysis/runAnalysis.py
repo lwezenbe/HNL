@@ -31,6 +31,7 @@ submission_parser.add_argument('--skimLevel',  action='store', default='Reco',  
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
 submission_parser.add_argument('--systematics',  action='store',      default='nominal',               help='Choose level of systematics.', choices = ['nominal', 'limited', 'full'])
 submission_parser.add_argument('--tag',  action='store',      default=None,               help='Tag with additional information for the output, e.g. TauFakes, sidebandInMC')
+submission_parser.add_argument('--bkgrOnly',   action='store_true',     default=False,  help='Run only the background')
 
 argParser.add_argument('--makePlots',   action='store_true',    default=False,  help='Use existing root files to make the plots')
 argParser.add_argument('--showCuts',   action='store_true',     default=False,  help='Show what the pt cuts were for the category in the plots')
@@ -40,7 +41,7 @@ argParser.add_argument('--rescaleSignal', type = float,  action='store', default
 argParser.add_argument('--masses', type=float, nargs='*',  help='Only run or plot signal samples with mass given in this list')
 argParser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l', ''])
 argParser.add_argument('--signalOnly',   action='store_true',   default=False,  help='Run or plot a only the signal')
-argParser.add_argument('--bkgrOnly',   action='store_true',     default=False,  help='Run or plot a only the background')
+argParser.add_argument('--plotBkgrOnly',   action='store_true',     default=False,  help='Plot only the background')
 argParser.add_argument('--plotSingleBin',   action='store_true',     default=False,  help='Run or plot a only the background')
 argParser.add_argument('--categoriesToPlot',   action='store',     default='super',  help='What categories to use', choices=['original', 'analysis', 'super'])
 argParser.add_argument('--additionalCondition',   action='store',     default=None,  help='Additional condition for selection')
@@ -140,6 +141,7 @@ if not args.isTest:
         
             for sample_name in sample_manager.sample_names:
                 if args.includeData is None and 'Data' in sample_name: continue
+                if args.bkgrOnly and 'HNL' in sample_name: continue
                 sample = sample_manager.getSample(sample_name)
                 if args.sample and args.sample != sample.name: continue
                 for njob in xrange(sample.returnSplitJobs()): 
@@ -339,6 +341,7 @@ if not args.makePlots and not args.makeDataCards:
  
             cutter.cut(True, 'Total')
 
+
             #
             # Event selection
             #
@@ -404,7 +407,7 @@ if not args.makePlots and not args.makeDataCards:
             event.reweighter.fillTreeWithWeights(output_tree)
             for v in var.keys():
                 output_tree.setTreeVariable(v, var[v][0](chain))
-           
+        
             output_tree.setTreeVariable('weight', event.reweighter.getTotalWeight(sideband = is_sideband_event, tau_fake_method = 'TauFakesDY' if args.region == 'ZZCR' else None))
             output_tree.setTreeVariable('isprompt', prompt_str == 'prompt')
             output_tree.setTreeVariable('category', chain.category)
@@ -442,12 +445,14 @@ else:
     list_of_hist = {}
     list_of_hist_forbar = {}
 
+    if args.bkgrOnly: args.plotBkgrOnly = True
+
     for year in args.year:
         print 'Processing ', year
 
         sample_manager = getSampleManager(year)
 
-        if not args.bkgrOnly:
+        if not args.plotBkgrOnly:
             signal_list = [s for s in glob.glob(getOutputName('signal', year, args.tag)+'/*'+args.flavor+'-*') if s.split('/')[-1] in sample_manager.sample_outputs]
             for i, s in enumerate(signal_list):
                 if 'signalOrdering' in s:
@@ -524,12 +529,12 @@ else:
         # Create variable distributions
         #
 
-        def createSingleVariableDistributions(tree, vname, hname, bins, condition, proc, include_systematics = False, split_corr = False):
+        def createSingleVariableDistributions(tree, vname, hname, bins, condition, proc, include_systematics = 'nominal', split_corr = False):
             #import time
             #init_time = time.time()
             out_dict = {}
             out_dict['nominal'] = Histogram(tree.getHistFromTree(vname, hname, bins, condition))
-            if include_systematics:
+            if include_systematics != 'nominal':
                 from HNL.Systematics.systematics import returnWeightShapes
                 out_dict.update(returnWeightShapes(tree, vname, hname, bins, condition, year, proc, ['non-prompt'] if args.includeData == 'includeSideband' else None, split_corr = split_corr))
             #end_time = time.time()
@@ -538,12 +543,13 @@ else:
 
 
         #TODO: remove split_tau_signal after we can do tau signal cleaning (aka gen info becomes available)
-        def createVariableDistributions(categories_dict, var_dict, signal, background, data, sample_manager, additional_condition = None, split_tau_signal = False, include_systematics = False, sr = None, split_corr = False):
+        def createVariableDistributions(categories_dict, var_dict, signal, background, data, sample_manager, additional_condition = None, split_tau_signal = False, include_systematics = 'nominal', sr = None, split_corr = False):
             if additional_condition is None:
                 additional_condition = ''
             else:
                 additional_condition = '&&({0})'.format(additional_condition)
 
+            print 'includes systematics?', include_systematics
     
             from HNL.Tools.outputTree import OutputTree
             categories_to_use = categories_dict[0]
@@ -556,7 +562,7 @@ else:
                     tmp_list_of_hist[c][v] = {'signal':{}, 'bkgr':{}, 'data':{}}
 
             # Load in the signal histograms from the files
-            if not args.bkgrOnly:
+            if not args.plotBkgrOnly:
                 print "Loading signal histograms"
                 for isignal, s in enumerate(signal):
                     progress(isignal, len(signal))
@@ -566,8 +572,8 @@ else:
                     from HNL.Tools.helpers import isValidRootFile
                     check_split_tau = all([isValidRootFile(s+'/variables-HNL-{0}-m{1}.root'.format(x, int(sample_mass))) for x in ['taulep', 'tauhad']])
                     if not split_tau_signal or not check_split_tau:
-                        syst_to_run = getSystToRun(year, sample_name)            
-                        split_syst_to_run = getSystToRun(year, sample_name, split_corr=split_corr)            
+                        syst_to_run = getSystToRun(year, sample_name) if include_systematics in ['full'] else ['nominal']
+                        split_syst_to_run = getSystToRun(year, sample_name, split_corr=split_corr) if include_systematics in ['full'] else ['nominal']           
                         for syst, corr_syst in zip(syst_to_run, split_syst_to_run):
                             intree = OutputTree('events_{0}'.format(syst), s+'/variables.root')
                             for c, cc in zip(categories_to_use, category_conditions): 
@@ -578,8 +584,8 @@ else:
                                         tmp_list_of_hist[c][v]['signal'][sample_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&!issideband)'+additional_condition, sample_name, split_corr = split_corr)['nominal'] 
                     else:
                         for tausig in ['taulep', 'tauhad']:
-                            syst_to_run = getSystToRun(year, sample_name)            
-                            split_syst_to_run = getSystToRun(year, sample_name, split_corr=split_corr)            
+                            syst_to_run = getSystToRun(year, sample_name) if include_systematics in ['full'] else ['nominal']
+                            split_syst_to_run = getSystToRun(year, sample_name, split_corr=split_corr) if include_systematics in ['full'] else ['nominal']            
                             for syst, corr_syst in zip(syst_to_run, split_syst_to_run):
                                 sample_name = 'HNL-{0}-m{1}'.format(tausig, int(sample_mass))
                                 intree = OutputTree('events_{0}'.format(syst), s+'/variables-{0}.root'.format(sample_name))
@@ -601,18 +607,19 @@ else:
 
             if args.includeData is not None:
                 print "Loading data"
-                syst_to_run = getSystToRun(year, 'non-prompt') if args.includeData == 'includeSideband' else ['nominal']    
-                split_syst_to_run = getSystToRun(year, 'non-prompt', split_corr=split_corr) if args.includeData == 'includeSideband' else ['nominal']           
+                syst_to_run = getSystToRun(year, 'non-prompt') if args.includeData == 'includeSideband' and include_systematics in ['full'] else ['nominal']    
+                split_syst_to_run = getSystToRun(year, 'non-prompt', split_corr=split_corr) if args.includeData == 'includeSideband' and include_systematics in ['full'] else ['nominal']           
                 for isyst, (syst, corr_syst) in enumerate(zip(syst_to_run, split_syst_to_run)):
                     progress(isyst, len(syst_to_run))
                     intree = OutputTree('events_{0}'.format(syst), data_list[0]+'/variables.root')
                     for ic, (c, cc) in enumerate(zip(categories_to_use, category_conditions)):
                         for v in var_dict:
+                            proc_to_use = 'non-prompt' if args.includeData == 'includeSideband' else 'Data'
                             if syst == 'nominal':
-                                tmp_list_of_hist[c][v]['data']['sideband'] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&issideband)'+additional_condition, 'non-prompt', include_systematics, split_corr=split_corr)
+                                tmp_list_of_hist[c][v]['data']['sideband'] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&issideband)'+additional_condition, proc_to_use, include_systematics, split_corr=split_corr)
                                 tmp_list_of_hist[c][v]['data']['signalregion'] = {'nominal' : Histogram(intree.getHistFromTree(v, str(c)+'-'+v+'-'+'-nominal-Data-signalregion'+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&!issideband)'+additional_condition))}
                             else:
-                                tmp_list_of_hist[c][v]['data']['sideband'][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&issideband)'+additional_condition, 'non-prompt', split_corr=split_corr)['nominal']
+                                tmp_list_of_hist[c][v]['data']['sideband'][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&issideband)'+additional_condition, proc_to_use, split_corr=split_corr)['nominal']
 
             if not args.signalOnly:
                 print "Loading background histograms"
@@ -623,21 +630,16 @@ else:
 
 
                 for ib, b in enumerate(background):
-                    #print b
                     progress(ib, len(background))
                     if not args.individualSamples:
                         if b == 'non-prompt': continue
-                        syst_to_run = getSystToRun(year, b)            
-                        
-                        split_syst_to_run = getSystToRun(year, b, split_corr=split_corr)            
+                        syst_to_run = getSystToRun(year, b) if include_systematics in ['full'] else ['nominal']    
+                        split_syst_to_run = getSystToRun(year, b, split_corr=split_corr) if include_systematics in ['full'] else ['nominal']            
                         for syst, corr_syst in zip(syst_to_run, split_syst_to_run):
-                     #       print syst
                             intree = OutputTree('events_{0}'.format(syst), getOutputName('bkgr', year, args.tag)+'/'+b+'/variables.root')                       
  
                             for c, cc in zip(categories_to_use, category_conditions):
-                      #          print c, cc
                                 for iv, v in enumerate(var_dict.keys()): 
-                       #             print v, var_dict[v][1]
                                     if syst == 'nominal': 
                                         tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, include_systematics, split_corr=split_corr)
                                     else:
@@ -647,16 +649,18 @@ else:
                                         if syst == 'nominal': 
                                             tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np'+syst+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&!isprompt&&!issideband)'+additional_condition, 'non-prompt', include_systematics)
                                         else:
-                                            tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np'+syst+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&!isprompt&&!issideband)'+additional_condition, b)['nominal']
-
-                                        if 'non-prompt' not in tmp_list_of_hist[c][v]['bkgr'].keys():
-                                            tmp_list_of_hist[c][v]['bkgr']['non-prompt'] = tmp_hist
+                                            tmp_hist = {corr_syst : createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np'+syst+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&!isprompt&&!issideband)'+additional_condition, b)['nominal']}
+               
+                                        if corr_syst not in tmp_list_of_hist[c][v]['bkgr']['non-prompt'].keys():
+                                            tmp_list_of_hist[c][v]['bkgr']['non-prompt'].update(tmp_hist)
                                         else:
-                                            tmp_list_of_hist[c][v]['bkgr']['non-prompt'][corr_syst] = tmp_hist['nominal']
+                                            for sk in tmp_hist.keys():
+                                                tmp_list_of_hist[c][v]['bkgr']['non-prompt'][sk].add(tmp_hist[sk])
+                                        if v == 'searchregion': print b, c, tmp_hist['nominal'].getHist().GetSumOfWeights(), tmp_list_of_hist[c][v]['bkgr']['non-prompt']['nominal'].getHist().GetSumOfWeights()
                                         del(tmp_hist)
                     else:
-                        syst_to_run = getSystToRun(year, b)            
-                        split_syst_to_run = getSystToRun(year, sample_name, split_corr=split_corr)            
+                        syst_to_run = getSystToRun(year, b) if include_systematics in ['full'] else ['nominal'] 
+                        split_syst_to_run = getSystToRun(year, sample_name, split_corr=split_corr) if include_systematics in ['full'] else ['nominal']
                         for syst, corr_syst in zip(syst_to_run, split_syst_to_run):
                             intree = OutputTree('events', getOutputName('bkgr', year)+'/'+sample_manager.output_dict[b]+'/variables-'+b+'.root')                       
                             for c, cc in zip(categories_to_use, category_conditions):
@@ -756,7 +760,7 @@ else:
 
         if args.makePlots:
             print "Creating list of histograms"
-            list_of_hist[year] = createVariableDistributions(category_dict[args.categoriesToPlot], var, signal_list, background_collection, data_list, sample_manager, additional_condition = args.additionalCondition, include_systematics = args.systematics is not None and not args.ignoreSystematics)
+            list_of_hist[year] = createVariableDistributions(category_dict[args.categoriesToPlot], var, signal_list, background_collection, data_list, sample_manager, additional_condition = args.additionalCondition, include_systematics = args.systematics if not args.ignoreSystematics else 'nominal')
             print "Making Bar Charts"
             list_of_hist_forbar[year] = createVariableDistributions(category_dict['original'], {'searchregion' : var['searchregion']}, signal_list, background_collection, data_list, sample_manager, additional_condition = args.additionalCondition)
 
@@ -831,7 +835,7 @@ else:
 
         if args.signalOnly:
             output_dir = os.path.join(output_dir, 'signalOnly')
-        elif args.bkgrOnly:
+        elif args.plotBkgrOnly:
             output_dir = os.path.join(output_dir, 'bkgrOnly')
         else:
             output_dir = os.path.join(output_dir, 'signalAndBackground')
@@ -895,7 +899,7 @@ else:
 
                 # Make list of signal histograms for the plot object
                 signal_legendnames = []
-                if args.bkgrOnly or not list_of_hist[year][c][v]['signal'].values(): 
+                if args.plotBkgrOnly or not list_of_hist[year][c][v]['signal'].values(): 
                     signal_hist = None
                 else:
                     signal_hist = []
@@ -919,7 +923,7 @@ else:
                 bkgr_legendnames = [sample_tex_names[x] for x in bkgr_legendnames]
 
 
-                if not args.signalOnly and not args.bkgrOnly:
+                if not args.signalOnly and not args.plotBkgrOnly:
                     legend_names = signal_legendnames+bkgr_legendnames
                 elif args.signalOnly:
                     legend_names = signal_legendnames
@@ -945,7 +949,7 @@ else:
                 else:
 
                     # Create plot object (if signal and background are displayed, also show the ratio)
-                    draw_ratio = None if args.signalOnly or args.bkgrOnly else True
+                    draw_ratio = None if args.signalOnly or args.plotBkgrOnly else True
                     if args.includeData is not None: draw_ratio = True
                     if not args.individualSamples:
                         #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
@@ -1047,7 +1051,7 @@ else:
             #
             # Signal
             #   
-        #    if not args.bkgrOnly:
+        #    if not args.plotBkgrOnly:
         #        hist_to_plot = []
         #        hist_names = []
         #        for sn, sample_name in enumerate(sorted(signal_names, key=lambda k: int(k.split('-m')[-1]))):

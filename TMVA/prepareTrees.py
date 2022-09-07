@@ -57,12 +57,12 @@ from HNL.TMVA.mvaVariables import mass_ranges
 #Load in samples
 #
 from HNL.Samples.sampleManager import SampleManager
-file_list = 'TMVA/fulllist_'+args.era+args.year+'_mconly' if args.customList is None else args.customList
+file_list = 'fulllist_'+args.era+args.year if args.customList is None else args.customList
 skim_str = 'noskim' if args.noskim else 'Reco'
 sample_manager = SampleManager(args.era, args.year, skim_str, file_list, skim_selection=args.selection, region = args.region)
 jobs = []
 for sample_name in sample_manager.sample_names:
-    if sample_name == 'Data': continue
+    if 'Data' in sample_name: continue
     sample = sample_manager.getSample(sample_name)
     try:
         for njob in xrange(sample.returnSplitJobs()): 

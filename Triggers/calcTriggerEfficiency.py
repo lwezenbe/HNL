@@ -40,7 +40,7 @@ from HNL.EventSelection.eventCategorization import CATEGORIES_TO_USE as CATEGORI
 #
 if args.isTest: 
     args.isChild = True
-    if args.sample is None and not args.makePlots: args.sample = 'HNL-tau-m40'
+    if args.sample is None and not args.makePlots: args.sample = 'WZTo3LNu'
     if args.subJob is None: args.subJob = '0'
     if args.year is None: args.year = ['2017']
     if args.era is None: args.era = 'UL'
@@ -62,7 +62,7 @@ log = getLogger(args.logLevel)
 from HNL.Samples.sampleManager import SampleManager
 def getSampleManager(year):
     if not args.noskim:
-        return SampleManager(args.era, year, 'auto', 'Triggers/triggerlist_'+args.era+str(year), skim_selection=args.selection)
+        return SampleManager(args.era, year, 'auto', 'Triggers/triggerlist_'+args.era+str(year), skim_selection=args.selection, region = args.region)
     else:
         return SampleManager(args.era, year, 'noskim', 'Triggers/triggerlist_'+args.era+str(year))
 
@@ -109,6 +109,7 @@ def getOutputName(year, sample_name):
     return os.path.join(getOutputBase(year, sample_name), 'tmp_'+sample_name, '_'.join([sample_name, 'efficiency', subjobAppendix])+'.root')
 
 from HNL.Tools.outputTree import EfficiencyTree
+from HNL.Tools.helpers import progress
 
 #
 # Define variables
@@ -116,18 +117,23 @@ from HNL.Tools.outputTree import EfficiencyTree
 leading_lep_split = [15., 30., 55., 'inf']
 
 leading_lep_cat = [str(leading_lep_split[i])+'to'+str(leading_lep_split[i+1]) for i in xrange(len(leading_lep_split)-1)]
+if len(leading_lep_split) > 2:
+    leading_lep_cat += [str(leading_lep_split[0])+'to'+str(leading_lep_split[-1])]
 
 var = {
-    'l1pt' : (lambda c : c.l_pt[0],                          np.arange(0., 100., 15.),                 ('p_{T}(l1) [GeV]', 'Efficiency')),
-    'l2pt' : (lambda c : c.l_pt[1],                          np.arange(5., 80., 5.),                  ('p_{T}(l2) [GeV]', 'Efficiency')),
-    'l3pt' : (lambda c : c.l_pt[2],                          np.arange(5., 80., 5.),                  ('p_{T}(l3) [GeV]', 'Efficiency')),
+    #'l1pt' : (lambda c : c.l_pt[0],                          np.arange(0., 100., 15.),                 ('p_{T}(l1) [GeV]', 'Efficiency')),
+    #'l2pt' : (lambda c : c.l_pt[1],                          np.arange(5., 80., 5.),                  ('p_{T}(l2) [GeV]', 'Efficiency')),
+    #'l3pt' : (lambda c : c.l_pt[2],                          np.arange(5., 80., 5.),                  ('p_{T}(l3) [GeV]', 'Efficiency')),
+    'l1pt' : (lambda c : c.l_pt[0],                          np.arange(0., 100., 2.),                 ('p_{T}(l1) [GeV]', 'Efficiency')),
+    'l2pt' : (lambda c : c.l_pt[1],                          np.arange(5., 80., 2.),                  ('p_{T}(l2) [GeV]', 'Efficiency')),
+    'l3pt' : (lambda c : c.l_pt[2],                          np.arange(5., 80., 2.),                  ('p_{T}(l3) [GeV]', 'Efficiency')),
     'abs(l1eta)' : (lambda c : abs(c.l_eta[0]),                          np.arange(0., 3., .5),                  ('|#eta|(l1) [GeV]', 'Efficiency')),
     'abs(l2eta)' : (lambda c : abs(c.l_eta[1]),                          np.arange(0., 3., .5),                  ('|#eta|(l2) [GeV]', 'Efficiency')),
     'abs(l3eta)' : (lambda c : abs(c.l_eta[2]),                          np.arange(0., 3., .5),                  ('|#eta|(l3) [GeV]', 'Efficiency')),
     'l1pt-abs(l1eta)' : (lambda c : (c.l_pt[0], abs(c.l_eta[0])),      (np.arange(0., 100., 15.), np.arange(0., 3., .5)), ('p_{T}(l1) [GeV]', '|#eta|(l1)')),
     'l2pt-abs(l2eta)' : (lambda c : (c.l_pt[1], abs(c.l_eta[1])),      (np.arange(5., 40., 5.), np.arange(0., 3., .5)), ('p_{T}(l2) [GeV]', '|#eta|(subleading)')),
     'l3pt-abs(l3eta)' : (lambda c : (c.l_pt[2], abs(c.l_eta[2])),      (np.arange(5., 40., 5.), np.arange(0., 3., .5)), ('p_{T}(l3) [GeV]', '|#eta|(subleading)')),
-    'l2pt-l3pt' : (lambda c : (c.l_pt[2], c.l_pt[1]),      (np.arange(5., 40., 5.), np.arange(5., 40., 5.)), ('p_{T}(l3) [GeV]', 'p_{T}(l2) [GeV]')),
+    'l3pt-l2pt' : (lambda c : (c.l_pt[2], c.l_pt[1]),      (np.arange(5., 40., 5.), np.arange(5., 40., 5.)), ('p_{T}(l3) [GeV]', 'p_{T}(l2) [GeV]')),
 }
 
 
@@ -195,7 +201,6 @@ if not args.makePlots:
     #
     # Loop over all events
     #
-    from HNL.Tools.helpers import progress
     from HNL.EventSelection.eventSelectionTools import select3Leptons
     for entry in event_range:
         if args.isTest: progress(entry - event_range[0], len(event_range))
@@ -239,11 +244,13 @@ else:
         if not skip_running_jobs: merge(in_files, __file__, jobs[year], ('sample', 'subJob'), argParser, istest=args.isTest, additionalArgs=[('year', year)])
 
         sample_manager = getSampleManager(year)  
-        samples_to_plot = sample_manager.getOutputs()
+        #samples_to_plot = sample_manager.getOutputs()
+        samples_to_plot = ['WZ']
 
         overall_efficiencies = {}
-        for sample_output in samples_to_plot:
+        for isample, sample_output in enumerate(samples_to_plot):
             if args.sample and sample_output != args.sample: continue
+            progress(isample, len(samples_to_plot))
 
             efficiency_tree = EfficiencyTree('trigger_efficiency', getOutputName(year, sample_output).rsplit('/', 2)[0]+'/efficiency.root')
 
@@ -260,63 +267,65 @@ else:
                     if highpt != 'inf': llc_condition += "&&l1pt<{0}".format(highpt)
                     efficiencies[v][llc] = {}
                     for tc in TRIGGER_CATEGORIES:
+                        if tc != 'EEE' : continue
                         tc_condition = "&&".join(['category=={0}'.format(cat) for cat in TRIGGER_CATEGORIES[tc]])
                         efficiencies[v][llc][tc] = efficiency_tree.getEfficiency(v, v+'-'+str(tc)+'-'+llc, condition = llc_condition+'&&'+tc_condition)
                     efficiencies[v][llc]['Total'] = efficiency_tree.getEfficiency(v, v+'-'+llc+'-total', condition = llc_condition)
                 #Now also add to the total
                 efficiencies[v]['Total'] = efficiency_tree.getEfficiency(v, v+'-total')
 
-                #for tc in TRIGGER_CATEGORIES:
-                #    output_string = getOutputBase(year, sample_output).replace('Triggers/data/', 'Triggers/data/Results/')
-                #    if '-' in v:
-                #        for llc in leading_lep_cat:
-                #            name_for_plot = "".join([x for x in v if x not in ['(', ')']])
-                #            p = Plot(efficiencies[v][llc][tc], 'efficiency', tc+'/'+name_for_plot+'/'+llc, year = year, era = args.era)
-                #            p.draw2D(output_dir=output_string, names = [tc+'/'+name_for_plot+'/'+llc.replace('.0', '')])
-                #    else:
-                #        for llc in leading_lep_cat:
-                #            name_for_plot = "".join([x for x in v if x not in ['(', ')']])
-                #            p = Plot(efficiencies[v][llc][tc], 'efficiency', tc+'/'+name_for_plot+'/'+llc, year = year, era = args.era)
-                #            p.drawHist(output_string)
+                for tc in TRIGGER_CATEGORIES:
+                    if tc != 'EEE' : continue
+                    output_string = getOutputBase(year, sample_output).replace('Triggers/data/', 'Triggers/data/Results/')
+                    if '-' in v:
+                        for llc in leading_lep_cat:
+                            name_for_plot = "".join([x for x in v if x not in ['(', ')']])
+                            p = Plot(efficiencies[v][llc][tc], 'efficiency', tc+'/'+name_for_plot+'/'+llc, year = year, era = args.era, x_name = var[v][2][0], y_name = var[v][2][1])
+                            p.draw2D(output_dir=output_string, names = [tc+'/'+name_for_plot+'/'+llc.replace('.0', '')])
+                    else:
+                        for llc in leading_lep_cat:
+                            name_for_plot = "".join([x for x in v if x not in ['(', ')']])
+                            p = Plot(efficiencies[v][llc][tc], 'efficiency', tc+'/'+name_for_plot+'/'+llc, year = year, era = args.era, x_name = var[v][2][0], y_name = var[v][2][1])
+                            p.drawHist(output_string)
 
             overall_efficiencies[sample_output] = efficiencies.copy()
 
-
-        # Make comparative 1D plots with multiple processes in the plot
-        if 'MET' in overall_efficiencies.keys() and 'WZ' in overall_efficiencies.keys():
-            signal_dict = {
-                'EEE' : 'HNL-e-m50',
-                'EEMu' : 'HNL-e-m50',
-                'EMuMu' : 'HNL-mu-m50',
-                'MuMuMu' : 'HNL-mu-m50',
-                'TauEE' : 'HNL-tau-m50',
-                'TauEMu' : 'HNL-tau-m50',
-                'TauMuMu' : 'HNL-tau-m50',
-                'Total' : 'HNL-e-m50'
-            }
-
-            for v in var:
-                if '3D' in v  or '-' in v: continue
-                output_string = getOutputBase(year, 'Combined').replace('Triggers/data/', 'Triggers/data/Results/')
-                for llc in leading_lep_cat:
-                    for tc in TRIGGER_CATEGORIES.keys()+['Total']:
-                        if tc != 'Total' and not signal_dict[tc] in overall_efficiencies.keys(): continue
-                        #p = Plot([overall_efficiencies['WZ'][v][llc][tc], overall_efficiencies[signal_dict[tc]][v][llc][tc]], ['WZ (MC)', 'HNL(m_{N}=50 GeV)', 'MET (data)'], 
-                        p = Plot([overall_efficiencies['WZ'][v][llc][tc]], ['WZ (MC)', 'MET (data)'], 
-                                    'Split/'+tc+'/'+''.join([x for x in v if x not in ['(', ')']])+'/'+llc, year = year, era = args.era, bkgr_hist = overall_efficiencies['MET'][v][llc][tc], draw_ratio = True, color_palette='StackTauPOGbyName', color_palette_bkgr='Didar', x_name = var[v][2][0], y_name = var[v][2][1])
-                        p.setLegend(x1=0.33, x2=0.96, y1=0.82, y2=.92, ncolumns=3)
-                        p.drawHist(output_string, draw_option='EP', bkgr_draw_option='EP', max_cutoff=1.1)
-        
-                #p = Plot([overall_efficiencies['WZ'][v]['Total'].getEfficiency(), overall_efficiencies[signal_dict[tc]][v]['Total'].getEfficiency()], ['WZ (MC)', 'HNL(m_{N}=50 GeV)', 'MET (data)'], 
-                #p = Plot([overall_efficiencies['WZ'][v]['Total'], overall_efficiencies['HNL-e-m50'][v]['Total']], ['WZ (MC)', 'HNL(m_{N}=50 GeV)', 'MET (data)'], 
-                p = Plot([overall_efficiencies['WZ'][v]['Total']], ['WZ (MC)', 'MET (data)'], 
-                         'total/'+v, year = year, era = args.era, bkgr_hist = overall_efficiencies['MET'][v]['Total'], draw_ratio = True, color_palette='StackTauPOGbyName', color_palette_bkgr='Didar', x_name = var[v][2][0], y_name = var[v][2][1])
-                p.setLegend(x1=0.4, x2=0.96, y1=0.82, y2=.92, ncolumns=2)
-                p.drawHist(output_string, draw_option='EP', bkgr_draw_option='EP', max_cutoff=1.3)
-                #for tc in TRIGGER_CATEGORIES:
-                #    if tc == 'Total': continue
-                #    for llc in leading_lep_cat:
-                #        p = Plot([overall_efficiencies['WZ'][v][llc][tc], overall_efficiencies[signal_dict[tc]][v][llc][tc]], ['WZ (MC)', 'HNL(m_{N}=50 GeV)', 'MET (data)'], 
-                #                    'total/'+''.join([x for x in v if x not in ['(', ')']])+'/'+tc+'/'+llc, year = year, era = args.era, bkgr_hist = overall_efficiencies['MET'][v][llc][tc], draw_ratio = True, color_palette='StackTauPOGbyName', color_palette_bkgr='Didar')
-                #        p.setLegend(x1=0.33, x2=0.96, y1=0.82, y2=.92, ncolumns=3)
-                #        p.drawHist(output_string, draw_option='EP', bkgr_draw_option='EP', max_cutoff=1.1)
+#        print 'Making comparison plots'
+#        # Make comparative 1D plots with multiple processes in the plot
+#        if 'Data' in overall_efficiencies.keys() and 'WZ' in overall_efficiencies.keys():
+#            signal_dict = {
+#                'EEE' : 'HNL-e-m50',
+#                'EEMu' : 'HNL-e-m50',
+#                'EMuMu' : 'HNL-mu-m50',
+#                'MuMuMu' : 'HNL-mu-m50',
+#                'TauEE' : 'HNL-tau-m50',
+#                'TauEMu' : 'HNL-tau-m50',
+#                'TauMuMu' : 'HNL-tau-m50',
+#                'Total' : 'HNL-e-m50'
+#            }
+#
+#            for v in var:
+#                if '3D' in v  or '-' in v: continue
+#                output_string = getOutputBase(year, 'Combined').replace('Triggers/data/', 'Triggers/data/Results/')
+#                for llc in leading_lep_cat:
+#                    for tc in TRIGGER_CATEGORIES.keys()+['Total']:
+#                        if tc != 'Total' and not signal_dict[tc] in overall_efficiencies.keys(): continue
+#                        #p = Plot([overall_efficiencies['WZ'][v][llc][tc], overall_efficiencies[signal_dict[tc]][v][llc][tc]], ['WZ (MC)', 'HNL(m_{N}=50 GeV)', 'MET (data)'], 
+#                        p = Plot([overall_efficiencies['WZ'][v][llc][tc]], ['WZ (MC)', 'JetMET (data)'], 
+#                                    'Split/'+tc+'/'+''.join([x for x in v if x not in ['(', ')']])+'/'+llc, year = year, era = args.era, bkgr_hist = overall_efficiencies['Data'][v][llc][tc], draw_ratio = True, color_palette='StackTauPOGbyName', color_palette_bkgr='Didar', x_name = var[v][2][0], y_name = var[v][2][1])
+#                        p.setLegend(x1=0.33, x2=0.96, y1=0.82, y2=.92, ncolumns=3)
+#                        p.drawHist(output_string, draw_option='EP', bkgr_draw_option='EP', max_cutoff=1.1)
+#        
+#                #p = Plot([overall_efficiencies['WZ'][v]['Total'].getEfficiency(), overall_efficiencies[signal_dict[tc]][v]['Total'].getEfficiency()], ['WZ (MC)', 'HNL(m_{N}=50 GeV)', 'MET (data)'], 
+#                #p = Plot([overall_efficiencies['WZ'][v]['Total'], overall_efficiencies['HNL-e-m50'][v]['Total']], ['WZ (MC)', 'HNL(m_{N}=50 GeV)', 'MET (data)'], 
+#                p = Plot([overall_efficiencies['WZ'][v]['Total']], ['WZ (MC)', 'JetMET (data)'], 
+#                         'total/'+v, year = year, era = args.era, bkgr_hist = overall_efficiencies['Data'][v]['Total'], draw_ratio = True, color_palette='StackTauPOGbyName', color_palette_bkgr='Didar', x_name = var[v][2][0], y_name = var[v][2][1])
+#                p.setLegend(x1=0.4, x2=0.96, y1=0.82, y2=.92, ncolumns=2)
+#                p.drawHist(output_string, draw_option='EP', bkgr_draw_option='EP', max_cutoff=1.3)
+#                for tc in TRIGGER_CATEGORIES:
+#                    if tc == 'Total': continue
+#                    for llc in leading_lep_cat:
+#                        p = Plot([overall_efficiencies['WZ'][v][llc][tc], overall_efficiencies[signal_dict[tc]][v][llc][tc]], ['WZ (MC)', 'HNL(m_{N}=50 GeV)', 'JetMET (data)'], 
+#                                    'total/'+''.join([x for x in v if x not in ['(', ')']])+'/'+tc+'/'+llc, year = year, era = args.era, bkgr_hist = overall_efficiencies['Data'][v][llc][tc], draw_ratio = True, color_palette='StackTauPOGbyName', color_palette_bkgr='Didar')
+#                        p.setLegend(x1=0.33, x2=0.96, y1=0.82, y2=.92, ncolumns=3)
+#                        p.drawHist(output_string, draw_option='EP', bkgr_draw_option='EP', max_cutoff=1.1)

@@ -19,12 +19,11 @@ class Cutter():
         if passed:
             if self.chain is not None:
                 try:
-                    weight = self.chain.weight
+                    weight = self.chain.weight if self.chain.weight is not None else 1.
                 except:
                     weight = 1.
             else:
                 weight = 1.
-            print weight
             self.list_of_cuts[cut_name].Fill(.5, weight)
             return True
         return False

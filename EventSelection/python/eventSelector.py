@@ -126,9 +126,11 @@ class EventSelector:
         return False
 
     def removeOverlapDYandZG(self, sample_name, cutter):
-        if 'DY' in sample_name and not cutter.cut(self.leptonFromMEExternalConversion(), 'Cleaning DY'): return False
-        if sample_name == 'ZG' and not cutter.cut(not self.leptonFromMEExternalConversion(), 'Cleaning XG'): return False
-        return True
+        if 'DY' in sample_name and self.chain._zgEventType >= 3: return True
+        if sample_name == 'ZG' and self.chain._zgEventType < 3: return True
+        #if 'DY' in sample_name and self.leptonFromMEExternalConversion(): return True
+        #if sample_name == 'ZG' and not self.leptonFromMEExternalConversion(): return True
+        return False
 
     def removeOverlapInTauSignal(self, sample_name):
         if 'taulep' in sample_name:
@@ -142,7 +144,7 @@ class EventSelector:
             return True
 
     def passedFilter(self, cutter, sample_name, kwargs={}):
-#        if not self.removeOverlapDYandZG(sample_name, cutter): return False
+        if not cutter.cut(not self.removeOverlapDYandZG(sample_name, cutter), 'Clean DY and ZG'): return False
 
         ignoreSignalOverlapRemoval = kwargs.get('ignoreSignalOverlapRemoval', False)
         #if not ignoreSignalOverlapRemoval and not self.removeOverlapInTauSignal(sample_name): return False

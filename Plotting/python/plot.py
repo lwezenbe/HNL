@@ -249,9 +249,10 @@ class Plot:
     def getYName(self): 
         from HNL.Plotting.plottingTools import allBinsSameWidth
         test_hist = self.s[0] if len(self.s) > 0 else self.b[0]
+        #Should only be done for 1D hist, the veto also works for TH3 and so on because it inherits from TH2
+        if isinstance(test_hist, ROOT.TH2): return self.y_name
 
         add_x_width = allBinsSameWidth(test_hist)
-
 
         if '[' in self.y_name:
             return self.y_name
@@ -627,7 +628,7 @@ class Plot:
                 for i in xrange(len(self.b)):
                     self.stat_bkgr_errors[i].Draw("E Same")
 
-            self.legend.AddEntry(self.tot_totbkgr_error, 'Total Error' if self.syst_hist is not None else 'Stat. Error')
+            self.legend.AddEntry(self.tot_totbkgr_error, 'Total Unc.' if self.syst_hist is not None else 'Stat. Unc.')
 
     def drawHist(self, output_dir = None, normalize_signal = None, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None, 
         custom_labels = None, draw_lines = None, message = None, min_cutoff = None, max_cutoff = None, ref_line = 1., observed_name = 'Data'):
@@ -952,7 +953,7 @@ class Plot:
 
 
     def draw2D(self, option='ETextColz', output_dir = None, message = None, names = None):
-     
+    
         setDefault2D()    
         self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
         self.setAxisLog(is2D=True)
