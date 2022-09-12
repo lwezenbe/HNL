@@ -218,7 +218,9 @@ TRIGGER_CATEGORIES = {
     'EEE': [11], 
     'MuMuMu': [12], 
     'EEMu': [13, 14], 
-    'EMuMu': [15, 16]
+    'EMuMu': [15, 16],
+    'NoTau' : [11, 12, 13, 14, 15, 16],
+    'TauFinalStates': [5, 6, 7, 8, 9],
     } 
 
 DETAILED_TRIGGER_CATEGORIES = {

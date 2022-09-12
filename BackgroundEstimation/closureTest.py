@@ -344,6 +344,7 @@ if not args.makePlots:
 
         fake_factor = fakerate_collection.getFakeWeight()
         weight = reweighter.getTotalWeight()
+        print weight
 
         for v in var:
             try:
