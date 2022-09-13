@@ -81,6 +81,13 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         new_chain.l_indices = [0.0]*nL
         new_chain.l_isFO = [0.0]*nL
         new_chain.l_istight = [0.0]*nL
+        new_chain.light_pt = [0.0]*nL
+        new_chain.light_eta = [0.0]*nL
+        new_chain.light_phi = [0.0]*nL
+        new_chain.light_charge = [0.0]*nL
+        new_chain.light_flavor = [0.0]*nL
+        new_chain.light_e = [0.0]*nL
+        new_chain.light_indices = [0.0]*nL
         if not chain.is_data:
             new_chain.l_isfake = [0.0]*nL
 
@@ -89,6 +96,7 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
     else:
         ptAndIndex = chain.leptons
 
+    light_index = 0
     for i in xrange(nL):
         new_chain.l_indices[i] = ptAndIndex[i][1]
         new_chain.l_flavor[i] = chain._lFlavor[ptAndIndex[i][1]]
@@ -101,6 +109,16 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         new_chain.l_istight[i] = isGoodLepton(chain, ptAndIndex[i][1], 'tight')
         if not chain.is_data:
             new_chain.l_isfake[i] = isFakeLepton(chain, ptAndIndex[i][1])
+        
+        if new_chain.l_flavor[i] < 2:
+            new_chain.l_indices[light_index] = ptAndIndex[i][1]
+            new_chain.l_flavor[light_index] = chain._lFlavor[ptAndIndex[i][1]]
+            new_chain.l_pt[light_index] = ptAndIndex[i][0]
+            new_chain.l_eta[light_index] = chain._lEta[ptAndIndex[i][1]]
+            new_chain.l_phi[light_index] = chain._lPhi[ptAndIndex[i][1]]
+            new_chain.l_e[light_index] = getElectronE(chain, ptAndIndex[i][1]) if new_chain.l_flavor[i] < 1 else chain._lE[ptAndIndex[i][1]]
+            new_chain.l_charge[light_index] = chain._lCharge[ptAndIndex[i][1]]
+            light_index += 1
 
     return True
 
