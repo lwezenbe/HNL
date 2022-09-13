@@ -396,11 +396,11 @@ class Plot:
         #Set axis: if significance is also drawn, no x-axis
         # self.tot_err.SetMinimum(0.3)
         # self.tot_err.SetMaximum(1.7)
-        self.tot_err.SetMinimum(0.)
+        self.tot_err.SetMinimum(max(0., 0.7*pt.getOverallMinimum(ratios, zero_not_allowed = True,  include_error=False)))
         if just_errors:
             self.tot_err.SetMaximum(2.)
         else:
-            self.tot_err.SetMaximum(max(2., min(6, 1.3*pt.getOverallMaximum(ratios, include_error=False))))
+            self.tot_err.SetMaximum(min(6, 1.3*pt.getOverallMaximum(ratios, include_error=False)))
         # self.tot_err.GetXaxis().SetRangeUser(15., 900.)
         self.tot_err.GetXaxis().SetTitleSize(.18)
         self.tot_err.GetYaxis().SetTitleSize(.18)

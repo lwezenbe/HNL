@@ -340,8 +340,6 @@ if not args.makePlots and not args.makeDataCards:
             progress(entry - event_range[0], len(event_range))
  
             cutter.cut(True, 'Total')
-
-
             #
             # Event selection
             #

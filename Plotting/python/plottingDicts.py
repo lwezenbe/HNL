@@ -4,7 +4,6 @@ sample_tex_names = {
     'TT-T+X' : 't(#bar{t})X',
     'non-prompt' : 'Nonprompt',
     'XG' : 'V#gamma',
-    'QCD' : 'QCD',
     'Other' : 'Other',
     'triboson' : 'Triboson'
 }
