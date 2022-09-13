@@ -26,7 +26,6 @@ class FilterObject(object):
             if not cutter.cut(selectGenLeptonsGeneral(self.chain, self.new_chain, nL, cutter=cutter), 'select leptons'): return False
 
         self.chain.category = self.ec.returnCategory()
-        self.chain.detailed_category = self.ec.returnDetailedCategory()
         reweighter = kwargs.get('reweighter')
         if kwargs.get('calculate_weights', False) and reweighter is not None:
             self.chain.weight = reweighter.getTotalWeight(sideband = sideband, tau_fake_method = 'TauFakesDY' if self.region == 'ZZCR' else None)
