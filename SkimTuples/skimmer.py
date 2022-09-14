@@ -152,7 +152,8 @@ if not args.checkLogs:
     # Switch off unused branches and create outputTree
     #
     if args.region is None:
-        delete_branches = ['lhe', 'Lhe', 'ttg', '_ph']
+        #delete_branches = ['lhe', 'Lhe', 'ttg', '_ph']
+        delete_branches = ['ttg', '_ph']
         if args.reprocess: delete_branches += ['lumiweight']
         #delete_branches.extend(['HLT']) #TODO: For now using pass_trigger, this may need to change
         delete_branches.extend(['tauPOG*2015', 'tau*MvaNew']) #Outdated tau
@@ -189,6 +190,7 @@ if not args.checkLogs:
         new_branches.extend(['event_category/I'])
         new_branches.extend(['njets/I', 'nbjets/I'])
         new_branches.extend(['l_pt[3]/F', 'l_eta[3]/F', 'l_phi[3]/F', 'l_e[3]/F', 'l_charge[3]/F', 'l_flavor[3]/I', 'l_indices[3]/I', 'l_isFO[3]/O', 'l_istight[3]/O', 'l_isfake[3]/O'])
+        new_branches.extend(['light_pt[3]/F', 'light_eta[3]/F', 'light_phi[3]/F', 'light_e[3]/F', 'light_charge[3]/F', 'light_flavor[3]/I', 'light_indices[3]/I'])
 
     from HNL.Tools.makeBranches import makeBranches
     new_vars = makeBranches(output_tree, new_branches)

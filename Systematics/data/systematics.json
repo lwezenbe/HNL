@@ -85,6 +85,39 @@
             "Correlated"    : true,
             "Description"   : "Conversionnorm"
         },
+     "Tribosonnorm" :
+        {
+            "Type"          : "flat",
+            "Value"         : 1.1,
+            "FinalStates"   : "*",
+            "Processes"     : "triboson",
+            "Year"          : ["2016pre", "2016post", "2017", "2018"],
+            "Activate"      : true,
+            "Correlated"    : true,
+            "Description"   : "Tribosonnorm"
+        },
+     "TTXnorm" :
+        {
+            "Type"          : "flat",
+            "Value"         : 1.1,
+            "FinalStates"   : "*",
+            "Processes"     : "TT-T+X",
+            "Year"          : ["2016pre", "2016post", "2017", "2018"],
+            "Activate"      : true,
+            "Correlated"    : true,
+            "Description"   : "TTXnorm"
+        },
+     "Othernorm" :
+        {
+            "Type"          : "flat",
+            "Value"         : 1.2,
+            "FinalStates"   : "*",
+            "Processes"     : ["Other", "QCD"],
+            "Year"          : ["2016pre", "2016post", "2017", "2018"],
+            "Activate"      : true,
+            "Correlated"    : true,
+            "Description"   : "TTXnorm"
+        },
     "nonpromptTau" :
         {
             "Type"          : "flat",
