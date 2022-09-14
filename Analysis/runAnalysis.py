@@ -373,28 +373,24 @@ if not args.makePlots and not args.makeDataCards:
             # Determine if it is a prompt event
             # Depending on the previous step, the selection should be the tight or the FO (because of rerunning)
             #
-            prompt_str = None
             if args.region != 'NoSelection':
                 if len(chain.l_flavor) == chain.l_flavor.count(2): continue #Not all taus
 
-                nprompt = 0
-                if not 'Data' in sample.name:
+                #Need to overwrite nonprompt in special cases
+                if not 'Data' in sample.name and args.tag in ['TauFakes', 'TauFakePurity']:
+                    nprompt = 0
                     for i, index in enumerate(chain.l_indices):
                         #For taufakes we're only interested in FO tau to make the prompt consideration
                         if args.tag == 'TauFakes':
                             if chain._lIsPrompt[index] or chain._lFlavor[index] < 2 or chain.l_istight[i]: nprompt += 1
                         elif args.tag == 'TauFakePurity':
                             if chain._lIsPrompt[index] or chain._lFlavor[index] < 2: nprompt += 1
-                        else:            
-                            if not args.genLevel and chain._lIsPrompt[index]: nprompt += 1
-                            elif args.genLevel and chain._gen_lIsPrompt[index]: nprompt += 1
                    
-                    prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
+                    chain.is_prompt = True if nprompt == nl else False
                     if args.tag == 'TauFakePurity':
                         chain.istight = all([chain.l_istight[l] for l in range(nl) if chain.l_flavor[l] == 2])
             else:
-                prompt_str = None
-                chain.category = 17
+                chain.category = 33
 
             if args.strategy == 'MVA':
                 tmva.predictAndWriteAll(chain)
@@ -407,7 +403,7 @@ if not args.makePlots and not args.makeDataCards:
                 output_tree.setTreeVariable(v, var[v][0](chain))
         
             output_tree.setTreeVariable('weight', event.reweighter.getTotalWeight(sideband = is_sideband_event, tau_fake_method = 'TauFakesDY' if args.region == 'ZZCR' else None))
-            output_tree.setTreeVariable('isprompt', prompt_str == 'prompt')
+            output_tree.setTreeVariable('isprompt', chain.is_prompt)
             output_tree.setTreeVariable('category', chain.category)
             output_tree.setTreeVariable('searchregion', srm[args.region].getSearchRegion(chain))
             output_tree.setTreeVariable('issideband', is_sideband_event)

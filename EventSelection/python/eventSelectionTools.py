@@ -71,6 +71,7 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
    
     if len(chain.leptons) != nL:  return False
 
+
     if chain is new_chain:
         new_chain.l_pt = [0.0]*nL
         new_chain.l_eta = [0.0]*nL
@@ -111,15 +112,22 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
             new_chain.l_isfake[i] = isFakeLepton(chain, ptAndIndex[i][1])
         
         if new_chain.l_flavor[i] < 2:
-            new_chain.l_indices[light_index] = ptAndIndex[i][1]
-            new_chain.l_flavor[light_index] = chain._lFlavor[ptAndIndex[i][1]]
-            new_chain.l_pt[light_index] = ptAndIndex[i][0]
-            new_chain.l_eta[light_index] = chain._lEta[ptAndIndex[i][1]]
-            new_chain.l_phi[light_index] = chain._lPhi[ptAndIndex[i][1]]
-            new_chain.l_e[light_index] = getElectronE(chain, ptAndIndex[i][1]) if new_chain.l_flavor[i] < 1 else chain._lE[ptAndIndex[i][1]]
-            new_chain.l_charge[light_index] = chain._lCharge[ptAndIndex[i][1]]
+            new_chain.light_indices[light_index] = ptAndIndex[i][1]
+            new_chain.light_flavor[light_index] = chain._lFlavor[ptAndIndex[i][1]]
+            new_chain.light_pt[light_index] = ptAndIndex[i][0]
+            new_chain.light_eta[light_index] = chain._lEta[ptAndIndex[i][1]]
+            new_chain.light_phi[light_index] = chain._lPhi[ptAndIndex[i][1]]
+            new_chain.light_e[light_index] = getElectronE(chain, ptAndIndex[i][1]) if new_chain.l_flavor[i] < 1 else chain._lE[ptAndIndex[i][1]]
+            new_chain.light_charge[light_index] = chain._lCharge[ptAndIndex[i][1]]
             light_index += 1
-
+    
+    if not chain.is_data:
+        prompt_list = [chain._lIsPrompt[l] for l in new_chain.l_indices]
+        new_chain.is_prompt = all(prompt_list)
+    else:
+        new_chain.is_prompt = True
+       
+ 
     return True
 
 def select3Leptons(chain, new_chain, cutter = None):
@@ -177,6 +185,8 @@ def selectGenLeptonsGeneral(chain, new_chain, nL, cutter=None):
         new_chain.l_charge[i] = chain._gen_lCharge[ptAndIndex[i][1]]
         new_chain.l_flavor[i] = chain._gen_lFlavor[ptAndIndex[i][1]]
     
+    prompt_list = [chain._gen_lIsPrompt[l] for l in new_chain.l_indices]
+    new_chain.is_prompt = all(prompt_list)
     return True
 
 #

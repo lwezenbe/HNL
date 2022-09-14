@@ -396,11 +396,11 @@ class Plot:
         #Set axis: if significance is also drawn, no x-axis
         # self.tot_err.SetMinimum(0.3)
         # self.tot_err.SetMaximum(1.7)
-        self.tot_err.SetMinimum(max(0., 0.7*pt.getOverallMinimum(ratios, zero_not_allowed = True,  include_error=False)))
+        self.tot_err.SetMinimum(max(0., 0.95*pt.getOverallMinimum(ratios, zero_not_allowed = True,  include_error=False)))
         if just_errors:
             self.tot_err.SetMaximum(2.)
         else:
-            self.tot_err.SetMaximum(min(6, 1.3*pt.getOverallMaximum(ratios, include_error=False)))
+            self.tot_err.SetMaximum(min(6, 1.1*pt.getOverallMaximum(ratios, include_error=False)))
         # self.tot_err.GetXaxis().SetRangeUser(15., 900.)
         self.tot_err.GetXaxis().SetTitleSize(.18)
         self.tot_err.GetYaxis().SetTitleSize(.18)
@@ -446,7 +446,6 @@ class Plot:
                 r.SetMarkerSize(1.)
                 r.Draw(draw_text)
 
-       
         self.line.Draw()
 
         self.ratio_legend = ROOT.TLegend(0.2, .75, .6, .9)
@@ -477,7 +476,6 @@ class Plot:
                 extra_text.SetNDC()
                 extra_text.SetTextSize(0.1)
                 extra_text.DrawLatex(0.55, 0.78, extra_text_string)
-        
         self.ratio_pad.Update() 
         self.canvas.cd() 
         self.canvas.Update() 

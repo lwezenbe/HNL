@@ -188,6 +188,7 @@ if not args.checkLogs:
         new_branches.extend(['l1_phi/F', 'l2_phi/F', 'l3_phi/F'])
         new_branches.extend(['l1_charge/F', 'l2_charge/F', 'l3_charge/F'])
         new_branches.extend(['event_category/I'])
+        new_branches.extend(['is_prompt/O'])
         new_branches.extend(['njets/I', 'nbjets/I'])
         new_branches.extend(['l_pt[3]/F', 'l_eta[3]/F', 'l_phi[3]/F', 'l_e[3]/F', 'l_charge[3]/F', 'l_flavor[3]/I', 'l_indices[3]/I', 'l_isFO[3]/O', 'l_istight[3]/O', 'l_isfake[3]/O'])
         new_branches.extend(['light_pt[3]/F', 'light_eta[3]/F', 'light_phi[3]/F', 'light_e[3]/F', 'light_charge[3]/F', 'light_flavor[3]/I', 'light_indices[3]/I'])
