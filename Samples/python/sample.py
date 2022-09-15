@@ -113,7 +113,7 @@ class Sample(object):
     def initTree(self, needhcount=False):
 
         self.chain              = ROOT.TChain('blackJackAndHookers/blackJackAndHookersTree')
- 
+
         assert len(self.list_of_files) > 0 and isValidRootFile(self.list_of_files[0])
 
         for f in self.list_of_files:

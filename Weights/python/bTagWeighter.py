@@ -144,6 +144,7 @@ def getReweightingFunction(algo, era, year, workingpoint, selection):
         sf_reader = ScaleFactorReaderCSV(algo, era, year, workingpoint)
     try:
         from HNL.Tools.efficiency import Efficiency
+        if selection == 'HNLtauTest': selection = 'default'
         in_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'ObjectSelection', 'data', 'btagEfficiencies', era+'-'+year, selection, 'events.root')
         eff_mc = {
             'b' : Efficiency('btag_efficiencies', lambda c, i: [c._jetSmearedPt[i], c._jetEta[i]], ('p_{T} [GeV]', '|#eta|'), in_path, subdirs=[algo, 'b', workingpoint]),

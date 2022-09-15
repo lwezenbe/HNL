@@ -26,6 +26,7 @@ YEARLIB_FES = {'prelegacy2016' : '2016Legacy',
         }
 
 ALGOLIB = {'HNL' : 'DeepTau2017v2p1VSjet',
+            'HNLtauTest' : 'DeepTau2017v2p1VSjet',
             'ewkino'  :  'MVAoldDM2017v2' }
 
 UNC_LIB = {

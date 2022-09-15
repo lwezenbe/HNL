@@ -24,7 +24,7 @@ submission_parser.add_argument('--logLevel',  action='store',      default='INFO
 submission_parser.add_argument('--summaryFile', action='store_true', default=False,  help='Create text file that shows all selected arguments')
 submission_parser.add_argument('--genSkim',  action='store_true',      default=False,               help='skim on generator level leptons')
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
-submission_parser.add_argument('--skimSelection',  action='store',      default='default',               help='Selection for the skim.', choices=['leptonMVAtop', 'TTT', 'Luka', 'AN2017014', 'LukaFR', 'default'])
+submission_parser.add_argument('--skimSelection',  action='store',      default='default',               help='Selection for the skim.', choices=['leptonMVAtop', 'TTT', 'Luka', 'AN2017014', 'LukaFR', 'default', 'HNLtauTest'])
 submission_parser.add_argument('--region',   action='store', default=None,  help='Choose the selection region', 
     choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
 submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino'])
@@ -218,6 +218,8 @@ if not args.checkLogs:
             obj_sel = objectSelectionCollection('HNL', 'Luka', 'loose', 'loose', 'loose', False, analysis=args.analysis)
         elif args.skimSelection == 'TTT':
             obj_sel = objectSelectionCollection('HNL', 'TTT', 'loose', 'loose', 'loose', False, analysis=args.analysis)
+        elif args.skimSelection == 'HNLtauTest':
+            obj_sel = objectSelectionCollection('HNLtauTest', 'HNL', 'loose', 'loose', 'loose', False, analysis=args.analysis)
         else:
             obj_sel = objectSelectionCollection('HNL', 'HNL', 'loose', 'loose', 'loose', False, analysis=args.analysis)
 
