@@ -368,7 +368,7 @@ else:
 
     base_path = getOutputBase()
 
-    in_files = glob.glob(os.path.join(base_path, '*'))
+    in_files = [x for x in glob.glob(os.path.join(base_path, '*')) if x.rsplit('/', 1)[-1] in sample_manager.sample_outputs]
     merge(in_files, __file__, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
 
     base_path_split  = base_path.rsplit('/data/')

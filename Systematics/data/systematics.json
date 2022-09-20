@@ -31,6 +31,18 @@
             "Correlated"    : true,
             "Description"   : "Luminosity"
         },
+    "theory":
+        {
+            "Type"          : "flat",
+            "Value"         : 1.0,
+            "FinalStates"   : "*",
+            "Processes"     : "signal",
+            "Year"          : ["2016pre", "2016post", "2017", "2018"],
+            "Activate"     : true,
+            "Correlated"    : true,
+            "Func"          : "theory",
+            "Description"   : "Theory uncertainties (ME and PDF)"
+        },
     "triggerStat" :
         {
             "Type"          : "flat",
@@ -284,6 +296,15 @@
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : true,
             "Description"   : "Jet Energy Resolution"
+        },
+    "UnclMET"  :
+        {
+            "Type"              : "rerun",
+            "Value"             : 1.0,
+            "FinalStates"       : "*",
+            "Processes"         : "MC",
+            "Year"              : ["2016pre", "2016post", "2017", "2018"],
+            "Activate"          : false,
+            "Description"   : "Unclustered MET variation"
         }
-
 }
