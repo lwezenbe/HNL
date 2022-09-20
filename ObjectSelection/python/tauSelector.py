@@ -215,20 +215,20 @@ def isGoodGenTau(chain, index):
     if abs(chain._gen_lPt[index]) < 20:            return False
     return True             
 
-def isCleanFromLightLeptons(chain, index):
+def isCleanFromLightLeptons(chain, index, workingpoint = 'loose'):
     for l in xrange(chain._nLight):
-        if chain._lFlavor[l] == 1 and not isGoodMuon(chain, l, workingpoint='loose'):    continue
-        if chain._lFlavor[l] == 0 and not isGoodElectron(chain, l, workingpoint='loose'):    continue
+        if chain._lFlavor[l] == 1 and not isGoodMuon(chain, l, workingpoint=workingpoint):    continue
+        if chain._lFlavor[l] == 0 and not isGoodElectron(chain, l, workingpoint=workingpoint):    continue
         if deltaR(chain._lEta[l], chain._lEta[index], chain._lPhi[l], chain._lPhi[index]) < 0.4: return False
     return True
 
-def isBaseTau(chain, index):
+def isBaseTau(chain, index, cleaningwp = 'loose'):
     if chain._lFlavor[index] != 2:              return False
     if chain._lPt[index] < 20:                return False
     if chain._lEta[index] > 2.3:                return False
     if abs(chain._dz[index]) >= 0.2:            return False
     if chain._tauDecayMode[index] == 5 or chain._tauDecayMode[index] == 6: return False
-    if not isCleanFromLightLeptons(chain, index):       return False
+    if not isCleanFromLightLeptons(chain, index, workingpoint = cleaningwp):       return False
     return True
 
 #
@@ -255,6 +255,33 @@ def isTightTauHNL(chain, index):
         if not chain.is_FO_lepton[index][0]: return False
     else:
         if not isFOTauHNL(chain, index):              return False
+    if not tau_id_WP[chain.era][('deeptauVSjets', 'medium')](chain)[index]:   return False
+    return True
+
+#
+# HNL selection
+#
+def isLooseTauHNLtest(chain, index):
+    if not isBaseTau(chain, index, cleaningwp='tight'): return False
+    if not tau_DMfinding[chain.era]['deeptauVSjets'](chain)[index]:   return False
+    if not tau_id_WP[chain.era][('deeptauVSjets', 'vvvloose')](chain)[index]:   return False
+    if not passedElectronDiscr(chain, index, 'deeptauVSjets', 'tight'): return False
+    if not passedMuonDiscr(chain, index, 'deeptauVSjets', 'tight'): return False
+    return True
+
+def isFOTauHNLtest(chain, index):
+    if getattr(chain, 'is_loose_lepton', None) is not None and chain.is_loose_lepton[index] is not None and chain.is_loose_lepton[index][1] == 'HNL':
+        if not chain.is_loose_lepton[index][0]: return False
+    else:
+        if not isLooseTauHNLtest(chain, index):              return False
+    # if not tau_id_WP[chain.era][('deeptauVSjets, 'medium')](chain)[index]:   return False
+    return True
+
+def isTightTauHNLtest(chain, index): 
+    if getattr(chain, 'is_FO_lepton', None) is not None and chain.is_FO_lepton[index] is not None and chain.is_FO_lepton[index][1] == 'HNL':
+        if not chain.is_FO_lepton[index][0]: return False
+    else:
+        if not isFOTauHNLtest(chain, index):              return False
     if not tau_id_WP[chain.era][('deeptauVSjets', 'medium')](chain)[index]:   return False
     return True
 
@@ -292,6 +319,8 @@ def isLooseTau(chain, index, algo):
         return isLooseTauHNL(chain, index)
     elif algo == 'ewkino':
         return isLooseTauEwkino(chain, index)
+    elif algo == 'HNLtauTest':
+        return isLooseTauHNLtest(chain, index)
     else:
         raise RuntimeError('Wrong input for "algo" in isLooseTau')
 
@@ -300,6 +329,8 @@ def isFOTau(chain, index, algo):
         return isFOTauHNL(chain, index)
     elif algo == 'ewkino':
         return isFOTauEwkino(chain, index)
+    elif algo == 'HNLtauTest':
+        return isFOTauHNLtest(chain, index)
     else:
         raise RuntimeError('Wrong input for "algo" in isFOTau')
 
@@ -308,6 +339,8 @@ def isTightTau(chain, index, algo):
         return isTightTauHNL(chain, index)
     elif algo == 'ewkino':
         return isTightTauEwkino(chain, index)
+    elif algo == 'HNLtauTest':
+        return isTightTauHNLtest(chain, index)
     else:
         raise RuntimeError('Wrong input for "algo" in isTightTau')
 
@@ -406,6 +439,13 @@ def getTauAlgoWP(chain, selection = None, general_wp = None):
             return 'deeptauVSjets', ('vvvloose', 'loose', 'loose')
         elif general_wp == 'tight':
             return 'deeptauVSjets', ('medium', 'loose', 'loose')
+        else:
+            return None
+    elif selection == 'HNLtauTest':
+        if general_wp in ['loose', 'FO']:
+            return 'deeptauVSjets', ('vvvloose', 'tight', 'tight')
+        elif general_wp == 'tight':
+            return 'deeptauVSjets', ('medium', 'tight', 'tight')
         else:
             return None
     elif selection == 'ewkino':

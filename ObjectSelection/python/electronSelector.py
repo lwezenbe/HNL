@@ -540,8 +540,11 @@ def isFOElectronHNLUL(chain, index, syst = None):
     #Barrel
     if chain._leptonMvaTOPUL[index] <= 0.81:
         if not chain._lElectronPassMVAFall17NoIsoWPLoose[index]: return False
-        if chain._ptRatio[index] < 0.5:     return False
-        if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) > 0.5: return False
+        if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) > 0.1: return False
+        if '2016' in chain.year:
+            if chain._ptRatio[index] < 0.5:     return False
+        else:
+            if chain._ptRatio[index] < 0.4:     return False
     return True
 
 def isTightElectronHNLUL(chain, index, syst = None):
@@ -660,4 +663,5 @@ def electronConeCorrection(chain, index, algo = None):
     if algo == 'cutbased':
         return 1+max(0., chain._relIso[index]-0.1)
     else:
-        return 0.67/chain._ptRatio[index]
+        #return 0.67/chain._ptRatio[index]
+        return 0.72/chain._ptRatio[index]

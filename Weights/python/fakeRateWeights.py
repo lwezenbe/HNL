@@ -33,8 +33,8 @@ def lightLepFileName(year, data_string, flavor):
         return 'fakeRateMap_'+data_string+'_'+flavor+'_'+year+'.root'
 
 default_tau_path = lambda proc, year, selection, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Weights', 'data', 'FakeRates', year, 'Tau', 'TauFakes'+proc+'ttl-'+selection, data_string, 'fakerate.root')
-default_ele_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', era+'-'+year, lightLepFileName(luka_year_dict[year], data_string, 'electron'))
-default_mu_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', era+'-'+year, lightLepFileName(luka_year_dict[year], data_string, 'muon'))
+default_ele_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Weights', 'data', 'FakeRates', era+'-'+year, 'Electron', lightLepFileName(luka_year_dict[year], data_string, 'electron'))
+default_mu_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Weights', 'data', 'FakeRates', era+'-'+year, 'Muon', lightLepFileName(luka_year_dict[year], data_string, 'muon'))
 
 ele = 0
 mu = 1

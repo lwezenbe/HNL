@@ -89,7 +89,7 @@ else:
 if not args.inData:
     sublist = 'BackgroundEstimation/TauFakes-'+args.era+args.year
 else:
-    sublist = 'fulllist_'+args.era+args.year+'_nosignal'
+    sublist = 'fulllist_'+args.era+args.year
 sample_manager = SampleManager(args.era, args.year, skim_str, sublist, skim_selection=args.selection)
 
 this_file_name = __file__.split('.')[0].rsplit('/', 1)[-1]
@@ -102,6 +102,7 @@ from HNL.EventSelection.eventCategorization import ANALYSIS_CATEGORIES
 jobs = []
 for sample_name in sample_manager.sample_names:
     if args.sample and args.sample not in sample_name: continue
+    if 'HNL' in sample_name: continue
     sample = sample_manager.getSample(sample_name)
     if not args.inData and args.application == 'TauFakesDY' and not 'DY' in sample.name: continue
     for njob in xrange(sample.returnSplitJobs()):
@@ -344,7 +345,6 @@ if not args.makePlots:
 
         fake_factor = fakerate_collection.getFakeWeight()
         weight = reweighter.getTotalWeight()
-        print weight
 
         for v in var:
             try:

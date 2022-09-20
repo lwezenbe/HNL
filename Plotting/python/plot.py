@@ -45,7 +45,7 @@ import os
 import ROOT
 from HNL.Tools.helpers import isTimeStampFormat, makeDirIfNeeded
 from HNL.Plotting.style import setDefault, setDefault2D
-class Plot:
+class Plot(object):
     
     def __init__(self, signal_hist = None, tex_names = None, name = None, x_name = None, y_name = None, bkgr_hist = None, observed_hist = None, syst_hist = None, extra_text = None, 
         x_log = None, y_log = None, draw_ratio = None, draw_significance = None, color_palette = 'HNLfromTau', color_palette_bkgr = 'HNLfromTau', year = '2016', era = 'prelegacy'):
@@ -394,14 +394,13 @@ class Plot:
         self.tot_err.SetMarkerStyle(0)
 
         #Set axis: if significance is also drawn, no x-axis
-        # self.tot_err.SetMinimum(0.3)
-        # self.tot_err.SetMaximum(1.7)
-        self.tot_err.SetMinimum(max(0., 0.95*pt.getOverallMinimum(ratios, zero_not_allowed = True,  include_error=False)))
-        if just_errors:
-            self.tot_err.SetMaximum(2.)
-        else:
-            self.tot_err.SetMaximum(min(6, 1.1*pt.getOverallMaximum(ratios, include_error=False)))
-        # self.tot_err.GetXaxis().SetRangeUser(15., 900.)
+        self.tot_err.SetMinimum(0.3)
+        self.tot_err.SetMaximum(1.7)
+        #self.tot_err.SetMinimum(max(0., 0.95*pt.getOverallMinimum(ratios, zero_not_allowed = True,  include_error=False)))
+        #if just_errors:
+        #    self.tot_err.SetMaximum(2.)
+        #else:
+        #    self.tot_err.SetMaximum(min(6, 1.1*pt.getOverallMaximum(ratios, include_error=False)))
         self.tot_err.GetXaxis().SetTitleSize(.18)
         self.tot_err.GetYaxis().SetTitleSize(.18)
         self.tot_err.GetXaxis().SetLabelSize(.18)
@@ -1040,72 +1039,6 @@ class Plot:
         self.savePlot(output_dir +'/'+ self.name, message = None)
         ROOT.SetOwnership(self.canvas, False)
         
-    def drawFilledGraph(self, output_dir = None):
-        
-        setDefault()
-        
-        #Create Canvas
-        self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
-
-        self.setPads()
-        self.plotpad.Draw()
-        self.plotpad.cd()
-
-        graph = self.s[0] 
-        graph.SetMarkerSize(1.5)
-        from ROOT import TColor
-        graph.SetLineColor(TColor.GetColor('#78CAD2'))
-        graph.SetFillColor(TColor.GetColor('#78CAD2'))
-        #graph.SetMarkerColor(TColor.GetColor('#78CAD2'))
-        graph.SetFillStyle(1001)
-
-        graph.Draw('F')
-        if isinstance(self.x_name, list):
-            print 'invalid x_names'
-            return
-        graph.SetTitle(";" + self.x_name + ";" + self.y_name)
- 
-        xmax = pt.getXMax(self.s)
-        xmin = pt.getXMin(self.s)
-        ymax = pt.getYMax(self.s)
-        ymin = pt.getYMin(self.s)
-
-        if self.x_log :
-            self.plotpad.SetLogx()
-            graph.GetXaxis().SetRangeUser(0.3*xmin, 30*xmax)
-        else :
-            graph.GetXaxis().SetRangeUser(0.7*xmin, 1.3*xmax)
-        
-        if self.y_log:
-            self.plotpad.SetLogy()
-            graph.GetYaxis().SetRangeUser(0.3*ymin, 10*ymax)
-        else :
-            graph.GetYaxis().SetRangeUser(0.5*ymin, 1.2*ymax)       
-
- 
-        #self.setAxisLog() 
-        #Write extra text
-        if self.extra_text is not None:
-            self.drawExtraText()
-        
-        #Create Legend
-        self.canvas.cd()
-        legend = ROOT.TLegend(0.5, .8, .9, .9)
-        for h, n in zip(self.s, self.tex_names):
-            legend.AddEntry(h, n)
-        legend.SetFillStyle(0)
-        legend.SetBorderSize(0)
-        legend.Draw()
-       
- 
-        ROOT.gPad.Update() 
-        self.canvas.Update()
-        cl.CMS_lumi(self.canvas, 4, 11, 'Simulation', self.era+self.year)
-
-        #Save everything
-        self.savePlot(output_dir +'/'+ self.name, message = None)
-        ROOT.SetOwnership(self.canvas, False)
-
     def drawBarChart(self, output_dir = None, parallel_bins=False, message = None, index_colors = False):
         
         #

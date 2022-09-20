@@ -128,8 +128,8 @@ class EfficiencyTree(OutputTree):
     def getDenominator(self, vname, hname, condition = None):
         return super(EfficiencyTree, self).getHistFromTree(vname, hname, self.bins, condition) 
    
-    def getEfficiency(self, vname, hname, condition = None, passed_name = 'passed', inPercent = False):
-        eff = self.getNumerator(vname, hname, condition, passed_name = passed_name).Clone('tmp_'+self.name)
-        eff.Divide(eff, self.getDenominator(vname, hname, condition), 1., 1., "B")
-        if inPercent: eff.Scale(100.)
-        return eff
+    def getEfficiency(self, vname, hname, condition = None, passed_name = 'passed'):
+        num = self.getNumerator(vname, hname, condition, passed_name = passed_name).Clone('tmp_'+hname)
+        denom = self.getDenominator(vname, hname, condition).Clone('tmp_denom_'+hname)
+        from HNL.Tools.efficiency import Efficiency
+        return Efficiency(hname, vname, vname, None, efficiency_num = num, efficiency_denom = denom)

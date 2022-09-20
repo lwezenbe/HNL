@@ -285,13 +285,9 @@ def isFOMuonHNL(chain, index):
         if not chain.is_loose_lepton[index][0]: return False
     else:
         if not isLooseMuonHNL(chain, index):        return False
-    if chain._lPtCorr[index] <= 10: return False
     if chain._leptonMvaTOPUL[index] <= 0.64:
         if chain._ptRatio[index] < 0.45:        return False
-        if '2016' in chain.year:
-            if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutMuon(chain, index, 20., 0.02, 40., 0.015): return False 
-        else:
-            if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) >= slidingCutMuon(chain, index, 20., 0.025, 40., 0.015): return False 
+        if (chain._closestJetDeepFlavor_b[index] + chain._closestJetDeepFlavor_bb[index] + chain._closestJetDeepFlavor_lepb[index]) > 0.025: return False 
     return True
 
 def isTightMuonHNL(chain, index):
@@ -404,4 +400,5 @@ def muonConeCorrection(chain, index, algo = None):
         return 0.67/chain._ptRatio[index]
     else:
         # return 0.8/chain._ptRatio[index]
-        return 0.67/chain._ptRatio[index]
+        #return 0.67/chain._ptRatio[index]
+        return 0.72/chain._ptRatio[index]

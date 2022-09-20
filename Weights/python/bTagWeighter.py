@@ -142,6 +142,7 @@ def getReweightingFunction(algo, era, year, workingpoint, selection):
         sf_reader = ScaleFactorReaderJSON(algo, era, year, workingpoint)
     else:
         sf_reader = ScaleFactorReaderCSV(algo, era, year, workingpoint)
+
     try:
         from HNL.Tools.efficiency import Efficiency
         if selection == 'HNLtauTest': selection = 'default'

@@ -650,7 +650,6 @@ else:
                                         else:
                                             for sk in tmp_hist.keys():
                                                 tmp_list_of_hist[c][v]['bkgr']['non-prompt'][sk].add(tmp_hist[sk])
-                                        if v == 'searchregion': print b, c, tmp_hist['nominal'].getHist().GetSumOfWeights(), tmp_list_of_hist[c][v]['bkgr']['non-prompt']['nominal'].getHist().GetSumOfWeights()
                                         del(tmp_hist)
                     else:
                         syst_to_run = getSystToRun(year, b) if include_systematics in ['full'] else ['nominal'] 
