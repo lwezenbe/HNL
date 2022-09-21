@@ -419,7 +419,7 @@ if not args.makePlots and not args.makeDataCards:
         output_tree.write(is_test = arg_string if args.isTest else None, append = systematic != 'nominal')
         
         cutter.saveCutFlow(output_name, arg_string = arg_string if args.isTest else None)
-   
+  
     for syst in getSystToRun(year, args.sample): 
         print 'Running {0}'.format(syst)
         runEventLoop(chain, output_name_full, syst)
@@ -496,7 +496,7 @@ else:
             if args.sample is not None and args.sample != sample_name:      continue
             if sample_name not in sample_manager.sample_outputs:              continue    
             if args.masses is not None and sample_mass not in args.masses:  continue 
-            if args.flavor is not None and '-'+args.flavor+'-' not in sample_name:  continue 
+            if args.flavor != '' and '-'+args.flavor+'-' not in sample_name:  continue 
             tmp_signal_list.append(s)
 
         signal_list = [x for x in tmp_signal_list]
@@ -952,7 +952,6 @@ else:
                     else:
                         p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
                                 color_palette = 'Didar', color_palette_bkgr = 'Didar', x_name = var[v][2][0], y_name = var[v][2][1])
-
 
                     # Draw
                     #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = True, draw_option='EHist', min_cutoff = 1)

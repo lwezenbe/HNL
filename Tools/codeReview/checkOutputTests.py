@@ -192,6 +192,7 @@ def compareFiles(f, withinerrors=False):
     faulty_hn = []
     
     for hn in list_of_hist_names:
+        if 'cutflow' in hn: continue
         obj = loadObjects(f, hn)
         if isinstance(obj, str):
             everything_clear = False

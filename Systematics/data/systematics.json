@@ -56,7 +56,7 @@
     "triggerSyst" :
         {
             "Type"          : "flat",
-            "Value"         : 1.02,
+            "Value"         : 1.03,
             "FinalStates"   : "*",
             "Processes"     : "MC",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
@@ -304,7 +304,7 @@
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
-            "Activate"          : false,
+            "Activate"          : true,
             "Description"   : "Unclustered MET variation"
         }
 }

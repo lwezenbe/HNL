@@ -97,7 +97,6 @@ makeDirIfNeeded(pnfs_backup_base+'/x')
 for mf in merge_files:
     path, name = mf.rsplit('/', 1)
     new_name = name.split('_', 1)[1]+'.root'
-
     if not args.isTest and args.backupName != 'nobackup':
         if isValidRootFile(pnfs_base+'/'+new_name):
     #        continue

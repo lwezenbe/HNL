@@ -147,7 +147,7 @@ class EventSelector:
 
     def passedFilter(self, cutter, sample_name, kwargs={}):
         ignoreSignalOverlapRemoval = kwargs.get('ignoreSignalOverlapRemoval', False)
-        #if not ignoreSignalOverlapRemoval and not self.removeOverlapInTauSignal(sample_name): return False
+        if not ignoreSignalOverlapRemoval and not self.removeOverlapInTauSignal(sample_name): return False
 
         if not cutter.cut(self.chain._passMETFilters, 'metfilters'): return False
 
