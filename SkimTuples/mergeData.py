@@ -49,7 +49,6 @@ makeDirIfNeeded(output_folder+'/x')
 event_information_set = set()
 
 file_list = [pnfs_base+'/{0}.root'.format(infile) for infile in list_of_datafiles[args.infiles]]
-print file_list
 for i, sub_f_name in enumerate(file_list):
     progress(i, len(file_list))
 

@@ -152,7 +152,6 @@ class Reweighter:
             tot_weight *= self.returnWeight(weight)
         if sideband:
             tot_weight *= self.getFakeRateWeight(tau_method = tau_fake_method)
-        #tot_weight *= self.getPrefireWeight()
         return tot_weight
 
     def fillTreeWithWeights(self, chain):

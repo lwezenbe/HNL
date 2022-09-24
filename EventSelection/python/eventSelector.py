@@ -12,10 +12,10 @@ class FilterObject(object):
         self.ec = event_categorization
 
     def initEvent(self, nL, cutter, sort_leptons, kwargs={}):
-        sideband = kwargs.get('sideband', None) 
+        self.sideband = kwargs.get('sideband', None) 
         offline_thresholds = kwargs.get('offline_thresholds', True)       
 
-        if sideband is not None:
+        if self.sideband is not None:
             self.chain.obj_sel['tau_wp'] = 'FO'
             self.chain.obj_sel['ele_wp'] = 'FO'
             self.chain.obj_sel['mu_wp'] = 'FO'
@@ -28,7 +28,7 @@ class FilterObject(object):
         self.chain.category = self.ec.returnCategory()
         reweighter = kwargs.get('reweighter')
         if kwargs.get('calculate_weights', False) and reweighter is not None:
-            self.chain.weight = reweighter.getTotalWeight(sideband = sideband, tau_fake_method = 'TauFakesDY' if self.region == 'ZZCR' else None)
+            self.chain.weight = reweighter.getTotalWeight(sideband = self.sideband, tau_fake_method = 'TauFakesDY' if self.region == 'ZZCR' else None)
         else:
             self.chain.weight = None
 
@@ -37,10 +37,10 @@ class FilterObject(object):
             return False
 
         #If sideband, only select events where not all 3 leptons are tight
-        if sideband is not None:
+        if self.sideband is not None:
             nfail = 0
             for i, l in enumerate(self.chain.l_indices):
-                if isinstance(sideband, list) and self.chain.l_flavor[i] not in sideband: continue
+                if isinstance(self.sideband, list) and self.chain.l_flavor[i] not in self.sideband: continue
                 if not isGoodLepton(self.chain, l, 'tight'):
                     nfail += 1
             if nfail < 1: return False
@@ -95,6 +95,10 @@ class EventSelector:
             self.selector = LightLepFakeEnrichedDY(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization, additional_args = additional_options)
         elif self.name == 'LightLepFakesTT':
             self.selector = LightLepFakeEnrichedTT(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization, additional_args = additional_options)
+        elif self.name == 'LightLepFakesDYCT':
+            self.selector = LightLepFakeEnrichedDY(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization, additional_args = {'tightWP' : True})
+        elif self.name == 'LightLepFakesTTCT':
+            self.selector = LightLepFakeEnrichedTT(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization, additional_args = {'tightWP' : True})
         elif self.name == 'LightLeptonFakes':
             self.selector = LightLeptonFakeMeasurementRegion(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
         elif self.name == 'TauMixCT':

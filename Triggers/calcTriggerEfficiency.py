@@ -125,20 +125,20 @@ var = {
 #    'l1pt' : (lambda c : c.l_pt[0],                          np.arange(0., 100., 15.),                 ('p_{T}(l1) [GeV]', 'Efficiency')),
 #    'l2pt' : (lambda c : c.l_pt[1],                          np.arange(5., 80., 5.),                  ('p_{T}(l2) [GeV]', 'Efficiency')),
 #    'l3pt' : (lambda c : c.l_pt[2],                          np.arange(5., 80., 5.),                  ('p_{T}(l3) [GeV]', 'Efficiency')),
-#    'light1pt' : (lambda c : c.light_pt[0],                          np.arange(0., 110., 10.),                 ('p_{T}(light lep 1) [GeV]', 'Efficiency')),
-#    'light2pt' : (lambda c : c.light_pt[1],                          np.arange(10., 110., 10.),                  ('p_{T}(light lep 2) [GeV]', 'Efficiency')),
-#    #'l1pt' : (lambda c : c.l_pt[0],                          np.arange(0., 100., 2.),                 ('p_{T}(l1) [GeV]', 'Efficiency')),
-#    #'l2pt' : (lambda c : c.l_pt[1],                          np.arange(5., 80., 2.),                  ('p_{T}(l2) [GeV]', 'Efficiency')),
-#    #'l3pt' : (lambda c : c.l_pt[2],                          np.arange(5., 80., 2.),                  ('p_{T}(l3) [GeV]', 'Efficiency')),
+    'light1pt' : (lambda c : c.light_pt[0],                          np.arange(0., 110., 10.),                 ('p_{T}(light lep 1) [GeV]', 'Efficiency')),
+    'light2pt' : (lambda c : c.light_pt[1],                          np.arange(10., 110., 10.),                  ('p_{T}(light lep 2) [GeV]', 'Efficiency')),
+    #'l1pt' : (lambda c : c.l_pt[0],                          np.arange(0., 100., 2.),                 ('p_{T}(l1) [GeV]', 'Efficiency')),
+    #'l2pt' : (lambda c : c.l_pt[1],                          np.arange(5., 80., 2.),                  ('p_{T}(l2) [GeV]', 'Efficiency')),
+    #'l3pt' : (lambda c : c.l_pt[2],                          np.arange(5., 80., 2.),                  ('p_{T}(l3) [GeV]', 'Efficiency')),
 #    'abs(l1eta)' : (lambda c : abs(c.l_eta[0]),                          np.arange(0., 3., .5),                  ('|#eta|(l1) [GeV]', 'Efficiency')),
 #    'abs(l2eta)' : (lambda c : abs(c.l_eta[1]),                          np.arange(0., 3., .5),                  ('|#eta|(l2) [GeV]', 'Efficiency')),
 #    'abs(l3eta)' : (lambda c : abs(c.l_eta[2]),                          np.arange(0., 3., .5),                  ('|#eta|(l3) [GeV]', 'Efficiency')),
-#    'abs(light1eta)' : (lambda c : abs(c.light_eta[0]),                          np.arange(0., 3., .5),                  ('|#eta|(light lep 1) [GeV]', 'Efficiency')),
-#    'abs(light2eta)' : (lambda c : abs(c.light_eta[1]),                          np.arange(0., 3., .5),                  ('|#eta|(light lep 2) [GeV]', 'Efficiency')),
+    'abs(light1eta)' : (lambda c : abs(c.light_eta[0]),                          np.arange(0., 3., .2),                  ('|#eta|(light lep 1) [GeV]', 'Efficiency')),
+    'abs(light2eta)' : (lambda c : abs(c.light_eta[1]),                          np.arange(0., 3., .2),                  ('|#eta|(light lep 2) [GeV]', 'Efficiency')),
 #    'l1pt-abs(l1eta)' : (lambda c : (c.l_pt[0], abs(c.l_eta[0])),      (np.arange(0., 100., 15.), np.arange(0., 3., .5)), ('p_{T}(l1) [GeV]', '|#eta|(l1)')),
 #    'l2pt-abs(l2eta)' : (lambda c : (c.l_pt[1], abs(c.l_eta[1])),      (np.arange(5., 40., 5.), np.arange(0., 3., .5)), ('p_{T}(l2) [GeV]', '|#eta|(subleading)')),
 #    'l3pt-abs(l3eta)' : (lambda c : (c.l_pt[2], abs(c.l_eta[2])),      (np.arange(5., 40., 5.), np.arange(0., 3., .5)), ('p_{T}(l3) [GeV]', '|#eta|(subleading)')),
-    'l3pt-l2pt' : (lambda c : (c.l_pt[2], c.l_pt[1]),      (np.arange(5., 50., 5.), np.arange(5., 50., 5.)), ('p_{T}(l3) [GeV]', 'p_{T}(l2) [GeV]')),
+#    'l3pt-l2pt' : (lambda c : (c.l_pt[2], c.l_pt[1]),      (np.arange(5., 50., 5.), np.arange(5., 50., 5.)), ('p_{T}(l3) [GeV]', 'p_{T}(l2) [GeV]')),
 #    'l3pt-l2pt' : (lambda c : (c.l_pt[2], c.l_pt[1]),      (np.arange(10., 32., 2.), np.arange(10., 32., 2.)), ('p_{T}(l3) [GeV]', 'p_{T}(l2) [GeV]')),
 #    'l2pt-l1pt' : (lambda c : (c.l_pt[1], c.l_pt[0]),      (np.arange(10., 34., 4.), np.arange(15., 35., 4.)), ('p_{T}(l2) [GeV]', 'p_{T}(l1) [GeV]')),
 }
@@ -369,7 +369,6 @@ else:
                 for tc in TRIGGER_CATEGORIES:
                     #if tc != 'TauEE' : continue
                     output_string = getOutputBase(year, sample_output).replace('Triggers/data/', 'Triggers/data/Results/')
-                    print output_string
                     if '-' in v:
                         for llc in leading_lep_cat:
                             name_for_plot = "".join([x for x in v if x not in ['(', ')']])

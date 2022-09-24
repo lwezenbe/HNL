@@ -66,7 +66,8 @@ def returnFakeRateCollection(chain, tau_method = None, region = None):
     fakerates[ele] = FakeRateEmulator('fakeRate_electron_'+luka_year_dict[str(chain.year)], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_ele_path(chain.era, str(chain.year), data_dict[(chain.is_data, 'light')]))
     fakerates[mu] = FakeRateEmulator('fakeRate_muon_'+luka_year_dict[str(chain.year)], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_mu_path(chain.era, str(chain.year), data_dict[(chain.is_data, 'light')]))
     if tau_method is None: tau_method = TAU_METHOD
-    fakerates[tau] = returnTauFR(tau_method, chain, region)
+    if not chain.obj_sel['notau']:
+        fakerates[tau] = returnTauFR(tau_method, chain, region)
 
     fakerate_collection = FakeRateCollection(chain, fakerates)
 

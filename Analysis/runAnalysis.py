@@ -336,8 +336,8 @@ if not args.makePlots and not args.makeDataCards:
         for entry in event_range:
 
             chain.GetEntry(entry)
-            #if args.isTest: progress(entry - event_range[0], len(event_range))
-            progress(entry - event_range[0], len(event_range))
+            if args.isTest: progress(entry - event_range[0], len(event_range))
+            #progress(entry - event_range[0], len(event_range))
  
             cutter.cut(True, 'Total')
             #
@@ -361,7 +361,7 @@ if not args.makePlots and not args.makeDataCards:
                     is_sideband_event = True
                 else:
                     pass
-         
+        
             #
             # Make the code blind in signal regions
             # If you ever remove these next lines, set remove manually_blinded as well
