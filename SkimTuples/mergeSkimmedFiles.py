@@ -109,9 +109,9 @@ for mf in merge_files:
     for sf in sub_files:
         tot_size += fileSize(sf)
     
-    #if tot_size > 1000:
-    #    mergeLargeFile(mf)
-    #else:
-    #    mergeSmallFile(mf)
+    if tot_size > 1000:
+        mergeLargeFile(mf)
+    else:
+        mergeSmallFile(mf)
         
-    mergeSmallFile(mf)
+#    mergeSmallFile(mf)

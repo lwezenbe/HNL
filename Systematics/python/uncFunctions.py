@@ -17,7 +17,7 @@ def returnTheoryUnc(sample_name):
         return round(1 + (0.03*(1-frac)+0.15*frac), 2)
 
 def returnUncFunc(function_name, kwargs):
-    if func == 'theory':
+    if function_name == 'theory':
         sample_name = kwargs.get('process')
         if sample_name is None: raise RuntimeError("Invalid argument in returnUncFunc")
         return returnTheoryUnc(sample_name)

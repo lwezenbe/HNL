@@ -394,13 +394,13 @@ class Plot(object):
         self.tot_err.SetMarkerStyle(0)
 
         #Set axis: if significance is also drawn, no x-axis
-        self.tot_err.SetMinimum(0.3)
-        self.tot_err.SetMaximum(1.7)
-        #self.tot_err.SetMinimum(max(0., 0.95*pt.getOverallMinimum(ratios, zero_not_allowed = True,  include_error=False)))
-        #if just_errors:
-        #    self.tot_err.SetMaximum(2.)
-        #else:
-        #    self.tot_err.SetMaximum(min(6, 1.1*pt.getOverallMaximum(ratios, include_error=False)))
+        #self.tot_err.SetMinimum(0.3)
+        #self.tot_err.SetMaximum(1.7)
+        self.tot_err.SetMinimum(max(0., 0.95*pt.getOverallMinimum(ratios, zero_not_allowed = True,  include_error=False)))
+        if just_errors:
+            self.tot_err.SetMaximum(2.)
+        else:
+            self.tot_err.SetMaximum(min(6, 1.1*pt.getOverallMaximum(ratios, include_error=False)))
         self.tot_err.GetXaxis().SetTitleSize(.18)
         self.tot_err.GetYaxis().SetTitleSize(.18)
         self.tot_err.GetXaxis().SetLabelSize(.18)
@@ -814,15 +814,15 @@ class Plot(object):
                 else:
                     h.Draw(tmp_draw_option+'Same')
 
-        if normalize_signal == 'bkgr':
-            if self.extra_text is None: self.extra_text = []
-            self.extra_text.append(pt.extraTextFormat('Scaled to background yield'))          
-        elif isinstance(normalize_signal, int) or isinstance(normalize_signal, float):
-            if self.extra_text is None: self.extra_text = []
-            if normalize_signal >= 1.:
-                self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0}'.format(int(normalize_signal))))          
-            else:
-                self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0:.3g}'.format(normalize_signal)))          
+#        if normalize_signal == 'bkgr':
+#            if self.extra_text is None: self.extra_text = []
+#            self.extra_text.append(pt.extraTextFormat('Scaled to background yield'))          
+#        elif isinstance(normalize_signal, int) or isinstance(normalize_signal, float):
+#            if self.extra_text is None: self.extra_text = []
+#            if normalize_signal >= 1.:
+#                self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0}'.format(int(normalize_signal))))          
+#            else:
+#                self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0:.3g}'.format(normalize_signal)))          
         
         self.drawErrors(draw_option, bkgr_draw_option)
 

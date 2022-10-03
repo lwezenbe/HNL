@@ -129,13 +129,13 @@ CATEGORIES_TO_USE = range(1, len(CATEGORIES))
 SUPER_CATEGORIES = {
     'SingleTau' : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18], 
     'NoTau' : [19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32], 
-#    'Other': [33]
+    'Other': [33]
     }
 SUPER_CATEGORIES_TEX = {
     'SingleTau' : '2 light lep + #tau_{h}', 
     'NoTau' : '3 light lep', 
 #    'Total': [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16], 
-#    'Other': '4 leptons'
+    'Other': '4 leptons'
     }
 mutual_exclusive_supercategories = ['SingleTau', 'NoTau']
 
@@ -187,8 +187,13 @@ TRIGGER_CATEGORIES = {
     'MuMuMu': [20], 
     'EEMu': [21, 22, 23, 24, 25, 26], 
     'EMuMu': [27, 28, 29, 30, 31, 32],
-    'LeadingLightLepElectron':[1, 2, 3, 4, 5, 6, 13, 15, 17, 19, 21, 22, 24, 25, 27, 30], 
-    'LeadingLightLepMuon':[7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 23, 26, 28, 29, 31, 32]
+    'LeadingLightLepElectron' : [1, 2, 3, 4, 5, 6, 13, 15, 17, 19, 21, 22, 24, 25, 27, 30], 
+    'LeadingLightLepMuon' : [7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 23, 26, 28, 29, 31, 32],
+    #'CrossCategory' : [13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
+#    'CrossCategoryLeadingElectron' : [13, 15, 17, 21, 22, 24, 25, 27, 30],
+#    'CrossCategoryLeadingMuon' : [14, 16, 18, 23, 26,28, 29, 31, 32],
+#    'DoubleElectrons' : [2, 3, 5, 6, 19, 21, 22, 24, 25],
+#    'DoubleMuons' : [8, 9, 11, 12, 20, 28, 29, 31, 32]
     } 
 
 def filterSuperCategory(super_category_name, category):

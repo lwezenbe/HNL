@@ -2,7 +2,7 @@ import ROOT
 import glob, os
 from HNL.Tools.helpers import makeDirIfNeeded, progress
 
-list_of_datafiles =  {'signal' : ['SingleMuon', 'SingleElectron', 'DoubleMuon', 'DoubleEG', 'MuonEG'],
+list_of_datafiles =  {'signal' : ['SingleMuon', 'SingleElectron', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'EGamma'],
                         'reference' : ['JetHT', 'MET', 'HTMHT']}
 
 
@@ -51,7 +51,6 @@ event_information_set = set()
 file_list = [pnfs_base+'/{0}.root'.format(infile) for infile in list_of_datafiles[args.infiles]]
 for i, sub_f_name in enumerate(file_list):
     progress(i, len(file_list))
-
 
     f = ROOT.TFile(sub_f_name)
     c = f.Get('blackJackAndHookers/blackJackAndHookersTree')

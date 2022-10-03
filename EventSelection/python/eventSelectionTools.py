@@ -622,6 +622,13 @@ def calcLT(chain, new_chain, is_reco_level = True):
     LT += chain.met
     return LT
 
+def objectInHEMregion(chain, new_chain):
+    for eta, phi in zip(new_chain.l_eta, new_chain.l_phi):
+        if eta < 1.3 and -1.57 < phi < -0.87: return True
+    for j_index in selectJets(chain):
+        if chain._jetEta[j_index] < 1.3 and -1.57 < chain._jetPhi[j_index] < -0.87: return True
+    return False
+    
 #
 # Functions that change some values in the tree
 #

@@ -22,13 +22,13 @@ list_of_syst = {}
 
 from HNL.Tools.helpers import getObjFromFile
 for year in years:
-    for syst in reader.getFlats(year, split_correlations=False):
-        val = abs(1.-reader.getValue(syst, year))
-        group = reader.getDescription(syst, year)
-        if group in list_of_syst.keys():
-            list_of_syst[group].append(val)
-        else:
-            list_of_syst[group] = [val]
+#    for syst in reader.getFlats(year, split_correlations=False):
+#        val = abs(1.-reader.getValue(syst, year))
+#        group = reader.getDescription(syst, year)
+#        if group in list_of_syst.keys():
+#            list_of_syst[group].append(val)
+#        else:
+#            list_of_syst[group] = [val]
 
     for region in regions.keys():
         for sr in regions[region]:
@@ -47,6 +47,7 @@ for year in years:
                         #print nominal_hist
 
                         for syst, uncorr_syst in zip(reader.getWeights(year, split_correlations=True)+reader.getReruns(year, split_correlations=True), reader.getWeights(year, split_correlations=False)+reader.getReruns(year, split_correlations=False)):
+                            if not 'prefire' in syst: continue
                             try:
                                 #syst_hist_up = getObjFromFile(shape_loc(region, era, year, 'e', 'HNL-e-m{0}'.format(mass), sr, cat), sr+'-'+cat+str(syst)+'Up/'+b).GetSumOfWeights()
                                 #syst_hist_down = getObjFromFile(shape_loc(region, era, year, 'e', 'HNL-e-m{0}'.format(mass), sr, cat), sr+'-'+cat+str(syst)+'Down/'+b).GetSumOfWeights()

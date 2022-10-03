@@ -40,10 +40,12 @@ argParser.add_argument('--makeDataCards', action = 'store_true',  help='Make dat
 argParser.add_argument('--rescaleSignal', type = float,  action='store', default=None,  help='Enter desired signal coupling squared')
 argParser.add_argument('--masses', type=float, nargs='*',  help='Only run or plot signal samples with mass given in this list')
 argParser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l', ''])
+argParser.add_argument('--cutFlowOnly',   action='store_true',   default=False,  help='Do not overwrite any plots, just produce cutflow tables')
 argParser.add_argument('--signalOnly',   action='store_true',   default=False,  help='Run or plot a only the signal')
 argParser.add_argument('--plotBkgrOnly',   action='store_true',     default=False,  help='Plot only the background')
 argParser.add_argument('--plotSingleBin',   action='store_true',     default=False,  help='Run or plot a only the background')
 argParser.add_argument('--categoriesToPlot',   action='store',     default='super',  help='What categories to use', choices=['original', 'analysis', 'super'])
+argParser.add_argument('--category',   action='store',     default=None,  help='What specific category to use')
 argParser.add_argument('--additionalCondition',   action='store',     default=None,  help='Additional condition for selection')
 argParser.add_argument('--ignoreSystematics',   action='store_true',     default=False,  help='ignore systematics in plots')
 argParser.add_argument('--combineYears',   action='store_true',     default=False,  help='combine all years specified in year arg in plots')
@@ -132,7 +134,7 @@ else:
 #
 if not args.isTest:
     jobs = {}
-    if args.makePlots and args.submitPlotting and not args.isChild:
+    if (args.makeDataCards or args.makePlots) and args.submitPlotting and not args.isChild:
         jobs = [['0']]
     else:
         for year in args.year:
@@ -152,8 +154,9 @@ if not args.isTest:
 #
 
 from HNL.Tools.jobSubmitter import submitJobs, checkShouldMerge
-if args.makePlots and args.submitPlotting and not args.isChild:
-    submitJobs(__file__, ['subJob'], jobs, argParser, jobLabel='runAnalysis-plotting-'+args.region, include_all_groups = True)
+if (args.makeDataCards or args.makePlots) and args.submitPlotting and not args.isChild:
+    label = 'datacards' if args.makeDataCards else 'plotting'
+    submitJobs(__file__, ['subJob'], jobs, argParser, jobLabel='runAnalysis-'+label+'-'+args.region, include_all_groups = True)
     exit(0)
 
 if not args.isChild and not args.makePlots and not args.makeDataCards:
@@ -310,6 +313,7 @@ if not args.makePlots and not args.makeDataCards:
         for v in var.keys():
             branches.extend(['{0}/F'.format(v)])
         branches.extend(['weight/F', 'isprompt/O', 'category/I', 'searchregion/I', 'issideband/O'])
+        branches.extend(['isPreHEMrun/O','objectInHEM/O'])
         if args.tag == 'TauFakePurity': branches.extend(['istight/O'])
         branches.extend(event.reweighter.returnBranches())
         branches.extend(event.systematics.returnBranches(args.sample))
@@ -394,7 +398,7 @@ if not args.makePlots and not args.makeDataCards:
 
             if args.strategy == 'MVA':
                 tmva.predictAndWriteAll(chain)
-
+        
             #
             # Fill tree
             #
@@ -407,6 +411,9 @@ if not args.makePlots and not args.makeDataCards:
             output_tree.setTreeVariable('category', chain.category)
             output_tree.setTreeVariable('searchregion', srm[args.region].getSearchRegion(chain))
             output_tree.setTreeVariable('issideband', is_sideband_event)
+            from HNL.EventSelection.eventSelectionTools import objectInHEMregion
+            output_tree.setTreeVariable('objectInHEM', objectInHEMregion(chain, chain))
+            output_tree.setTreeVariable('isPreHEMrun', chain._runNb < 319077)
             if args.tag == 'TauFakePurity':
                 output_tree.setTreeVariable('istight', chain.istight)
                 
@@ -501,8 +508,9 @@ else:
 
         signal_list = [x for x in tmp_signal_list]
 
-        sorted_analysis_categories = cat.ANALYSIS_CATEGORIES.keys()
-        sorted_super_categories = cat.SUPER_CATEGORIES.keys()
+        sorted_analysis_categories = cat.ANALYSIS_CATEGORIES.keys() if args.category is None else args.category
+        from HNL.Analysis.analysisTypes import getRelevantSuperCategories
+        sorted_super_categories = getRelevantSuperCategories(cat.SUPER_CATEGORIES.keys(), args.region) if args.category is None else args.category
 
         #Reset list_of_hist
         category_dict = {
@@ -510,11 +518,12 @@ else:
             'analysis': (sorted_analysis_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.ANALYSIS_CATEGORIES[y]])+')' for y in sorted_analysis_categories], {y :[str(x) for x in cat.ANALYSIS_CATEGORIES[y]] for y in sorted_analysis_categories}),
             'super' : (sorted_super_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.SUPER_CATEGORIES[y]])+')' for y in sorted_super_categories], {y:[str(x) for x in cat.SUPER_CATEGORIES[y]] for y in sorted_super_categories})
         } 
-        
+
         #Add entry for the search regions in the var dictionary
         from HNL.Weights.reweighter import var_weights
         var.update(var_weights)
         var['searchregion'] = (lambda c : c.searchregion, np.arange(0.5, srm[args.region].getNumberOfSearchRegions()+1.5, 1.), ('Search Region', 'Events'))
+        #var = {'searchregion' : (lambda c : c.searchregion, np.arange(0.5, srm[args.region].getNumberOfSearchRegions()+1.5, 1.), ('Search Region', 'Events'))}
 
         # Custom Var that you can create from existing var (i.e. 2D plots)
         # var['l3pt-met'] = (lambda c : [c.l3pt, c.met], (np.array([20., 25., 35., 50., 70., 100.]), np.array([0., 20., 35., 50., 100.])), ('p_{T}(l3) [GeV]', 'met'))
@@ -536,8 +545,7 @@ else:
             return out_dict 
 
 
-        #TODO: remove split_tau_signal after we can do tau signal cleaning (aka gen info becomes available)
-        def createVariableDistributions(categories_dict, var_dict, signal, background, data, sample_manager, additional_condition = None, split_tau_signal = False, include_systematics = 'nominal', sr = None, split_corr = False):
+        def createVariableDistributions(categories_dict, var_dict, signal, background, data, sample_manager, additional_condition = None, include_systematics = 'nominal', sr = None, split_corr = False):
             if additional_condition is None:
                 additional_condition = ''
             else:
@@ -546,6 +554,7 @@ else:
             print 'includes systematics?', include_systematics
     
             from HNL.Tools.outputTree import OutputTree
+            from HNL.Analysis.analysisTypes import getBinning
             categories_to_use = categories_dict[0]
             category_conditions = categories_dict[1]
             tmp_list_of_hist = {}
@@ -563,33 +572,16 @@ else:
                     sample_name = s.split('/')[-1]
                     sample_mass = float(sample_name.split('-m')[-1])
 
-                    from HNL.Tools.helpers import isValidRootFile
-                    check_split_tau = all([isValidRootFile(s+'/variables-HNL-{0}-m{1}.root'.format(x, int(sample_mass))) for x in ['taulep', 'tauhad']])
-                    if not split_tau_signal or not check_split_tau:
-                        syst_to_run = getSystToRun(year, sample_name) if include_systematics in ['full'] else ['nominal']
-                        split_syst_to_run = getSystToRun(year, sample_name, split_corr=split_corr) if include_systematics in ['full'] else ['nominal']           
-                        for syst, corr_syst in zip(syst_to_run, split_syst_to_run):
-                            intree = OutputTree('events_{0}'.format(syst), s+'/variables.root')
-                            for c, cc in zip(categories_to_use, category_conditions): 
-                                for v in var_dict.keys():
-                                    if syst == 'nominal':
-                                        tmp_list_of_hist[c][v]['signal'][sample_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&!issideband)'+additional_condition, sample_name, include_systematics, split_corr = split_corr)
-                                    else:
-                                        tmp_list_of_hist[c][v]['signal'][sample_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&!issideband)'+additional_condition, sample_name, split_corr = split_corr)['nominal'] 
-                    else:
-                        for tausig in ['taulep', 'tauhad']:
-                            syst_to_run = getSystToRun(year, sample_name) if include_systematics in ['full'] else ['nominal']
-                            split_syst_to_run = getSystToRun(year, sample_name, split_corr=split_corr) if include_systematics in ['full'] else ['nominal']            
-                            for syst, corr_syst in zip(syst_to_run, split_syst_to_run):
-                                sample_name = 'HNL-{0}-m{1}'.format(tausig, int(sample_mass))
-                                intree = OutputTree('events_{0}'.format(syst), s+'/variables-{0}.root'.format(sample_name))
-
-                                for c, cc in zip(categories_to_use, category_conditions):
-                                    for v in var_dict.keys():
-                                        if syst == 'nominal':
-                                            tmp_list_of_hist[c][v]['signal'][sample_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&!issideband)'+additional_condition, sample_name, include_systematics, split_corr=split_corr)
-                                        else:
-                                            tmp_list_of_hist[c][v]['signal'][sample_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&!issideband)'+additional_condition, sample_name, split_corr=split_corr)['nominal']
+                    syst_to_run = getSystToRun(year, sample_name) if include_systematics in ['full'] else ['nominal']
+                    split_syst_to_run = getSystToRun(year, sample_name, split_corr=split_corr) if include_systematics in ['full'] else ['nominal']           
+                    for syst, corr_syst in zip(syst_to_run, split_syst_to_run):
+                        intree = OutputTree('events_{0}'.format(syst), s+'/variables.root')
+                        for c, cc in zip(categories_to_use, category_conditions): 
+                            for v in var_dict.keys():
+                                if syst == 'nominal':
+                                    tmp_list_of_hist[c][v]['signal'][sample_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition, sample_name, include_systematics, split_corr = split_corr)
+                                else:
+                                    tmp_list_of_hist[c][v]['signal'][sample_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition, sample_name, split_corr = split_corr)['nominal'] 
                                     
  
                     for c, cc in zip(categories_to_use, category_conditions): 
@@ -610,10 +602,10 @@ else:
                         for v in var_dict:
                             proc_to_use = 'non-prompt' if args.includeData == 'includeSideband' else 'Data'
                             if syst == 'nominal':
-                                tmp_list_of_hist[c][v]['data']['sideband'] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&issideband)'+additional_condition, proc_to_use, include_systematics, split_corr=split_corr)
-                                tmp_list_of_hist[c][v]['data']['signalregion'] = {'nominal' : Histogram(intree.getHistFromTree(v, str(c)+'-'+v+'-'+'-nominal-Data-signalregion'+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&!issideband)'+additional_condition))}
+                                tmp_list_of_hist[c][v]['data']['sideband'] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&issideband)'+additional_condition, proc_to_use, include_systematics, split_corr=split_corr)
+                                tmp_list_of_hist[c][v]['data']['signalregion'] = {'nominal' : Histogram(intree.getHistFromTree(v, str(c)+'-'+v+'-'+'-nominal-Data-signalregion'+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition))}
                             else:
-                                tmp_list_of_hist[c][v]['data']['sideband'][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&issideband)'+additional_condition, proc_to_use, split_corr=split_corr)['nominal']
+                                tmp_list_of_hist[c][v]['data']['sideband'][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&issideband)'+additional_condition, proc_to_use, split_corr=split_corr)['nominal']
 
             if not args.signalOnly:
                 print "Loading background histograms"
@@ -635,15 +627,15 @@ else:
                             for c, cc in zip(categories_to_use, category_conditions):
                                 for iv, v in enumerate(var_dict.keys()): 
                                     if syst == 'nominal': 
-                                        tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, include_systematics, split_corr=split_corr)
+                                        tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, include_systematics, split_corr=split_corr)
                                     else:
-                                        tmp_list_of_hist[c][v]['bkgr'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, split_corr=split_corr)['nominal']
+                                        tmp_list_of_hist[c][v]['bkgr'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, split_corr=split_corr)['nominal']
                                                
                                     if args.includeData != 'includeSideband':
                                         if syst == 'nominal': 
-                                            tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np'+syst+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&!isprompt&&!issideband)'+additional_condition, 'non-prompt', include_systematics)
+                                            tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np'+syst+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!isprompt&&!issideband)'+additional_condition, 'non-prompt', include_systematics)
                                         else:
-                                            tmp_hist = {corr_syst : createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np'+syst+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&!isprompt&&!issideband)'+additional_condition, b)['nominal']}
+                                            tmp_hist = {corr_syst : createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np'+syst+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!isprompt&&!issideband)'+additional_condition, b)['nominal']}
                
                                         if corr_syst not in tmp_list_of_hist[c][v]['bkgr']['non-prompt'].keys():
                                             tmp_list_of_hist[c][v]['bkgr']['non-prompt'].update(tmp_hist)
@@ -655,13 +647,13 @@ else:
                         syst_to_run = getSystToRun(year, b) if include_systematics in ['full'] else ['nominal'] 
                         split_syst_to_run = getSystToRun(year, sample_name, split_corr=split_corr) if include_systematics in ['full'] else ['nominal']
                         for syst, corr_syst in zip(syst_to_run, split_syst_to_run):
-                            intree = OutputTree('events', getOutputName('bkgr', year)+'/'+sample_manager.output_dict[b]+'/variables-'+b+'.root')                       
+                            intree = OutputTree('events_{0}'.format(syst), getOutputName('bkgr', year, args.tag)+'/'+sample_manager.output_dict[b]+'/variables-'+b+'.root')                       
                             for c, cc in zip(categories_to_use, category_conditions):
                                 for iv, v in enumerate(var_dict.keys()):
                                     if syst == 'nominal': 
-                                        tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'t'+syst+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&!issideband)'+additional_condition, b, include_systematics, split_corr=split_corr)
+                                        tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'t'+syst+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, include_systematics, split_corr=split_corr)
                                     else:
-                                        tmp_list_of_hist[c][v]['bkgr'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'t'+syst+'-'+str(sr)+'-'+str(year), var_dict[v][1], '('+cc+'&&!issideband)'+additional_condition, b, split_corr=split_corr)['nominal']
+                                        tmp_list_of_hist[c][v]['bkgr'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'t'+syst+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, split_corr=split_corr)['nominal']
 
                 if args.includeData == 'includeSideband':
                     for c, cc in zip(categories_to_use, category_conditions):
@@ -704,7 +696,7 @@ else:
                     for mva in list_of_mvas:
                         var_for_datacard[mva] = [x for x in var[mva]]
 
-                hist_for_datacard = createVariableDistributions(category_dict[args.categoriesToPlot], var_for_datacard, signal_list, background_collection, data_list, sample_manager, '||'.join(['searchregion=={0}'.format(x) for x in srm[args.region].getGroupValues(sr)]), split_tau_signal = True, include_systematics = True, sr=sr, split_corr=True)
+                hist_for_datacard = createVariableDistributions(category_dict[args.categoriesToPlot], var_for_datacard, signal_list, background_collection, data_list, sample_manager, '||'.join(['searchregion=={0}'.format(x) for x in srm[args.region].getGroupValues(sr)]), include_systematics = args.systematics, sr=sr, split_corr=True)
                    
                 for ac in category_dict[args.categoriesToPlot][0]:
                     print 'Filling', ac
@@ -718,13 +710,6 @@ else:
                             out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([args.selection, args.region]), 
                                                     args.era+str(year), args.flavor, sample_name, bin_name+'.shapes.root')
                             makeDirIfNeeded(out_path)
-                            try:
-                                if 'HNL-tau' in sample_name:
-                                    if ac == 'NoTau': sample_name = sample_name.replace('tau', 'taulep')
-                                    else: sample_name = sample_name.replace('tau', 'tauhad')
-                                    hist_for_datacard[ac][v]['signal'][sample_name]['nominal']
-                            except:
-                                sample_name = 'HNL-tau-m{0}'.format(int(sample_mass))
                             hist_for_datacard[ac][v]['signal'][sample_name]['nominal'].replaceZeroBins()
                             hist_for_datacard[ac][v]['signal'][sample_name]['nominal'].write(out_path, write_name='HNL-{0}-m{1}'.format(args.flavor, int(sample_mass)), subdirs = [bin_name.rsplit('-', 1)[0]])
                             for syst in hist_for_datacard[ac][v]['signal'][sample_name].keys():
@@ -750,17 +735,17 @@ else:
                             if 'HNL-tau' in sample_name:
                                 sample_name = 'HNL-tau-m{0}'.format(int(sample_mass))
                             makeDataCard(bin_name, args.flavor, args.era, year, 0, sample_name, bkgr_names, args.selection, args.region, ac, shapes=True, coupling_sq = coupling_squared, nonprompt_from_sideband = args.includeData == 'includeSideband')
-
+    
         if args.makePlots:
             print "Creating list of histograms"
             list_of_hist[year] = createVariableDistributions(category_dict[args.categoriesToPlot], var, signal_list, background_collection, data_list, sample_manager, additional_condition = args.additionalCondition, include_systematics = args.systematics if not args.ignoreSystematics else 'nominal')
-            print "Making Bar Charts"
-            list_of_hist_forbar[year] = createVariableDistributions(category_dict['original'], {'searchregion' : var['searchregion']}, signal_list, background_collection, data_list, sample_manager, additional_condition = args.additionalCondition)
+#            print "Making Bar Charts"
+#            list_of_hist_forbar[year] = createVariableDistributions(category_dict['original'], {'searchregion' : var['searchregion']}, signal_list, background_collection, data_list, sample_manager, additional_condition = args.additionalCondition)
 
 
 
     years_to_plot = [y for y in args.year]
-    if args.combineYears: years_to_plot.extend(['-'.join(args.year)])
+    if args.combineYears: years_to_plot.extend((['-'.join(sorted(args.year))]))
 
     if args.combineYears:
         def combineYears(hist_list, include_systematics = True):
@@ -792,7 +777,7 @@ else:
        
  
         list_of_hist[years_to_plot[-1]] = combineYears(list_of_hist)
-        list_of_hist_forbar[years_to_plot[-1]] = combineYears(list_of_hist_forbar, False)
+#        list_of_hist_forbar[years_to_plot[-1]] = combineYears(list_of_hist_forbar, False)
 
     for year in years_to_plot:
         
@@ -810,7 +795,7 @@ else:
                 names_to_return.append(name)
             
             if not no_other:
-                other_hist = hist_dict[sorted_yields[n+1][0]].clone('other_hist')
+                other_hist = hist_dict[sorted_yields[n+1][0]][syst].clone('other_hist')
                 for (name, y) in sorted_yields[n+2:]:
                     other_hist.add(hist_dict[name][syst])
 
@@ -848,197 +833,207 @@ else:
         #
         print "Creating variable plots"
 
-        from HNL.EventSelection.eventCategorization import CATEGORY_NAMES
-        # for c in list_of_hist.keys():
-        for c in category_dict[args.categoriesToPlot][0]:
-            if args.categoriesToPlot == 'original':
-                c_name = CATEGORY_NAMES[c]
-            elif args.categoriesToPlot == 'analysis':
-                from HNL.EventSelection.eventCategorization import ANALYSIS_CATEGORIES_TEX
-                c_name = ANALYSIS_CATEGORIES_TEX[c] 
-            else:
-                from HNL.EventSelection.eventCategorization import SUPER_CATEGORIES_TEX
-                c_name = SUPER_CATEGORIES_TEX[c] 
-
-            extra_text = [extraTextFormat(c_name, xpos = 0.2, ypos = 0.74, textsize = None, align = 12)]  #Text to display event type in plot
-            if args.flavor: 
-                from decimal import Decimal
-                et_flavor = args.flavor if args.flavor == 'e' else '#'+args.flavor
-                extra_text.append(extraTextFormat('|V_{'+et_flavor+'N}|^{2} = '+'%.0E' % Decimal(str(0.01**2)), textsize = 0.7))
+        if args.makePlots and not args.cutFlowOnly:
+            from HNL.EventSelection.eventCategorization import CATEGORY_NAMES
+            # for c in list_of_hist.keys():
+            for c in category_dict[args.categoriesToPlot][0]:
+                if args.categoriesToPlot == 'original':
+                    c_name = CATEGORY_NAMES[c]
+                elif args.categoriesToPlot == 'analysis':
+                    from HNL.EventSelection.eventCategorization import ANALYSIS_CATEGORIES_TEX
+                    c_name = ANALYSIS_CATEGORIES_TEX[c] 
+                else:
+                    from HNL.EventSelection.eventCategorization import SUPER_CATEGORIES_TEX
+                    c_name = SUPER_CATEGORIES_TEX[c] 
     
-            # Plots that display chosen for chosen signal masses and backgrounds the distributions for the different variables
-            # S and B in same canvas for each variable
-            for v in var.keys():
-                syst_hist = []
-                bkgr_legendnames = []
-                # Make list of background histograms for the plot object (or None if no background)
-                if args.signalOnly or not list_of_hist[year][c][v]['bkgr'].values(): 
-                    bkgr_hist = None
-                else:
-                    bkgr_hist = []
-                    syst_hist = []
-                    if args.individualSamples:
-                        bkgr_hist, bkgr_legendnames = selectNMostContributingHist(list_of_hist[year][c][v]['bkgr'], 7)
-                    else:
-                        for bk in list_of_hist[year][c][v]['bkgr'].keys():
-                            bkgr_hist.append(list_of_hist[year][c][v]['bkgr'][bk]['nominal'])
-                            bkgr_legendnames.append(bk)
-                            if args.systematics == 'full' and not args.ignoreSystematics:
-                                if 'total_syst' not in list_of_hist[year][c][v]['bkgr'][bk].keys():
-                                    from HNL.Systematics.systematics import makeSystErrorHist
-                                    list_of_hist[year][c][v]['bkgr'][bk]['total_syst'] = makeSystErrorHist(list_of_hist[year][c][v]['bkgr'][bk], bk, c, year, 'non-prompt' if args.includeData == 'includeSideband' else None)
-            
-                                syst_hist.append(list_of_hist[year][c][v]['bkgr'][bk]['total_syst'])
-
-                # Make list of signal histograms for the plot object
-                signal_legendnames = []
-                if args.plotBkgrOnly or not list_of_hist[year][c][v]['signal'].values(): 
-                    signal_hist = None
-                else:
-                    signal_hist = []
-                    for sk in list_of_hist[year][c][v]['signal'].keys():
-                        signal_hist.append(list_of_hist[year][c][v]['signal'][sk]['nominal'])
-                        # if 'filtered' in sk:
-                        #     signal_legendnames.append('HNL m_{N} = 30 GeV w Pythia filter')
-                        # else:
-                        # signal_legendnames.append('HNL '+ sk.split('-')[1] +' m_{N} = '+sk.split('-m')[-1]+ ' GeV')
-                        signal_legendnames.append('HNL m_{N}='+sk.split('-m')[-1]+ 'GeV')
-
-                if args.includeData is not None and not 'Weight' in v:
-                    observed_hist = list_of_hist[year][c][v]['data']['signalregion']['nominal']
-                    #tmp blinding
-                    if args.region in signal_regions: observed_hist = None
-                else:
-                    observed_hist = None
-
-                from HNL.Plotting.plottingDicts import sample_tex_names
-                #Clean bkgr names
-                bkgr_legendnames = [sample_tex_names[x] for x in bkgr_legendnames]
-
-
-                if not args.signalOnly and not args.plotBkgrOnly:
-                    legend_names = signal_legendnames+bkgr_legendnames
-                elif args.signalOnly:
-                    legend_names = signal_legendnames
-                else:
-                    legend_names = bkgr_legendnames
+                extra_text = [extraTextFormat(c_name, xpos = 0.2, ypos = 0.74, textsize = None, align = 12)]  #Text to display event type in plot
+                if args.flavor: 
+                    from decimal import Decimal
+                    et_flavor = args.flavor if args.flavor == 'e' else '#'+args.flavor
+                    extra_text.append(extraTextFormat('|V_{'+et_flavor+'N}|^{2} = '+'%.0E' % Decimal(str(0.01**2)), textsize = 0.7))
         
-                #Create specialized signal region plots if this is the correct variable
-                if v == 'searchregion' and args.region in signal_regions:
-                    from HNL.EventSelection.searchRegions import plotLowMassRegions, plotHighMassRegions, plotLowMassRegionsLoose
-                    # else:
-                    #     signal_names = [s + ' V^{2}=' + str(signal_couplingsquared[s.split('-')[1]][int(s.split('-m')[-1])])  for s in signal_names]
-                       
-                    if args.region == 'lowMassSR':
-                        plotLowMassRegions(signal_hist, bkgr_hist, legend_names, 
-                            out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c), extra_text = [x for x in extra_text], year = year, era = args.era)
-                    if args.region == 'lowMassSRloose':
-                        plotLowMassRegionsLoose(signal_hist, bkgr_hist, legend_names, 
-                            out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c), extra_text = [x for x in extra_text], year = year, era = args.era)
-                    if args.region == 'highMassSR':
-                        plotHighMassRegions(signal_hist, bkgr_hist, legend_names, 
-                            out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c), extra_text = [x for x in extra_text], year = year, era = args.era)
-
-                else:
-
-                    # Create plot object (if signal and background are displayed, also show the ratio)
-                    draw_ratio = None if args.signalOnly or args.plotBkgrOnly else True
-                    if args.includeData is not None: draw_ratio = True
+                # Plots that display chosen for chosen signal masses and backgrounds the distributions for the different variables
+                # S and B in same canvas for each variable
+                for v in var.keys():
+                    syst_hist = []
+                    bkgr_legendnames = []
+                    # Make list of background histograms for the plot object (or None if no background)
+                    if args.signalOnly or not list_of_hist[year][c][v]['bkgr'].values(): 
+                        bkgr_hist = None
+                    else:
+                        bkgr_hist = []
+                        syst_hist = []
+                        if args.individualSamples:
+                            bkgr_hist, bkgr_legendnames = selectNMostContributingHist(list_of_hist[year][c][v]['bkgr'], 7)
+                        else:
+                            for bk in list_of_hist[year][c][v]['bkgr'].keys():
+                                bkgr_hist.append(list_of_hist[year][c][v]['bkgr'][bk]['nominal'])
+                                bkgr_legendnames.append(bk)
+                                if args.systematics == 'full' and not args.ignoreSystematics:
+                                    if 'total_syst' not in list_of_hist[year][c][v]['bkgr'][bk].keys():
+                                        from HNL.Systematics.systematics import makeSystErrorHist
+                                        list_of_hist[year][c][v]['bkgr'][bk]['total_syst'] = makeSystErrorHist(list_of_hist[year][c][v]['bkgr'][bk], bk, c, year, 'non-prompt' if args.includeData == 'includeSideband' else None)
+                
+                                    syst_hist.append(list_of_hist[year][c][v]['bkgr'][bk]['total_syst'])
+    
+                    # Make list of signal histograms for the plot object
+                    signal_legendnames = []
+                    if args.plotBkgrOnly or not list_of_hist[year][c][v]['signal'].values(): 
+                        signal_hist = None
+                    else:
+                        signal_hist = []
+                        for sk in list_of_hist[year][c][v]['signal'].keys():
+                            signal_hist.append(list_of_hist[year][c][v]['signal'][sk]['nominal'])
+                            # if 'filtered' in sk:
+                            #     signal_legendnames.append('HNL m_{N} = 30 GeV w Pythia filter')
+                            # else:
+                            # signal_legendnames.append('HNL '+ sk.split('-')[1] +' m_{N} = '+sk.split('-m')[-1]+ ' GeV')
+                            signal_legendnames.append('HNL m_{N}='+sk.split('-m')[-1]+ 'GeV')
+    
+                    if args.includeData is not None and not 'Weight' in v:
+                        observed_hist = list_of_hist[year][c][v]['data']['signalregion']['nominal']
+                        #tmp blinding
+                        if args.region in signal_regions: observed_hist = None
+                    else:
+                        observed_hist = None
+    
+                    from HNL.Plotting.plottingDicts import sample_tex_names
+                    #Clean bkgr names
                     if not args.individualSamples:
-                        #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
-                        #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = True, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
-                        p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = False, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
-                                color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau' if not args.analysis == 'tZq' else 'tZq', x_name = var[v][2][0], y_name = var[v][2][1])
+                        bkgr_legendnames = [sample_tex_names[x] for x in bkgr_legendnames]
+    
+    
+                    if not args.signalOnly and not args.plotBkgrOnly:
+                        legend_names = signal_legendnames+bkgr_legendnames
+                    elif args.signalOnly:
+                        legend_names = signal_legendnames
                     else:
-                        p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
-                                color_palette = 'Didar', color_palette_bkgr = 'Didar', x_name = var[v][2][0], y_name = var[v][2][1])
-
-                    # Draw
-                    #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = True, draw_option='EHist', min_cutoff = 1)
-                    if '-' in v:
-                        p.draw2D(output_dir = os.path.join(output_dir+'/2D', 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c))
+                        legend_names = bkgr_legendnames
+            
+                    #Create specialized signal region plots if this is the correct variable
+                    if v == 'searchregion' and args.region in signal_regions:
+                        from HNL.EventSelection.searchRegions import plotLowMassRegions, plotHighMassRegions, plotLowMassRegionsLoose
+                        # else:
+                        #     signal_names = [s + ' V^{2}=' + str(signal_couplingsquared[s.split('-')[1]][int(s.split('-m')[-1])])  for s in signal_names]
+                           
+                        if args.region == 'lowMassSR':
+                            plotLowMassRegions(signal_hist, bkgr_hist, legend_names, 
+                                out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c), extra_text = [x for x in extra_text], year = year, era = args.era)
+                        if args.region == 'lowMassSRloose':
+                            plotLowMassRegionsLoose(signal_hist, bkgr_hist, legend_names, 
+                                out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c), extra_text = [x for x in extra_text], year = year, era = args.era)
+                        if args.region == 'highMassSR':
+                            plotHighMassRegions(signal_hist, bkgr_hist, legend_names, 
+                                out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c), extra_text = [x for x in extra_text], year = year, era = args.era)
+    
                     else:
-                        p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = 'bkgr', draw_option='EHist', min_cutoff = 1)
-                        #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = 'med', draw_option='EHist', min_cutoff = 1)
-                        #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = None, draw_option='EHist', min_cutoff = 1)
-                        #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = 10., draw_option='EHist', min_cutoff = 1)
-                    # p.drawHist(output_dir = os.path.join(output_dir, c), normalize_signal = False, draw_option='EHist', min_cutoff = 1)
+    
+                        # Create plot object (if signal and background are displayed, also show the ratio)
+                        draw_ratio = None if args.signalOnly or args.plotBkgrOnly else True
+                        if args.includeData is not None: draw_ratio = True
+                        if not args.individualSamples:
+                            #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
+                            #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = True, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
+                            p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = False, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
+                                    color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau' if not args.analysis == 'tZq' else 'tZq', x_name = var[v][2][0], y_name = var[v][2][1])
+                        else:
+                            p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
+                                    color_palette = 'Didar', color_palette_bkgr = 'Didar', x_name = var[v][2][0], y_name = var[v][2][1])
+    
+                        # Draw
+                        #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = True, draw_option='EHist', min_cutoff = 1)
+                        if '-' in v:
+                            p.draw2D(output_dir = os.path.join(output_dir+'/2D', 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c))
+                        else:
+                            normalize_signal = None
+                            if not args.bkgrOnly:
+                                #if 'mass' in v:
+                                #    normalize_signal = 'med'
+                                #else:
+                                #    normalize_signal = None
+                                normalize_signal = 'bkgr'
+                            p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = normalize_signal, draw_option='EHist', min_cutoff = 1)
+                            #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = 'med', draw_option='EHist', min_cutoff = 1)
+                            #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = None, draw_option='EHist', min_cutoff = 1)
+                            #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = 10., draw_option='EHist', min_cutoff = 1)
+                        # p.drawHist(output_dir = os.path.join(output_dir, c), normalize_signal = False, draw_option='EHist', min_cutoff = 1)
+    
+                    if v == 'searchregion':
+                        print os.path.join(output_dir, 'Yields/SearchRegions', c, 'yields.txt')
+                        out_file = open(os.path.join(output_dir, 'Yields/SearchRegions', c, 'yields.txt'), 'w')
+                        number_of_processes = 0
+                        if observed_hist is not None:
+                            number_of_processes += 1
+                        if bkgr_hist is not None:
+                            number_of_processes += len(bkgr_hist)
+                        if signal_hist is not None:
+                            number_of_processes += len(signal_hist)
+    
+                        out_file.write('\\begin{tabular}{l'+'|'.join(['c' for p in range(number_of_processes)])+'} \\\\ \n')
+                        out_file.write('\\hline \\hline \n')
+                        process_line = 'Year\t'
+                        yield_line = '{0}\t'.format(year)
+                        if observed_hist is not None:
+                            process_line += ' & Observed \t'
+                            yield_line += ' & %s \t'%float('%.1f' % observed_hist.getHist().GetSumOfWeights())
+                        if bkgr_hist is not None:
+                            for ib, b in enumerate(bkgr_hist):
+                                process_line += ' & '+bkgr_legendnames[ib]+'\t'
+                                yield_line += ' & %s \t'%float('%.1f' % b.getHist().GetSumOfWeights())
+                        if signal_hist is not None:
+                            for isig, sig in enumerate(signal_hist):
+                                process_line += ' & '+signal_legendnames[isig]+'\t'
+                                yield_line +=  ' & %s \t'%float('%.1f' % sig.getHist().GetSumOfWeights())
+    
+                        process_line += '\n'
+                        yield_line += '\n'
+                        out_file.write(process_line)
+                        out_file.write(yield_line)
+                        out_file.write('\\end{tabular}')
+                        out_file.close()
 
-                if v == 'searchregion':
-                    out_file = open(os.path.join(output_dir, 'Yields/SearchRegions', c, 'yields.txt'), 'w')
-                    number_of_processes = 0
-                    if observed_hist is not None:
-                        number_of_processes += 1
-                    if bkgr_hist is not None:
-                        number_of_processes += len(bkgr_hist)
-                    if signal_hist is not None:
-                        number_of_processes += len(signal_hist)
-
-                    out_file.write('\\begin{tabular}{l'+'|'.join(['c' for p in range(number_of_processes)])+'} \\\\ \n')
-                    out_file.write('\\hline \\hline \n')
-                    process_line = 'Year\t'
-                    yield_line = '{0}\t'.format(year)
-                    if observed_hist is not None:
-                        process_line += ' & Observed \t'
-                        yield_line += ' & %s \t'%float('%.1f' % observed_hist.getHist().GetSumOfWeights())
-                    if bkgr_hist is not None:
-                        for ib, b in enumerate(bkgr_hist):
-                            process_line += ' & '+bkgr_legendnames[ib]+'\t'
-                            yield_line += ' & %s \t'%float('%.1f' % b.getHist().GetSumOfWeights())
-                    if signal_hist is not None:
-                        for isig, sig in enumerate(signal_hist):
-                            process_line += ' & '+signal_legendnames[isig]+'\t'
-                            yield_line +=  ' & %s \t'%float('%.1f' % sig.getHist().GetSumOfWeights())
-
-                    process_line += '\n'
-                    yield_line += '\n'
-                    out_file.write(process_line)
-                    out_file.write(yield_line)
-                    out_file.write('\\end{tabular}')
-                    out_file.close()
-
-
-        #
-        # Bar charts
-        #
-
-        from HNL.EventSelection.eventCategorization import CATEGORY_TEX_NAMES
-        from ROOT import TH1D
-        grouped_categories = cat.SUPER_CATEGORIES
 
         signal_names = [s.split('/')[-1] for s in signal_list]
-        for supercat in grouped_categories.keys():
-            if nl != 3 and supercat != 'Other': continue
-            #
-            # Bkgr
-            #
-            if not args.signalOnly:
-                hist_to_plot = []
-                if args.individualSamples:
-                    bkgr_hist_to_draw, bkgr_to_draw = selectNMostContributingHist(list_of_hist[supercat]['searchregion']['bkgr'], 7)
-                else:
-                    bkgr_to_draw = [b for b in background_collection]
-                for i_sample, sample_name in enumerate(bkgr_to_draw):
-                    hist_to_plot.append(TH1D(sample_name+supercat, sample_name+supercat, len(grouped_categories[supercat]), 0, len(grouped_categories[supercat])))
-                    for i, c in enumerate(grouped_categories[supercat]):
-                        if args.individualSamples and sample_name == 'Other':
-                            bkgr_hist = selectNMostContributingHist(list_of_hist_forbar[year][c]['searchregion']['bkgr'], 7)[0][-1]
-                            hist_to_plot[i_sample].SetBinContent(i+1, bkgr_hist.getHist().GetSumOfWeights()) 
-                        else:
-                            hist_to_plot[i_sample].SetBinContent(i+1, list_of_hist_forbar[year][c]['searchregion']['bkgr'][sample_name]['nominal'].getHist().GetSumOfWeights()) 
-
-                if args.includeData == 'signalregion':
-                    observed_hist = TH1D('data'+supercat, 'data'+supercat, len(grouped_categories[supercat]), 0, len(grouped_categories[supercat]))
-                    for i, c in enumerate(grouped_categories[supercat]):
-                        observed_hist.SetBinContent(i+1, list_of_hist_forbar[year][c]['searchregion']['data']['signalregion']['nominal'].getHist().GetSumOfWeights()) 
-                else:
-                    observed_hist = None
-
-                x_names = [CATEGORY_TEX_NAMES[n] for n in grouped_categories[supercat]]
-                #p = Plot(hist_to_plot, bkgr_to_draw, name = 'Events-bar-bkgr-'+supercat, observed_hist = observed_hist, x_name = x_names, y_name = 'Events', y_log='SingleTau' in supercat, color_palette = 'Didar')            
-                p = Plot(hist_to_plot, bkgr_to_draw, name = 'Events-bar-bkgr-'+supercat, observed_hist = observed_hist, x_name = x_names, y_name = 'Events', y_log='SingleTau' in supercat)            
-
-                p.drawBarChart(output_dir = os.path.join(output_dir, 'Yields', 'BarCharts'))
+#        #
+#        # Bar charts
+#        #
+#
+#        from HNL.EventSelection.eventCategorization import CATEGORY_TEX_NAMES
+#        from ROOT import TH1D
+#        grouped_categories = cat.SUPER_CATEGORIES
+#
+#        for supercat in grouped_categories.keys():
+#            if nl != 3 and supercat != 'Other': continue
+#            #
+#            # Bkgr
+#            #
+#            if not args.signalOnly:
+#                hist_to_plot = []
+#                if args.individualSamples:
+#                    bkgr_hist_to_draw, bkgr_to_draw = selectNMostContributingHist(list_of_hist[supercat]['searchregion']['bkgr'], 7)
+#                else:
+#                    bkgr_to_draw = [b for b in background_collection]
+#                for i_sample, sample_name in enumerate(bkgr_to_draw):
+#                    hist_to_plot.append(TH1D(sample_name+supercat, sample_name+supercat, len(grouped_categories[supercat]), 0, len(grouped_categories[supercat])))
+#                    for i, c in enumerate(grouped_categories[supercat]):
+#                        if args.individualSamples and sample_name == 'Other':
+#                            bkgr_hist = selectNMostContributingHist(list_of_hist_forbar[year][c]['searchregion']['bkgr'], 7)[0][-1]
+#                            hist_to_plot[i_sample].SetBinContent(i+1, bkgr_hist.getHist().GetSumOfWeights()) 
+#                        else:
+#                            hist_to_plot[i_sample].SetBinContent(i+1, list_of_hist_forbar[year][c]['searchregion']['bkgr'][sample_name]['nominal'].getHist().GetSumOfWeights()) 
+#
+#                if args.includeData == 'signalregion':
+#                    observed_hist = TH1D('data'+supercat, 'data'+supercat, len(grouped_categories[supercat]), 0, len(grouped_categories[supercat]))
+#                    for i, c in enumerate(grouped_categories[supercat]):
+#                        observed_hist.SetBinContent(i+1, list_of_hist_forbar[year][c]['searchregion']['data']['signalregion']['nominal'].getHist().GetSumOfWeights()) 
+#                else:
+#                    observed_hist = None
+#
+#                x_names = [CATEGORY_TEX_NAMES[n] for n in grouped_categories[supercat]]
+#                #p = Plot(hist_to_plot, bkgr_to_draw, name = 'Events-bar-bkgr-'+supercat, observed_hist = observed_hist, x_name = x_names, y_name = 'Events', y_log='SingleTau' in supercat, color_palette = 'Didar')            
+#                p = Plot(hist_to_plot, bkgr_to_draw, name = 'Events-bar-bkgr-'+supercat, observed_hist = observed_hist, x_name = x_names, y_name = 'Events', y_log='SingleTau' in supercat)            
+#
+#                p.drawBarChart(output_dir = os.path.join(output_dir, 'Yields', 'BarCharts'))
             
             #
             # Signal
@@ -1080,39 +1075,43 @@ else:
         #    p = Plot(hist_to_plot_pie, sample_names, name = 'Events_'+str(c), x_name = CATEGORY_TEX_NAMES, y_name = 'Events', extra_text = extra_text)
         #    p.drawPieChart(output_dir = os.path.join(output_dir, 'Yields', 'PieCharts'), draw_percent=True)
 
-#        print "plotting cutflow"
-#        in_files = {}
-#        for sample_name in background_collection+signal_names: 
-#            if not args.individualSamples:
-#                if args.flavor != 'tau' or not 'HNL' in sample_name:
-#                    in_path = lambda y : getOutputName('signal' if 'HNL' in sample_name else 'bkgr', y, args.tag)+'/'+sample_name+'/variables.root'
-#                else:
-#                    extra_name = sample_name.replace('tau', 'tauhad')
-#                    in_path = lambda y : getOutputName('signal' if 'HNL' in sample_name else 'bkgr', y, args.tag)+'/'+sample_name+'/variables-{0}.root'.format(extra_name)
-#            else:
-#                in_path = lambda y : getOutputName('bkgr', y, args.tag)+'/'+sample_manager.output_dict[sample_name]+'/variables-'+sample_name+'.root'
-#
-#            from HNL.Tools.helpers import isValidRootFile
-#            print in_path(year), isValidRootFile(in_path(year))
-#            if not '-' in year:
-#                if not isValidRootFile(in_path(year)): continue
-#                in_files[sample_name] = [in_path(year)]
-#            else:
-#                valid_for_all_years = True
-#                for y in args.year:
-#                    if not isValidRootFile(in_path(y)): 
-#                        valid_for_all_years = False
-#                        break
-#                if valid_for_all_years:
-#                    in_files[sample_name] = [in_path(y) for y in args.year]
-#
-#            from HNL.EventSelection.bitCutter import plotCutFlow
-#        #    plotCutFlow([in_path], os.path.join(output_dir, 'Yields', 'CutFlow'), [sample_name], ignore_weights=True, output_name = sample_name, subdir = 'nominal')
-#        for c in category_dict[args.categoriesToPlot][0]:
-#            #plotCutFlow(in_files, os.path.join(output_dir, 'Yields', 'CutFlow', c), ignore_weights=True, output_name = 'all', subdir = 'nominal', categories = category_dict[args.categoriesToPlot][2][c])
-#            from HNL.EventSelection.bitCutter import printCutFlow
-#            split_output_dir = output_dir.split('/src/')[1]
-#            public_output_dir = '/user/lwezenbe/public_html/'+split_output_dir.split('/data/Results/')[0]+'/'+split_output_dir.split('/data/Results/')[1]
-#            #printCutFlow(in_files, os.path.join(public_output_dir.rsplit('/', 1)[0], 'Yields', 'CutFlow', c), subdir = 'nominal', categories = category_dict[args.categoriesToPlot][2][c], group_backgrounds=False)
-#            #printCutFlow(in_files, os.path.join(public_output_dir.rsplit('/', 1)[0], 'Yields', 'CutFlow', c), subdir = 'nominal', group_backgrounds = False)
-#            printCutFlow(in_files, os.path.join(public_output_dir.rsplit('/', 1)[0], 'Yields', 'CutFlow', c), subdir = 'nominal', categories = category_dict[args.categoriesToPlot][2][c])
+        
+
+        if args.makePlots:    
+            print "plotting cutflow"
+            in_files = {}
+            for sample_name in background_collection+signal_names: 
+                if not args.individualSamples:
+                    if args.flavor != 'tau' or not 'HNL' in sample_name:
+                        in_path = lambda y : getOutputName('signal' if 'HNL' in sample_name else 'bkgr', y, args.tag)+'/'+sample_name+'/variables.root'
+                    else:
+                        extra_name = sample_name.replace('tau', 'tauhad')
+                        in_path = lambda y : getOutputName('signal' if 'HNL' in sample_name else 'bkgr', y, args.tag)+'/'+sample_name+'/variables-{0}.root'.format(extra_name)
+                else:
+                    in_path = lambda y : getOutputName('bkgr', y, args.tag)+'/'+sample_manager.output_dict[sample_name]+'/variables-'+sample_name+'.root'
+    
+                from HNL.Tools.helpers import isValidRootFile
+                #print in_path(year), isValidRootFile(in_path(year))
+                if not '-' in year:
+                    if not isValidRootFile(in_path(year)): continue
+                    in_files[sample_name] = [in_path(year)]
+                else:
+                    valid_for_all_years = True
+                    for y in args.year:
+                        if not isValidRootFile(in_path(y)): 
+                            valid_for_all_years = False
+                            print 'not valid for', sample_name, 'in', y
+                            break
+                    if valid_for_all_years:
+                        in_files[sample_name] = [in_path(y) for y in args.year]
+    
+                from HNL.EventSelection.bitCutter import plotCutFlow
+            #    plotCutFlow([in_path], os.path.join(output_dir, 'Yields', 'CutFlow'), [sample_name], ignore_weights=True, output_name = sample_name, subdir = 'nominal')
+            for c in category_dict[args.categoriesToPlot][0]:
+                #plotCutFlow(in_files, os.path.join(output_dir, 'Yields', 'CutFlow', c), ignore_weights=True, output_name = 'all', subdir = 'nominal', categories = category_dict[args.categoriesToPlot][2][c])
+                from HNL.EventSelection.bitCutter import printCutFlow
+                split_output_dir = output_dir.split('/src/')[1]
+                public_output_dir = '/user/lwezenbe/public_html/'+split_output_dir.split('/data/Results/')[0]+'/'+split_output_dir.split('/data/Results/')[1]
+                #printCutFlow(in_files, os.path.join(public_output_dir.rsplit('/', 1)[0], 'Yields', 'CutFlow', c), subdir = 'nominal', categories = category_dict[args.categoriesToPlot][2][c], group_backgrounds=False)
+                #printCutFlow(in_files, os.path.join(public_output_dir.rsplit('/', 1)[0], 'Yields', 'CutFlow', c), subdir = 'nominal', group_backgrounds = False)
+                printCutFlow(in_files, os.path.join(public_output_dir.rsplit('/', 1)[0], 'Yields', 'CutFlow', c), subdir = 'nominal', categories = category_dict[args.categoriesToPlot][2][c])

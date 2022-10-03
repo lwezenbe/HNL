@@ -189,7 +189,7 @@
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
-            "Activate"          : true,
+            "Activate"          : false,
             "Description"   : "Muon efficiency"
         },
     "muonIDSFWeight_syst"  :
@@ -199,7 +199,7 @@
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
-            "Activate"          : true,
+            "Activate"          : false,
             "Correlated"    : true,
             "Description"   : "Muon efficiency"
         },

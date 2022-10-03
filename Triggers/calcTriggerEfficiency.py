@@ -22,6 +22,7 @@ submission_parser.add_argument('--logLevel',  action='store', default='INFO',  h
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
 submission_parser.add_argument('--useRef', action='store_true', default=False,  help='pass ref cuts')
 submission_parser.add_argument('--noskim', action='store_true', default=False,  help='pass ref cuts')
+submission_parser.add_argument('--noOfflineThresholds', action='store_true', default=False,  help='Skip offline threshold cut')
 submission_parser.add_argument('--closureTest', action='store_true', default=False,  help='apply SF')
 submission_parser.add_argument('--separateTriggers', action='store', default=None,  
     help='Look at each trigger separately for each set of triggers. Single means just one trigger, cumulative uses cumulative OR of all triggers that come before the chosen one in the list, full applies all triggers for a certain category', 
@@ -125,8 +126,8 @@ var = {
 #    'l1pt' : (lambda c : c.l_pt[0],                          np.arange(0., 100., 15.),                 ('p_{T}(l1) [GeV]', 'Efficiency')),
 #    'l2pt' : (lambda c : c.l_pt[1],                          np.arange(5., 80., 5.),                  ('p_{T}(l2) [GeV]', 'Efficiency')),
 #    'l3pt' : (lambda c : c.l_pt[2],                          np.arange(5., 80., 5.),                  ('p_{T}(l3) [GeV]', 'Efficiency')),
-    'light1pt' : (lambda c : c.light_pt[0],                          np.arange(0., 110., 10.),                 ('p_{T}(light lep 1) [GeV]', 'Efficiency')),
-    'light2pt' : (lambda c : c.light_pt[1],                          np.arange(10., 110., 10.),                  ('p_{T}(light lep 2) [GeV]', 'Efficiency')),
+    'light1pt' : (lambda c : c.light_pt[0],                          np.arange(0., 110., 2.),                 ('p_{T}(light lep 1) [GeV]', 'Efficiency')),
+    'light2pt' : (lambda c : c.light_pt[1],                          np.arange(10., 110., 2.),                  ('p_{T}(light lep 2) [GeV]', 'Efficiency')),
     #'l1pt' : (lambda c : c.l_pt[0],                          np.arange(0., 100., 2.),                 ('p_{T}(l1) [GeV]', 'Efficiency')),
     #'l2pt' : (lambda c : c.l_pt[1],                          np.arange(5., 80., 2.),                  ('p_{T}(l2) [GeV]', 'Efficiency')),
     #'l3pt' : (lambda c : c.l_pt[2],                          np.arange(5., 80., 2.),                  ('p_{T}(l3) [GeV]', 'Efficiency')),
@@ -226,7 +227,7 @@ if not args.makePlots:
         if args.useRef and not cutter.cut(chain._passTrigger_ref, 'passed ref filter'):     continue
 
         event.initEvent()
-        if not event.passedFilter(cutter, sample.name, offline_thresholds = True, ignore_triggers = True): continue
+        if not event.passedFilter(cutter, sample.name, offline_thresholds = not args.noOfflineThresholds, ignore_triggers = True): continue
 
         if chain.l_flavor.count(2) > 1: continue
 
@@ -293,8 +294,8 @@ else:
         if not skip_running_jobs: merge(in_files, __file__, jobs[year], ('sample', 'subJob'), argParser, istest=args.isTest, additionalArgs=[('year', year)])
 
         sample_manager = getSampleManager(year)  
-        samples_to_plot = sample_manager.getOutputs()
-        #samples_to_plot = ['WZ']
+        #samples_to_plot = sample_manager.getOutputs()
+        samples_to_plot = ['WZ']
 
         efficiencies[year] = {}
 
@@ -365,20 +366,25 @@ else:
         print 'Making regular plots for', year 
         for trigger in triggers_to_run:
             for isample, sample_output in enumerate(samples_to_plot):
-                if sample_output != 'WZ': continue
-                for tc in TRIGGER_CATEGORIES:
+                for tc in TRIGGER_CATEGORIES.keys()+['Total']:
                     #if tc != 'TauEE' : continue
                     output_string = getOutputBase(year, sample_output).replace('Triggers/data/', 'Triggers/data/Results/')
-                    if '-' in v:
-                        for llc in leading_lep_cat:
-                            name_for_plot = "".join([x for x in v if x not in ['(', ')']])
-                            p = Plot(efficiencies[year][trigger][sample_output][v][llc][tc].getEfficiency(), 'efficiency', trigger+'/'+tc+'/'+name_for_plot+'/'+llc, year = year, era = args.era, x_name = var[v][2][0], y_name = var[v][2][1])
-                            p.draw2D(output_dir=output_string, names = [trigger+'/'+tc+'/'+name_for_plot+'/'+llc.replace('.0', '')])
-                    else:
-                        for llc in leading_lep_cat:
-                            name_for_plot = "".join([x for x in v if x not in ['(', ')']])
-                            p = Plot(efficiencies[year][trigger][sample_output][v][llc][tc].getEfficiency(), 'efficiency', trigger+'/'+tc+'/'+name_for_plot+'/'+llc, year = year, era = args.era, x_name = var[v][2][0], y_name = var[v][2][1])
-                            p.drawHist(output_string, max_cutoff = 1.2)
+                    for v in var:
+                        if '-' in v:
+                            for llc in leading_lep_cat:
+                                name_for_plot = "".join([x for x in v if x not in ['(', ')']])
+                                p = Plot(efficiencies[year][trigger][sample_output][v][llc][tc].getEfficiency(), 'efficiency', trigger+'/'+tc+'/'+name_for_plot+'/'+llc, year = year, era = args.era, x_name = var[v][2][0], y_name = var[v][2][1])
+                                p.draw2D(output_dir=output_string, names = [trigger+'/'+tc+'/'+name_for_plot+'/'+llc.replace('.0', '')])
+                        else:
+                            for llc in leading_lep_cat:
+                                xvar = var[v][2][0]
+                                if llc in ['LeadingLightLepElectron', 'CrossCategoryLeadingElectron'] and v == 'light1pt':
+                                    xvar = 'p_{T}(leading e) [GeV]'
+                                elif llc in ['LeadingLightLepMuon', 'CrossCategoryLeadingMuon'] and v == 'light1pt':
+                                    xvar = 'p_{T}(leading #mu) [GeV]'
+                                name_for_plot = "".join([x for x in v if x not in ['(', ')']])
+                                p = Plot(efficiencies[year][trigger][sample_output][v][llc][tc].getEfficiency(), 'efficiency', trigger+'/'+tc+'/'+name_for_plot+'/'+llc, year = year, era = args.era, x_name = xvar, y_name = var[v][2][1], color_palette = 'Black')
+                                p.drawHist(output_string, max_cutoff = 1.4)
     
         print 'Making comparison plots for', year
         # Make comparative 1D plots with multiple processes in the plot

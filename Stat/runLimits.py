@@ -13,7 +13,7 @@ submission_parser.add_argument('--blind',   action='store_true', default=False, 
 submission_parser.add_argument('--useExistingLimits',   action='store_true', default=False,  help='Dont run combine, just plot')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA', 'custom'])
-submission_parser.add_argument('--datacard', action='store', default='', type=str,  help='What type of analysis do you want to run?', choices=['MaxOneTau', 'Combined', 'Ditau', 'NoTau', 'SingleTau', 'TauFinalStates'])
+submission_parser.add_argument('--datacard', action='store', default='', type=str,  help='What type of analysis do you want to run?', choices=['MaxOneTau', 'Combined', 'Ditau', 'NoTau', 'SingleTau', 'TauFinalStates', 'EEE-Mu'])
 submission_parser.add_argument('--compareToCards',   type=str, nargs='*',  help='Compare to a specific card if it exists. If you want different selection use "selection/card" otherwise just "card"')
 submission_parser.add_argument('--lod',   type=str,  help='"Level of detail": Describes how binned you want you analysis categories to be.', choices = ['analysis', 'super'])
 submission_parser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
@@ -74,10 +74,10 @@ if not args.useExistingLimits:
 
 compare_dict = {
     'cutbased-AN2017014': 'Replicated AN2017014 selection',
-    'cutbased-default': 'Search regions',
+    'cutbased-default': 'Search region binning',
     'cutbased-leptonMVAtop': 'top lepton MVA',
     'MVA-default': 'BDT',
-    'custom-default' : ''
+    'custom-default' : '',
 }
 
 asymptotic_str = 'asymptotic' if args.asymptotic else ''

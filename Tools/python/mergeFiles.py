@@ -95,7 +95,7 @@ def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False
     # First clean up the directory
     for f in paths:
         if '.txt' in f or '.root' in f: continue
-        moveToBackup(f)
+    #    moveToBackup(f)
         mergeSinglePath(f, groups_to_merge=groups_to_merge)
 
     if not istest: disableShouldMerge(script, argparser, additionalArgs=additionalArgs)

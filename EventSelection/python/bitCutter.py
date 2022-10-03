@@ -139,7 +139,6 @@ class CutterCollection():
 
 from HNL.Plotting.plot import makeList
 def printCutFlow(in_file_paths, out_file_path, subdir = None, ignore_weights = False, categories = ['all'], group_backgrounds = True):
-    print in_file_paths
     subdir = 'cutflow' if subdir is None else 'cutflow/'+subdir
     in_file_path_names = in_file_paths.keys()
 
@@ -182,6 +181,13 @@ def printCutFlow(in_file_paths, out_file_path, subdir = None, ignore_weights = F
             mass = int(ifp.split('-m')[-1])
             from HNL.Analysis.analysisTypes import signal_couplingsquared, signal_couplingsquaredinsample
 
+        def getBinContent(hist, b):
+            val = hist.GetBinContent(b)
+            #tmp solution
+            if val == 0. and b in [12, 13]:
+                return getBinContent(hist, b-1)
+            return val
+
         for ic, c in enumerate(categories):
             for isfp, sfp in enumerate(in_file_paths[ifp]):
                 tmp_hist = getObjFromFile(sfp, subdir+'/'+weight_string+'_cutflow_'+c)
@@ -191,8 +197,8 @@ def printCutFlow(in_file_paths, out_file_path, subdir = None, ignore_weights = F
                         list_of_cut_values[ifp_to_use].append(0.)
                     bin_to_use = findLabelBin(tmp_hist, cut)
                     if bin_to_use is not None:
-                        list_of_cut_values[ifp_to_use][icut] += tmp_hist.GetBinContent(bin_to_use) 
-    
+                        list_of_cut_values[ifp_to_use][icut] += getBinContent(tmp_hist, bin_to_use) 
+   
 #    for ifp in in_file_path_names:
 #        is_bkgr = not 'HNL' in ifp
 #        if group_backgrounds and is_bkgr:

@@ -101,6 +101,7 @@ class Sample(object):
             hcounter = None
             listOfFiles                 = glob.glob(sub_path + '*/*/*/*.root')
             for f in listOfFiles:
+                print f, self.getHist(name, f).GetSumOfWeights()
                 if hcounter is None:     
                     hcounter = self.getHist(name, f)
                 else:                   

@@ -68,8 +68,7 @@ if not args.merge:
     sample_manager = getSampleManager(year)
     hcounter = {}
     for sample_name in sample_manager.sample_names:
-        if args.sample is not None and sample.name != args.sample: continue
-        print sample_name
+        if args.sample is not None and sample_name != args.sample: continue
         sample = sample_manager.getSample(sample_name)
         if sample.is_data: continue
         chain = sample.initTree()

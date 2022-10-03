@@ -138,21 +138,7 @@ class EventSelector:
         if sample_name == 'ZG' and not is_prompt: return True
         return False
 
-    def removeOverlapInTauSignal(self, sample_name):
-        if 'taulep' in sample_name:
-            nlight = 0.
-            ntau = 0.
-            for l in xrange(self.chain._gen_nL):
-                if self.chain._gen_lFlavor[l] == 2 and self.chain._gen_lVisPt[l] > 18.: ntau += 1.
-                if self.chain._gen_lFlavor[l] != 2 and self.chain._gen_lPt[l] > 15. and self.chain._gen_lEta[l] < 3.: nlight += 1.
-            return ntau < 1 or nlight < 1
-        else:
-            return True
-
     def passedFilter(self, cutter, sample_name, kwargs={}):
-        ignoreSignalOverlapRemoval = kwargs.get('ignoreSignalOverlapRemoval', False)
-        if not ignoreSignalOverlapRemoval and not self.removeOverlapInTauSignal(sample_name): return False
-
         if not cutter.cut(self.chain._passMETFilters, 'metfilters'): return False
 
         #Triggers
