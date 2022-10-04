@@ -17,7 +17,7 @@ class LeptonIDSF(object):
         self.etaMax = sf_hist.GetXaxis().GetXmax()
         self.etaMin = sf_hist.GetXaxis().GetXmin()
 
-    def getSingleSF(self, pt, eta, syst = 'nominal'):
+    def getSingleSF(self, pt, eta, flavor, syst = 'nominal'):
         if not eta <= self.etaMax:
             log.warning("Lepton eta out of bounds: %3.2f (need %3.2f <= eta <=% 3.2f)", eta, self.etaMin, self.etaMax)
             eta = self.etaMax
@@ -31,9 +31,15 @@ class LeptonIDSF(object):
         if syst == 'nominal':
             return self.sf_hist.GetBinContent(self.sf_hist.FindBin(eta, pt))
         elif syst == 'statup':
-            return self.sf_hist.GetBinError(self.sf_hist.FindBin(eta, pt)) + self.stat_hist.GetBinError(self.stat_hist.FindBin(eta, pt))
+            if flavor == 1:
+                return self.sf_hist.GetBinError(self.sf_hist.FindBin(eta, pt)) + self.stat_hist.GetBinError(self.stat_hist.FindBin(eta, pt))
+            else:
+                return self.sf_hist.GetBinContent(self.sf_hist.FindBin(eta, pt)) + self.stat_hist.GetBinContent(self.stat_hist.FindBin(eta, pt))
         elif syst == 'statdown':
-            return self.sf_hist.GetBinError(self.sf_hist.FindBin(eta, pt)) - self.stat_hist.GetBinError(self.stat_hist.FindBin(eta, pt))
+            if flavor == 1:
+                return self.sf_hist.GetBinError(self.sf_hist.FindBin(eta, pt)) - self.stat_hist.GetBinError(self.stat_hist.FindBin(eta, pt))
+            else:
+                return self.sf_hist.GetBinContent(self.sf_hist.FindBin(eta, pt)) - self.stat_hist.GetBinContent(self.stat_hist.FindBin(eta, pt))
         elif syst == 'systup':
             return self.sf_hist.GetBinContent(self.sf_hist.FindBin(eta, pt)) + self.syst_hist.GetBinContent(self.syst_hist.FindBin(eta, pt))
         elif syst == 'systdown':
@@ -48,8 +54,7 @@ class LeptonIDSF(object):
                 eta = getLeptonEta(chain, l)
                 from HNL.ObjectSelection.leptonSelector import getLeptonPt
                 pt = getLeptonPt(chain, l)
-                total_sf *= self.getSingleSF(pt, eta, syst)
-                self.getSingleSF(pt, eta, syst), total_sf
+                total_sf *= self.getSingleSF(pt, eta, flavor, syst)
         return total_sf
 
 class ElectronIDSF(LeptonIDSF):
