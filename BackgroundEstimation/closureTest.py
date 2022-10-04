@@ -89,7 +89,7 @@ else:
 if not args.inData:
     sublist = 'BackgroundEstimation/TauFakes-'+args.era+args.year
 else:
-    sublist = 'fulllist_'+args.era+args.year+'_nosignal'
+    sublist = 'fulllist_'+args.era+args.year
 sample_manager = SampleManager(args.era, args.year, skim_str, sublist, skim_selection=args.selection)
 
 this_file_name = __file__.split('.')[0].rsplit('/', 1)[-1]
@@ -102,6 +102,7 @@ from HNL.EventSelection.eventCategorization import ANALYSIS_CATEGORIES
 jobs = []
 for sample_name in sample_manager.sample_names:
     if args.sample and args.sample not in sample_name: continue
+    if 'HNL' in sample_name: continue
     sample = sample_manager.getSample(sample_name)
     if not args.inData and args.application == 'TauFakesDY' and not 'DY' in sample.name: continue
     for njob in xrange(sample.returnSplitJobs()):
@@ -119,10 +120,10 @@ else:
     var = {
             'minMos':               (lambda c : c.minMos,       np.arange(0., 160., 10.),         ('min(M_{OS}) [GeV]', 'Events')),
             'm3l':                  (lambda c : c.M3l,          np.arange(0., 240., 15.),         ('M_{3l} [GeV]', 'Events')),
-            'met':                  (lambda c : c._met,         np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
+            #'met':                  (lambda c : c._met,         np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
             #'met':                  (lambda c : c._met,         np.arange(0., 90., 3.),         ('p_{T}^{miss} [GeV]', 'Events')),
-            #'met':                  (lambda c : c._met,         np.arange(50., 123., 3.),         ('p_{T}^{miss} [GeV]', 'Events')),
-            'mtOther':              (lambda c : c.mtOther,      np.arange(0., 300., 15.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
+            'met':                  (lambda c : c._met,         np.arange(50., 123., 3.),         ('p_{T}^{miss} [GeV]', 'Events')),
+            'mtOther':              (lambda c : c.mtOther,      np.arange(0., 230., 15.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
             #'ptFakes':              (lambda c, i : c.l_pt[i],         np.arange(0., 300., 15.),       ('p_{T} [GeV]', 'Events')),
             #'etaFakes':             (lambda c, i : c.l_eta[i],        np.arange(-2.5, 3.0, 0.5),       ('#eta', 'Events')),
             'ptLeading':            (lambda c : c.l_pt[0],         np.arange(0., 100., 15.),       ('p_{T}(leading) [GeV]', 'Events')),
@@ -367,7 +368,7 @@ else:
 
     base_path = getOutputBase()
 
-    in_files = glob.glob(os.path.join(base_path, '*'))
+    in_files = [x for x in glob.glob(os.path.join(base_path, '*')) if x.rsplit('/', 1)[-1] in sample_manager.sample_outputs]
     merge(in_files, __file__, jobs, ('sample', 'subJob'), argParser, istest=args.isTest)
 
     base_path_split  = base_path.rsplit('/data/')

@@ -31,6 +31,18 @@
             "Correlated"    : true,
             "Description"   : "Luminosity"
         },
+    "theory":
+        {
+            "Type"          : "flat",
+            "Value"         : 1.0,
+            "FinalStates"   : "*",
+            "Processes"     : "signal",
+            "Year"          : ["2016pre", "2016post", "2017", "2018"],
+            "Activate"     : true,
+            "Correlated"    : true,
+            "Func"          : "theory",
+            "Description"   : "Theory uncertainties (ME and PDF)"
+        },
     "triggerStat" :
         {
             "Type"          : "flat",
@@ -44,11 +56,12 @@
     "triggerSyst" :
         {
             "Type"          : "flat",
-            "Value"         : 1.02,
+            "Value"         : 1.03,
             "FinalStates"   : "*",
             "Processes"     : "MC",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
             "Activate"     : true,
+            "Correlated"    : true,
             "Description"   : "Triggers"
         },
      "WZnorm" :
@@ -59,6 +72,7 @@
             "Processes"     : "WZ",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
             "Activate"     : true,
+            "Correlated"    : true,
             "Description"   : "WZnorm"
         },
      "ZZnorm" :
@@ -69,6 +83,7 @@
             "Processes"     : "ZZ-H",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
             "Activate"     : true,
+            "Correlated"    : true,
             "Description"   : "ZZnorm"
         },
      "Conversionnorm" :
@@ -79,7 +94,41 @@
             "Processes"     : "XG",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
             "Activate"     : true,
+            "Correlated"    : true,
             "Description"   : "Conversionnorm"
+        },
+     "Tribosonnorm" :
+        {
+            "Type"          : "flat",
+            "Value"         : 1.1,
+            "FinalStates"   : "*",
+            "Processes"     : "triboson",
+            "Year"          : ["2016pre", "2016post", "2017", "2018"],
+            "Activate"      : true,
+            "Correlated"    : true,
+            "Description"   : "Tribosonnorm"
+        },
+     "TTXnorm" :
+        {
+            "Type"          : "flat",
+            "Value"         : 1.1,
+            "FinalStates"   : "*",
+            "Processes"     : "TT-T+X",
+            "Year"          : ["2016pre", "2016post", "2017", "2018"],
+            "Activate"      : true,
+            "Correlated"    : true,
+            "Description"   : "TTXnorm"
+        },
+     "Othernorm" :
+        {
+            "Type"          : "flat",
+            "Value"         : 1.2,
+            "FinalStates"   : "*",
+            "Processes"     : ["Other", "QCD"],
+            "Year"          : ["2016pre", "2016post", "2017", "2018"],
+            "Activate"      : true,
+            "Correlated"    : true,
+            "Description"   : "TTXnorm"
         },
     "nonpromptTau" :
         {
@@ -109,6 +158,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : true,
+            "Correlated"    : true,
             "Description"   : "Pileup"
         },
     "electronIDSFWeight_stat"  :
@@ -129,6 +179,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
+            "Correlated"    : true,
             "Description"   : "Electron efficiency"
         },
     "muonIDSFWeight_stat"  :
@@ -138,7 +189,7 @@
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
-            "Activate"          : true,
+            "Activate"          : false,
             "Description"   : "Muon efficiency"
         },
     "muonIDSFWeight_syst"  :
@@ -148,7 +199,8 @@
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
-            "Activate"          : true,
+            "Activate"          : false,
+            "Correlated"    : true,
             "Description"   : "Muon efficiency"
         },
     "tauSFWeight"  :
@@ -170,6 +222,17 @@
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : true,
             "Description"   : "Electron reconstruction efficiency"
+        },
+    "prefireWeight"     :
+        {
+            "Type"              : "weight",
+            "Value"             : 1.0,
+            "FinalStates"       : "*",
+            "Processes"         : "MC",
+            "Year"              : ["2016pre", "2016post", "2017", "2018"],
+            "Activate"          : true,
+            "Correlated"    : true,
+            "Description"   : "Prefire Weight"
         },
     "btagWeight_lightcorrelated"  :
         {
@@ -233,6 +296,15 @@
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : true,
             "Description"   : "Jet Energy Resolution"
+        },
+    "UnclMET"  :
+        {
+            "Type"              : "rerun",
+            "Value"             : 1.0,
+            "FinalStates"       : "*",
+            "Processes"         : "MC",
+            "Year"              : ["2016pre", "2016post", "2017", "2018"],
+            "Activate"          : true,
+            "Description"   : "Unclustered MET variation"
         }
-
 }

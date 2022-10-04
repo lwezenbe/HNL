@@ -63,6 +63,8 @@ class OutputTree(object):
             vname = ":".join(reversed(vname.split('-')))
             dim = len(vname.split(':'))
 
+        hname = ''.join([x for x in hname if x not in ['(', ')']])
+
         import ROOT
         ROOT.gROOT.SetBatch(True)
    
@@ -118,18 +120,18 @@ class EfficiencyTree(OutputTree):
     def setBins(self, bins):
         self.bins = bins
 
-    def getNumerator(self, vname, hname, condition = None):
+    def getNumerator(self, vname, hname, condition = None, passed_name = 'passed'):
         if condition is None: 
-            condition = 'passed'
+            condition = passed_name
         else:   
-            condition += '&&passed'                     
+            condition += '&&'+passed_name                     
         return super(EfficiencyTree, self).getHistFromTree(vname, hname, self.bins, condition) 
     
     def getDenominator(self, vname, hname, condition = None):
         return super(EfficiencyTree, self).getHistFromTree(vname, hname, self.bins, condition) 
    
-    def getEfficiency(self, vname, hname, condition = None, inPercent = False):
-        eff = self.getNumerator(vname, hname, condition).Clone('tmp_'+self.name)
-        eff.Divide(eff, self.getDenominator(vname, hname, condition), 1., 1., "B")
-        if inPercent: eff.Scale(100.)
-        return eff
+    def getEfficiency(self, vname, hname, condition = None, passed_name = 'passed'):
+        num = self.getNumerator(vname, hname, condition, passed_name = passed_name).Clone('tmp_'+hname)
+        denom = self.getDenominator(vname, hname, condition).Clone('tmp_denom_'+hname)
+        from HNL.Tools.efficiency import Efficiency
+        return Efficiency(hname, vname, vname, None, efficiency_num = num, efficiency_denom = denom)

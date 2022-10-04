@@ -33,8 +33,8 @@ def lightLepFileName(year, data_string, flavor):
         return 'fakeRateMap_'+data_string+'_'+flavor+'_'+year+'.root'
 
 default_tau_path = lambda proc, year, selection, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Weights', 'data', 'FakeRates', year, 'Tau', 'TauFakes'+proc+'ttl-'+selection, data_string, 'fakerate.root')
-default_ele_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', era+'-'+year, lightLepFileName(luka_year_dict[year], data_string, 'electron'))
-default_mu_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', era+'-'+year, lightLepFileName(luka_year_dict[year], data_string, 'muon'))
+default_ele_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Weights', 'data', 'FakeRates', era+'-'+year, 'Electron', lightLepFileName(luka_year_dict[year], data_string, 'electron'))
+default_mu_path = lambda era, year, data_string : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Weights', 'data', 'FakeRates', era+'-'+year, 'Muon', lightLepFileName(luka_year_dict[year], data_string, 'muon'))
 
 ele = 0
 mu = 1
@@ -66,7 +66,8 @@ def returnFakeRateCollection(chain, tau_method = None, region = None):
     fakerates[ele] = FakeRateEmulator('fakeRate_electron_'+luka_year_dict[str(chain.year)], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_ele_path(chain.era, str(chain.year), data_dict[(chain.is_data, 'light')]))
     fakerates[mu] = FakeRateEmulator('fakeRate_muon_'+luka_year_dict[str(chain.year)], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_mu_path(chain.era, str(chain.year), data_dict[(chain.is_data, 'light')]))
     if tau_method is None: tau_method = TAU_METHOD
-    fakerates[tau] = returnTauFR(tau_method, chain, region)
+    if not chain.obj_sel['notau']:
+        fakerates[tau] = returnTauFR(tau_method, chain, region)
 
     fakerate_collection = FakeRateCollection(chain, fakerates)
 

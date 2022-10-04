@@ -106,6 +106,8 @@ class SystematicJSONreader:
             if 'Data' in proc: return False
             if self.datadriven_processes is not None and proc in self.datadriven_processes: return False
             return True
+        elif raw_processes == 'signal':
+            if not 'HNL' in proc: return False
         else:
             return proc in raw_processes
         
@@ -121,22 +123,29 @@ class SystematicJSONreader:
 
     def systIsCorrelated(self, syst):
         return self.json_data[syst].get('Correlated', False)
+    
+    def getFunc(self, syst):
+        return self.json_data[syst].get('Func', None)
 
-    def getValue(self, syst, year):
+    def getValue(self, syst, year, **kwargs):
         try:
             len(self.json_data[syst]['Value'])
             is_list = True
         except:
             is_list = False
 
-        if is_list and len(self.json_data[syst]['Value']) != len(self.json_data[syst]['Year']):
-            raise RuntimeError("Provided list of values but their length is different from the length of the Years")
-        
-        if is_list:
-            val_index = self.json_data[syst]["Year"].index(year)
-            return self.json_data[syst]['Value'][val_index]
+        if self.getFunc(syst) is not None:
+            from HNL.Systematics.uncFunctions import returnUncFunc
+            return returnUncFunc(self.getFunc(syst), kwargs)
         else:
-            return self.json_data[syst]['Value']
+            if is_list and len(self.json_data[syst]['Value']) != len(self.json_data[syst]['Year']):
+                raise RuntimeError("Provided list of values but their length is different from the length of the Years")
+            
+            if is_list:
+                val_index = self.json_data[syst]["Year"].index(year)
+                return self.json_data[syst]['Value'][val_index]
+            else:
+                return self.json_data[syst]['Value']
 
     def getDescription(self, syst, year):
         return self.json_data[syst]['Description']
@@ -160,7 +169,7 @@ def insertSystematics(out_file, bkgr_names, sig_name, year, final_state, datadri
             if not reader.filterProcesses(syst, proc) or not reader.filterFinalStates(syst, final_state):
                 out_str += ['-']
             else:
-                out_str += [reader.getValue(syst, year)]
+                out_str += [reader.getValue(syst, year, process = proc)]
         
         out_file.write(tab(out_str))        
          
@@ -201,19 +210,19 @@ def makeSystErrorHist(in_hist, process_name, final_state, year, datadriven_proce
     for b in xrange(1, nominal_hist.getHist().GetNbinsX() + 1):
         syst_error_hist.getHist().SetBinError(b, 0.)
         for flat_unc in reader.getFlats(year, process_name, final_state):
-            if reader.systIsCorrelated(flat_unc): continue
+           # if reader.systIsCorrelated(flat_unc): continue
             percentage = abs(1.-reader.getValue(flat_unc, year))
             syst_error_hist.getHist().SetBinError(b, sqrErr(syst_error_hist.getHist().GetBinError(b), nominal_hist.getHist().GetBinContent(b)*percentage)) 
-    
+
         for weight in reader.getWeights(year, process_name, final_state, split_syst = False):
-            if reader.systIsCorrelated(weight): continue
+            #if reader.systIsCorrelated(weight): continue
             err_up = abs(in_hist[weight+'Up'].getHist().GetBinContent(b) - in_hist['nominal'].getHist().GetBinContent(b))
             err_down = abs(in_hist[weight+'Down'].getHist().GetBinContent(b) - in_hist['nominal'].getHist().GetBinContent(b))
             bin_error = max(err_up, err_down)
             syst_error_hist.getHist().SetBinError(b, sqrErr(syst_error_hist.getHist().GetBinError(b), bin_error))
-        
+
         for rerun in reader.getReruns(year, process_name, final_state, split_syst = False):
-            if reader.systIsCorrelated(rerun): continue
+            #if reader.systIsCorrelated(rerun): continue
             err_up = abs(in_hist[rerun+'Up'].getHist().GetBinContent(b) - in_hist['nominal'].getHist().GetBinContent(b))
             err_down = abs(in_hist[rerun+'Down'].getHist().GetBinContent(b) - in_hist['nominal'].getHist().GetBinContent(b))
             bin_error = max(err_up, err_down)

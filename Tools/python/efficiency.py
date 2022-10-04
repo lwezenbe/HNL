@@ -5,15 +5,15 @@ from HNL.Tools.histogram import Histogram
 
 class Efficiency(object):
 
-    def __init__(self, name, var, var_tex, path, bins=None, subdirs=None):      
+    def __init__(self, name, var, var_tex, path=None, bins=None, subdirs=None, efficiency_num = None, efficiency_denom = None):      
         self.name = name
         self.path = path
         self.var = var
         self.var_tex = var_tex
         self.bins = bins
         self.subdirs = subdirs
-        self.efficiency_num = None
-        self.efficiency_denom = None
+        self.efficiency_num = efficiency_num
+        self.efficiency_denom = efficiency_denom
         self.efficiency = None
 
         #If bins == None, load in histograms from the path
@@ -22,7 +22,7 @@ class Efficiency(object):
             if bins:    bins_check = True
         except:
             if bins.any():      bins_check = True
-       
+     
         if bins_check:
             self.efficiency_num = Histogram(name+'_num', self.var, var_tex, bins)
             self.efficiency_denom = Histogram(name+'_denom', self.var, var_tex, bins)
@@ -31,8 +31,12 @@ class Efficiency(object):
             if subdirs is not None:
                 for d in subdirs:
                     obj_name += d+'/'
-            self.efficiency_num = Histogram(getObjFromFile(self.path, obj_name+self.name+'_num'))
-            self.efficiency_denom = Histogram(getObjFromFile(self.path, obj_name+self.name+'_denom'))
+            if (self.efficiency_num is None or self.efficiency_denom is None) and self.path is not None:
+                self.efficiency_num = Histogram(getObjFromFile(self.path, obj_name+self.name+'_num'))
+                self.efficiency_denom = Histogram(getObjFromFile(self.path, obj_name+self.name+'_denom'))
+            else:
+                self.efficiency_num = Histogram(self.efficiency_num)
+                self.efficiency_denom = Histogram(self.efficiency_denom)
      
         self.isTH2 = self.efficiency_num.isTH2
         self.isTH3 = self.efficiency_num.isTH3
@@ -151,6 +155,7 @@ class Efficiency(object):
 
     def write(self, append = False, name=None, is_test=None):
         append_string = 'recreate'
+        if self.path is None: raise RuntimeError('No path defined for storage of efficiency')
         if append and isValidRootFile(self.path): append_string = 'update'
 
 

@@ -46,7 +46,7 @@ if not args.checkLog:
     from HNL.Tools.helpers import progress
     log = getLogger('INFO')
     
-    sample_manager = SampleManager(args.era, year, 'Reco', 'Testing/fulllist_'+args.era+year, skim_selection=args.selection, region=None)
+    sample_manager = SampleManager(args.era, year, 'Reco', 'fulllist_'+args.era+year, skim_selection=args.selection, region=None)
     sample = sample_manager.getSample(args.sample)
     chain = sample.initTree(needhcount = False)
     #

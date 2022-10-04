@@ -23,13 +23,15 @@ class LeptonIDplotter:
         for year in list_of_years:
             for era in list_of_eras:
                 for algo in list_of_algos:
+                    print self.getPath(year, era, algo, self.signal), self.getPath(year, era, algo, self.background)
                     curves.append(ROC(algo, self.getPath(year, era, algo, self.signal), misid_path =self.getPath(year, era, algo, self.background)).returnGraph())
                     ordered_f_names.append(algo +' ('+era+ ' ' +year+')')
 
         extra_text = [extraTextFormat('efficiency: '+self.signal, xpos = 0.2, ypos = 0.82, textsize = 1.2, align = 12)]  #Text to display event type in plot
         extra_text.append(extraTextFormat('misid: '+self.background, textsize = 1.2, align = 12))  #Text to display event type in plot
 
-        p = Plot(curves, ordered_f_names, self.signal+'_'+self.flavor, 'efficiency', 'misid', y_log=True, extra_text=extra_text)
+        #p = Plot(curves, ordered_f_names, self.signal+'_'+self.flavor, 'efficiency', 'misid', y_log=True, extra_text=extra_text)
+        p = Plot(curves, ordered_f_names, self.signal+'_'+self.flavor, 'efficiency', 'misid', y_log=False, extra_text=extra_text)
         p.drawGraph(output_dir = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'ObjectSelection', 'data', 'Results', 'compareLeptonId', 'ROC', self.signal+'-'+self.background)))
 
     def getAlgosAndWorkingPoints(self, file_name):

@@ -16,13 +16,15 @@ var_weights = {
         'muonIDSFWeight':          (lambda c : c.muonIDSFWeight,      np.arange(0.75, 1.26, .01),         ('Muon SF weight', 'Events')), 
         'electronIDSFWeight':          (lambda c : c.electronIDSFWeight,      np.arange(0.75, 1.26, .01),         ('Electron SF weight', 'Events')), 
         'btagWeight':          (lambda c : c.btagWeight,      np.arange(0.5, 1.5, .01),         ('btag weight', 'Events')), 
+        'prefireWeight':          (lambda c : c.prefireWeight,      np.arange(0.5, 1.5, .01),         ('prefire weight', 'Events')), 
+        'triggerSFWeight':          (lambda c : c.triggerSFWeight,      np.arange(0.5, 1.5, .01),         ('trigger SF', 'Events')), 
 } 
 
 class Reweighter:
     
-    WEIGHTS_TO_USE = var_weights.keys()
 
     def __init__(self, sample, sample_manager):
+        self.WEIGHTS_TO_USE = var_weights.keys()
         self.sample = sample
         self.sample_manager = sample_manager
 
@@ -52,6 +54,8 @@ class Reweighter:
             electron_wp = checkElectronWP(self.sample.chain, None)
             self.electronIDSF = ElectronIDSF(sample.chain.era, sample.chain.year, electron_wp)
 
+            from HNL.Weights.triggerSF import TriggerSF
+            self.triggerSF = TriggerSF(sample.chain.era, sample.chain.year)
 
         self.fakerate_collection = None
 
@@ -59,12 +63,15 @@ class Reweighter:
         return ['{0}/F'.format(weight) for weight in self.WEIGHTS_TO_USE]
 
     def getPrefireWeight(self, syst = 'nominal'):
-        if syst == 'nominal':
-            return self.sample.chain._prefireWeight
-        if syst == 'up':
-            return self.sample.chain._prefireWeightUp
-        if syst == 'down':
-            return self.sample.chain._prefireWeightDown
+        if not self.sample.is_data and self.sample.chain.is_reco_level:
+            if syst == 'nominal':
+                return self.sample.chain._prefireWeight
+            if syst == 'up':
+                return self.sample.chain._prefireWeightUp
+            if syst == 'down':
+                return self.sample.chain._prefireWeightDown
+        else:
+            return 1.
 
     def getLumiWeight(self):
         return self.lumiweighter.getLumiWeight()
@@ -111,6 +118,13 @@ class Reweighter:
             return self.electronIDSF.getTotalSF(self.sample.chain, syst)
         else:
             return 1.        
+
+    def getTriggerSF(self, syst = 'nominal'):
+        if not self.sample.is_data and self.sample.chain.is_reco_level:
+            return self.triggerSF.getSF(self.sample.chain, syst)
+        else:
+            return 1.        
+        
         
     def returnWeight(self, weight_name, syst = 'nominal'):
         if weight_name == 'lumiWeight':
@@ -127,7 +141,10 @@ class Reweighter:
             return self.getElectronIDSF(syst=syst)
         if weight_name == 'btagWeight':
             return self.getBTagWeight(syst=syst)
-
+        if weight_name == 'prefireWeight':
+            return self.getPrefireWeight(syst=syst)
+        if weight_name == 'triggerSFWeight':
+            return self.getTriggerSF(syst=syst)
 
     def getTotalWeight(self, sideband=False, tau_fake_method = None):
         tot_weight = 1.
@@ -135,7 +152,6 @@ class Reweighter:
             tot_weight *= self.returnWeight(weight)
         if sideband:
             tot_weight *= self.getFakeRateWeight(tau_method = tau_fake_method)
-        #tot_weight *= self.getPrefireWeight()
         return tot_weight
 
     def fillTreeWithWeights(self, chain):

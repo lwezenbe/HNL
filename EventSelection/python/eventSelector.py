@@ -12,10 +12,10 @@ class FilterObject(object):
         self.ec = event_categorization
 
     def initEvent(self, nL, cutter, sort_leptons, kwargs={}):
-        sideband = kwargs.get('sideband', None) 
+        self.sideband = kwargs.get('sideband', None) 
         offline_thresholds = kwargs.get('offline_thresholds', True)       
 
-        if sideband is not None:
+        if self.sideband is not None:
             self.chain.obj_sel['tau_wp'] = 'FO'
             self.chain.obj_sel['ele_wp'] = 'FO'
             self.chain.obj_sel['mu_wp'] = 'FO'
@@ -26,10 +26,9 @@ class FilterObject(object):
             if not cutter.cut(selectGenLeptonsGeneral(self.chain, self.new_chain, nL, cutter=cutter), 'select leptons'): return False
 
         self.chain.category = self.ec.returnCategory()
-        self.chain.detailed_category = self.ec.returnDetailedCategory()
         reweighter = kwargs.get('reweighter')
         if kwargs.get('calculate_weights', False) and reweighter is not None:
-            self.chain.weight = reweighter.getTotalWeight(sideband = sideband, tau_fake_method = 'TauFakesDY' if self.region == 'ZZCR' else None)
+            self.chain.weight = reweighter.getTotalWeight(sideband = self.sideband, tau_fake_method = 'TauFakesDY' if self.region == 'ZZCR' else None)
         else:
             self.chain.weight = None
 
@@ -38,10 +37,10 @@ class FilterObject(object):
             return False
 
         #If sideband, only select events where not all 3 leptons are tight
-        if sideband is not None:
+        if self.sideband is not None:
             nfail = 0
             for i, l in enumerate(self.chain.l_indices):
-                if isinstance(sideband, list) and self.chain.l_flavor[i] not in sideband: continue
+                if isinstance(self.sideband, list) and self.chain.l_flavor[i] not in self.sideband: continue
                 if not isGoodLepton(self.chain, l, 'tight'):
                     nfail += 1
             if nfail < 1: return False
@@ -96,6 +95,10 @@ class EventSelector:
             self.selector = LightLepFakeEnrichedDY(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization, additional_args = additional_options)
         elif self.name == 'LightLepFakesTT':
             self.selector = LightLepFakeEnrichedTT(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization, additional_args = additional_options)
+        elif self.name == 'LightLepFakesDYCT':
+            self.selector = LightLepFakeEnrichedDY(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization, additional_args = {'tightWP' : True})
+        elif self.name == 'LightLepFakesTTCT':
+            self.selector = LightLepFakeEnrichedTT(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization, additional_args = {'tightWP' : True})
         elif self.name == 'LightLeptonFakes':
             self.selector = LightLeptonFakeMeasurementRegion(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
         elif self.name == 'TauMixCT':
@@ -105,7 +108,7 @@ class EventSelector:
         elif self.name == 'MCCT':
             self.selector = GeneralMCCTRegion(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
         elif self.name == 'NoSelection':
-            if chain.is_data and not 'sideband' in additional_options:
+            if chain.is_data and not ('sideband' in additional_options or 'for_skim' in additional_options):
                 raise RuntimeError("Running this would mean unblinding. Dont do this.")
             self.selector = SignalRegionSelector('baseline', chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
         else:
@@ -125,28 +128,17 @@ class EventSelector:
             return True
         return False
 
-    def removeOverlapDYandZG(self, sample_name, cutter):
-        if 'DY' in sample_name and not cutter.cut(self.leptonFromMEExternalConversion(), 'Cleaning DY'): return False
-        if sample_name == 'ZG' and not cutter.cut(not self.leptonFromMEExternalConversion(), 'Cleaning XG'): return False
-        return True
+#    def removeOverlapDYandZG(self, sample_name, cutter):
+#        if 'DY' in sample_name and self.leptonFromMEExternalConversion(): return True
+#        if sample_name == 'ZG' and not self.leptonFromMEExternalConversion(): return True
+#        return False
 
-    def removeOverlapInTauSignal(self, sample_name):
-        if 'taulep' in sample_name:
-            nlight = 0.
-            ntau = 0.
-            for l in xrange(self.chain._gen_nL):
-                if self.chain._gen_lFlavor[l] == 2 and self.chain._gen_lVisPt[l] > 18.: ntau += 1.
-                if self.chain._gen_lFlavor[l] != 2 and self.chain._gen_lPt[l] > 15. and self.chain._gen_lEta[l] < 3.: nlight += 1.
-            return ntau < 1 or nlight < 1
-        else:
-            return True
+    def removeOverlapDYandZG(self, is_prompt, sample_name, cutter):
+        if 'DY' in sample_name and is_prompt: return True
+        if sample_name == 'ZG' and not is_prompt: return True
+        return False
 
     def passedFilter(self, cutter, sample_name, kwargs={}):
-        if not self.removeOverlapDYandZG(sample_name, cutter): return False
-
-        ignoreSignalOverlapRemoval = kwargs.get('ignoreSignalOverlapRemoval', False)
-        #if not ignoreSignalOverlapRemoval and not self.removeOverlapInTauSignal(sample_name): return False
-
         if not cutter.cut(self.chain._passMETFilters, 'metfilters'): return False
 
         #Triggers
@@ -157,6 +149,7 @@ class EventSelector:
         if self.name != 'NoSelection':
             passed = self.selector.passedFilter(cutter, kwargs)
             if not passed: return False
+            if not cutter.cut(not self.removeOverlapDYandZG(self.new_chain.is_prompt, sample_name, cutter), 'Clean DY and ZG'): return False
             return True
         else:
             return True

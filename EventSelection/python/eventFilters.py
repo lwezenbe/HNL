@@ -230,7 +230,7 @@ def passedFilterTauFakeEnrichedTT(chain, new_chain, cutter, inverted_cut):
     # if not cutter.cut(chain._tauGenStatus[chain.l_indices[2]] == 6, 'fake tau'):    return False
     return True
 
-def passedFilterLightLepFakeEnrichedTT(chain, new_chain, cutter):
+def passedFilterLightLepFakeEnrichedTT(chain, new_chain, cutter, fake_flavors):
 
     if not cutter.cut(new_chain.l_flavor.count(2) == 0, 'no tau'):                   return False
 

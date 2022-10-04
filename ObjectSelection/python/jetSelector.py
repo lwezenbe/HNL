@@ -251,6 +251,10 @@ def getMET(chain):
             return chain._met_JECUp, chain._metPhi_JECUp
         elif syst == 'JECDown':
             return chain._met_JECDown, chain._metPhi_JECDown
+        elif syst == 'UnclMETUp':
+            return chain._met_UnclUp, chain._metPhi_UnclUp
+        elif syst == 'UnclMETDown':
+            return chain._met_UnclDown, chain._metPhi_UnclDown
         else:
             return chain._met, chain._metPhi
     else:

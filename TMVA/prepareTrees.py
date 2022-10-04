@@ -10,7 +10,7 @@ argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
 submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
-submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
+submission_parser.add_argument('--era',     action='store',       default='UL', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -57,12 +57,12 @@ from HNL.TMVA.mvaVariables import mass_ranges
 #Load in samples
 #
 from HNL.Samples.sampleManager import SampleManager
-file_list = 'TMVA/fulllist_'+args.era+args.year+'_mconly' if args.customList is None else args.customList
+file_list = 'fulllist_'+args.era+args.year if args.customList is None else args.customList
 skim_str = 'noskim' if args.noskim else 'Reco'
 sample_manager = SampleManager(args.era, args.year, skim_str, file_list, skim_selection=args.selection, region = args.region)
 jobs = []
 for sample_name in sample_manager.sample_names:
-    if sample_name == 'Data': continue
+    if 'Data' in sample_name: continue
     sample = sample_manager.getSample(sample_name)
     try:
         for njob in xrange(sample.returnSplitJobs()): 

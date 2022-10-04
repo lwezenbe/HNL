@@ -13,11 +13,13 @@ submission_parser.add_argument('--year',     action='store',      default=None, 
 submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--skimSelection',  action='store',      default='default',               help='Name of the selection.')
 submission_parser.add_argument('--skimName',  action='store',      default='Reco',               help='Name of the skim.')
+submission_parser.add_argument('--sample',  action='store',      default=None,               help='Name of the skim.')
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
 submission_parser.add_argument('--dryRun',   action='store_true', default=False,  help='do not launch subjobs, only show them')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
+submission_parser.add_argument('--backupName',   action='store', default=None,  help='Give backup a name for special cases')
 submission_parser.add_argument('--region',   action='store', default=None,  help='Choose the selection region', 
     choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
 
@@ -39,7 +41,7 @@ def mergeSmallFile(merge_file):
     path, name = merge_file.rsplit('/', 1)
     if not args.isTest:
         os.system('hadd -f -v '+path+'/'+name.split('_', 1)[1]+'.root '+merge_file+'/*root')
-        os.system('rm -r -f '+ merge_file)
+#        os.system('rm -r -f '+ merge_file)
     else:
         makeDirIfNeeded(path+'/testArea/'+name.split('_', 1)[1]+'.root')
         os.system('hadd -f -v '+path+'/testArea/'+name.split('_', 1)[1]+'.root '+merge_file+'/*root')
@@ -66,8 +68,8 @@ def mergeLargeFile(merge_file):
     for j, file_list in enumerate(split_list):
         if not args.isTest:
             os.system('hadd -f -v '+path+'/'+name+ '/tmp_batches/batch_'+str(j)+ '.root '+' '.join(file_list))
-            for f in file_list:
-                os.system('rm '+f)
+#            for f in file_list:
+#                os.system('rm '+f)
         else:
             os.system('hadd -f -v '+path+'/testArea/'+name+ '/tmp_batches/batch_'+str(j)+ '.root '+' '.join(file_list))
 
@@ -75,56 +77,41 @@ def mergeLargeFile(merge_file):
         os.system('hadd -f -v '+path+'/testArea/'+name.split('_', 1)[1]+'.root '+path+'/testArea/'+name+ '/tmp_batches/*root')
     else:
         os.system('hadd -f -v '+path+'/'+name.split('_', 1)[1]+'.root '+path+'/'+name+ '/tmp_batches/*root')
-        # os.system('rm -rf '+path+'/'+name)
+        os.system('rm -rf '+path+'/'+name+'/tmp_batches')
 
 skim_selection_string = args.skimSelection if args.region is None else args.skimSelection+'/'+args.region 
 pnfs_base = os.path.join('/pnfs/iihe/cms/store/user', os.path.expandvars('$USER'), 'skimmedTuples/HNL', skim_selection_string, args.era+args.year, args.skimName)
-pnfs_backup_base = os.path.join('/pnfs/iihe/cms/store/user', os.path.expandvars('$USER'), 'skimmedTuples/HNL/Backup', skim_selection_string, args.era+args.year, args.skimName)
-if not args.batchSystem == 'HTCondor':
-    pnfs_base = 'srm://maite.iihe.ac.be:8443'+pnfs_base
-    pnfs_backup_base = 'srm://maite.iihe.ac.be:8443'+pnfs_backup_base
+pnfs_backup_base = os.path.join('/pnfs/iihe/cms/store/user', os.path.expandvars('$USER'), 'skimmedTuples/HNL/Backup', skim_selection_string, args.era+args.year, args.skimName, args.backupName if args.backupName is not None else '')
+#if not args.batchSystem == 'HTCondor':
+#    pnfs_base = 'srm://maite.iihe.ac.be:8443'+pnfs_base
+#    pnfs_backup_base = 'srm://maite.iihe.ac.be:8443'+pnfs_backup_base
 
 #Merges subfiles if needed
-if args.batchSystem != 'HTCondor':
-    merge_files = glob.glob('/storage_mnt/storage/user/'+os.path.expandvars('$USER')+'/public/ntuples/HNL/'+skim_selection_string+'/'+args.era+args.year+'/'+args.skimName+'/tmp*')
-else:
-    merge_files = glob.glob(pnfs_base+'/tmp*')
+sample_name = '*' if args.sample is None else args.sample
+merge_files = glob.glob(pnfs_base+'/tmp_'+sample_name+'*')
 merge_files = sorted(merge_files)
 
-if args.batchSystem != 'HTCondor':
-    os.system('gfal-mkdir '+pnfs_base)
-    os.system('gfal-mkdir '+pnfs_backup_base)
-else:
-    makeDirIfNeeded(pnfs_base)
-    makeDirIfNeeded(pnfs_backup_base)
+makeDirIfNeeded(pnfs_base+'/x')
+makeDirIfNeeded(pnfs_backup_base+'/x')
 
 for mf in merge_files:
-    if 'Data' in mf: continue
     path, name = mf.rsplit('/', 1)
     new_name = name.split('_', 1)[1]+'.root'
-
-    if not args.isTest:
-        if args.batchSystem != 'HTCondor':
-            os.system('gfal-rm '+pnfs_backup_base+'/'+new_name)
-            os.system('gfal-copy '+pnfs_base+'/'+new_name+' '+pnfs_backup_base+'/'+new_name)
-            os.system('gfal-rm '+pnfs_base+'/'+new_name)
-        else:
-            if isValidRootFile(pnfs_base+'/'+new_name):
-                os.system('scp '+pnfs_base+'/'+new_name + ' '+ pnfs_backup_base+'/'+new_name)
-
+    if not args.isTest and args.backupName != 'nobackup':
+        if isValidRootFile(pnfs_base+'/'+new_name):
+    #        continue
+            if isValidRootFile(pnfs_backup_base+'/'+new_name):
+                os.system('rm -f '+ pnfs_backup_base+'/'+new_name)
+            os.system('scp '+pnfs_base+'/'+new_name + ' '+ pnfs_backup_base+'/'+new_name)
+    
     sub_files = glob.glob(mf+'/*')
     tot_size = 0
     for sf in sub_files:
         tot_size += fileSize(sf)
     
-    # if tot_size > 1000:
-    #     mergeLargeFile(mf)
-    # else:
-    #     mergeSmallFile(mf)
+    if tot_size > 1000:
+        mergeLargeFile(mf)
+    else:
+        mergeSmallFile(mf)
         
-    mergeSmallFile(mf)
-
-    if args.batchSystem != 'HTCondor' and not args.isTest:
-        #Move to pnfs once it is merged locally
-        os.system('gfal-copy file://'+path+'/'+new_name+' '+pnfs_base+'/'+new_name)
-        os.system('rm '+path+'/'+new_name)
+#    mergeSmallFile(mf)

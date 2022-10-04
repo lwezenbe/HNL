@@ -76,8 +76,8 @@ def successfullJob(fname, level = 0):
 
 from HNL.Tools.helpers import makeDirIfNeeded
 def clearLogs(base):
-    last_base = base.replace('Latest', 'Previous')
-    makeDirIfNeeded(last_base+'/x')
-    os.system('rm -r '+last_base+'/*')
-    os.system('scp -r '+base+'/* '+last_base+'/.')
+#    last_base = base.replace('Latest', 'Previous')
+#    makeDirIfNeeded(last_base+'/x')
+#    os.system('rm -r '+last_base+'/*')
+#    os.system('scp -r '+base+'/* '+last_base+'/.')
     os.system('rm -r '+base)

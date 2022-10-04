@@ -20,8 +20,12 @@ def getOverallMinimum(hist, zero_not_allowed = False, include_error = True, syst
         if include_error:
             loc_min = getMinWithErr(h, zero_not_allowed, syst_hist = syst_hist)
         else:
-            loc_min = h.GetMinimum()
+            if zero_not_allowed:
+                loc_min = h.GetMinimum(0.001)
+            else:
+                loc_min = h.GetMinimum()
         if loc_min < current_min:    current_min = loc_min
+    if current_min == 999999: current_min = -999999.
     return current_min
 
 def getNestedMin(arr):

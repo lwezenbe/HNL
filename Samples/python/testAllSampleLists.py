@@ -29,8 +29,9 @@ import os
 #
 # to test single RecoGeneral file, for now comment when not used
 #
-# years = ['2016pre', '2016post', '2017', '2018']
-years = ['2016pre', '2017', '2018']
+#years = ['2016pre', '2016post', '2017', '2018']
+years = ['2018']
+#years = ['2016pre', '2017', '2018']
 eras = ['UL']
 skims = ['noskim']
 settings = {'skim_selection' : 'default', 'region' : None}
@@ -40,6 +41,7 @@ for year in years:
             out_name = os.path.expandvars('$CMSSW_BASE/src/HNL/Samples/InputFiles/InputFileTests/'+era+year+skim+'.txt')
             makeDirIfNeeded(out_name)
             out_file = open(out_name, 'w')
+            #sample_manager = SampleManager(era, year, skim, 'fulllist_'+era+year, skim_selection = settings['skim_selection'], region = settings['skim_selection'])
             sample_manager = SampleManager(era, year, skim, 'Skimmer/skimlist_'+era+year, skim_selection = settings['skim_selection'], region = settings['skim_selection'])
             sample_list = sample_manager.createSampleList()
             for sample in sample_list:

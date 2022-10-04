@@ -13,7 +13,7 @@ submission_parser = argParser.add_argument_group('submission', 'Arguments for su
 submission_parser.add_argument('--flavor', action='store',  help='flavor for which to run fake rate measurement', choices=['tau', 'e', 'mu'])
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
 submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
-submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
+submission_parser.add_argument('--era',     action='store',       default='UL', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -91,7 +91,7 @@ else:
 
 sublist = None
 if args.inData:
-    sublist = 'fulllist_'+args.era+args.year+'_nosignal'
+    sublist = 'fulllist_'+args.era+args.year
 elif args.flavor == 'tau':
     sublist = 'BackgroundEstimation/TauFakes-'+args.era+args.year
 elif args.flavor == 'mu':
@@ -108,6 +108,7 @@ sample_manager = SampleManager(args.era, args.year, skim_str, sublist, skim_sele
 jobs = []
 for sample_name in sample_manager.sample_names:
     if args.sample and args.sample not in sample_name: continue
+    if 'HNL' in sample_name: continue
     if args.tauRegion is not None and not args.inData:
         if 'TauFakesDYttl' in args.tauRegion and not 'DY' in sample_name: continue
         elif args.tauRegion == 'TauFakesTTttl' and not 'TT' in sample_name: continue
@@ -302,11 +303,11 @@ else:
         #    p.draw2D(output_dir = output_dir, names = ['ttl_'+fr])
         
         ttl = fakerate.getEfficiency('l_pt-abs(l_eta)', 'total')
-        p = Plot(signal_hist = ttl, name = 'ttl_total', year = args.year, era = args.era, x_name="p_{T} [GeV]", y_name = "|#eta|")
+        p = Plot(signal_hist = ttl.getEfficiency(), name = 'ttl_total', year = args.year, era = args.era, x_name="p_{T} [GeV]", y_name = "|#eta|")
         p.draw2D(output_dir = output_dir, names = ['ttl_total'])
         for c in conditions:
             ttl = fakerate.getEfficiency('l_pt-abs(l_eta)', c, conditions[c])
-            p = Plot(signal_hist = ttl, name = 'ttl_'+c, year = args.year, era = args.era, x_name="p_{T} [GeV]", y_name = "|#eta|")
+            p = Plot(signal_hist = ttl.getEfficiency(), name = 'ttl_'+c, year = args.year, era = args.era, x_name="p_{T} [GeV]", y_name = "|#eta|")
             p.draw2D(output_dir = output_dir, names = ['ttl_'+c])
 
         # Draw all components

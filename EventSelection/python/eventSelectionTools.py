@@ -71,6 +71,7 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
    
     if len(chain.leptons) != nL:  return False
 
+
     if chain is new_chain:
         new_chain.l_pt = [0.0]*nL
         new_chain.l_eta = [0.0]*nL
@@ -81,6 +82,13 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         new_chain.l_indices = [0.0]*nL
         new_chain.l_isFO = [0.0]*nL
         new_chain.l_istight = [0.0]*nL
+        new_chain.light_pt = [0.0]*nL
+        new_chain.light_eta = [0.0]*nL
+        new_chain.light_phi = [0.0]*nL
+        new_chain.light_charge = [0.0]*nL
+        new_chain.light_flavor = [0.0]*nL
+        new_chain.light_e = [0.0]*nL
+        new_chain.light_indices = [0.0]*nL
         if not chain.is_data:
             new_chain.l_isfake = [0.0]*nL
 
@@ -89,6 +97,7 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
     else:
         ptAndIndex = chain.leptons
 
+    light_index = 0
     for i in xrange(nL):
         new_chain.l_indices[i] = ptAndIndex[i][1]
         new_chain.l_flavor[i] = chain._lFlavor[ptAndIndex[i][1]]
@@ -101,7 +110,24 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         new_chain.l_istight[i] = isGoodLepton(chain, ptAndIndex[i][1], 'tight')
         if not chain.is_data:
             new_chain.l_isfake[i] = isFakeLepton(chain, ptAndIndex[i][1])
-
+        
+        if new_chain.l_flavor[i] < 2:
+            new_chain.light_indices[light_index] = ptAndIndex[i][1]
+            new_chain.light_flavor[light_index] = chain._lFlavor[ptAndIndex[i][1]]
+            new_chain.light_pt[light_index] = ptAndIndex[i][0]
+            new_chain.light_eta[light_index] = chain._lEta[ptAndIndex[i][1]]
+            new_chain.light_phi[light_index] = chain._lPhi[ptAndIndex[i][1]]
+            new_chain.light_e[light_index] = getElectronE(chain, ptAndIndex[i][1]) if new_chain.l_flavor[i] < 1 else chain._lE[ptAndIndex[i][1]]
+            new_chain.light_charge[light_index] = chain._lCharge[ptAndIndex[i][1]]
+            light_index += 1
+    
+    if not chain.is_data:
+        prompt_list = [chain._lIsPrompt[l] for l in new_chain.l_indices]
+        new_chain.is_prompt = all(prompt_list)
+    else:
+        new_chain.is_prompt = True
+       
+ 
     return True
 
 def select3Leptons(chain, new_chain, cutter = None):
@@ -159,6 +185,8 @@ def selectGenLeptonsGeneral(chain, new_chain, nL, cutter=None):
         new_chain.l_charge[i] = chain._gen_lCharge[ptAndIndex[i][1]]
         new_chain.l_flavor[i] = chain._gen_lFlavor[ptAndIndex[i][1]]
     
+    prompt_list = [chain._gen_lIsPrompt[l] for l in new_chain.l_indices]
+    new_chain.is_prompt = all(prompt_list)
     return True
 
 #
@@ -223,19 +251,16 @@ from HNL.ObjectSelection.leptonSelector import coneCorrection
 def calculateGeneralVariables(chain, new_chain, is_reco_level = True):
     if is_reco_level:
         #ptCone
-        # new_chain.pt_cone = []
-        new_chain.dr_closestJet = [0.0]*20
+        #new_chain.dr_closestJet = [0.0]*20
+        new_chain.dr_closestJet = []
         for il, l in enumerate(new_chain.l_indices):
-            # if new_chain.l_flavor[il] < 2:
-            #     new_chain.pt_cone.append(chain._lPtCorr[l]*coneCorrection(chain, l))
-            # else:
-            #     new_chain.pt_cone.append(chain._lPt[l]*coneCorrection(chain, l))
 
-            closest_jet = findClosestJet(chain, new_chain, il)
-            if closest_jet is None:
-                new_chain.dr_closestJet.append(-1.)
-            else:
-                new_chain.dr_closestJet.append(deltaR(new_chain.l_eta[il], chain._jetEta[closest_jet], new_chain.l_phi[il], chain._jetPhi[closest_jet]))
+#            closest_jet = findClosestJet(chain, new_chain, il)
+#            if closest_jet is None:
+#                new_chain.dr_closestJet.append(-1.)
+#            else:
+#                new_chain.dr_closestJet.append(deltaR(new_chain.l_eta[il], chain._jetEta[closest_jet], new_chain.l_phi[il], chain._jetPhi[closest_jet]))
+            new_chain.dr_closestJet.append(0.)
 
         #calculate #jets and #bjets
         new_chain.njets = len(selectJets(chain))
@@ -597,6 +622,13 @@ def calcLT(chain, new_chain, is_reco_level = True):
     LT += chain.met
     return LT
 
+def objectInHEMregion(chain, new_chain):
+    for eta, phi in zip(new_chain.l_eta, new_chain.l_phi):
+        if eta < 1.3 and -1.57 < phi < -0.87: return True
+    for j_index in selectJets(chain):
+        if chain._jetEta[j_index] < 1.3 and -1.57 < chain._jetPhi[j_index] < -0.87: return True
+    return False
+    
 #
 # Functions that change some values in the tree
 #

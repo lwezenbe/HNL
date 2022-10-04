@@ -21,6 +21,7 @@ cat_dict = {
     'TauMixCT' : [17],
     'TauMixCTM3lcutInverted' : [17],
     'TauFakesTT' : [17],
+    'TauFakesDYCT' : [17],
     'TauFakesDY' : [17]
 }
 
@@ -56,7 +57,7 @@ def determineWeights(eras, years, selections, regions, strategy):
                             infile.Close()
 
                         for dy_c in DY_contributions:
-                            print in_file_path(era, year, selection, region, tt_c, strategy)
+                            print in_file_path(era, year, selection, region, dy_c, strategy)
                             infile = TFile(in_file_path(era, year, selection, region, dy_c, strategy), 'read')
                             intree = infile.Get('events_nominal')
                             tmp_dy_hist = getHistFromTree(intree, 'searchregion', dy_c, np.arange(0., 2., 1.), '(!isprompt)')
@@ -64,6 +65,7 @@ def determineWeights(eras, years, selections, regions, strategy):
                             dy_tot += tmp_dy_hist.GetSumOfWeights()
                             infile.Close()
                     weights[era][year][selection][region] = {'DY' : dy_tot/(tt_tot+dy_tot), 'TT' : tt_tot/(tt_tot+dy_tot)}            
+                    print weights[era][year][selection][region]
 
     json_f = json.dumps(weights)
     out_file = open(out_file_path, 'w')

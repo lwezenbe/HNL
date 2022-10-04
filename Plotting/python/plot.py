@@ -45,7 +45,7 @@ import os
 import ROOT
 from HNL.Tools.helpers import isTimeStampFormat, makeDirIfNeeded
 from HNL.Plotting.style import setDefault, setDefault2D
-class Plot:
+class Plot(object):
     
     def __init__(self, signal_hist = None, tex_names = None, name = None, x_name = None, y_name = None, bkgr_hist = None, observed_hist = None, syst_hist = None, extra_text = None, 
         x_log = None, y_log = None, draw_ratio = None, draw_significance = None, color_palette = 'HNLfromTau', color_palette_bkgr = 'HNLfromTau', year = '2016', era = 'prelegacy'):
@@ -249,9 +249,10 @@ class Plot:
     def getYName(self): 
         from HNL.Plotting.plottingTools import allBinsSameWidth
         test_hist = self.s[0] if len(self.s) > 0 else self.b[0]
+        #Should only be done for 1D hist, the veto also works for TH3 and so on because it inherits from TH2
+        if isinstance(test_hist, ROOT.TH2): return self.y_name
 
         add_x_width = allBinsSameWidth(test_hist)
-
 
         if '[' in self.y_name:
             return self.y_name
@@ -365,7 +366,7 @@ class Plot:
             r.SetMarkerColor(r.GetLineColor())
 
         if self.observed is not None:
-            ytitle = 'obs./pred.'
+            ytitle = 'Obs./Pred.'
         else:
             ytitle = 'S/B'
 
@@ -393,12 +394,13 @@ class Plot:
         self.tot_err.SetMarkerStyle(0)
 
         #Set axis: if significance is also drawn, no x-axis
-        # self.tot_err.SetMinimum(0.3)
-        # self.tot_err.SetMaximum(1.7)
-        self.tot_err.SetMinimum(0.)
-        #self.tot_err.SetMaximum(2.)
-        self.tot_err.SetMaximum(max(2., 1.3*pt.getOverallMaximum(ratios, include_error=False)))
-        # self.tot_err.GetXaxis().SetRangeUser(15., 900.)
+        #self.tot_err.SetMinimum(0.3)
+        #self.tot_err.SetMaximum(1.7)
+        self.tot_err.SetMinimum(max(0., 0.95*pt.getOverallMinimum(ratios, zero_not_allowed = True,  include_error=False)))
+        if just_errors:
+            self.tot_err.SetMaximum(2.)
+        else:
+            self.tot_err.SetMaximum(min(6, 1.1*pt.getOverallMaximum(ratios, include_error=False)))
         self.tot_err.GetXaxis().SetTitleSize(.18)
         self.tot_err.GetYaxis().SetTitleSize(.18)
         self.tot_err.GetXaxis().SetLabelSize(.18)
@@ -416,7 +418,6 @@ class Plot:
             if custom_labels is not None:
                 for i, n in enumerate(custom_labels):
                     self.tot_err.GetXaxis().SetBinLabel(i+1, n)
-
 
         self.tot_err.Draw("E2")
         self.stat_err.Draw("E2Same")
@@ -437,14 +438,13 @@ class Plot:
         self.line.SetLineWidth(1)
         self.line.SetLineStyle(3)
 
-        draw_text = 'EPSame'
+        draw_text = 'EPSame0'
         if self.draw_ratio == 'text': draw_text += 'Text'
         if not just_errors and len(ratios) > 0:
             for r in ratios:
                 r.SetMarkerSize(1.)
                 r.Draw(draw_text)
 
-       
         self.line.Draw()
 
         self.ratio_legend = ROOT.TLegend(0.2, .75, .6, .9)
@@ -475,7 +475,6 @@ class Plot:
                 extra_text.SetNDC()
                 extra_text.SetTextSize(0.1)
                 extra_text.DrawLatex(0.55, 0.78, extra_text_string)
-        
         self.ratio_pad.Update() 
         self.canvas.cd() 
         self.canvas.Update() 
@@ -572,7 +571,6 @@ class Plot:
             makeDirIfNeeded(central_destination)    
 
 
-
         self.canvas.SaveAs(destination + ".pdf")
         self.canvas.SaveAs(destination + ".png")
         self.canvas.SaveAs(destination + ".root")
@@ -627,7 +625,7 @@ class Plot:
                 for i in xrange(len(self.b)):
                     self.stat_bkgr_errors[i].Draw("E Same")
 
-            self.legend.AddEntry(self.tot_totbkgr_error, 'Total Error' if self.syst_hist is not None else 'Stat. Error')
+            self.legend.AddEntry(self.tot_totbkgr_error, 'Total Unc.' if self.syst_hist is not None else 'Stat. Unc.')
 
     def drawHist(self, output_dir = None, normalize_signal = None, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None, 
         custom_labels = None, draw_lines = None, message = None, min_cutoff = None, max_cutoff = None, ref_line = 1., observed_name = 'Data'):
@@ -816,15 +814,15 @@ class Plot:
                 else:
                     h.Draw(tmp_draw_option+'Same')
 
-        if normalize_signal == 'bkgr':
-            if self.extra_text is None: self.extra_text = []
-            self.extra_text.append(pt.extraTextFormat('Scaled to background yield'))          
-        elif isinstance(normalize_signal, int) or isinstance(normalize_signal, float):
-            if self.extra_text is None: self.extra_text = []
-            if normalize_signal >= 1.:
-                self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0}'.format(int(normalize_signal))))          
-            else:
-                self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0:.3g}'.format(normalize_signal)))          
+#        if normalize_signal == 'bkgr':
+#            if self.extra_text is None: self.extra_text = []
+#            self.extra_text.append(pt.extraTextFormat('Scaled to background yield'))          
+#        elif isinstance(normalize_signal, int) or isinstance(normalize_signal, float):
+#            if self.extra_text is None: self.extra_text = []
+#            if normalize_signal >= 1.:
+#                self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0}'.format(int(normalize_signal))))          
+#            else:
+#                self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0:.3g}'.format(normalize_signal)))          
         
         self.drawErrors(draw_option, bkgr_draw_option)
 
@@ -952,7 +950,7 @@ class Plot:
 
 
     def draw2D(self, option='ETextColz', output_dir = None, message = None, names = None):
-     
+    
         setDefault2D()    
         self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
         self.setAxisLog(is2D=True)

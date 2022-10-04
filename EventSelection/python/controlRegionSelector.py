@@ -82,7 +82,7 @@ class TauFakeEnrichedDY(FilterObject):
             self.chain.obj_sel['mu_wp'] = 'tight'
 
     def initEvent(self, cutter, kwargs={}):
-        kwargs['sideband'] = None
+        if not self.use_default_objects:        kwargs['sideband'] = None
         return super(TauFakeEnrichedDY, self).initEvent(3, cutter, sort_leptons = False, kwargs=kwargs)
 
     def passedFilter(self, cutter, kwargs={}):
@@ -106,7 +106,7 @@ class TauFakeEnrichedTT(FilterObject):
             self.chain.obj_sel['mu_wp'] = 'tight'
 
     def initEvent(self, cutter, kwargs={}):
-        kwargs['sideband'] = None
+        if not self.use_default_objects:        kwargs['sideband'] = None
         return super(TauFakeEnrichedTT, self).initEvent(3, cutter, sort_leptons = False, kwargs=kwargs)
 
     def passedFilter(self, cutter, kwargs={}):
@@ -122,15 +122,15 @@ class LightLepFakeEnrichedDY(FilterObject):
     
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None, additional_args = None):
         super(LightLepFakeEnrichedDY, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
-        self.use_default_objects = additional_args.get('tightwp', False) if additional_args is not None else False
+        self.use_default_objects = additional_args.get('tightWP', False) if additional_args is not None else False
         self.fake_flavors = additional_args.get('fake_flavors', [0, 1]) if additional_args is not None else [0, 1]
+        self.chain.obj_sel['notau'] = True
         if not self.use_default_objects:
-            self.chain.obj_sel['notau'] = True
             self.chain.obj_sel['ele_wp'] = 'FO'
             self.chain.obj_sel['mu_wp'] = 'FO'
 
     def initEvent(self, cutter, kwargs={}):
-        kwargs['sideband'] = None
+        if not self.use_default_objects:        kwargs['sideband'] = None
         return super(LightLepFakeEnrichedDY, self).initEvent(3, cutter, sort_leptons = False, kwargs=kwargs)
 
     def passedFilter(self, cutter, kwargs={}):
@@ -146,11 +146,12 @@ class LightLepFakeEnrichedTT(FilterObject):
     
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None, additional_args = None):
         super(LightLepFakeEnrichedTT, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
+        self.use_default_objects = additional_args.get('tightWP', False) if additional_args is not None else False
         self.fake_flavors = additional_args.get('fake_flavors', [0, 1]) if additional_args is not None else [0, 1]
         self.chain.obj_sel['notau'] = True
 
     def initEvent(self, cutter, kwargs = {}):
-        kwargs['sideband'] = None
+        if not self.use_default_objects:        kwargs['sideband'] = None
         return super(LightLepFakeEnrichedTT, self).initEvent(3, cutter, sort_leptons = False, kwargs=kwargs)
 
     def passedFilter(self, cutter, kwargs={}):
@@ -162,14 +163,15 @@ from HNL.ObjectSelection.leptonSelector import isGoodLepton, isFakeLepton
 from HNL.EventSelection.eventSelectionTools import selectJets
 #Orthogonal due to selection of exactly 1 lepton
 class LightLeptonFakeMeasurementRegion(FilterObject):
-    def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None):
+    def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None, additional_args = None):
         super(LightLeptonFakeMeasurementRegion, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
+        self.use_default_objects = additional_args.get('tightWP', False) if additional_args is not None else False
         self.chain.obj_sel['ele_wp'] = 'loose'
         self.chain.obj_sel['mu_wp'] = 'loose'
         self.chain.obj_sel['notau'] = True
 
     def initEvent(self, cutter, kwargs={}):
-        kwargs['sideband'] = None
+        if not self.use_default_objects:        kwargs['sideband'] = None
         return super(LightLeptonFakeMeasurementRegion, self).initEvent(1, cutter, sort_leptons = False, kwargs=kwargs)
 
     def passedFilter(self, cutter, kwargs={}):
@@ -213,7 +215,7 @@ class GeneralMCCTRegion(FilterObject):
         super(GeneralMCCTRegion, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
 
     def initEvent(self, cutter, kwargs={}):
-        kwargs['sideband'] = None
+        #kwargs['sideband'] = None
         return super(GeneralMCCTRegion, self).initEvent(3, cutter, sort_leptons = False, kwargs=kwargs)
 
     def passedFilter(self, cutter, kwargs={}):

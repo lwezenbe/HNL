@@ -174,16 +174,31 @@ def printCutFlow(in_file_paths, out_file_path, subdir = None, ignore_weights = F
         else:
             ifp_to_use = ifp
         if ifp_to_use not in list_of_cut_values.keys(): list_of_cut_values[ifp_to_use] = []
+
+        if not is_bkgr and not ignore_weights:
+            flavor = ifp.split('HNL-')[-1].split('-m')[0]
+            if 'tau' in flavor: flavor = 'tau'
+            mass = int(ifp.split('-m')[-1])
+            from HNL.Analysis.analysisTypes import signal_couplingsquared, signal_couplingsquaredinsample
+
+        def getBinContent(hist, b):
+            val = hist.GetBinContent(b)
+            #tmp solution
+            if val == 0. and b in [12, 13]:
+                return getBinContent(hist, b-1)
+            return val
+
         for ic, c in enumerate(categories):
             for isfp, sfp in enumerate(in_file_paths[ifp]):
                 tmp_hist = getObjFromFile(sfp, subdir+'/'+weight_string+'_cutflow_'+c)
+                if not is_bkgr and not ignore_weights: tmp_hist.Scale(signal_couplingsquared[flavor][mass]/signal_couplingsquaredinsample[flavor][mass])
                 for icut, cut in enumerate(cut_names):
                     if ic == 0 and isfp == 0:
                         list_of_cut_values[ifp_to_use].append(0.)
                     bin_to_use = findLabelBin(tmp_hist, cut)
                     if bin_to_use is not None:
-                        list_of_cut_values[ifp_to_use][icut] += tmp_hist.GetBinContent(bin_to_use) 
-    
+                        list_of_cut_values[ifp_to_use][icut] += getBinContent(tmp_hist, bin_to_use) 
+   
 #    for ifp in in_file_path_names:
 #        is_bkgr = not 'HNL' in ifp
 #        if group_backgrounds and is_bkgr:

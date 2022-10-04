@@ -89,7 +89,6 @@ class Event(object):
         passed =  self.event_selector.passedFilter(cutter, sample_name, kwargs)
         if passed:
             self.chain.category = self.event_category.returnCategory()
-            self.chain.detailed_category = self.event_category.returnDetailedCategory()
             return True
         return False
 

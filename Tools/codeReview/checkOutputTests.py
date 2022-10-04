@@ -192,6 +192,7 @@ def compareFiles(f, withinerrors=False):
     faulty_hn = []
     
     for hn in list_of_hist_names:
+        if 'cutflow' in hn: continue
         obj = loadObjects(f, hn)
         if isinstance(obj, str):
             everything_clear = False
@@ -207,10 +208,10 @@ def compareFiles(f, withinerrors=False):
             everything_clear = False
             out_file.write(hn+': '+test_result+'\n')
             faulty_hn.append('\t ' +hn+': '+test_result+'\n')
-            try:
-                if not isinstance(obj_prev, TTree): plotComparison(f, hn)
-            except:
-                pass
+#            try:
+#                if not isinstance(obj_prev, TTree): plotComparison(f, hn)
+#            except:
+#                pass
 
         del obj_prev, obj_latest
 

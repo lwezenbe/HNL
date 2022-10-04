@@ -13,7 +13,7 @@ argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
 submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
-submission_parser.add_argument('--era',     action='store',       default='prelegacy', choices = ['UL', 'prelegacy'],   help='Select era')
+submission_parser.add_argument('--era',     action='store',       default='UL', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--sample',   action='store',      default=None,   help='Select sample by entering the name as defined in the conf file')
 submission_parser.add_argument('--subJob',   action='store',      default=None,   help='The number of the subjob for this sample')
 submission_parser.add_argument('--isTest',   action='store_true', default=False,  help='Run a small test')
@@ -24,7 +24,7 @@ submission_parser.add_argument('--logLevel',  action='store',      default='INFO
 submission_parser.add_argument('--summaryFile', action='store_true', default=False,  help='Create text file that shows all selected arguments')
 submission_parser.add_argument('--genSkim',  action='store_true',      default=False,               help='skim on generator level leptons')
 submission_parser.add_argument('--customList',  action='store',      default=None,               help='Name of a custom sample list. Otherwise it will use the appropriate noskim file.')
-submission_parser.add_argument('--skimSelection',  action='store',      default='default',               help='Selection for the skim.', choices=['leptonMVAtop', 'TTT', 'Luka', 'AN2017014', 'LukaFR', 'default'])
+submission_parser.add_argument('--skimSelection',  action='store',      default='default',               help='Selection for the skim.', choices=['leptonMVAtop', 'TTT', 'Luka', 'AN2017014', 'LukaFR', 'default', 'HNLtauTest'])
 submission_parser.add_argument('--region',   action='store', default=None,  help='Choose the selection region', 
     choices=['baseline', 'highMassSR', 'lowMassSR', 'ZZCR', 'WZCR', 'ConversionCR'])
 submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino'])
@@ -39,7 +39,7 @@ args = argParser.parse_args()
 #
 if args.isTest:
     if args.sample is None: args.sample = 'DYJetsToLL-M-50'
-    if args.year is None: args.year = '2016'
+    if args.year is None: args.year = '2017'
     args.subJob = '0'
     args.isChild = True
 
@@ -48,7 +48,7 @@ if args.isTest:
 #
 from HNL.Samples.sampleManager import SampleManager
 file_list = 'Skimmer/skimlist_{0}{1}'.format(args.era, args.year) if args.customList is None else args.customList
-if args.isTest: file_list = 'fulllist_{0}{1}'.format(args.era, args.year)
+#if args.isTest: file_list = 'fulllist_{0}{1}'.format(args.era, args.year)
 gen_name = 'Reco' if not args.genSkim else 'Gen'
 if args.region is None and not args.reprocess:
     sample_manager = SampleManager(args.era, args.year, 'noskim', file_list, need_skim_samples=True)
@@ -58,17 +58,17 @@ else:
 #
 # Subjobs
 #
-tot_jobs = 0
-if not args.isTest:
+if not args.isTest and (not args.isChild or args.checkLogs):
     jobs = []
     for sample_name in sample_manager.sample_names:
+        if args.sample is not None and sample_name != args.sample: continue
         print "LOADING THIS SAMPLE NOW:", sample_name
         sample = sample_manager.getSample(sample_name)
         if sample is None:
             raise RuntimeError(sample_name, "not found.")
         for njob in xrange(sample.returnSplitJobs()):
+            if args.subJob is not None and str(njob) != args.subJob: continue
             jobs += [(sample.name, str(njob))]
-        tot_jobs += sample.returnSplitJobs()
 
 if not args.checkLogs:
     from HNL.Tools.logger import getLogger, closeLogger
@@ -122,7 +122,7 @@ if not args.checkLogs:
     #
     from HNL.Tools.helpers import isValidRootFile, makeDirIfNeeded
     if sample.is_data:
-        output_file_name = 'Data'
+        output_file_name = sample.output
     elif args.region is not None or args.reprocess: 
         output_file_name = sample.path.split('/')[-1].rsplit('.', 1)[0]
     else:
@@ -152,7 +152,8 @@ if not args.checkLogs:
     # Switch off unused branches and create outputTree
     #
     if args.region is None:
-        delete_branches = ['lhe', 'Lhe', 'ttg', '_ph']
+        #delete_branches = ['lhe', 'Lhe', 'ttg', '_ph']
+        delete_branches = ['ttg', '_ph']
         if args.reprocess: delete_branches += ['lumiweight']
         #delete_branches.extend(['HLT']) #TODO: For now using pass_trigger, this may need to change
         delete_branches.extend(['tauPOG*2015', 'tau*MvaNew']) #Outdated tau
@@ -187,8 +188,10 @@ if not args.checkLogs:
         new_branches.extend(['l1_phi/F', 'l2_phi/F', 'l3_phi/F'])
         new_branches.extend(['l1_charge/F', 'l2_charge/F', 'l3_charge/F'])
         new_branches.extend(['event_category/I'])
+        new_branches.extend(['is_prompt/O'])
         new_branches.extend(['njets/I', 'nbjets/I'])
         new_branches.extend(['l_pt[3]/F', 'l_eta[3]/F', 'l_phi[3]/F', 'l_e[3]/F', 'l_charge[3]/F', 'l_flavor[3]/I', 'l_indices[3]/I', 'l_isFO[3]/O', 'l_istight[3]/O', 'l_isfake[3]/O'])
+        new_branches.extend(['light_pt[3]/F', 'light_eta[3]/F', 'light_phi[3]/F', 'light_e[3]/F', 'light_charge[3]/F', 'light_flavor[3]/I', 'light_indices[3]/I'])
 
     from HNL.Tools.makeBranches import makeBranches
     new_vars = makeBranches(output_tree, new_branches)
@@ -215,6 +218,8 @@ if not args.checkLogs:
             obj_sel = objectSelectionCollection('HNL', 'Luka', 'loose', 'loose', 'loose', False, analysis=args.analysis)
         elif args.skimSelection == 'TTT':
             obj_sel = objectSelectionCollection('HNL', 'TTT', 'loose', 'loose', 'loose', False, analysis=args.analysis)
+        elif args.skimSelection == 'HNLtauTest':
+            obj_sel = objectSelectionCollection('HNLtauTest', 'HNL', 'loose', 'loose', 'loose', False, analysis=args.analysis)
         else:
             obj_sel = objectSelectionCollection('HNL', 'HNL', 'loose', 'loose', 'loose', False, analysis=args.analysis)
 
@@ -223,7 +228,7 @@ if not args.checkLogs:
     from HNL.EventSelection.event import Event
     #if args.region is not None:
     if args.region is None:
-        event = Event(sample, new_vars, sample_manager, is_reco_level=not args.genSkim, selection=args.skimSelection, strategy=args.strategy, region=args.region if args.region is not None else 'NoSelection', year = args.year, era = args.era, analysis = args.analysis, obj_sel = obj_sel)
+        event = Event(sample, new_vars, sample_manager, is_reco_level=not args.genSkim, selection=args.skimSelection, strategy=args.strategy, region=args.region if args.region is not None else 'NoSelection', year = args.year, era = args.era, analysis = args.analysis, obj_sel = obj_sel, additional_options = {'for_skim':True})
     else:
         event = Event(sample, new_vars, sample_manager, is_reco_level=not args.genSkim, selection=args.skimSelection, strategy=args.strategy, region=args.region if args.region is not None else 'NoSelection', year = args.year, era = args.era, analysis = args.analysis)
     chain.strategy = 'MVA' if args.region != 'AN2017014' else 'cutbased'

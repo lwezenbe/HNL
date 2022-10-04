@@ -113,6 +113,13 @@ class ScaleFactorReaderJSON:
         self.btvjson = CorrectionSet.from_file(sf_dir)
         self.algo = algo_dict[algo]
         self.workingpoint = self.WORKINGPOINT_DICT[workingpoint]
+        self.year = year
+        
+        #Tmp solution because of faulty SF (https://cms-pub-talk.web.cern.ch/t/b-tag-object-review/7180)
+        if year == '2016post':
+            sf_dir_2016pre = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Weights', 'data', 'btagging', 'JSON', era+'2016pre', 'btagging.json.gz')
+            self.btvjson_2016pre = CorrectionSet.from_file(sf_dir_2016pre)
+
 
     def getUncName(self, unc):
         if unc == 'nominal':
@@ -132,7 +139,11 @@ class ScaleFactorReaderJSON:
         if flavor in ['b', 'c']:
             return self.btvjson[self.algo+'_comb'].evaluate(self.getUncName(syst), self.workingpoint, self.FLAVOR_DICT[flavor], abs(eta), pt)
         else:
-            return self.btvjson[self.algo+'_incl'].evaluate(self.getUncName(syst), self.workingpoint, self.FLAVOR_DICT[flavor], abs(eta), pt)
+            #Tmp solution because of faulty SF (https://cms-pub-talk.web.cern.ch/t/b-tag-object-review/7180)
+            if self.year != '2016post':
+                return self.btvjson[self.algo+'_incl'].evaluate(self.getUncName(syst), self.workingpoint, self.FLAVOR_DICT[flavor], abs(eta), pt)
+            else:
+                return self.btvjson_2016pre[self.algo+'_incl'].evaluate(self.getUncName(syst), self.workingpoint, self.FLAVOR_DICT[flavor], abs(eta), pt)
 
 
 #Define a functio that returns a reweighting-function according to the data 
@@ -142,8 +153,10 @@ def getReweightingFunction(algo, era, year, workingpoint, selection):
         sf_reader = ScaleFactorReaderJSON(algo, era, year, workingpoint)
     else:
         sf_reader = ScaleFactorReaderCSV(algo, era, year, workingpoint)
+
     try:
         from HNL.Tools.efficiency import Efficiency
+        if selection == 'HNLtauTest': selection = 'default'
         in_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'ObjectSelection', 'data', 'btagEfficiencies', era+'-'+year, selection, 'events.root')
         eff_mc = {
             'b' : Efficiency('btag_efficiencies', lambda c, i: [c._jetSmearedPt[i], c._jetEta[i]], ('p_{T} [GeV]', '|#eta|'), in_path, subdirs=[algo, 'b', workingpoint]),
