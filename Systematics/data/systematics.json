@@ -1,33 +1,44 @@
 {
-    "luminosity" :
+    "lumi_13TeV" :
         {
             "Type"          : "flat",
-            "Value"         : [1.01, 1.01, 1.02, 1.015],
+            "Value"         : [1.02, 1.015],
             "FinalStates"   : "*",
             "Processes"     : "MC",
-            "Year"          : ["2016pre", "2016post", "2017", "2018"],
-            "Activate"     : true,
+            "Year"          : ["2017", "2018"],
+            "Activate"      : true,
             "Description"   : "Luminosity"
         },
-    "luminosity1718" :
+    "lumi_13TeV_2016" :
+        {
+            "Type"          : "flat",
+            "Value"         : [1.01, 1.01],
+            "FinalStates"   : "*",
+            "Processes"     : "MC",
+            "Year"          : ["2016pre", "2016post"],
+            "Activate"      : true,
+            "Correlated"    : true,
+            "Description"   : "Luminosity"
+        },
+    "lumi_13TeV_1718" :
         {
             "Type"          : "flat",
             "Value"         : [1.006, 1.002],
             "FinalStates"   : "*",
             "Processes"     : "MC",
             "Year"          : ["2017", "2018"],
-            "Activate"     : true,
+            "Activate"      : true,
             "Correlated"    : true,
             "Description"   : "Luminosity"
         },
-    "luminosityAllYears" :
+    "lumi_13TeV_correlated" :
         {
             "Type"          : "flat",
-            "Value"         : [1.006, 1.006, 1.009, 1.002],
+            "Value"         : [1.006, 1.006, 1.009, 1.02],
             "FinalStates"   : "*",
             "Processes"     : "MC",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
-            "Activate"     : true,
+            "Activate"      : true,
             "Correlated"    : true,
             "Description"   : "Luminosity"
         },
@@ -38,7 +49,7 @@
             "FinalStates"   : "*",
             "Processes"     : "signal",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
-            "Activate"     : true,
+            "Activate"      : true,
             "Correlated"    : true,
             "Func"          : "theory",
             "Description"   : "Theory uncertainties (ME and PDF)"
@@ -189,7 +200,7 @@
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
-            "Activate"          : false,
+            "Activate"          : true,
             "Description"   : "Muon efficiency"
         },
     "muonIDSFWeight_syst"  :
@@ -199,7 +210,7 @@
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
-            "Activate"          : false,
+            "Activate"          : true,
             "Correlated"    : true,
             "Description"   : "Muon efficiency"
         },
