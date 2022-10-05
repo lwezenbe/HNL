@@ -74,20 +74,11 @@ def makeDataCard(bin_name, flavor, era, year, obs_yield, sig_name, bkgr_names, s
 def runCombineCommand(command, output = None):
     currentDir = os.getcwd()
     current_release = os.path.expandvars('$CMSSW_BASE')
-    print current_release
     combine_release = os.path.expandvars('$CMSSW_BASE')+'/../'+release
     os.system('rm ' + combine_release +'/src/*root &> /dev/null') 
     os.chdir(combine_release+'/src')
-    os.system('(eval `scramv1 runtime -sh`; ' + command + ')')
-    if len(glob.glob('*.root'))!=0:
-        if output is None:
-            os.system('mv *.root '+current_release +'/src/HNL/Stat/data/output/tmp/')
-            print 'output saved to '+current_release +'/src/HNL/Stat/data/output/tmp'
-        else:
-            os.system('mv *.root '+output)
-            print 'output saved to '+output
-    else:
-        print 'No combine .root output was saved. If this is not what you expect, please check your input.'
+    output_folder = output if output is not None else currentDir
+    os.system('eval `scramv1 runtime -sh`; cd {0}; {1}'.format(output_folder, command))
     os.chdir(currentDir)
 
 from ROOT import TGraph

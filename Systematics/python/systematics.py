@@ -73,7 +73,7 @@ class SystematicJSONreader:
             if proc is not None and not self.filterProcesses(k, proc): continue
             if final_state is not None and not self.filterFinalStates(k, final_state): continue
             if split_correlations and not self.systIsCorrelated(k):
-                syst_name = k+str(year)
+                syst_name = k+'_'+str(year)
             else:
                 syst_name = k
             if split_syst:
@@ -107,7 +107,8 @@ class SystematicJSONreader:
             if self.datadriven_processes is not None and proc in self.datadriven_processes: return False
             return True
         elif raw_processes == 'signal':
-            if not 'HNL' in proc: return False
+            return 'HNL' in proc
+            
         else:
             return proc in raw_processes
         
@@ -170,7 +171,7 @@ def insertSystematics(out_file, bkgr_names, sig_name, year, final_state, datadri
                 out_str += ['-']
             else:
                 out_str += [reader.getValue(syst, year, process = proc)]
-        
+    
         out_file.write(tab(out_str))        
          
 def returnWeightShapes(tree, vname, hname, bins, condition, year, proc, datadriven_processes = None, split_corr = False):
@@ -234,3 +235,4 @@ def makeSystErrorHist(in_hist, process_name, final_state, year, datadriven_proce
 if __name__ == '__main__':
     sr = SystematicJSONreader()
     print [sr.getValue(syst) for syst in sr.getFlats()]
+

@@ -30,20 +30,17 @@ from numpy import sqrt
 
 def runAsymptoticLimit(card_manager, signal_name, cardname):
     datacard = card_manager.getDatacardPath(signal_name, cardname)
-    print datacard
 
     output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname
     if args.tag is not None: output_folder += '-'+args.tag
+    makeDirIfNeeded(output_folder+'/x')
     print 'Running Combine for {0}'.format(signal_name)
 
     if args.blind:
-        runCombineCommand('combine -M AsymptoticLimits '+datacard+ ' --run blind')
+        runCombineCommand('combine -M AsymptoticLimits '+datacard+ ' --run blind', output_folder)
     else:
-        runCombineCommand('combine -M AsymptoticLimits '+datacard)
-
-    makeDirIfNeeded(output_folder+'/x')
-    os.system('scp '+os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/output/tmp/*root')+ ' ' +output_folder+'/.')
-    os.system('rm '+os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/output/tmp/*root'))
+        runCombineCommand('combine -M AsymptoticLimits '+datacard, output_folder)
+    
     print 'Finished running asymptotic limits for {0}'.format(signal_name)
     return
 
