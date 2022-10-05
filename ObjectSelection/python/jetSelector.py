@@ -26,6 +26,10 @@ def isCleanFromLeptons(chain, index, wp):
     # for l in xrange(chain._nLight):
         if not isGoodLepton(chain, l, wp): continue
         if deltaR(chain._lEta[l], chain._jetEta[index], chain._lPhi[l], chain._jetPhi[index]) < 0.4: return False
+        if chain._lFlavor[l] == 2:
+            if not isGoodLepton(chain, l, 'tight'): continue
+            if deltaR(chain._lEta[l], chain._jetEta[index], chain._lPhi[l], chain._jetPhi[index]) < 0.5: return False
+            
     return True
 
 def isGoodJetAN2017014(chain, index, cleaned = 'loose'):
