@@ -115,7 +115,7 @@ if not args.checkLogs:
     # Get lumiweight
     #
     from HNL.Weights.lumiweight import LumiWeight
-    lw = LumiWeight(sample, sample_manager, recalculate = args.reprocess)
+    lw = LumiWeight(sample, sample_manager)
 
     #
     # Create new reduced tree (except if it already exists and overwrite option is not used)
@@ -271,11 +271,22 @@ if not args.checkLogs:
     if not sample.is_data:
         if args.region is None and not args.reprocess:
             hcounter = sample.getSubHist(args.subJob, 'hCounter')
+            lhecounter = sample.getSubHist(args.subJob, 'lheCounter')
+            pscounter = sample.getSubHist(args.subJob, 'psCounter')
+            if sample.is_signal:
+                diraccounter = sample.getSubHist(args.subJob, 'hCounterDirac')
         else:
             hcounter = sample.getHist('hCounter')
+            lhecounter = sample.getHist('lheCounter')
+            pscounter = sample.getHist('psCounter')
+            if sample.is_signal:
+                diraccounter = sample.getHist('hCounterDirac')
         output_file.cd('blackJackAndHookers')
-        if not args.reprocess or args.subJob == 0:
-            hcounter.Write()
+        hcounter.Write()
+        lhecounter.Write()
+        pscounter.Write()
+        if sample.is_signal:
+            diraccounter.Write()
         
     output_file.Close()
 

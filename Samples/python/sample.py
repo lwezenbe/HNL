@@ -101,7 +101,6 @@ class Sample(object):
             hcounter = None
             listOfFiles                 = glob.glob(sub_path + '*/*/*/*.root')
             for f in listOfFiles:
-                print f, self.getHist(name, f).GetSumOfWeights()
                 if hcounter is None:     
                     hcounter = self.getHist(name, f)
                 else:                   
@@ -147,8 +146,9 @@ class Sample(object):
 
 class SkimSample(Sample):
 
-    def __init__(self, name, path, output, split_jobs, xsec, max_filesize = 6000):  
+    def __init__(self, name, path, output, split_jobs, xsec, max_filesize = 6000, fraction_to_skim = 1.0):  
         super(SkimSample, self).__init__(name, path, output, split_jobs, xsec, max_filesize)
+        self.fraction_to_skim           = fraction_to_skim
         self.list_of_subjobclusters     = self.createSubjobClusters()
         self.split_jobs                 = len(self.list_of_subjobclusters)
 
@@ -156,7 +156,7 @@ class SkimSample(Sample):
         list_of_subjobclusters = []
         tot_size = 0.
         tmp_arr = []
-        for f in self.list_of_files:
+        for ifile, f in enumerate(self.list_of_files):
             file_size = self.fileSize(f)
             # if file_size > self.max_filesize:
             #     raise RuntimeError("There are singular files larger than 1GB, you run the risk of creating corrupt output.")
@@ -167,7 +167,10 @@ class SkimSample(Sample):
                 if len(tmp_arr) > 0: list_of_subjobclusters.append([x for x in tmp_arr])
                 tmp_arr = [f]
                 tot_size = file_size
-            
+           
+            #Stop when we hit a certain fraction of the files
+            if float(ifile)/len(self.list_of_files) > self.fraction_to_skim: break
+ 
         #Append last array to list of subjob cluster
         if len(tmp_arr) > 0:
             list_of_subjobclusters.append([x for x in tmp_arr])
@@ -212,7 +215,7 @@ class SkimSample(Sample):
 def createSampleList(file_name, sample_manager = None, need_skim_sample = False, skim_selection = None, region = None):
     sample_infos = [line.split('%')[0].strip() for line in open(file_name)]                     # Strip % comments and \n charachters
     sample_infos = [line.split() for line in sample_infos if line]                              # Get lines into tuples
-    for name, path, output, split_jobs, xsec in sample_infos:
+    for name, path, output, split_jobs, frac, xsec in sample_infos:
         try:
             split_jobs
         except:
@@ -226,7 +229,7 @@ def createSampleList(file_name, sample_manager = None, need_skim_sample = False,
         if not need_skim_sample: 
             yield Sample(name, path, output, split_jobs, xsec)
         else:
-            yield SkimSample(name, path, output, split_jobs, xsec)
+            yield SkimSample(name, path, output, split_jobs, xsec, frac)
 
 #
 #       Load in a specific sample from the list

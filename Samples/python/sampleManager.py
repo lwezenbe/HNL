@@ -40,7 +40,7 @@ class SampleManager:
         self.era = era
         self.year = year
 
-        if skim_selection is None:
+        if skim is None:
             self.skim = 'noskim'
         elif skim == 'auto':
             self.skim = self.findInFileToUse()
@@ -171,7 +171,7 @@ class SampleManager:
     def createSampleList(self):
         sample_infos = [line.split('%')[0].strip() for line in open(self.path)]                     # Strip % comments and \n charachters
         sample_infos = [line.split() for line in sample_infos if line]                              # Get lines into tuples
-        for name, path, output, split_jobs, xsec in sample_infos:
+        for name, path, output, split_jobs, frac, xsec in sample_infos:
             if name not in self.sample_names: continue
             try:
                 split_jobs
@@ -191,7 +191,7 @@ class SampleManager:
             if not self.need_skim_samples: 
                 yield Sample(name, path, output, split_jobs, xsec)
             else:
-                yield SkimSample(name, path, output, split_jobs, xsec)
+                yield SkimSample(name, path, output, split_jobs, xsec, float(frac))
 
 if __name__ == '__main__':
     sample_manager = SampleManager(2016, 'noskim', 'test')

@@ -13,13 +13,12 @@ LUMINOSITY_MAP = {
 
 class LumiWeight:
 
-    def __init__(self, sample, sample_manager, recalculate = False):
+    def __init__(self, sample, sample_manager, method = None):
         self.sample = sample
         self.skimmed = sample_manager.skim != 'noskim'
-        self.recalculate = recalculate
 
         if not self.sample.is_data:
-            if recalculate:
+            if method == 'recalculate':
                 #Get hcounter from original file
                 self.lumi_cluster = sample_manager.makeLumiClusters(noskimpath=True)[sample.shavedName()]
                 self.total_hcount = 0
@@ -28,7 +27,7 @@ class LumiWeight:
                     tmp_path = sample_manager.getPath(cl_name, noskimpath=True) #Getting the hcount from original unskimmed paths because of temporary bug in the hcounters copied to skimmed files
                     self.total_hcount += self.sample.getHist('hCounter', tmp_path).GetSumOfWeights()
 
-            else:
+            elif method == 'hcounter':
                 #Read hcounter from json
                 year = sample_manager.year
                 era = sample_manager.era
@@ -37,6 +36,9 @@ class LumiWeight:
                 weights = json.load(f)
                 self.total_hcount = weights[sample.name]
                 f.close()
+            else:
+                self.total_hcount = self.sample.getHist('hCounter').GetSumOfWeights()
+    
 
         #self.total_hcount = 1.
 
