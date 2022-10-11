@@ -66,6 +66,7 @@ if not args.isTest and (not args.isChild or args.checkLogs):
         sample = sample_manager.getSample(sample_name)
         if sample is None:
             raise RuntimeError(sample_name, "not found.")
+        print sample.returnSplitJobs()
         for njob in xrange(sample.returnSplitJobs()):
             if args.subJob is not None and str(njob) != args.subJob: continue
             jobs += [(sample.name, str(njob))]

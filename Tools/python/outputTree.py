@@ -26,7 +26,10 @@ class OutputTree(object):
 
             from HNL.Tools.makeBranches import makeBranches
             self.new_vars = makeBranches(self.tree, branches, branches_already_defined)
-    
+   
+    def getEntries(self, condition=""):
+        return self.tree.GetEntries(condition)
+ 
     def setTreeVariable(self, var_name, new_value):
         var_name = cleanName(var_name)
         if self.new_vars is not None:

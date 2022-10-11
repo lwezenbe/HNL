@@ -27,7 +27,7 @@ class Systematics:
 
     def getWeightSystematics(self, weight):
         short_weight, syst_append = self.splitSystName(weight)
-        
+       
         weight_up = self.reweighter.returnWeight(short_weight, syst=syst_append+'up')
         weight_down = self.reweighter.returnWeight(short_weight, syst=syst_append+'down')
         return weight_up, weight_down

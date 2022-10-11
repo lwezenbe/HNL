@@ -164,7 +164,7 @@ if not args.isChild and not args.makePlots and not args.makeDataCards:
     #     raise RuntimeError("Already existing files available. You would be overwriting")
     for year in jobs.keys():
         submitJobs(__file__, ('sample', 'subJob'), jobs[year], argParser, jobLabel = 'runAnalysis-'+str(year)+'-'+args.region, additionalArgs= [('year', year)])
-        exit(0)
+    exit(0)
 
 #
 # Some constants to make referring to signal leptons more readable
@@ -317,6 +317,8 @@ if not args.makePlots and not args.makeDataCards:
         if args.tag == 'TauFakePurity': branches.extend(['istight/O'])
         branches.extend(event.reweighter.returnBranches())
         branches.extend(event.systematics.returnBranches(args.sample))
+#        if sample.is_signal:
+#            branches.extend(['isDiracType/O', 'diracSF/F'])
         output_tree = OutputTree('events_{0}'.format(systematic), output_name_full, branches = branches, branches_already_defined = systematic != 'nominal')
 
 
@@ -349,6 +351,7 @@ if not args.makePlots and not args.makeDataCards:
             #
  
             event.initEvent(reset_obj_sel = True)
+            
             if args.tag == 'TauFakePurity':
                 chain.obj_sel['tau_wp'] = 'FO'            
        
@@ -398,7 +401,9 @@ if not args.makePlots and not args.makeDataCards:
 
             if args.strategy == 'MVA':
                 tmva.predictAndWriteAll(chain)
-        
+      
+            from HNL.ObjectSelection.jetSelector import getMET
+ 
             #
             # Fill tree
             #
@@ -416,6 +421,9 @@ if not args.makePlots and not args.makeDataCards:
             output_tree.setTreeVariable('isPreHEMrun', chain._runNb < 319077)
             if args.tag == 'TauFakePurity':
                 output_tree.setTreeVariable('istight', chain.istight)
+#            if sample.is_signal:
+#                output_tree.setTreeVariable('isDiracType', chain._gen_isDiracType)
+#                output_tree.setTreeVariable('diracSF', event.reweighter.lumiweighter.getDiracTypeSF())
                 
             event.systematics.storeAllSystematicsForShapes(output_tree, args.sample)
             output_tree.fill()
@@ -454,7 +462,7 @@ else:
         sample_manager = getSampleManager(year)
 
         if not args.plotBkgrOnly:
-            signal_list = [s for s in glob.glob(getOutputName('signal', year, args.tag)+'/*'+args.flavor+'-*') if s.split('/')[-1] in sample_manager.sample_outputs]
+            signal_list = [s for s in glob.glob(getOutputName('signal', year, args.tag)+'/*') if s.split('/')[-1] in sample_manager.sample_outputs]
             for i, s in enumerate(signal_list):
                 if 'signalOrdering' in s:
                     signal_list.pop(i)
@@ -500,7 +508,7 @@ else:
         for i_s, s in enumerate(signal_list):
             sample_name = s.split('/')[-1]
             sample_mass = float(sample_name.split('-m')[-1])
-            if args.sample is not None and args.sample != sample_name:      continue
+            #if args.sample is not None and args.sample != sample_name:      continue
             if sample_name not in sample_manager.sample_outputs:              continue    
             if args.masses is not None and sample_mass not in args.masses:  continue 
             if args.flavor != '' and '-'+args.flavor+'-' not in sample_name:  continue 
@@ -551,8 +559,6 @@ else:
             else:
                 additional_condition = '&&({0})'.format(additional_condition)
 
-            print 'includes systematics?', include_systematics
-    
             from HNL.Tools.outputTree import OutputTree
             from HNL.Analysis.analysisTypes import getBinning
             categories_to_use = categories_dict[0]
@@ -582,7 +588,6 @@ else:
                                     tmp_list_of_hist[c][v]['signal'][sample_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition, sample_name, include_systematics, split_corr = split_corr)
                                 else:
                                     tmp_list_of_hist[c][v]['signal'][sample_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition, sample_name, split_corr = split_corr)['nominal'] 
-                                    
  
                     for c, cc in zip(categories_to_use, category_conditions): 
                         for v in var_dict.keys():
@@ -683,6 +688,7 @@ else:
             # If we want to use shapes, first make shape histograms, then make datacards
             #
             for sr in srm[args.region].getListOfSearchRegionGroups():
+                if sr != 'E': continue
                 print 'Making datacards for region', sr
                 var_for_datacard = {}
                 var_for_datacard['searchregion'] = (lambda c : c.searchregion, np.arange(srm[args.region].getGroupValues(sr)[0]-0.5, srm[args.region].getGroupValues(sr)[-1]+1.5, 1.), ('Search Region', 'Events'))
@@ -705,9 +711,13 @@ else:
                         sample_mass = float(sample_name.split('-m')[-1])
                         if sample_mass not in args.masses: continue
                         for v in var_for_datacard.keys():
-
+                            if v != 'mediummass150200e': continue
                             bin_name = sr+'-'+ac+'-'+v
-                            out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([args.selection, args.region]), 
+                            if not args.isTest:
+                                out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([args.selection, args.region]), 
+                                                    args.era+str(year), args.flavor, sample_name, bin_name+'.shapes.root')
+                            else:
+                                out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'testArea', 'shapes', '-'.join([args.selection, args.region]), 
                                                     args.era+str(year), args.flavor, sample_name, bin_name+'.shapes.root')
                             makeDirIfNeeded(out_path)
                             hist_for_datacard[ac][v]['signal'][sample_name]['nominal'].replaceZeroBins()
@@ -734,7 +744,7 @@ else:
                             coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
                             if 'HNL-tau' in sample_name:
                                 sample_name = 'HNL-tau-m{0}'.format(int(sample_mass))
-                            makeDataCard(bin_name, args.flavor, args.era, year, 0, sample_name, bkgr_names, args.selection, args.region, ac, shapes=True, coupling_sq = coupling_squared, nonprompt_from_sideband = args.includeData == 'includeSideband')
+                            makeDataCard(bin_name, args.flavor, args.era, year, 0, sample_name, bkgr_names, args.selection, args.region, ac, shapes=True, coupling_sq = coupling_squared, nonprompt_from_sideband = args.includeData == 'includeSideband', is_test=True)
     
         if args.makePlots:
             print "Creating list of histograms"
@@ -959,7 +969,6 @@ else:
                         # p.drawHist(output_dir = os.path.join(output_dir, c), normalize_signal = False, draw_option='EHist', min_cutoff = 1)
     
                     if v == 'searchregion':
-                        print os.path.join(output_dir, 'Yields/SearchRegions', c, 'yields.txt')
                         out_file = open(os.path.join(output_dir, 'Yields/SearchRegions', c, 'yields.txt'), 'w')
                         number_of_processes = 0
                         if observed_hist is not None:
@@ -976,14 +985,19 @@ else:
                         if observed_hist is not None:
                             process_line += ' & Observed \t'
                             yield_line += ' & %s \t'%float('%.1f' % observed_hist.getHist().GetSumOfWeights())
-                        if bkgr_hist is not None:
-                            for ib, b in enumerate(bkgr_hist):
-                                process_line += ' & '+bkgr_legendnames[ib]+'\t'
-                                yield_line += ' & %s \t'%float('%.1f' % b.getHist().GetSumOfWeights())
                         if signal_hist is not None:
                             for isig, sig in enumerate(signal_hist):
                                 process_line += ' & '+signal_legendnames[isig]+'\t'
                                 yield_line +=  ' & %s \t'%float('%.1f' % sig.getHist().GetSumOfWeights())
+                        if bkgr_hist is not None:
+                            tot_bkgr = 0.
+                            for ib, b in enumerate(bkgr_hist):
+                                tot_bkgr += b.getHist().GetSumOfWeights()
+                                process_line += ' & '+bkgr_legendnames[ib]+'\t'
+                                yield_line += ' & %s \t'%float('%.1f' % b.getHist().GetSumOfWeights())
+                            process_line += ' & Total Predicted\t'
+                            yield_line += ' & %s \t'%float('%.1f' % tot_bkgr)
+                            
     
                         process_line += '\n'
                         yield_line += '\n'

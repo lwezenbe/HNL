@@ -39,6 +39,8 @@ class LumiWeight:
             else:
                 self.total_hcount = self.sample.getHist('hCounter').GetSumOfWeights()
     
+#        if self.sample.is_signal:
+#            self.total_hcount_dirac = self.sample.getHist('hCounterDirac').GetSumOfWeights()
 
         #self.total_hcount = 1.
 
@@ -51,6 +53,9 @@ class LumiWeight:
         else:
             self.lumi_weight = rerun_chain.original_weight * (rerun_chain.lumiWeight/abs(rerun_chain.lumiWeight))*(self.sample.xsec*LUMINOSITY_MAP[self.sample.chain.era+self.sample.chain.year])/self.total_hcount
             return self.lumi_weight
+
+    def getDiracTypeSF(self):
+        return self.total_hcount/self.total_hcount_dirac
 
 if __name__ == '__main__':
     from HNL.Samples.sampleManager import SampleManager
