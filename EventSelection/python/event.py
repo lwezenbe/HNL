@@ -51,7 +51,6 @@ class Event(object):
 
         from HNL.ObjectSelection.jetSelector import getMET
         self.chain.met, self.chain.metPhi = getMET(self.chain)
-        #print 'last things first'    
 
     def processLeptons(self, tau_energy_scale = 'nominal'):
         self.processMuons()

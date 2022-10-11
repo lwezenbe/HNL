@@ -24,7 +24,6 @@ class Systematics:
         else:
             return (weight, '')
 
-
     def getWeightSystematics(self, weight):
         short_weight, syst_append = self.splitSystName(weight)
        

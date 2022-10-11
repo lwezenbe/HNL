@@ -217,7 +217,6 @@ class Histogram:
         for bx in xrange(1, nbinsx+1):
             for by in xrange(1, nbinsy+1):
                 for bz in xrange(1, nbinsz+1):
-                    print self.hist.GetBinContent(bx, by, bz)
                     if self.hist.GetBinContent(bx, by, bz) <= 0.0: self.hist.SetBinContent(bx, by, bz, 1e-7)
         
 

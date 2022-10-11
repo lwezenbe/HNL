@@ -402,8 +402,6 @@ if not args.makePlots and not args.makeDataCards:
             if args.strategy == 'MVA':
                 tmva.predictAndWriteAll(chain)
       
-            from HNL.ObjectSelection.jetSelector import getMET
- 
             #
             # Fill tree
             #
@@ -508,7 +506,7 @@ else:
         for i_s, s in enumerate(signal_list):
             sample_name = s.split('/')[-1]
             sample_mass = float(sample_name.split('-m')[-1])
-            #if args.sample is not None and args.sample != sample_name:      continue
+            if args.sample is not None and args.sample != sample_name:      continue
             if sample_name not in sample_manager.sample_outputs:              continue    
             if args.masses is not None and sample_mass not in args.masses:  continue 
             if args.flavor != '' and '-'+args.flavor+'-' not in sample_name:  continue 
@@ -688,7 +686,6 @@ else:
             # If we want to use shapes, first make shape histograms, then make datacards
             #
             for sr in srm[args.region].getListOfSearchRegionGroups():
-                if sr != 'E': continue
                 print 'Making datacards for region', sr
                 var_for_datacard = {}
                 var_for_datacard['searchregion'] = (lambda c : c.searchregion, np.arange(srm[args.region].getGroupValues(sr)[0]-0.5, srm[args.region].getGroupValues(sr)[-1]+1.5, 1.), ('Search Region', 'Events'))
@@ -711,13 +708,8 @@ else:
                         sample_mass = float(sample_name.split('-m')[-1])
                         if sample_mass not in args.masses: continue
                         for v in var_for_datacard.keys():
-                            if v != 'mediummass150200e': continue
                             bin_name = sr+'-'+ac+'-'+v
-                            if not args.isTest:
-                                out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([args.selection, args.region]), 
-                                                    args.era+str(year), args.flavor, sample_name, bin_name+'.shapes.root')
-                            else:
-                                out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'testArea', 'shapes', '-'.join([args.selection, args.region]), 
+                            out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([args.selection, args.region]), 
                                                     args.era+str(year), args.flavor, sample_name, bin_name+'.shapes.root')
                             makeDirIfNeeded(out_path)
                             hist_for_datacard[ac][v]['signal'][sample_name]['nominal'].replaceZeroBins()
@@ -744,7 +736,7 @@ else:
                             coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
                             if 'HNL-tau' in sample_name:
                                 sample_name = 'HNL-tau-m{0}'.format(int(sample_mass))
-                            makeDataCard(bin_name, args.flavor, args.era, year, 0, sample_name, bkgr_names, args.selection, args.region, ac, shapes=True, coupling_sq = coupling_squared, nonprompt_from_sideband = args.includeData == 'includeSideband', is_test=True)
+                            makeDataCard(bin_name, args.flavor, args.era, year, 0, sample_name, bkgr_names, args.selection, args.region, ac, shapes=True, coupling_sq = coupling_squared, nonprompt_from_sideband = args.includeData == 'includeSideband')
     
         if args.makePlots:
             print "Creating list of histograms"
