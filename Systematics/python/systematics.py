@@ -164,7 +164,6 @@ def insertSystematics(out_file, bkgr_names, sig_name, year, final_state, datadri
     final_state = translateCategories(final_state)    
 
     for syst_name, syst in zip(reader.getAllSources(year, split_correlations=True), reader.getAllSources(year, split_correlations=False)):
-        print syst_name
         out_str = [syst_name, 'lnN' if syst in reader.getFlats(year) else 'shape']
         for proc in bkgr_names + [sig_name]:
             if not reader.filterProcesses(syst, proc) or not reader.filterFinalStates(syst, final_state):
