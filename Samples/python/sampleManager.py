@@ -191,7 +191,7 @@ class SampleManager:
             if not self.need_skim_samples: 
                 yield Sample(name, path, output, split_jobs, xsec)
             else:
-                yield SkimSample(name, path, output, split_jobs, xsec, float(frac))
+                yield SkimSample(name, path, output, split_jobs, xsec, fraction_to_skim=float(frac))
 
 if __name__ == '__main__':
     sample_manager = SampleManager(2016, 'noskim', 'test')

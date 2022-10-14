@@ -32,12 +32,12 @@ class LeptonIDSF(object):
             return self.sf_hist.GetBinContent(self.sf_hist.FindBin(eta, pt))
         elif syst == 'statup':
             if flavor == 1:
-                return self.sf_hist.GetBinError(self.sf_hist.FindBin(eta, pt)) + self.stat_hist.GetBinError(self.stat_hist.FindBin(eta, pt))
+                return self.sf_hist.GetBinContent(self.sf_hist.FindBin(eta, pt)) + self.stat_hist.GetBinError(self.stat_hist.FindBin(eta, pt))
             else:
                 return self.sf_hist.GetBinContent(self.sf_hist.FindBin(eta, pt)) + self.stat_hist.GetBinContent(self.stat_hist.FindBin(eta, pt))
         elif syst == 'statdown':
             if flavor == 1:
-                return self.sf_hist.GetBinError(self.sf_hist.FindBin(eta, pt)) - self.stat_hist.GetBinError(self.stat_hist.FindBin(eta, pt))
+                return self.sf_hist.GetBinContent(self.sf_hist.FindBin(eta, pt)) - self.stat_hist.GetBinError(self.stat_hist.FindBin(eta, pt))
             else:
                 return self.sf_hist.GetBinContent(self.sf_hist.FindBin(eta, pt)) - self.stat_hist.GetBinContent(self.stat_hist.FindBin(eta, pt))
         elif syst == 'systup':
@@ -90,6 +90,7 @@ class MuonIDSF(LeptonIDSF):
             root_file_location = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Weights', 'data', 'IDSF', 'Muon', era, year, 'NUM_LeptonMva{0}_DEN_TrackerMuons/NUM_LeptonMva{0}_DEN_TrackerMuons_abseta_pt.root'.format(self.working_point_dict[working_point][era])))
             self.sf_hist = getObjFromFile(root_file_location, 'NUM_LeptonMva{0}_DEN_TrackerMuons_abseta_pt'.format(self.working_point_dict[working_point][era]))
             self.syst_hist = getObjFromFile(root_file_location, 'NUM_LeptonMva{0}_DEN_TrackerMuons_abseta_pt_combined_syst'.format(self.working_point_dict[working_point][era]))
+            print root_file_location
             self.stat_hist = getObjFromFile(root_file_location, 'NUM_LeptonMva{0}_DEN_TrackerMuons_abseta_pt_stat'.format(self.working_point_dict[working_point][era]))
         else:
             root_file_location = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Weights', 'data', 'IDSF', 'Muon', era, year, self.working_point_dict[working_point][era], 'muonTOPLeptonMVA{0}{1}.root'.format(self.working_point_dict[working_point][era], year)))

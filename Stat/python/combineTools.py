@@ -29,7 +29,7 @@ def makeDataCard(bin_name, flavor, era, year, obs_yield, sig_name, bkgr_names, s
     if not shapes:
         out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'testArea' if is_test else '', 'dataCards', era+str(year), '-'.join([selection, region]), flavor, sig_name, 'cutAndCount',  bin_name+'.txt')
     else:
-        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'testArea' if is_test else '', 'dataCards', era+str(year), '-'.join([selection, region]), flavor, sig_name, 'shapes', bin_name+'test.txt')
+        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'testArea' if is_test else '', 'dataCards', era+str(year), '-'.join([selection, region]), flavor, sig_name, 'shapes', bin_name+'.txt')
     makeDirIfNeeded(out_name)
     out_file = open(out_name, 'w')
 
@@ -58,10 +58,8 @@ def makeDataCard(bin_name, flavor, era, year, obs_yield, sig_name, bkgr_names, s
         out_file.write(tab(['rate', '']+ ['%4.6f' % by if by >= 0 else 0.0 for by in bkgr_yields] + ['%4.6f' % sig_yield]))
     out_file.write('-'*400 + '\n')
 
-    # For now no systematics, just lumi as example
     from HNL.Systematics.systematics import insertSystematics
     insertSystematics(out_file, bkgr_names, sig_name, year, final_state, datadriven_processes = ['non-prompt'] if nonprompt_from_sideband else None)
-    #out_file.write(tab(['lumi_13TeV', 'lnN']+ [1.025]*(len(bkgr_names)+1)))
 
 
     #autoMCstats

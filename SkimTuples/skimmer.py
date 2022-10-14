@@ -62,7 +62,7 @@ if not args.isTest and (not args.isChild or args.checkLogs):
     jobs = []
     for sample_name in sample_manager.sample_names:
         if args.sample is not None and sample_name != args.sample: continue
-        print "LOADING THIS SAMPLE NOW:", sample_name
+        print "LOADING THIS SAMPLE NOW:", sample_name 
         sample = sample_manager.getSample(sample_name)
         if sample is None:
             raise RuntimeError(sample_name, "not found.")

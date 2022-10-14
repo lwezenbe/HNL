@@ -156,6 +156,14 @@ ANALYSIS_CATEGORIES_TEX = {
 }
 mutual_exclusive_analysiscategories = ['OneTau-OSSF', 'OneTau-SSSF', 'OneTau-OF', 'EEE-Mu', 'MuMuMu-E']
 
+def isLightLeptonFinalState(cat_key):
+    if cat_key in SUPER_CATEGORIES.keys():
+        return cat_key == 'NoTau'
+    elif cat_key in ANALYSIS_CATEGORIES.keys():
+        return not 'OneTau' in cat_key
+    else:
+        return cat_key in SUPER_CATEGORIES[cat_key]
+
 def translateCategories(in_cat):
     if in_cat in SUPER_CATEGORIES.keys():
         return in_cat

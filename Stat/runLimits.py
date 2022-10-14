@@ -30,6 +30,7 @@ from numpy import sqrt
 
 def runAsymptoticLimit(card_manager, signal_name, cardname):
     datacard = card_manager.getDatacardPath(signal_name, cardname)
+    print datacard
 
     output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname
     if args.tag is not None: output_folder += '-'+args.tag
