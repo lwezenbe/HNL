@@ -317,8 +317,8 @@ if not args.makePlots and not args.makeDataCards:
         if args.tag == 'TauFakePurity': branches.extend(['istight/O'])
         branches.extend(event.reweighter.returnBranches())
         branches.extend(event.systematics.returnBranches(args.sample))
-#        if sample.is_signal:
-#            branches.extend(['isDiracType/O', 'diracSF/F'])
+        if sample.is_signal:
+            branches.extend(['isDiracType/O', 'diracSF/F'])
         output_tree = OutputTree('events_{0}'.format(systematic), output_name_full, branches = branches, branches_already_defined = systematic != 'nominal')
 
 
@@ -397,7 +397,7 @@ if not args.makePlots and not args.makeDataCards:
                     if args.tag == 'TauFakePurity':
                         chain.istight = all([chain.l_istight[l] for l in range(nl) if chain.l_flavor[l] == 2])
             else:
-                chain.category = 33
+                chain.category = max(cat.CATEGORIES)
 
             if args.strategy == 'MVA':
                 tmva.predictAndWriteAll(chain)
@@ -419,9 +419,9 @@ if not args.makePlots and not args.makeDataCards:
             output_tree.setTreeVariable('isPreHEMrun', chain._runNb < 319077)
             if args.tag == 'TauFakePurity':
                 output_tree.setTreeVariable('istight', chain.istight)
-            #if sample.is_signal:
-            #    output_tree.setTreeVariable('isDiracType', chain._gen_isDiracType)
-            #    output_tree.setTreeVariable('diracSF', event.reweighter.lumiweighter.getDiracTypeSF())
+            if sample.is_signal:
+                output_tree.setTreeVariable('isDiracType', chain._gen_isDiracType)
+                output_tree.setTreeVariable('diracSF', event.reweighter.lumiweighter.getDiracTypeSF())
                 
             event.systematics.storeAllSystematicsForShapes(output_tree, args.sample)
             output_tree.fill()

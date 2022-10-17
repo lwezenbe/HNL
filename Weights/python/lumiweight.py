@@ -39,10 +39,8 @@ class LumiWeight:
             else:
                 self.total_hcount = self.sample.getHist('hCounter').GetSumOfWeights()
     
-#        if self.sample.is_signal:
-#            self.total_hcount_dirac = self.sample.getHist('hCounterDirac').GetSumOfWeights()
-
-        #self.total_hcount = 1.
+        if self.sample.is_signal:
+            self.total_hcount_dirac = self.sample.getHist('hCounterDirac').GetSumOfWeights()
 
     def getLumiWeight(self, rerun_chain = None):
         if self.sample.is_data:
