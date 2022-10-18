@@ -7,7 +7,7 @@ def getRegionFromMass(mass):
     else:
         return 'highMassSR'
 
-data_card_base = lambda era, year, selection, mass, flavor : os.path.join(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/dataCards'), era+year, selection+'-'+getRegionFromMass(mass), flavor)
+data_card_base = lambda era, year, selection, mass, flavor, dirac_str: os.path.join(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/dataCards'), dirac_str, era+year, selection+'-'+getRegionFromMass(mass), flavor)
 
 combined_final_states = {
     'MaxOneTau' : ['NoTau', 'SingleTau']
@@ -15,15 +15,16 @@ combined_final_states = {
 
 class SingleYearDatacardManager:
     
-    def __init__(self, year, era, strategy, flavor, selection):
+    def __init__(self, year, era, strategy, flavor, selection, masstype = 'Majorana'):
         self.year = year
         self.era = era
         self.strategy = strategy
         self.flavor = flavor
         self.selection = selection
+        self.masstype = masstype
 
     def getDatacardPath(self, signal_name, card_name, define_strategy = True):
-        return os.path.join(data_card_base(self.era, self.year, self.selection, self.getHNLmass(signal_name), self.flavor), signal_name, 'shapes', self.strategy if define_strategy else '', card_name+'.txt')
+        return os.path.join(data_card_base(self.era, self.year, self.selection, self.getHNLmass(signal_name), self.flavor, masstype), signal_name, 'shapes', self.strategy if define_strategy else '', card_name+'.txt')
 
     def getHNLmass(self, signal_name):
         return int(signal_name.split('-m')[-1])
@@ -118,16 +119,17 @@ class SingleYearDatacardManager:
 
 class DatacardManager:
 
-    def __init__(self, years, era, strategy, flavor, selection):
+    def __init__(self, years, era, strategy, flavor, selection, masstype = 'Majorana'):
         self.years = years
         self.era = era
         self.strategy = strategy
         self.flavor = flavor
         self.selection = selection
-        self.singleyear_managers = [SingleYearDatacardManager(y, era, strategy, flavor, selection) for y in years]
+        self.singleyear_managers = [SingleYearDatacardManager(y, era, strategy, flavor, selection, masstype) for y in years]
+        self.masstype = masstype
 
     def getDatacardPath(self, signal_name, card_name, define_strategy = True):
-        return os.path.join(data_card_base(self.era, '-'.join(self.years), self.selection, self.singleyear_managers[0].getHNLmass(signal_name), self.flavor), signal_name, 'shapes', self.strategy if define_strategy else '', card_name+'.txt')
+        return os.path.join(data_card_base(self.era, '-'.join(self.years), self.selection, self.singleyear_managers[0].getHNLmass(signal_name), self.flavor, self.masstype), signal_name, 'shapes', self.strategy if define_strategy else '', card_name+'.txt')
     
     def mergeYears(self, signal_name, card_name):
         if len(self.years) == 1:

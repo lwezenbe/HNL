@@ -70,7 +70,7 @@ class Sample(object):
             if self.path.endswith('.root'):
                 tot_size = self.fileSize(self.path)
             else:
-                for f in glob.glob(self.path + '*/*/*/*.root'):
+                for f in self.list_of_files:
                     tot_size += self.fileSize(f)
                 if tot_size == 0: 
                     print "No file loaded, check the input path of "+self.name+" again."

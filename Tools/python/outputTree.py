@@ -60,7 +60,9 @@ class OutputTree(object):
         else:
             raise RuntimeError("Tree in reading mode, you can not change input vars")
 
-    def getHistFromTree(self, vname, hname, bins, condition = None, weight = 'weight'):
+    def getHistFromTree(self, vname, hname, bins, condition = None, weight = None):
+        if weight is None: weight = 'weight'
+
         dim = 1
         if '-' in vname:
             vname = ":".join(reversed(vname.split('-')))

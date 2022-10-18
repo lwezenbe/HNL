@@ -1,4 +1,3 @@
-
 import os
 json_location = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Systematics', 'data', 'systematics.json'))
 
@@ -173,7 +172,7 @@ def insertSystematics(out_file, bkgr_names, sig_name, year, final_state, datadri
     
         out_file.write(tab(out_str))        
          
-def returnWeightShapes(tree, vname, hname, bins, condition, year, proc, datadriven_processes = None, split_corr = False):
+def returnWeightShapes(tree, vname, hname, bins, condition, year, proc, datadriven_processes = None, split_corr = False, additional_weight = None):
     reader = SystematicJSONreader(datadriven_processes)
     all_weights = reader.getWeights(year, proc, split_syst=True)
     all_corr_weights = reader.getWeights(year, proc, split_syst=True, split_correlations=True)
@@ -182,6 +181,8 @@ def returnWeightShapes(tree, vname, hname, bins, condition, year, proc, datadriv
     #print all_weights, all_corr_weights
     for weight, corr_weight in zip(all_weights, all_corr_weights):
         weight_for_name = corr_weight if split_corr else weight
+        if additional_weight is not None:
+            weight += '*'+additional_weight
         out_dict[weight_for_name] = Histogram(tree.getHistFromTree(vname, hname + weight_for_name, bins, condition, weight = weight))
     return out_dict     
 

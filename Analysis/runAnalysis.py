@@ -50,6 +50,7 @@ argParser.add_argument('--additionalCondition',   action='store',     default=No
 argParser.add_argument('--ignoreSystematics',   action='store_true',     default=False,  help='ignore systematics in plots')
 argParser.add_argument('--combineYears',   action='store_true',     default=False,  help='combine all years specified in year arg in plots')
 argParser.add_argument('--submitPlotting',   action='store_true',     default=False,  help='Send the plotting code to HTCondor')
+argParser.add_argument('--plotDirac',   action='store_true',     default=False,  help='plot dirac type HNL')
 
 args = argParser.parse_args()
 
@@ -75,7 +76,7 @@ if args.genLevel and args.selection == 'AN2017014':
 if args.genLevel and args.tag == 'TauFakes':
     raise RuntimeError('gen level can not be used for estimating TauFake fractions')
 
-if args.includeData == 'signalregion' and args.region in ['baseline', 'lowMassSR', 'highMassSR']:
+if args.includeData == 'signalregion' and args.region in ['baseline', 'lowMassSRloose', 'highMassSR']:
     raise RuntimeError('Running data in signal region without looking at the sideband. Either run in sideband or do not attempt this before approval')
 
 #
@@ -311,6 +312,7 @@ if not args.makePlots and not args.makeDataCards:
         from HNL.Tools.outputTree import OutputTree
         branches = []
         for v in var.keys():
+            print v
             branches.extend(['{0}/F'.format(v)])
         branches.extend(['weight/F', 'isprompt/O', 'category/I', 'searchregion/I', 'issideband/O'])
         branches.extend(['isPreHEMrun/O','objectInHEM/O'])
@@ -321,6 +323,7 @@ if not args.makePlots and not args.makeDataCards:
             branches.extend(['isDiracType/O', 'diracSF/F'])
         output_tree = OutputTree('events_{0}'.format(systematic), output_name_full, branches = branches, branches_already_defined = systematic != 'nominal')
 
+        print branches
 
         #
         # Create cutter to provide cut flow
@@ -538,16 +541,15 @@ else:
         # Create variable distributions
         #
 
-        def createSingleVariableDistributions(tree, vname, hname, bins, condition, proc, include_systematics = 'nominal', split_corr = False):
-            #import time
-            #init_time = time.time()
+        def createSingleVariableDistributions(tree, vname, hname, bins, condition, proc, include_systematics = 'nominal', split_corr = False, additional_weight = None):
             out_dict = {}
-            out_dict['nominal'] = Histogram(tree.getHistFromTree(vname, hname, bins, condition))
+            weight = 'weight'
+            if additional_weight is not None:
+                weight += '*'+additional_weight
+            out_dict['nominal'] = Histogram(tree.getHistFromTree(vname, hname, bins, condition, weight=weight))
             if include_systematics != 'nominal':
                 from HNL.Systematics.systematics import returnWeightShapes
-                out_dict.update(returnWeightShapes(tree, vname, hname, bins, condition, year, proc, ['non-prompt'] if args.includeData == 'includeSideband' else None, split_corr = split_corr))
-            #end_time = time.time()
-            #print "Time:", end_time - init_time
+                out_dict.update(returnWeightShapes(tree, vname, hname, bins, condition, year, proc, ['non-prompt'] if args.includeData == 'includeSideband' else None, split_corr = split_corr, additional_weight=additional_weight))
             return out_dict 
 
 
@@ -581,6 +583,9 @@ else:
 
                     syst_to_run = getSystToRun(year, sample_name) if include_systematics in ['full'] else ['nominal']
                     split_syst_to_run = getSystToRun(year, sample_name, split_corr=split_corr) if include_systematics in ['full'] else ['nominal']           
+
+                    additional_condition_to_use = additional_condition if not args.plotDirac else additional_condition+'&&isDiracType'
+                    additional_weight = "diracSF" if args.plotDirac else None
                     for syst, corr_syst in zip(syst_to_run, split_syst_to_run):
                         intree = OutputTree('events_{0}'.format(syst), s+'/variables.root')
                         for c, cc in zip(categories_to_use, category_conditions): 
@@ -588,9 +593,9 @@ else:
                             if 'tauhad' in sample_name and isLightLeptonFinalState(c): continue
                             for v in var_dict.keys():
                                 if syst == 'nominal':
-                                    tmp_list_of_hist[c][v]['signal'][cleaned_sample_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition, sample_name, include_systematics, split_corr = split_corr)
+                                    tmp_list_of_hist[c][v]['signal'][cleaned_sample_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, include_systematics, split_corr = split_corr, additional_weight = additional_weight)
                                 else:
-                                    tmp_list_of_hist[c][v]['signal'][cleaned_sample_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition, sample_name, split_corr = split_corr)['nominal'] 
+                                    tmp_list_of_hist[c][v]['signal'][cleaned_sample_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, split_corr = split_corr, additional_weight = additional_weight)['nominal'] 
  
                 for c, cc in zip(categories_to_use, category_conditions): 
                     for v in var_dict.keys():
@@ -717,8 +722,7 @@ else:
                             if sample_mass not in args.masses: continue
                             bin_name = sr+'-'+ac+'-'+v
                             out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([args.selection, args.region]), 
-                                                    args.era+str(year), args.flavor, sample_name, bin_name+'.shapes.root')
-                            print out_path
+                                                    args.era+str(year), args.flavor, sample_name, 'Dirac' if args.plotDirac else 'Majorana', bin_name+'.shapes.root')
                             makeDirIfNeeded(out_path)
                             hist_for_datacard[ac][v]['signal'][sample_name]['nominal'].replaceZeroBins()
                             hist_for_datacard[ac][v]['signal'][sample_name]['nominal'].write(out_path, write_name='HNL-{0}-m{1}'.format(args.flavor, int(sample_mass)), subdirs = [bin_name.rsplit('-', 1)[0]])
@@ -744,7 +748,7 @@ else:
                             coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
                             if 'HNL-tau' in sample_name:
                                 sample_name = 'HNL-tau-m{0}'.format(int(sample_mass))
-                            makeDataCard(bin_name, args.flavor, args.era, year, 0, sample_name, bkgr_names, args.selection, args.region, ac, shapes=True, coupling_sq = coupling_squared, nonprompt_from_sideband = args.includeData == 'includeSideband')
+                            makeDataCard(bin_name, args.flavor, args.era, year, 0, sample_name, bkgr_names, args.selection, args.region, ac, shapes=True, coupling_sq = coupling_squared, nonprompt_from_sideband = args.includeData == 'includeSideband', majorana_str = 'Majorana' if not args.plotDirac else 'Dirac')
     
         if args.makePlots:
             print "Creating list of histograms"
@@ -820,15 +824,17 @@ else:
         output_dir = os.path.join(os.getcwd(), 'data', 'testArea' if args.isTest else '', 'Results', 'runAnalysis', args.analysis+'-'+args.tag if args.tag is not None else args.analysis, '-'.join([args.strategy, args.selection, args.region, cleanName(args.additionalCondition) if args.additionalCondition is not None else '']), args.era+str(year))
 
 
-
         if args.signalOnly:
-            output_dir = os.path.join(output_dir, 'signalOnly')
+            signal_or_background_str = 'signalOnly'
         elif args.plotBkgrOnly:
-            output_dir = os.path.join(output_dir, 'bkgrOnly')
+            signal_or_background_str = 'bkgrOnly'
         else:
-            output_dir = os.path.join(output_dir, 'signalAndBackground')
-
-
+            signal_or_background_str = 'signalAndBackground'
+        
+        if not args.bkgrOnly:
+            if not args.plotDirac: signal_or_background_str += '-Majorana'
+            else:                  signal_or_background_str += '-Dirac'
+        output_dir = os.path.join(output_dir, signal_or_background_str)    
 
         if args.flavor:         output_dir = os.path.join(output_dir, args.flavor+'_coupling')
         else:                   output_dir = os.path.join(output_dir, 'all_coupling')

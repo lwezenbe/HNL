@@ -18,6 +18,7 @@ submission_parser.add_argument('--compareToCards',   type=str, nargs='*',  help=
 submission_parser.add_argument('--lod',   type=str,  help='"Level of detail": Describes how binned you want you analysis categories to be.', choices = ['analysis', 'super'])
 submission_parser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
 submission_parser.add_argument('--tag', type = str, default=None,  help='Add a file with a message in the plotting folder')
+submission_parser.add_argument('--masstype', type = str, default=None,  help='Choose what type of limits you want', choices = 'Dirac', 'Majorana')
 argParser.add_argument('--dryplot', action='store_true', default=False,  help='Add a file with a message in the plotting folder')
 args = argParser.parse_args()
 
@@ -53,7 +54,7 @@ cards_to_read = [args.datacard] if args.datacard != '' else ['NoTau', 'SingleTau
 
 # Create datacard manager
 from HNL.Stat.datacardManager import DatacardManager
-datacard_manager = DatacardManager(args.year, args.era, args.strategy, args.flavor, args.selection)
+datacard_manager = DatacardManager(args.year, args.era, args.strategy, args.flavor, args.selection, args.masstype)
 
 if not args.useExistingLimits:
     for card in cards_to_read:

@@ -156,7 +156,7 @@ class Plot(object):
                     bin_syst_error = self.syst_totbkgr_error.GetBinError(b)
                     self.tot_totbkgr_error.SetBinError(b, np.sqrt(bin_stat_error ** 2 + bin_syst_error ** 2))
 
-    def setAxisLog(self, is2D = False, stacked = True, min_cutoff = None, max_cutoff = None):
+    def setAxisLog(self, is2D = False, stacked = True, min_cutoff = None, max_cutoff = None, include_errors=True):
 
         if is2D:
             if self.x_log:
@@ -184,8 +184,8 @@ class Plot(object):
                         to_check_max += [k for k in self.b]
 
             # self.overall_max = max([pt.getOverallMaximum(to_check_max), 1])
-            self.overall_max = max([pt.getOverallMaximum(to_check_max, syst_hist = self.tot_totbkgr_error if len(self.b)>0 else None)])
-            self.overall_min = pt.getOverallMinimum(to_check_min, zero_not_allowed=True, syst_hist = self.tot_totbkgr_error if len(self.b) > 0 else None)
+            self.overall_max = max([pt.getOverallMaximum(to_check_max, include_error = include_errors, syst_hist = self.tot_totbkgr_error if len(self.b)>0 else None)])
+            self.overall_min = pt.getOverallMinimum(to_check_min, zero_not_allowed=True, include_error=include_errors, syst_hist = self.tot_totbkgr_error if len(self.b) > 0 else None)
 
             if self.x_log:
                 self.plotpad.SetLogx()
@@ -202,9 +202,12 @@ class Plot(object):
 
                 self.min_to_set = min_cutoff if min_cutoff is not None else 0.3*self.overall_min
             else:
-                self.max_to_set = 1.7*self.overall_max if max_cutoff is None else max_cutoff
-                # self.max_to_set = 23
-                self.min_to_set = min_cutoff if min_cutoff is not None else 0.7*self.overall_min
+                if include_errors:
+                    self.max_to_set = 1.7*self.overall_max if max_cutoff is None else max_cutoff
+                    self.min_to_set = min_cutoff if min_cutoff is not None else 0.7*self.overall_min
+                else:
+                    self.max_to_set = 1.1*self.overall_max if max_cutoff is None else max_cutoff
+                    self.min_to_set = min_cutoff if min_cutoff is not None else 0.9*self.overall_min
 
             #
             # Set min and max
@@ -598,20 +601,25 @@ class Plot(object):
     # Functions to do actual plotting
     #
 
-    def drawErrors(self, signal_draw_option, bkgr_draw_option):
+    def drawErrors(self, signal_draw_option, bkgr_draw_option, signal_error_option, bkgr_error_option):
         self.createErrorHist()
 
-        if len(self.s) > 0:
+        if len(self.s) > 0 and signal_error_option is not None:
             if signal_draw_option == 'Stack':
                 self.stat_totsignal_error.SetFillStyle(3013)
                 self.stat_totsignal_error.SetFillColor(ROOT.kGray+2)
                 self.stat_totsignal_error.SetMarkerStyle(0)
                 self.stat_totsignal_error.Draw("E2 Same")
-            elif 'E' in signal_draw_option:
+            else:
                 for i, s in enumerate(self.s):
-                    self.stat_signal_errors[i].Draw("E Same")
+                    if 'E2' in signal_error_option:
+                        self.stat_signal_errors[i].SetFillStyle(3013)
+                        self.stat_signal_errors[i].SetFillColor(ROOT.kGray+2)
+                        self.stat_signal_errors[i].SetMarkerStyle(0)
 
-        if len(self.b) > 0:
+                    self.stat_signal_errors[i].Draw(signal_error_option+" Same")
+
+        if len(self.b) > 0 and bkgr_error_option is not None:
             if bkgr_draw_option == 'Stack':
                 #self.stat_totbkgr_error.SetFillStyle(3013)
                 #self.stat_totbkgr_error.SetFillColor(ROOT.kGray+2)
@@ -621,13 +629,17 @@ class Plot(object):
                 self.tot_totbkgr_error.SetFillColor(ROOT.kGray+2)
                 self.tot_totbkgr_error.SetMarkerStyle(0)
                 self.tot_totbkgr_error.Draw("E2 Same")
-            elif 'E' in bkgr_draw_option:
+            else:
                 for i in xrange(len(self.b)):
-                    self.stat_bkgr_errors[i].Draw("E Same")
+                    if 'E2' in bkgr_error_option:
+                        self.stat_bkgr_errors[i].SetFillStyle(3013)
+                        self.stat_bkgr_errors[i].SetFillColor(ROOT.kGray+2)
+                        self.stat_bkgr_errors[i].SetMarkerStyle(0)
+                    self.stat_bkgr_errors[i].Draw(bkgr_error_option+" Same")
 
             self.legend.AddEntry(self.tot_totbkgr_error, 'Total Unc.' if self.syst_hist is not None else 'Stat. Unc.')
 
-    def drawHist(self, output_dir = None, normalize_signal = None, draw_option = 'EHist', bkgr_draw_option = 'Stack', draw_cuts = None, 
+    def drawHist(self, output_dir = None, normalize_signal = None, draw_option = 'EHist', bkgr_draw_option = 'Stack', error_option = 'E', bkgr_error_option = 'E', draw_cuts = None, 
         custom_labels = None, draw_lines = None, message = None, min_cutoff = None, max_cutoff = None, ref_line = 1., observed_name = 'Data'):
 
         #
@@ -753,7 +765,6 @@ class Plot(object):
         # Draw background first
         #
 
-        tmp_bkgr_draw_option = bkgr_draw_option.split('E')[-1].replace('Filled', '')
         if len(self.b) > 0:
             if bkgr_draw_option == 'Stack':
                 self.hs.Draw("Hist")                                     #Draw before using GetHistogram, see https://root-forum.cern.ch/t/thstack-gethistogram-null-pointer-error/12892/4
@@ -762,18 +773,16 @@ class Plot(object):
             else:
                 for i, b in enumerate(self.b):
                     if i == 0:
-                        b.Draw(tmp_bkgr_draw_option)
+                        b.Draw(bkgr_draw_option)
                         if self.draw_ratio is not None or self.draw_significance is not None: 
                             b.GetXaxis().SetLabelOffset(9999999)
                     else:
-                        b.Draw(tmp_bkgr_draw_option + 'Same')
+                        b.Draw(bkgr_draw_option + 'Same')
 
 
         #
         # Draw signal
         #
-        tmp_draw_option = draw_option.split('E')[-1]
-
         if normalize_signal == 'med':
             median_index = int(len(self.s)/2)
             denom_normalize_weight = self.s[median_index].GetSumOfWeights()
@@ -810,9 +819,9 @@ class Plot(object):
                     h.Scale(normalize_signal)
  
                 if(self.s.index(h) == 0 and self.b is None):
-                    h.Draw(tmp_draw_option)
+                    h.Draw(draw_option)
                 else:
-                    h.Draw(tmp_draw_option+'Same')
+                    h.Draw(draw_option+'Same')
 
 #        if normalize_signal == 'bkgr':
 #            if self.extra_text is None: self.extra_text = []
@@ -824,7 +833,7 @@ class Plot(object):
 #            else:
 #                self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0:.3g}'.format(normalize_signal)))          
         
-        self.drawErrors(draw_option, bkgr_draw_option)
+        self.drawErrors(draw_option, bkgr_draw_option, error_option, bkgr_error_option)
 
         #Draw observed
         if self.observed is not None:
@@ -840,7 +849,7 @@ class Plot(object):
         #
         # Calculate ranges of axis and set to log if requested
         #
-        self.setAxisLog(stacked = (len(self.b) > 0 and 'Stack' in bkgr_draw_option) or 'Stack' in draw_option, min_cutoff = min_cutoff, max_cutoff = max_cutoff)
+        self.setAxisLog(stacked = (len(self.b) > 0 and 'Stack' in bkgr_draw_option) or 'Stack' in draw_option, min_cutoff = min_cutoff, max_cutoff = max_cutoff, include_errors=error_option is not None and bkgr_error_option is not None)
 
         #
         # Set custom labels if needed
