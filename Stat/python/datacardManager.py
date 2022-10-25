@@ -24,7 +24,7 @@ class SingleYearDatacardManager:
         self.masstype = masstype
 
     def getDatacardPath(self, signal_name, card_name, define_strategy = True):
-        return os.path.join(data_card_base(self.era, self.year, self.selection, self.getHNLmass(signal_name), self.flavor, masstype), signal_name, 'shapes', self.strategy if define_strategy else '', card_name+'.txt')
+        return os.path.join(data_card_base(self.era, self.year, self.selection, self.getHNLmass(signal_name), self.flavor, self.masstype), signal_name, 'shapes', self.strategy if define_strategy else '', card_name+'.txt')
 
     def getHNLmass(self, signal_name):
         return int(signal_name.split('-m')[-1])

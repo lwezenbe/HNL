@@ -18,10 +18,12 @@ submission_parser.add_argument('--compareToCards',   type=str, nargs='*',  help=
 submission_parser.add_argument('--lod',   type=str,  help='"Level of detail": Describes how binned you want you analysis categories to be.', choices = ['analysis', 'super'])
 submission_parser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
 submission_parser.add_argument('--tag', type = str, default=None,  help='Add a file with a message in the plotting folder')
-submission_parser.add_argument('--masstype', type = str, default=None,  help='Choose what type of limits you want', choices = 'Dirac', 'Majorana')
+submission_parser.add_argument('--masstype', type = str, default=None,  help='Choose what type of limits you want', choices = ['Dirac', 'Majorana'])
 argParser.add_argument('--dryplot', action='store_true', default=False,  help='Add a file with a message in the plotting folder')
 args = argParser.parse_args()
 
+if args.masstype is None:
+    raise RuntimeError("Forgot to specify masstype")
 
 import glob
 from HNL.Stat.combineTools import runCombineCommand, extractScaledLimitsPromptHNL, makeGraphs, saveGraphs
@@ -89,7 +91,7 @@ for card in cards_to_read:
     for mass in args.masses:
         if not datacard_manager.checkMassAvailability(mass): continue
         from HNL.Stat.datacardManager import getRegionFromMass
-        input_folder = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.era+str(year_to_read), args.selection+'-'+getRegionFromMass(mass), args.flavor, 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', args.strategy, asymptotic_str, card+(('-'+args.tag) if args.tag is not None else ''))
+        input_folder = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.masstype, args.era+str(year_to_read), args.selection+'-'+getRegionFromMass(mass), args.flavor, 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', args.strategy, asymptotic_str, card+(('-'+args.tag) if args.tag is not None else ''))
         tmp_coupling = sqrt(signal_couplingsquared[args.flavor][mass])
 
         tmp_limit = extractScaledLimitsPromptHNL(input_folder + '/higgsCombineTest.AsymptoticLimits.mH120.root', tmp_coupling)
@@ -100,7 +102,7 @@ for card in cards_to_read:
             
     graphs = makeGraphs(passed_masses, couplings = passed_couplings, limits=limits)
 
-    out_path_base = lambda sample, era, sname, cname, tag : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', era, sname, args.flavor, 
+    out_path_base = lambda sample, era, sname, cname, tag : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.masstype, era, sname, args.flavor, 
                                         sample, 'shapes', asymptotic_str+'/'+cname+(('-'+tag) if tag is not None else ''))
     saveGraphs(graphs, out_path_base('Combined', args.era+year_to_read, args.strategy +'-'+ args.selection, card, args.tag)+"/limits.root")
 
@@ -154,7 +156,7 @@ for card in cards_to_read:
 
     coupling_dict = {'tau':'#tau', 'mu':'#mu', 'e':'e', '2l':'l'}
     from HNL.Plotting.plot import Plot
-    destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/Results/runAsymptoticLimits/'+args.strategy+'-'+args.selection+(('-'+args.tag) if args.tag is not None else '')+'/'+args.flavor+'/'+card+'/'+ args.era+year_to_read))
+    destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/Results/runAsymptoticLimits/'+args.masstype+'/'+args.strategy+'-'+args.selection+(('-'+args.tag) if args.tag is not None else '')+'/'+args.flavor+'/'+card+'/'+ args.era+year_to_read))
     if (observed_AN is None and expected_AN is None) or args.dryplot:
         bkgr_hist = None
     else:

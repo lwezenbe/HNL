@@ -312,7 +312,6 @@ if not args.makePlots and not args.makeDataCards:
         from HNL.Tools.outputTree import OutputTree
         branches = []
         for v in var.keys():
-            print v
             branches.extend(['{0}/F'.format(v)])
         branches.extend(['weight/F', 'isprompt/O', 'category/I', 'searchregion/I', 'issideband/O'])
         branches.extend(['isPreHEMrun/O','objectInHEM/O'])
@@ -322,8 +321,6 @@ if not args.makePlots and not args.makeDataCards:
         if sample.is_signal:
             branches.extend(['isDiracType/O', 'diracSF/F'])
         output_tree = OutputTree('events_{0}'.format(systematic), output_name_full, branches = branches, branches_already_defined = systematic != 'nominal')
-
-        print branches
 
         #
         # Create cutter to provide cut flow
@@ -346,7 +343,7 @@ if not args.makePlots and not args.makeDataCards:
 
             chain.GetEntry(entry)
             if args.isTest: progress(entry - event_range[0], len(event_range))
-            #progress(entry - event_range[0], len(event_range))
+            progress(entry - event_range[0], len(event_range))
  
             cutter.cut(True, 'Total')
             #
@@ -717,7 +714,6 @@ else:
                     print 'Filling', ac
                     for v in var_for_datacard.keys():
                         for sample_name in hist_for_datacard[ac][v]['signal'].keys():
-                            print sample_name
                             sample_mass = float(sample_name.split('-m')[-1])
                             if sample_mass not in args.masses: continue
                             bin_name = sr+'-'+ac+'-'+v

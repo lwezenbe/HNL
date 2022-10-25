@@ -13,9 +13,10 @@ LUMINOSITY_MAP = {
 
 class LumiWeight:
 
-    def __init__(self, sample, sample_manager, method = None):
+    def __init__(self, sample, sample_manager = None, method = None):
         self.sample = sample
-        self.skimmed = sample_manager.skim != 'noskim'
+        if method in ['recalculate', 'hcounter'] and sample_manager is None:
+            raise RuntimeError("Please specify sample manager in lumiweight")
 
         if not self.sample.is_data:
             if method == 'recalculate':
