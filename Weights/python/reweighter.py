@@ -67,7 +67,7 @@ class Reweighter:
 
     def returnBranches(self):
         branches = ['{0}/F'.format(weight) for weight in self.WEIGHTS_TO_USE]
-        if self.displacement_weighter is not None:
+        if not self.sample.is_data and self.displacement_weighter is not None:
             max_n_couplings = 20
             branches.extend(['ctauHN/F', 'displacement_ncouplings/I', 'displacement_vsquared[{0}]/F'.format(max_n_couplings), 'displacement_lumiweight[{0}]/F'.format(max_n_couplings)])
         return branches 
@@ -167,7 +167,7 @@ class Reweighter:
     def fillTreeWithWeights(self, chain):
         for weight in self.WEIGHTS_TO_USE:
             chain.setTreeVariable(weight, self.returnWeight(weight))
-        if self.displacement_weighter is not None:
+        if not self.sample.is_data and self.displacement_weighter is not None:
             couplings, weights = self.displacement_weighter.getRangeOfNewLumiWeights(chain.tree.ctauHN)
             chain.setTreeVariable('displacement_ncouplings', len(couplings))
             for i, (c, w) in enumerate(zip(couplings, weights)):
