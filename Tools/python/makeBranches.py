@@ -28,7 +28,7 @@ def removeAllForbiddenCharacters(original_name):
 #
 def makeBranches(tree, branches, already_defined=False):
     branches = [tuple(branch.split('/')) for branch in branches] 
-    for i, (name, t) in enumerate(sorted(branches)):
+    for i, (name, t) in enumerate(branches):
         for fc in forbidden_characters:
             if fc in name:  print "Forbidden character in name of new branch {0}. Changing name to {1}".format(name, removeAllForbiddenCharacters(name))
             branches[i] = (removeAllForbiddenCharacters(name), t)

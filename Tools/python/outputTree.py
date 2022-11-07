@@ -26,7 +26,7 @@ class OutputTree(object):
 
             from HNL.Tools.makeBranches import makeBranches
             self.new_vars = makeBranches(self.tree, branches, branches_already_defined)
-   
+
     def getEntries(self, condition=""):
         return self.tree.GetEntries(condition)
  
@@ -37,6 +37,11 @@ class OutputTree(object):
         else:
             raise RuntimeError("Tree in reading mode, you can not change input vars")
 
+    def getTreeVariable(self, var_name, entry = None):
+        if entry is not None:
+            self.tree.GetEntry(entry)
+        attr = getattr(self.tree, var_name)
+        return attr
 
     def fill(self):
         if self.new_vars is not None:

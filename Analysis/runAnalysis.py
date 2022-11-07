@@ -107,8 +107,8 @@ def customizeListToUse(y):
 def getSampleManager(y):
     if args.genLevel:
         skim_str = 'noskim'
-    elif args.includeData == 'includeSideband':
-        skim_str = 'Reco'
+#    elif args.includeData == 'includeSideband':
+#        skim_str = 'Reco'
     else:
         skim_str = args.skimLevel
     
@@ -405,6 +405,8 @@ if not args.makePlots and not args.makeDataCards:
             #
             # Fill tree
             #
+            if 'displacedHNL' in sample.name:
+                output_tree.setTreeVariable('ctauHN', chain._ctauHN)
             event.reweighter.fillTreeWithWeights(output_tree)
             for v in var.keys():
                 output_tree.setTreeVariable(v, var[v][0](chain))
@@ -422,7 +424,7 @@ if not args.makePlots and not args.makeDataCards:
             if sample.is_signal:
                 output_tree.setTreeVariable('isDiracType', chain._gen_isDiracType)
                 output_tree.setTreeVariable('diracSF', event.reweighter.lumiweighter.getDiracTypeSF())
-                
+                                   
             event.systematics.storeAllSystematicsForShapes(output_tree, args.sample)
             output_tree.fill()
  
@@ -550,7 +552,7 @@ else:
             return out_dict 
 
 
-        def createVariableDistributions(categories_dict, var_dict, signal, background, data, sample_manager, additional_condition = None, include_systematics = 'nominal', sr = None, split_corr = False):
+        def createVariableDistributions(categories_dict, var_dict, signal, background, data, sample_manager, additional_condition = None, include_systematics = 'nominal', sr = None, split_corr = False, for_datacards = False):
             if additional_condition is None:
                 additional_condition = ''
             else:
@@ -576,7 +578,9 @@ else:
                     sample_name = s.split('/')[-1]
                     sample_mass = float(sample_name.split('-m')[-1])
                     cleaned_sample_name = sample_name
-                    if 'HNL-tau' in sample_name: cleaned_sample_name = 'HNL-tau-m{0}'.format(int(sample_mass))
+                    #if 'HNL-tau' in sample_name: cleaned_sample_name = 'HNL-tau-m{0}'.format(int(sample_mass))
+                    if '-tau' in sample_name: 
+                        cleaned_sample_name = sample_name.split('-', 1)[0] + '-tau-'+sample_name.split('-', 2)[-1]
 
                     syst_to_run = getSystToRun(year, sample_name) if include_systematics in ['full'] else ['nominal']
                     split_syst_to_run = getSystToRun(year, sample_name, split_corr=split_corr) if include_systematics in ['full'] else ['nominal']           
@@ -589,18 +593,30 @@ else:
                             if 'taulep' in sample_name and not isLightLeptonFinalState(c): continue
                             if 'tauhad' in sample_name and isLightLeptonFinalState(c): continue
                             for v in var_dict.keys():
-                                if syst == 'nominal':
-                                    tmp_list_of_hist[c][v]['signal'][cleaned_sample_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, include_systematics, split_corr = split_corr, additional_weight = additional_weight)
+                                if not for_datacards or not 'displacedHNL' in sample_name:
+                                    if syst == 'nominal':
+                                        tmp_list_of_hist[c][v]['signal'][cleaned_sample_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, include_systematics, split_corr = split_corr, additional_weight = additional_weight)
+                                    else:
+                                        tmp_list_of_hist[c][v]['signal'][cleaned_sample_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, split_corr = split_corr, additional_weight = additional_weight)['nominal'] 
                                 else:
-                                    tmp_list_of_hist[c][v]['signal'][cleaned_sample_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, split_corr = split_corr, additional_weight = additional_weight)['nominal'] 
- 
+                                    for iv, vsquared in enumerate(np.ndarray(intree.getTreeVariable('displacement_ncouplings', 0), 'f', intree.getTreeVariable('displacement_vsquared', 0))):
+                                        vsquared_translated = str(vsquared)
+                                        vsquared_translated = vsquared_translated.replace('.', 'p').replace('e-', 'em')
+                                        new_name = 'displacedHNL'+vsquared_translated+cleaned_sample_name.split('HNL')[1]
+                                        additional_weight_corrected = '(displacement_lumiweight[{0}]/lumiWeight)'.format(iv) if additional_weight is None else additional_weight+'(displacement_lumiweight[{0}]/lumiWeight)'.format(iv)
+                                        if syst == 'nominal':
+                                            tmp_list_of_hist[c][v]['signal'][new_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year)+'-'+vsquared_translated, getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, include_systematics, split_corr = split_corr, additional_weight = additional_weight_corrected)
+                                        else:
+                                            tmp_list_of_hist[c][v]['signal'][new_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year)+'-'+vsquared_translated, getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, split_corr = split_corr, additional_weight = additional_weight_corrected)['nominal'] 
+
                 for c, cc in zip(categories_to_use, category_conditions): 
                     for v in var_dict.keys():
                         for sample_name in tmp_list_of_hist[c][v]['signal'].keys():
+                            if 'displacedHNL' in sample_name: continue
                             sample_mass = float(sample_name.split('-m')[-1])
                             for syst in tmp_list_of_hist[c][v]['signal'][sample_name].keys():
                                 coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
-                                tmp_list_of_hist[c][v]['signal'][sample_name][syst].hist.Scale(coupling_squared/signal_couplingsquaredinsample[args.flavor][sample_mass])
+                                tmp_list_of_hist[c][v]['signal'][sample_name][syst].hist.Scale(coupling_squared/signal_couplingsquaredinsample[sample_name])
                 print '\n'
 
             if args.includeData is not None:
@@ -708,7 +724,7 @@ else:
                     for mva in list_of_mvas:
                         var_for_datacard[mva] = [x for x in var[mva]]
 
-                hist_for_datacard = createVariableDistributions(category_dict[args.categoriesToPlot], var_for_datacard, signal_list, background_collection, data_list, sample_manager, '||'.join(['searchregion=={0}'.format(x) for x in srm[args.region].getGroupValues(sr)]), include_systematics = args.systematics, sr=sr, split_corr=True)
+                hist_for_datacard = createVariableDistributions(category_dict[args.categoriesToPlot], var_for_datacard, signal_list, background_collection, data_list, sample_manager, '||'.join(['searchregion=={0}'.format(x) for x in srm[args.region].getGroupValues(sr)]), include_systematics = args.systematics, sr=sr, split_corr=True, for_datacards=True)
                    
                 for ac in category_dict[args.categoriesToPlot][0]:
                     print 'Filling', ac
@@ -716,16 +732,23 @@ else:
                         for sample_name in hist_for_datacard[ac][v]['signal'].keys():
                             sample_mass = float(sample_name.split('-m')[-1])
                             if sample_mass not in args.masses: continue
+                            original_sample_name = sample_name
+                            if 'displacedHNL' in sample_name:
+                                coupling_squared = float(sample_name.split('HNL')[-1].split('-')[0].replace('p', '.').replace('em', 'e-'))
+                                sample_name = 'HNL-'+sample_name.split('-', 1)[1]
+                            else:
+                                coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
+                            
                             bin_name = sr+'-'+ac+'-'+v
                             out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([args.selection, args.region]), 
-                                                    args.era+str(year), args.flavor, sample_name, 'Dirac' if args.plotDirac else 'Majorana', bin_name+'.shapes.root')
+                                                    args.era+str(year), args.flavor, original_sample_name, 'Dirac' if args.plotDirac else 'Majorana', bin_name+'.shapes.root')
                             makeDirIfNeeded(out_path)
-                            hist_for_datacard[ac][v]['signal'][sample_name]['nominal'].replaceZeroBins()
-                            hist_for_datacard[ac][v]['signal'][sample_name]['nominal'].write(out_path, write_name='HNL-{0}-m{1}'.format(args.flavor, int(sample_mass)), subdirs = [bin_name.rsplit('-', 1)[0]])
-                            for syst in hist_for_datacard[ac][v]['signal'][sample_name].keys():
+                            hist_for_datacard[ac][v]['signal'][original_sample_name]['nominal'].replaceZeroBins()
+                            hist_for_datacard[ac][v]['signal'][original_sample_name]['nominal'].write(out_path, write_name=sample_name, subdirs = [bin_name.rsplit('-', 1)[0]])
+                            for syst in hist_for_datacard[ac][v]['signal'][original_sample_name].keys():
                                 if syst == 'nominal': continue
-                                hist_for_datacard[ac][v]['signal'][sample_name][syst].replaceZeroBins()
-                                hist_for_datacard[ac][v]['signal'][sample_name][syst].write(out_path, write_name='HNL-{0}-m{1}'.format(args.flavor, int(sample_mass)), subdirs = [bin_name.rsplit('-', 1)[0]+syst], append=True)
+                                hist_for_datacard[ac][v]['signal'][original_sample_name][syst].replaceZeroBins()
+                                hist_for_datacard[ac][v]['signal'][original_sample_name][syst].write(out_path, write_name=sample_name, subdirs = [bin_name.rsplit('-', 1)[0]+syst], append=True)
                             bkgr_names = []
                             for ib, b in enumerate(background_collection):
                                 bkgr_name = b.split('/')[-1]
@@ -738,13 +761,11 @@ else:
                                         hist_for_datacard[ac][v]['bkgr'][bkgr_name][syst].write(out_path, write_name=bkgr_name, subdirs = [bin_name.rsplit('-', 1)[0]+syst], append=True)
                                     bkgr_names.append(bkgr_name)
                             
-                            data_hist_tmp = hist_for_datacard[ac][v]['signal'][sample_name]['nominal'].clone('Ditau')
+                            data_hist_tmp = hist_for_datacard[ac][v]['signal'][original_sample_name]['nominal'].clone('Ditau')
                             data_hist_tmp.replaceZeroBins()
                             data_hist_tmp.write(out_path, write_name='data_obs', append=True, subdirs = [bin_name.rsplit('-', 1)[0]])
-                            coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
-                            if 'HNL-tau' in sample_name:
-                                sample_name = 'HNL-tau-m{0}'.format(int(sample_mass))
-                            makeDataCard(bin_name, args.flavor, args.era, year, 0, sample_name, bkgr_names, args.selection, args.region, ac, shapes=True, coupling_sq = coupling_squared, nonprompt_from_sideband = args.includeData == 'includeSideband', majorana_str = 'Majorana' if not args.plotDirac else 'Dirac')
+                          
+                            makeDataCard(bin_name, args.flavor, args.era, year, 0, sample_name, bkgr_names, args.selection, args.region, ac, shapes=True, coupling_sq = coupling_squared, nonprompt_from_sideband = args.includeData == 'includeSideband', majorana_str = 'Majorana' if not args.plotDirac else 'Dirac', tag = 'displaced' if 'displacedHNL' in original_sample_name else 'prompt', shapes_path=out_path)
     
         if args.makePlots:
             print "Creating list of histograms"

@@ -15,16 +15,22 @@ combined_final_states = {
 
 class SingleYearDatacardManager:
     
-    def __init__(self, year, era, strategy, flavor, selection, masstype = 'Majorana'):
+    def __init__(self, year, era, strategy, flavor, selection, masstype = 'Majorana', tag = 'prompt'):
         self.year = year
         self.era = era
         self.strategy = strategy
         self.flavor = flavor
         self.selection = selection
         self.masstype = masstype
+        self.tag = tag
 
-    def getDatacardPath(self, signal_name, card_name, define_strategy = True):
-        return os.path.join(data_card_base(self.era, self.year, self.selection, self.getHNLmass(signal_name), self.flavor, self.masstype), signal_name, 'shapes', self.strategy if define_strategy else '', card_name+'.txt')
+    def getDatacardPath(self, signal_name, card_name, coupling_sq, define_strategy = True):
+        from HNL.Stat.combineTools import displaced_mass_threshold
+        if self.tag == 'displaced':
+            tag_to_use = 'prompt' if self.getHNLmass(signal_name) > displaced_mass_threshold else 'displaced'
+        else:
+            tag_to_use = self.tag
+        return os.path.join(data_card_base(self.era, self.year, self.selection, self.getHNLmass(signal_name), self.flavor, self.masstype), signal_name, tag_to_use+'-{:.2e}'.format(coupling_sq), 'shapes', self.strategy if define_strategy else '', card_name+'.txt')
 
     def getHNLmass(self, signal_name):
         return int(signal_name.split('-m')[-1])
@@ -107,50 +113,56 @@ class SingleYearDatacardManager:
             return self.getCustomDatacardList(signal_name, final_state, lod, strategy)
                  
 
-    def mergeDatacards(self, signal_name, in_card_names, out_card_name, initial_merge = False):
+    def mergeDatacards(self, signal_name, coupling_sq, in_card_names, out_card_name, initial_merge = False):
         from HNL.Tools.helpers import makeDirIfNeeded
-        makeDirIfNeeded(self.getDatacardPath(signal_name, out_card_name))
+        makeDirIfNeeded(self.getDatacardPath(signal_name, out_card_name, coupling_sq))
         from HNL.Stat.combineTools import runCombineCommand
-        runCombineCommand('combineCards.py '+' '.join([self.getDatacardPath(signal_name, ic, define_strategy = not initial_merge) for ic in in_card_names])+' > '+self.getDatacardPath(signal_name, out_card_name))
+        runCombineCommand('combineCards.py '+' '.join([self.getDatacardPath(signal_name, ic, coupling_sq, define_strategy = not initial_merge) for ic in in_card_names])+' > '+self.getDatacardPath(signal_name, out_card_name, coupling_sq))
  
-    def initializeCards(self, signal_name, final_state, lod, strategy = 'custom'):
+    def initializeCards(self, signal_name, coupling_sq, final_state, lod, strategy = 'custom'):
         cards_to_merge = self.getSingleSignalDatacardList(signal_name, final_state, lod, strategy)
-        self.mergeDatacards(signal_name, cards_to_merge, final_state, initial_merge = True)
+        self.mergeDatacards(signal_name, coupling_sq, cards_to_merge, final_state, initial_merge = True)
 
 class DatacardManager:
 
-    def __init__(self, years, era, strategy, flavor, selection, masstype = 'Majorana'):
+    def __init__(self, years, era, strategy, flavor, selection, masstype = 'Majorana', tag = 'prompt'):
         self.years = years
         self.era = era
         self.strategy = strategy
         self.flavor = flavor
         self.selection = selection
-        self.singleyear_managers = [SingleYearDatacardManager(y, era, strategy, flavor, selection, masstype) for y in years]
+        self.tag = tag
+        self.singleyear_managers = [SingleYearDatacardManager(y, era, strategy, flavor, selection, masstype, tag) for y in years]
         self.masstype = masstype
 
-    def getDatacardPath(self, signal_name, card_name, define_strategy = True):
-        return os.path.join(data_card_base(self.era, '-'.join(self.years), self.selection, self.singleyear_managers[0].getHNLmass(signal_name), self.flavor, self.masstype), signal_name, 'shapes', self.strategy if define_strategy else '', card_name+'.txt')
+    def getDatacardPath(self, signal_name, card_name, coupling_sq, define_strategy = True):
+        from HNL.Stat.combineTools import displaced_mass_threshold
+        if self.tag == 'displaced':
+            tag_to_use = 'prompt' if self.singleyear_managers[0].getHNLmass(signal_name) > displaced_mass_threshold else 'displaced'
+        else:
+            tag_to_use = self.tag
+        return os.path.join(data_card_base(self.era, '-'.join(self.years), self.selection, self.singleyear_managers[0].getHNLmass(signal_name), self.flavor, self.masstype), signal_name, tag_to_use+'-{:.2e}'.format(coupling_sq), 'shapes', self.strategy if define_strategy else '', card_name+'.txt')
     
-    def mergeYears(self, signal_name, card_name):
+    def mergeYears(self, signal_name, coupling_sq, card_name):
         if len(self.years) == 1:
             return
         else:
-            out_path = self.getDatacardPath(signal_name, card_name)
+            out_path = self.getDatacardPath(signal_name, card_name, coupling_sq)
             from HNL.Tools.helpers import makeDirIfNeeded
             makeDirIfNeeded(out_path)
             from HNL.Stat.combineTools import runCombineCommand
-            runCombineCommand('combineCards.py '+' '.join([sm.getDatacardPath(signal_name, card_name) for sm in self.singleyear_managers])+' > '+out_path)
+            runCombineCommand('combineCards.py '+' '.join([sm.getDatacardPath(signal_name, card_name, coupling_sq) for sm in self.singleyear_managers])+' > '+out_path)
 
-    def prepareAllCards(self, signal_name, final_state, lod, strategy = 'cutbased'):
+    def prepareAllCards(self, signal_name, coupling_sq, final_state, lod, strategy = 'cutbased'):
         for iyear, year in enumerate(self.years):
-            self.singleyear_managers[iyear].initializeCards(signal_name, final_state, lod, strategy)
+            self.singleyear_managers[iyear].initializeCards(signal_name, final_state, coupling_sq, lod, strategy)
 
-        self.mergeYears(signal_name, final_state)
+        self.mergeYears(signal_name, coupling_sq, final_state)
 
-    def checkMassAvailability(self, mass):
+    def checkMassAvailability(self, mass, coupling):
         signal_name = 'HNL-'+self.flavor+'-m'+str(mass)
         exists = True
         for iyear, year in enumerate(self.years):
-            if not os.path.exists(self.singleyear_managers[iyear].getDatacardPath(signal_name, 'x', define_strategy = False).rsplit('/', 1)[0]): exists = False
+            if not os.path.exists(self.singleyear_managers[iyear].getDatacardPath(signal_name, 'x', coupling, define_strategy = False).rsplit('/', 1)[0]): exists = False
 
         return exists
