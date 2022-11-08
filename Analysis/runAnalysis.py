@@ -32,6 +32,7 @@ submission_parser.add_argument('--customList',  action='store',      default=Non
 submission_parser.add_argument('--systematics',  action='store',      default='nominal',               help='Choose level of systematics.', choices = ['nominal', 'limited', 'full'])
 submission_parser.add_argument('--tag',  action='store',      default=None,               help='Tag with additional information for the output, e.g. TauFakes, sidebandInMC')
 submission_parser.add_argument('--bkgrOnly',   action='store_true',     default=False,  help='Run only the background')
+submission_parser.add_argument('--blindStorage',   action='store_true',     default=False,  help='Do not store any signal region data')
 
 argParser.add_argument('--makePlots',   action='store_true',    default=False,  help='Use existing root files to make the plots')
 argParser.add_argument('--showCuts',   action='store_true',     default=False,  help='Show what the pt cuts were for the category in the plots')
@@ -50,6 +51,7 @@ argParser.add_argument('--additionalCondition',   action='store',     default=No
 argParser.add_argument('--ignoreSystematics',   action='store_true',     default=False,  help='ignore systematics in plots')
 argParser.add_argument('--combineYears',   action='store_true',     default=False,  help='combine all years specified in year arg in plots')
 argParser.add_argument('--submitPlotting',   action='store_true',     default=False,  help='Send the plotting code to HTCondor')
+argParser.add_argument('--unblind',   action='store_true',     default=False,  help='Also plot the observed data in signal region')
 argParser.add_argument('--plotDirac',   action='store_true',     default=False,  help='plot dirac type HNL')
 
 args = argParser.parse_args()
@@ -356,8 +358,7 @@ if not args.makePlots and not args.makeDataCards:
                 chain.obj_sel['tau_wp'] = 'FO'            
        
             is_sideband_event = False
-            manually_blinded = True
-            passed_tight_selection = event.passedFilter(cutter, sample.name, sideband = [2] if args.tag == 'TauFakes' else None, for_training = 'ForTraining' in args.region, manually_blinded = manually_blinded, calculate_weights = True)
+            passed_tight_selection = event.passedFilter(cutter, sample.name, sideband = [2] if args.tag == 'TauFakes' else None, for_training = 'ForTraining' in args.region, manually_blinded = True, calculate_weights = True)
             if need_sideband is None:
                 if not passed_tight_selection: continue
             else:
@@ -371,9 +372,9 @@ if not args.makePlots and not args.makeDataCards:
         
             #
             # Make the code blind in signal regions
-            # If you ever remove these next lines, set remove manually_blinded as well
+            # If you ever remove these next lines, remove manually_blinded as well
             #
-            if args.region in signal_regions and chain.is_data and not is_sideband_event:
+            if args.region in signal_regions and chain.is_data and not is_sideband_event and args.blindStorage:
                 continue            
 
             #
@@ -926,7 +927,7 @@ else:
                     if args.includeData is not None and not 'Weight' in v:
                         observed_hist = list_of_hist[year][c][v]['data']['signalregion']['nominal']
                         #tmp blinding
-                        if args.region in signal_regions: observed_hist = None
+                        if not args.unblind and args.region in signal_regions: observed_hist = None
                     else:
                         observed_hist = None
     

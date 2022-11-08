@@ -39,7 +39,7 @@ var_reco_3l = {
         'mtOther':      (lambda c : c.mtOther,  np.arange(0., 365., 15.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
         'mt3':   (lambda c : c.mt3,      np.arange(0., 415., 15.),         ('M_{T}(3l) [GeV]', 'Events')),
         
-        # Full SR (mainly for BDT variables
+        # Full SR (mainly for BDT variables)
         'm3l':          (lambda c : c.M3l,      np.arange(0., 415., 15.),         ('M_{3l} [GeV]', 'Events')),
         'j1pt':      (lambda c : c.j_pt[0],       np.arange(0., 160., 15.),       ('p_{T} (j1) [GeV]', 'Events')),
         'j2pt':      (lambda c : c.j_pt[1],       np.arange(0., 160., 15.),       ('p_{T} (j2) [GeV]', 'Events')),
