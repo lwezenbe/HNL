@@ -984,7 +984,7 @@ else:
                                 #    normalize_signal = 'med'
                                 #else:
                                 #    normalize_signal = None
-                                normalize_signal = 'bkgr'
+                                normalize_signal = 'med'
                             p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = normalize_signal, draw_option='EHist', min_cutoff = 1)
                             #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = 'med', draw_option='EHist', min_cutoff = 1)
                             #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = None, draw_option='EHist', min_cutoff = 1)

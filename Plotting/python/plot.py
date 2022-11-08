@@ -823,15 +823,15 @@ class Plot(object):
                 else:
                     h.Draw(draw_option+'Same')
 
-#        if normalize_signal == 'bkgr':
-#            if self.extra_text is None: self.extra_text = []
-#            self.extra_text.append(pt.extraTextFormat('Scaled to background yield'))          
-#        elif isinstance(normalize_signal, int) or isinstance(normalize_signal, float):
-#            if self.extra_text is None: self.extra_text = []
-#            if normalize_signal >= 1.:
-#                self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0}'.format(int(normalize_signal))))          
-#            else:
-#                self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0:.3g}'.format(normalize_signal)))          
+        if normalize_signal == 'bkgr':
+            if self.extra_text is None: self.extra_text = []
+            self.extra_text.append(pt.extraTextFormat('Scaled to background yield'))          
+        elif isinstance(normalize_signal, int) or isinstance(normalize_signal, float):
+            if self.extra_text is None: self.extra_text = []
+            if normalize_signal >= 1.:
+                self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0}'.format(int(normalize_signal))))          
+            else:
+                self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0:.3g}'.format(normalize_signal)))          
         
         self.drawErrors(draw_option, bkgr_draw_option, error_option, bkgr_error_option)
 
