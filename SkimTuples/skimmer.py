@@ -50,10 +50,12 @@ from HNL.Samples.sampleManager import SampleManager
 file_list = 'Skimmer/skimlist_{0}{1}'.format(args.era, args.year) if args.customList is None else args.customList
 #if args.isTest: file_list = 'fulllist_{0}{1}'.format(args.era, args.year)
 gen_name = 'Reco' if not args.genSkim else 'Gen'
+print 'loading in sample manager'
 if args.region is None and not args.reprocess:
     sample_manager = SampleManager(args.era, args.year, 'noskim', file_list, need_skim_samples=True)
 else:
     sample_manager = SampleManager(args.era, args.year, gen_name, file_list, need_skim_samples=False, skim_selection=args.skimSelection)
+print 'sample_manager loaded'
 
 #
 # Subjobs
@@ -73,6 +75,7 @@ if not args.isTest and (not args.isChild or args.checkLogs):
 if not args.checkLogs:
     from HNL.Tools.logger import getLogger, closeLogger
     log = getLogger(args.logLevel)
+    print 'logger obtained'
 
     #
     # Submit subjobs
@@ -205,7 +208,7 @@ if not args.checkLogs:
         event_range = xrange(max_events) if max_events < len(sample.getEventRange(args.subJob)) else sample.getEventRange(args.subJob)  
     else:
         event_range = sample.getEventRange(args.subJob)   
-        
+       
     #prepare object  and event selection
     from HNL.ObjectSelection.objectSelection import objectSelectionCollection, getObjectSelection
     if args.region is None:
@@ -236,8 +239,7 @@ if not args.checkLogs:
     for entry in event_range:
 
         chain.GetEntry(entry)
-        progress(entry - event_range[0], len(event_range))
-        # if args.isTest: progress(entry - event_range[0], len(event_range))
+        progress(entry - event_range[0], len(event_range), print_every = 10000 if not args.isTest else None)
     
         cutter.cut(True, 'Total')
 

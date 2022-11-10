@@ -37,7 +37,7 @@ from HNL.Analysis.analysisTypes import signal_couplingsquared
 from numpy import sqrt
 
 def runAsymptoticLimit(card_manager, signal_name, coupling_sq, cardname):
-    datacard = card_manager.getDatacardPath(signal_name, cardname, coupling_sq)
+    datacard = card_manager.getDatacardPath(signal_name, coupling_sq, cardname)
 
     output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname
     if args.tag is not None: output_folder += '-'+args.tag
@@ -58,7 +58,7 @@ def runHybridNew(mass):
     return datacard_massbase
 
 def runLimit(card_manager, signal_name, coupling_sq, cardname):
-    datacard_manager.prepareAllCards(signal_name, card, coupling_sq, args.lod, args.strategy)
+    datacard_manager.prepareAllCards(signal_name, coupling_sq, card, args.lod, args.strategy)
     
     if args.asymptotic: 
         runAsymptoticLimit(datacard_manager, signal_name, coupling_sq, card)
@@ -87,6 +87,7 @@ if not args.useExistingLimits:
             signal_name = 'HNL-'+args.flavor+'-m'+str(mass)
             couplings = returnCouplings(mass)
             for coupling in couplings:
+                print datacard_manager.checkMassAvailability(mass, coupling)
                 if not datacard_manager.checkMassAvailability(mass, coupling): continue
                 print '\x1b[6;30;42m', 'Processing mN =', str(mass), 'GeV with V2 = ', str(coupling), '\x1b[0m'
                 runLimit(datacard_manager, signal_name, coupling, card)

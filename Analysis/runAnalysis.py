@@ -45,7 +45,7 @@ argParser.add_argument('--cutFlowOnly',   action='store_true',   default=False, 
 argParser.add_argument('--signalOnly',   action='store_true',   default=False,  help='Run or plot a only the signal')
 argParser.add_argument('--plotBkgrOnly',   action='store_true',     default=False,  help='Plot only the background')
 argParser.add_argument('--plotSingleBin',   action='store_true',     default=False,  help='Run or plot a only the background')
-argParser.add_argument('--categoriesToPlot',   action='store',     default='super',  help='What categories to use', choices=['original', 'analysis', 'super'])
+argParser.add_argument('--categoriesToPlot',   action='store',     default='super',  help='What categories to use', choices=['original', 'analysis', 'super', 'splitanalysis'])
 argParser.add_argument('--category',   action='store',     default=None,  help='What specific category to use')
 argParser.add_argument('--additionalCondition',   action='store',     default=None,  help='Additional condition for selection')
 argParser.add_argument('--ignoreSystematics',   action='store_true',     default=False,  help='ignore systematics in plots')
@@ -287,7 +287,7 @@ if not args.makePlots and not args.makeDataCards:
     # Set event range
     #
     if args.isTest:
-        up_limit = 20000 if args.systematics != 'full' else 2000
+        up_limit = 2000 if args.systematics != 'full' else 2000
         if len(sample.getEventRange(0)) < up_limit:
             event_range = sample.getEventRange(0)
         else:
@@ -518,6 +518,7 @@ else:
         signal_list = [x for x in tmp_signal_list]
 
         sorted_analysis_categories = cat.ANALYSIS_CATEGORIES.keys() if args.category is None else args.category
+        sorted_splitanalysis_categories = cat.ANALYSIS_SPLITOSSF_CATEGORIES.keys() if args.category is None else args.category
         from HNL.Analysis.analysisTypes import getRelevantSuperCategories
         sorted_super_categories = getRelevantSuperCategories(cat.SUPER_CATEGORIES.keys(), args.region) if args.category is None else args.category
 
@@ -525,6 +526,7 @@ else:
         category_dict = {
             'original' : ([x for x in categories], ['(category=={0})'.format(x) for x in categories], {y : [str(y)] for y in categories}),
             'analysis': (sorted_analysis_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.ANALYSIS_CATEGORIES[y]])+')' for y in sorted_analysis_categories], {y :[str(x) for x in cat.ANALYSIS_CATEGORIES[y]] for y in sorted_analysis_categories}),
+            'splitanalysis': (sorted_splitanalysis_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.ANALYSIS_SPLITOSSF_CATEGORIES[y]])+')' for y in sorted_splitanalysis_categories], {y :[str(x) for x in cat.ANALYSIS_SPLITOSSF_CATEGORIES[y]] for y in sorted_splitanalysis_categories}),
             'super' : (sorted_super_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.SUPER_CATEGORIES[y]])+')' for y in sorted_super_categories], {y:[str(x) for x in cat.SUPER_CATEGORIES[y]] for y in sorted_super_categories})
         } 
 
@@ -587,7 +589,9 @@ else:
                     split_syst_to_run = getSystToRun(year, sample_name, split_corr=split_corr) if include_systematics in ['full'] else ['nominal']           
 
                     additional_condition_to_use = additional_condition if not args.plotDirac else additional_condition+'&&isDiracType'
-                    additional_weight = "diracSF" if args.plotDirac else None
+                    coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
+                    additional_weight = str(coupling_squared/signal_couplingsquaredinsample[sample_name])
+                    if args.plotDirac: additional_weight *= "diracSF"
                     for syst, corr_syst in zip(syst_to_run, split_syst_to_run):
                         intree = OutputTree('events_{0}'.format(syst), s+'/variables.root')
                         for c, cc in zip(categories_to_use, category_conditions): 
@@ -610,14 +614,14 @@ else:
                                         else:
                                             tmp_list_of_hist[c][v]['signal'][new_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year)+'-'+vsquared_translated, getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, split_corr = split_corr, additional_weight = additional_weight_corrected)['nominal'] 
 
-                for c, cc in zip(categories_to_use, category_conditions): 
-                    for v in var_dict.keys():
-                        for sample_name in tmp_list_of_hist[c][v]['signal'].keys():
-                            if 'displacedHNL' in sample_name: continue
-                            sample_mass = float(sample_name.split('-m')[-1])
-                            for syst in tmp_list_of_hist[c][v]['signal'][sample_name].keys():
-                                coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
-                                tmp_list_of_hist[c][v]['signal'][sample_name][syst].hist.Scale(coupling_squared/signal_couplingsquaredinsample[sample_name])
+                #for c, cc in zip(categories_to_use, category_conditions): 
+                #    for v in var_dict.keys():
+                #        for sample_name in tmp_list_of_hist[c][v]['signal'].keys():
+                #            if 'displacedHNL' in sample_name: continue
+                #            sample_mass = float(sample_name.split('-m')[-1])
+                #            for syst in tmp_list_of_hist[c][v]['signal'][sample_name].keys():
+                #                coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
+                #                tmp_list_of_hist[c][v]['signal'][sample_name][syst].hist.Scale(coupling_squared/signal_couplingsquaredinsample[sample_name])
                 print '\n'
 
             if args.includeData is not None:
@@ -876,6 +880,9 @@ else:
                 elif args.categoriesToPlot == 'analysis':
                     from HNL.EventSelection.eventCategorization import ANALYSIS_CATEGORIES_TEX
                     c_name = ANALYSIS_CATEGORIES_TEX[c] 
+                elif args.categoriesToPlot == 'splitanalysis':
+                    from HNL.EventSelection.eventCategorization import ANALYSIS_SPLITOSSF_CATEGORIES_TEX
+                    c_name = ANALYSIS_SPLITOSSF_CATEGORIES_TEX[c] 
                 else:
                     from HNL.EventSelection.eventCategorization import SUPER_CATEGORIES_TEX
                     c_name = SUPER_CATEGORIES_TEX[c] 
@@ -884,7 +891,9 @@ else:
                 if args.flavor: 
                     from decimal import Decimal
                     et_flavor = args.flavor if args.flavor == 'e' else '#'+args.flavor
-                    extra_text.append(extraTextFormat('|V_{'+et_flavor+'N}|^{2} = '+'%.0E' % Decimal(str(0.01**2)), textsize = 0.7))
+                    default_coupling = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][args.masses[0]]
+                    print default_coupling
+                    extra_text.append(extraTextFormat('|V_{'+et_flavor+'N}|^{2} = '+'%.0E' % Decimal(str(default_coupling)), textsize = 0.7))
         
                 # Plots that display chosen for chosen signal masses and backgrounds the distributions for the different variables
                 # S and B in same canvas for each variable

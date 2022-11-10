@@ -13,6 +13,12 @@ combined_final_states = {
     'MaxOneTau' : ['NoTau', 'SingleTau']
 }
 
+forbidden_combinations = {
+    'OneTau-OF' : ['E', 'C', 'D'],
+    'OneTau-OSSF': ['F', 'A', 'B'],
+    'OneTau-SSSF': ['E', 'C', 'D']   
+}
+
 class SingleYearDatacardManager:
     
     def __init__(self, year, era, strategy, flavor, selection, masstype = 'Majorana', tag = 'prompt'):
@@ -24,7 +30,7 @@ class SingleYearDatacardManager:
         self.masstype = masstype
         self.tag = tag
 
-    def getDatacardPath(self, signal_name, card_name, coupling_sq, define_strategy = True):
+    def getDatacardPath(self, signal_name, coupling_sq, card_name, define_strategy = True):
         from HNL.Stat.combineTools import displaced_mass_threshold
         if self.tag == 'displaced':
             tag_to_use = 'prompt' if self.getHNLmass(signal_name) > displaced_mass_threshold else 'displaced'
@@ -69,6 +75,7 @@ class SingleYearDatacardManager:
 
         output_list = []
         for search_region in srm.getListOfSearchRegionGroups():
+            if final_state in forbidden_combinations.keys() and search_region in forbidden_combinations[final_state]: continue
             output_list.append(self.getStandardDatacardName(search_region, final_state, signal_name, custom_strategy))  
         return output_list
 
@@ -115,9 +122,9 @@ class SingleYearDatacardManager:
 
     def mergeDatacards(self, signal_name, coupling_sq, in_card_names, out_card_name, initial_merge = False):
         from HNL.Tools.helpers import makeDirIfNeeded
-        makeDirIfNeeded(self.getDatacardPath(signal_name, out_card_name, coupling_sq))
+        makeDirIfNeeded(self.getDatacardPath(signal_name, coupling_sq, out_card_name))
         from HNL.Stat.combineTools import runCombineCommand
-        runCombineCommand('combineCards.py '+' '.join([self.getDatacardPath(signal_name, ic, coupling_sq, define_strategy = not initial_merge) for ic in in_card_names])+' > '+self.getDatacardPath(signal_name, out_card_name, coupling_sq))
+        runCombineCommand('combineCards.py '+' '.join([self.getDatacardPath(signal_name, coupling_sq, ic, define_strategy = not initial_merge) for ic in in_card_names])+' > '+self.getDatacardPath(signal_name, coupling_sq, out_card_name))
  
     def initializeCards(self, signal_name, coupling_sq, final_state, lod, strategy = 'custom'):
         cards_to_merge = self.getSingleSignalDatacardList(signal_name, final_state, lod, strategy)
@@ -135,27 +142,27 @@ class DatacardManager:
         self.singleyear_managers = [SingleYearDatacardManager(y, era, strategy, flavor, selection, masstype, tag) for y in years]
         self.masstype = masstype
 
-    def getDatacardPath(self, signal_name, card_name, coupling_sq, define_strategy = True):
+    def getDatacardPath(self, signal_name, coupling_sq, card_name, define_strategy = True):
         from HNL.Stat.combineTools import displaced_mass_threshold
         if self.tag == 'displaced':
             tag_to_use = 'prompt' if self.singleyear_managers[0].getHNLmass(signal_name) > displaced_mass_threshold else 'displaced'
         else:
             tag_to_use = self.tag
-        return os.path.join(data_card_base(self.era, '-'.join(self.years), self.selection, self.singleyear_managers[0].getHNLmass(signal_name), self.flavor, self.masstype), signal_name, tag_to_use+'-{:.2e}'.format(coupling_sq), 'shapes', self.strategy if define_strategy else '', card_name+'.txt')
+        return os.path.join(data_card_base(self.era, '-'.join(self.years), self.selection, self.singleyear_managers[0].getHNLmass(signal_name), self.flavor, self.masstype), signal_name, tag_to_use+'-{:.2e}'.format(float(coupling_sq)), 'shapes', self.strategy if define_strategy else '', card_name+'.txt')
     
     def mergeYears(self, signal_name, coupling_sq, card_name):
         if len(self.years) == 1:
             return
         else:
-            out_path = self.getDatacardPath(signal_name, card_name, coupling_sq)
+            out_path = self.getDatacardPath(signal_name, coupling_sq, card_name)
             from HNL.Tools.helpers import makeDirIfNeeded
             makeDirIfNeeded(out_path)
             from HNL.Stat.combineTools import runCombineCommand
-            runCombineCommand('combineCards.py '+' '.join([sm.getDatacardPath(signal_name, card_name, coupling_sq) for sm in self.singleyear_managers])+' > '+out_path)
+            runCombineCommand('combineCards.py '+' '.join([sm.getDatacardPath(signal_name, coupling_sq, card_name) for sm in self.singleyear_managers])+' > '+out_path)
 
     def prepareAllCards(self, signal_name, coupling_sq, final_state, lod, strategy = 'cutbased'):
         for iyear, year in enumerate(self.years):
-            self.singleyear_managers[iyear].initializeCards(signal_name, final_state, coupling_sq, lod, strategy)
+            self.singleyear_managers[iyear].initializeCards(signal_name, coupling_sq, final_state, lod, strategy)
 
         self.mergeYears(signal_name, coupling_sq, final_state)
 
@@ -163,6 +170,6 @@ class DatacardManager:
         signal_name = 'HNL-'+self.flavor+'-m'+str(mass)
         exists = True
         for iyear, year in enumerate(self.years):
-            if not os.path.exists(self.singleyear_managers[iyear].getDatacardPath(signal_name, 'x', coupling, define_strategy = False).rsplit('/', 1)[0]): exists = False
+            if not os.path.exists(self.singleyear_managers[iyear].getDatacardPath(signal_name, coupling, 'x', define_strategy = False).rsplit('/', 1)[0]): exists = False
 
         return exists
