@@ -169,21 +169,25 @@ def getReweightingFunction(algo, era, year, workingpoint, selection):
     # Define reweightingFunc
     from HNL.ObjectSelection.jetSelector import isGoodBJet
     def reweightingFunc(chain, syst = 'nominal'):
+        from HNL.ObjectSelection.bTagWP import passBtag, getFlavor
         p_mc = 1.
         p_data = 1.
         for j in xrange(chain._nJets):
             if not isGoodBJet(chain, j, 'base'): continue
 
-            from HNL.ObjectSelection.bTagWP import passBtag, getFlavor
-            if 'light' in syst and getFlavor(chain, j) != 'other':      continue
-            if 'bc' in syst and getFlavor(chain, j) == 'other':         continue  
+            syst_to_use = syst
+            if 'light' in syst and getFlavor(chain, j) != 'other':   
+                syst_to_use = 'nominal'   
+            if 'bc' in syst and getFlavor(chain, j) == 'other':
+                syst_to_use = 'nominal'   
 
             if passBtag(chain, j, workingpoint, algo):
                 p_mc *= eff_mc[getFlavor(chain, j)].evaluateEfficiency(chain, index = j)
-                p_data *= sf_reader.readValue(getFlavor(chain, j), chain._jetSmearedPt[j], chain._jetEta[j], syst)*eff_mc[getFlavor(chain, j)].evaluateEfficiency(chain, index = j)
+                p_data *= sf_reader.readValue(getFlavor(chain, j), chain._jetSmearedPt[j], chain._jetEta[j], syst_to_use)*eff_mc[getFlavor(chain, j)].evaluateEfficiency(chain, index = j)
             else:
                 p_mc *= 1. - eff_mc[getFlavor(chain, j)].evaluateEfficiency(chain, index = j)
-                p_data *= 1. - (sf_reader.readValue(getFlavor(chain, j), chain._jetSmearedPt[j], chain._jetEta[j], syst)* eff_mc[getFlavor(chain, j)].evaluateEfficiency(chain, index = j))
+                p_data *= 1. - (sf_reader.readValue(getFlavor(chain, j), chain._jetSmearedPt[j], chain._jetEta[j], syst_to_use)* eff_mc[getFlavor(chain, j)].evaluateEfficiency(chain, index = j))
+
         return p_data/p_mc
 
     return reweightingFunc

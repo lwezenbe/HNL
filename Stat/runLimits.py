@@ -7,6 +7,7 @@ submission_parser = argParser.add_argument_group('submission', 'Arguments for su
 submission_parser.add_argument('--year',     action='store', nargs='*',       default=None,   help='Select year', required=True)
 submission_parser.add_argument('--era',     action='store',       default='UL', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
 submission_parser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
+submission_parser.add_argument('--couplings', nargs='*', type=float,  help='Only run or plot signal samples with coupling squared given in this list')
 submission_parser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
 submission_parser.add_argument('--asymptotic',   action='store_true', default=False,  help='Use the -M AsymptoticLimits option in Combine')
 submission_parser.add_argument('--blind',   action='store_true', default=False,  help='activate --blind option of combine')
@@ -18,18 +19,25 @@ submission_parser.add_argument('--compareToCards',   type=str, nargs='*',  help=
 submission_parser.add_argument('--lod',   type=str,  help='"Level of detail": Describes how binned you want you analysis categories to be.', choices = ['analysis', 'super'])
 submission_parser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
 submission_parser.add_argument('--tag', type = str, default=None,  help='Add a file with a message in the plotting folder')
+submission_parser.add_argument('--masstype', type = str, default=None,  help='Choose what type of limits you want', choices = ['Dirac', 'Majorana'])
+argParser.add_argument('--displaced', action='store_true', default=False,  help='run limit for displaced sample')
 argParser.add_argument('--dryplot', action='store_true', default=False,  help='Add a file with a message in the plotting folder')
 args = argParser.parse_args()
 
+if args.masstype is None:
+    raise RuntimeError("Forgot to specify masstype")
+
+if args.displaced and not args.useExistingLimits and args.couplings is None:
+    raise RuntimeError("Please specify couplings for the displaced samples")
 
 import glob
-from HNL.Stat.combineTools import runCombineCommand, extractScaledLimitsPromptHNL, makeGraphs, saveGraphs
+from HNL.Stat.combineTools import runCombineCommand, extractScaledLimitsPromptHNL, extractScaledLimitsDisplacedHNL, makeGraphs, saveGraphs, displaced_mass_threshold
 from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped, getObjFromFile
 from HNL.Analysis.analysisTypes import signal_couplingsquared
 from numpy import sqrt
 
-def runAsymptoticLimit(card_manager, signal_name, cardname):
-    datacard = card_manager.getDatacardPath(signal_name, cardname)
+def runAsymptoticLimit(card_manager, signal_name, coupling_sq, cardname):
+    datacard = card_manager.getDatacardPath(signal_name, coupling_sq, cardname)
 
     output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname
     if args.tag is not None: output_folder += '-'+args.tag
@@ -49,25 +57,40 @@ def runHybridNew(mass):
     #TODO: Finish this
     return datacard_massbase
 
+def runLimit(card_manager, signal_name, coupling_sq, cardname):
+    datacard_manager.prepareAllCards(signal_name, coupling_sq, card, args.lod, args.strategy)
+    
+    if args.asymptotic: 
+        runAsymptoticLimit(datacard_manager, signal_name, coupling_sq, card)
+    else:
+        raise RuntimeError('To be implemented')
+
+
 cards_to_read = [args.datacard] if args.datacard != '' else ['NoTau', 'SingleTau']
 
 # Create datacard manager
 from HNL.Stat.datacardManager import DatacardManager
-datacard_manager = DatacardManager(args.year, args.era, args.strategy, args.flavor, args.selection)
+tag = 'displaced' if args.displaced else 'prompt'
+datacard_manager = DatacardManager(args.year, args.era, args.strategy, args.flavor, args.selection, args.masstype, tag)
 
+def returnCouplings(mass):
+    if args.couplings is None or mass > displaced_mass_threshold:
+        return [signal_couplingsquared[args.flavor][mass]]
+    else:
+        return [x for x in args.couplings]
+
+from HNL.Analysis.analysisTypes import signal_couplingsquared
 if not args.useExistingLimits:
     for card in cards_to_read:
         print '\x1b[6;30;42m', 'Processing datacard "' +str(card)+ '"', '\x1b[0m'
         for mass in args.masses:
-            if not datacard_manager.checkMassAvailability(mass): continue
-            print '\x1b[6;30;42m', 'Processing mN =', str(mass), 'GeV', '\x1b[0m'
             signal_name = 'HNL-'+args.flavor+'-m'+str(mass)
-            datacard_manager.prepareAllCards(signal_name, card, args.lod, args.strategy)
-
-            if args.asymptotic: runAsymptoticLimit(datacard_manager, signal_name, card)
-            else:
-                print 'To be implemented'
-                exit(0)
+            couplings = returnCouplings(mass)
+            for coupling in couplings:
+                print datacard_manager.checkMassAvailability(mass, coupling)
+                if not datacard_manager.checkMassAvailability(mass, coupling): continue
+                print '\x1b[6;30;42m', 'Processing mN =', str(mass), 'GeV with V2 = ', str(coupling), '\x1b[0m'
+                runLimit(datacard_manager, signal_name, coupling, card)
 
 compare_dict = {
     'cutbased-AN2017014': 'Replicated AN2017014 selection',
@@ -80,29 +103,43 @@ compare_dict = {
 asymptotic_str = 'asymptotic' if args.asymptotic else ''
 
 year_to_read = args.year[0] if len(args.year) == 1 else '-'.join(args.year)
-for card in cards_to_read:
 
+for card in cards_to_read:
+    destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/Results/runAsymptoticLimits/'+args.masstype+'-'+('prompt' if not args.displaced else 'displaced')+'/'+args.strategy+'-'+args.selection+(('-'+args.tag) if args.tag is not None else '')+'/'+args.flavor+'/'+card+'/'+ args.era+year_to_read))
+
+    #Make and save graph objects
     passed_masses = []
-    passed_couplings = []
     limits = {}
     for mass in args.masses:
-        if not datacard_manager.checkMassAvailability(mass): continue
-        from HNL.Stat.datacardManager import getRegionFromMass
-        input_folder = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.era+str(year_to_read), args.selection+'-'+getRegionFromMass(mass), args.flavor, 'HNL-'+args.flavor+'-m'+str(mass), 'shapes', args.strategy, asymptotic_str, card+(('-'+args.tag) if args.tag is not None else ''))
-        tmp_coupling = sqrt(signal_couplingsquared[args.flavor][mass])
+        couplings = returnCouplings(mass)
+        input_folders = []
+        for c in couplings:
+            tmp_folder = datacard_manager.getDatacardPath('HNL-'+args.flavor+'-m'+str(mass), card, c)
+            tmp_folder = tmp_folder.replace('dataCards', 'output').rsplit('/', 1)[0] +'/'+asymptotic_str+'/'+card
+            if args.tag is not None: tmp_folder += '-'+args.tag
+            tmp_folder += '/higgsCombineTest.AsymptoticLimits.mH120.root'
+            input_folders.append(tmp_folder)
 
-        tmp_limit = extractScaledLimitsPromptHNL(input_folder + '/higgsCombineTest.AsymptoticLimits.mH120.root', tmp_coupling)
-        if tmp_limit is not None and len(tmp_limit) > 4 and mass != 5: 
+        if args.displaced and mass <= displaced_mass_threshold:
+            tmp_limit = extractScaledLimitsDisplacedHNL(input_folders, couplings)
+            from HNL.Stat.combineTools import drawSignalStrengthPerCouplingDisplaced
+            drawSignalStrengthPerCouplingDisplaced(input_folders, couplings, destination+'/components', 'm'+str(mass), year_to_read, args.flavor)
+        else:
+            tmp_limit = extractScaledLimitsPromptHNL(input_folders[0], couplings[0])
+            from HNL.Stat.combineTools import drawSignalStrengthPerCouplingPrompt
+            drawSignalStrengthPerCouplingPrompt(input_folders[0], couplings[0], destination+'/components', 'm'+str(mass), year_to_read, args.flavor)
+
+        if tmp_limit is not None and len(tmp_limit) > 4: 
             passed_masses.append(mass)
-            passed_couplings.append(tmp_coupling)
             limits[mass] = tmp_limit
             
-    graphs = makeGraphs(passed_masses, couplings = passed_couplings, limits=limits)
+    graphs = makeGraphs(passed_masses, limits=limits)
 
-    out_path_base = lambda sample, era, sname, cname, tag : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', era, sname, args.flavor, 
-                                        sample, 'shapes', asymptotic_str+'/'+cname+(('-'+tag) if tag is not None else ''))
+    out_path_base = lambda sample, era, sname, cname, tag : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.masstype+'-'+'prompt' if not args.displaced else 'displaced', era, sname, args.flavor, sample, 'shapes', asymptotic_str+'/'+cname+(('-'+tag) if tag is not None else ''))
+    print out_path_base('Combined', args.era+year_to_read, args.strategy +'-'+ args.selection, card, args.tag)+"/limits.root"
     saveGraphs(graphs, out_path_base('Combined', args.era+year_to_read, args.strategy +'-'+ args.selection, card, args.tag)+"/limits.root")
 
+    #Load in other graph objects to compare
     compare_graphs = {}
     if args.compareToCards is not None:
         for cc in args.compareToCards:
@@ -151,9 +188,8 @@ for card in cards_to_read:
         tex_names = None
 
 
-    coupling_dict = {'tau':'#tau', 'mu':'#mu', 'e':'e', '2l':'l'}
+    from HNL.Stat.combineTools import coupling_dict
     from HNL.Plotting.plot import Plot
-    destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/Results/runAsymptoticLimits/'+args.strategy+'-'+args.selection+(('-'+args.tag) if args.tag is not None else '')+'/'+args.flavor+'/'+card+'/'+ args.era+year_to_read))
     if (observed_AN is None and expected_AN is None) or args.dryplot:
         bkgr_hist = None
     else:

@@ -44,10 +44,12 @@ def getColor(palette, index):
         return getHNLfromTau(index)
     elif palette == 'Large':
         return getLargeArrayColors(index)
+    elif palette == 'Syst':
+        return getSystColors(index)
     else:
         return getHistColor(index)
 
-pallete_by_tex = ['StackTauPOGbyName', 'WorkingPoints', 'AN2017', 'HNL', 'tZq', 'HNLfromTau']
+pallete_by_tex = ['StackTauPOGbyName', 'WorkingPoints', 'AN2017', 'HNL', 'tZq', 'HNLfromTau', 'Syst']
 def getPaletteIndex(palette, index, tex_name):
     if palette in pallete_by_tex:
         return tex_name
@@ -206,6 +208,12 @@ def getAN2017Colors(name):
     elif '-m40' in name: return TColor.GetColor("#ffff00")
     elif '-m60' in name: return TColor.GetColor("#ff00ff")
     else:               return TColor.GetColor("#012A36")
+
+def getSystColors(name):
+    if name == 'nominal': return TColor.GetColor("#3D405B")
+    elif name == 'up': return TColor.GetColor("#E07A5F")
+    elif name == 'down': return TColor.GetColor("#81B29A")
+    else: return TColor.GetColor("#F2CC8F")
 
 def gettZqColors(name):
     if name == 'WZ': return TColor.GetColor("#81efd7")

@@ -70,8 +70,10 @@ def loadtxtCstyle(source):
 # Progress bar
 #
 
-def progress(i, n, prefix="", size=60):
-    x = int(size*i/(n-1)) if n != 1 else int(size*i)
+def progress(i, n, prefix="", size=60, print_every = None):
+    if print_every is not None and i % print_every != 0: return
+    fraction = float(i)/(n-1) if n != 1 else float(i)
+    x = int(size*fraction)
     sys.stdout.write("%s\x1b[6;30;42m%s\x1b[0m\x1b[0;30;41m%s\x1b[0m %i/%i %s\r" % (" "*0, " "*x, " "*(size-x), i, n, prefix))
     sys.stdout.flush()
 

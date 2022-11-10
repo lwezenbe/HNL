@@ -13,9 +13,10 @@ LUMINOSITY_MAP = {
 
 class LumiWeight:
 
-    def __init__(self, sample, sample_manager, method = None):
+    def __init__(self, sample, sample_manager = None, method = None):
         self.sample = sample
-        self.skimmed = sample_manager.skim != 'noskim'
+        if method in ['recalculate', 'hcounter'] and sample_manager is None:
+            raise RuntimeError("Please specify sample manager in lumiweight")
 
         if not self.sample.is_data:
             if method == 'recalculate':
@@ -39,8 +40,8 @@ class LumiWeight:
             else:
                 self.total_hcount = self.sample.getHist('hCounter').GetSumOfWeights()
     
-
-        #self.total_hcount = 1.
+        if self.sample.is_signal:
+            self.total_hcount_dirac = self.sample.getHist('hCounterDirac').GetSumOfWeights()
 
     def getLumiWeight(self, rerun_chain = None):
         if self.sample.is_data:
@@ -51,6 +52,9 @@ class LumiWeight:
         else:
             self.lumi_weight = rerun_chain.original_weight * (rerun_chain.lumiWeight/abs(rerun_chain.lumiWeight))*(self.sample.xsec*LUMINOSITY_MAP[self.sample.chain.era+self.sample.chain.year])/self.total_hcount
             return self.lumi_weight
+
+    def getDiracTypeSF(self):
+        return self.total_hcount/self.total_hcount_dirac
 
 if __name__ == '__main__':
     from HNL.Samples.sampleManager import SampleManager

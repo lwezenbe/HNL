@@ -26,10 +26,19 @@ class Sample(object):
         self.output             = output
         self.mass               = self.getMass()
         self.is_signal          = 'HNL' in name
+        self.list_of_files      = self.getListOfFiles()
+
+    def getListOfFiles(self, sub_path = None):
+        if sub_path is None:
+            sub_path = self.path
         if self.path.endswith('.root'):
-            self.list_of_files         = [self.path]
+            list_of_files         = [sub_path]
         else:
-            self.list_of_files         = sorted(glob.glob(self.path + '*/*/*/*.root'))
+            if not 'displacedHNL' in self.name:
+                list_of_files         = sorted(glob.glob(sub_path + '*/*/*/*.root'))
+            else:
+                list_of_files         = sorted(glob.glob(sub_path + '*/*.root'))
+        return list_of_files
  
     #
     #   Return the file size of the file at the path location in MB
@@ -61,7 +70,7 @@ class Sample(object):
             if self.path.endswith('.root'):
                 tot_size = self.fileSize(self.path)
             else:
-                for f in glob.glob(self.path + '*/*/*/*.root'):
+                for f in self.list_of_files:
                     tot_size += self.fileSize(f)
                 if tot_size == 0: 
                     print "No file loaded, check the input path of "+self.name+" again."
@@ -99,7 +108,7 @@ class Sample(object):
             return hcounter
         else:
             hcounter = None
-            listOfFiles                 = glob.glob(sub_path + '*/*/*/*.root')
+            listOfFiles                 = self.getListOfFiles(sub_path)
             for f in listOfFiles:
                 if hcounter is None:     
                     hcounter = self.getHist(name, f)

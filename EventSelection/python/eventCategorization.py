@@ -156,6 +156,34 @@ ANALYSIS_CATEGORIES_TEX = {
 }
 mutual_exclusive_analysiscategories = ['OneTau-OSSF', 'OneTau-SSSF', 'OneTau-OF', 'EEE-Mu', 'MuMuMu-E']
 
+ANALYSIS_SPLITOSSF_CATEGORIES = {
+    'OneTau-OSSF': [4, 5, 6, 10, 11, 12],
+    'OneTau-OF' : [13, 14, 15, 16, 17, 18],
+    'OneTau-SSSF': [1, 2, 3, 7, 8, 9], 
+    'EEE-Mu-OSSF': [19, 24, 25, 26], 
+    'EEE-Mu-nOSSF': [21, 22, 23], 
+    'MuMuMu-E-OSSF': [20, 30, 31, 32], 
+    'MuMuMu-E-nOSSF': [27, 28, 29], 
+    }
+
+ANALYSIS_SPLITOSSF_CATEGORIES_TEX = {
+    'OneTau-OSSF'       : 'l^{+}l^{-}#tau_{h}',
+    'OneTau-OF'         : 'e#mu#tau_{h}',
+    'OneTau-SSSF'       : 'l^{#pm}l^{#pm}#tau_{h}',
+    'EEE-Mu-OSSF'       : 'e^{+}e^{-}e/#mu',
+    'EEE-Mu-nOSSF'      : 'e^{#pm}e^{#pm}e/#mu',
+    'MuMuMu-E-OSSF'     : '#mu^{+}#mu^{-}#mu/e',
+    'MuMuMu-E-nOSSF'    : '#mu^{#pm}#mu^{#pm}#mu/e'
+}
+
+def isLightLeptonFinalState(cat_key):
+    if cat_key in SUPER_CATEGORIES.keys():
+        return cat_key == 'NoTau'
+    elif cat_key in ANALYSIS_CATEGORIES.keys() or cat_key in ANALYSIS_SPLITOSSF_CATEGORIES.keys():
+        return not 'OneTau' in cat_key
+    else:
+        return cat_key in SUPER_CATEGORIES[cat_key]
+
 def translateCategories(in_cat):
     if in_cat in SUPER_CATEGORIES.keys():
         return in_cat

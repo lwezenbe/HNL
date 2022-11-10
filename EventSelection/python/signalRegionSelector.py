@@ -38,9 +38,6 @@ class SignalRegionSelector(FilterObject):
         manually_blinded = kwargs.get('manually_blinded', False)
 
         if not self.initEvent(cutter, kwargs=kwargs): return False
-        
-        if self.chain.is_data and self.sideband is None and not manually_blinded:
-            raise RuntimeError("\033[93m Running this would mean unblinding. Make sure you dont store the results. \033[0m")
 
         # if not self.is_reco_level:  return True #It has passed the basic selection
 

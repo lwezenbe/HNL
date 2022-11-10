@@ -32,12 +32,12 @@ class LeptonIDSF(object):
             return self.sf_hist.GetBinContent(self.sf_hist.FindBin(eta, pt))
         elif syst == 'statup':
             if flavor == 1:
-                return self.sf_hist.GetBinError(self.sf_hist.FindBin(eta, pt)) + self.stat_hist.GetBinError(self.stat_hist.FindBin(eta, pt))
+                return self.sf_hist.GetBinContent(self.sf_hist.FindBin(eta, pt)) + self.stat_hist.GetBinError(self.stat_hist.FindBin(eta, pt))
             else:
                 return self.sf_hist.GetBinContent(self.sf_hist.FindBin(eta, pt)) + self.stat_hist.GetBinContent(self.stat_hist.FindBin(eta, pt))
         elif syst == 'statdown':
             if flavor == 1:
-                return self.sf_hist.GetBinError(self.sf_hist.FindBin(eta, pt)) - self.stat_hist.GetBinError(self.stat_hist.FindBin(eta, pt))
+                return self.sf_hist.GetBinContent(self.sf_hist.FindBin(eta, pt)) - self.stat_hist.GetBinError(self.stat_hist.FindBin(eta, pt))
             else:
                 return self.sf_hist.GetBinContent(self.sf_hist.FindBin(eta, pt)) - self.stat_hist.GetBinContent(self.stat_hist.FindBin(eta, pt))
         elif syst == 'systup':

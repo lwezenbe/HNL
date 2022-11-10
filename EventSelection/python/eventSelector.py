@@ -108,8 +108,8 @@ class EventSelector:
         elif self.name == 'MCCT':
             self.selector = GeneralMCCTRegion(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
         elif self.name == 'NoSelection':
-            if chain.is_data and not ('sideband' in additional_options or 'for_skim' in additional_options):
-                raise RuntimeError("Running this would mean unblinding. Dont do this.")
+            #if chain.is_data and not ('sideband' in additional_options or 'for_skim' in additional_options):
+            #    raise RuntimeError("Running this would mean unblinding. Dont do this.")
             self.selector = SignalRegionSelector('baseline', chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
         else:
             raise RuntimeError("Unknown region specified.")

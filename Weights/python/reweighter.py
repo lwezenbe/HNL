@@ -57,10 +57,20 @@ class Reweighter:
             from HNL.Weights.triggerSF import TriggerSF
             self.triggerSF = TriggerSF(sample.chain.era, sample.chain.year)
 
+            if 'displacedHNL' in sample.name:
+                from HNL.Weights.displacementTools import DisplacementReweighter
+                self.displacement_weighter = DisplacementReweighter(sample)
+            else:
+                self.displacement_weighter = None
+
         self.fakerate_collection = None
 
     def returnBranches(self):
-        return ['{0}/F'.format(weight) for weight in self.WEIGHTS_TO_USE]
+        branches = ['{0}/F'.format(weight) for weight in self.WEIGHTS_TO_USE]
+        if not self.sample.is_data and self.displacement_weighter is not None:
+            max_n_couplings = 20
+            branches.extend(['ctauHN/F', 'displacement_ncouplings/I', 'displacement_vsquared[{0}]/F'.format(max_n_couplings), 'displacement_lumiweight[{0}]/F'.format(max_n_couplings)])
+        return branches 
 
     def getPrefireWeight(self, syst = 'nominal'):
         if not self.sample.is_data and self.sample.chain.is_reco_level:
@@ -157,6 +167,12 @@ class Reweighter:
     def fillTreeWithWeights(self, chain):
         for weight in self.WEIGHTS_TO_USE:
             chain.setTreeVariable(weight, self.returnWeight(weight))
+        if not self.sample.is_data and self.displacement_weighter is not None:
+            couplings, weights = self.displacement_weighter.getRangeOfNewLumiWeights(chain.tree.ctauHN)
+            chain.setTreeVariable('displacement_ncouplings', len(couplings))
+            for i, (c, w) in enumerate(zip(couplings, weights)):
+                chain.new_vars.displacement_vsquared[i] = c
+                chain.new_vars.displacement_lumiweight[i] = w
 
 if __name__ == '__main__':
     from HNL.Samples.sampleManager import SampleManager

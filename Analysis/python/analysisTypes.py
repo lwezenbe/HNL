@@ -29,7 +29,9 @@ var_gen_3l = {'minMos':        (lambda c : c.minMos,   np.arange(0., 120., 12.),
 var_reco_3l = {
         # WZCR, ConversionCR
         'l1pt':      (lambda c : c.l_pt[0],       np.arange(0., 300., 15.),       ('p_{T} (l1) [GeV]', 'Events')),
+        #'light1pt':      (lambda c : c.light_pt[0],       np.arange(0., 300., 15.),       ('p_{T} (l1) [GeV]', 'Events')),
         'l2pt':      (lambda c : c.l_pt[1],       np.arange(0., 200., 10.),       ('p_{T} (l2) [GeV]', 'Events')),
+        #'light2pt':      (lambda c : c.light_pt[1],       np.arange(0., 200., 10.),       ('p_{T} (l2) [GeV]', 'Events')),
         'l3pt':      (lambda c : c.l_pt[2],       np.arange(0., 150., 5.),       ('p_{T} (l3) [GeV]', 'Events')),
         'l1eta':      (lambda c : c.l_eta[0],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l1)', 'Events')),
         'l2eta':      (lambda c : c.l_eta[1],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l2)', 'Events')),
@@ -39,7 +41,7 @@ var_reco_3l = {
         'mtOther':      (lambda c : c.mtOther,  np.arange(0., 365., 15.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
         'mt3':   (lambda c : c.mt3,      np.arange(0., 415., 15.),         ('M_{T}(3l) [GeV]', 'Events')),
         
-        # Full SR (mainly for BDT variables
+        # Full SR (mainly for BDT variables)
         'm3l':          (lambda c : c.M3l,      np.arange(0., 415., 15.),         ('M_{3l} [GeV]', 'Events')),
         'j1pt':      (lambda c : c.j_pt[0],       np.arange(0., 160., 15.),       ('p_{T} (j1) [GeV]', 'Events')),
         'j2pt':      (lambda c : c.j_pt[1],       np.arange(0., 160., 15.),       ('p_{T} (j2) [GeV]', 'Events')),
@@ -189,10 +191,52 @@ signal_couplingsquared = {
         'mu' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:10e-4, 40:1e-4, 50:1e-4,  60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:0.1,  120:0.1, 125:0.1, 150:0.1,  200:0.1, 250:0.1, 300:0.1, 350:0.1,  400:0.1, 450:0.1, 500:0.1, 600:0.1, 700:0.1,  600:0.1,  800:0.1, 900:0.1, 1000:0.1, 1200:1., 1500:1.},
 }
 
+#signal_couplingsquaredinsample = {
+#        'tau' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:1e-4,  40:1e-4, 50:1e-4, 60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4, 120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4, 400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4, 800:1e-4, 900:1e-4, 1000:1e-4 },
+#        'e' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:1e-4, 40:1e-4, 50:1e-4,  60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4,  120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4,  400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4,  600:1e-4,  800:1e-4, 900:1e-4, 1000:1e-4, 1200:1e-4, 1500:1e-4 },
+#        'mu' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:1e-4, 40:1e-4, 50:1e-4,  60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4,  120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4,  400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4,  600:1e-4,  800:1e-4, 900:1e-4, 1000:1e-4, 1200:1e-4, 1500:1e-4},
+#}
+
 signal_couplingsquaredinsample = {
-        'tau' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:1e-4,  40:1e-4, 50:1e-4, 60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4, 120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4, 400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4, 800:1e-4, 900:1e-4, 1000:1e-4 },
-        'e' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:1e-4, 40:1e-4, 50:1e-4,  60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4,  120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4,  400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4,  600:1e-4,  800:1e-4, 900:1e-4, 1000:1e-4, 1200:1e-4, 1500:1e-4 },
-        'mu' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:1e-4, 40:1e-4, 50:1e-4,  60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4,  120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4,  400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4,  600:1e-4,  800:1e-4, 900:1e-4, 1000:1e-4, 1200:1e-4, 1500:1e-4},
+        'displacedHNL-e-m10' : 1e-5, 'displacedHNL-mu-m10' : 1e-5,
+        'HNL-e-m10' : 1e-4, 'HNL-mu-m10' : 1e-4,
+        'HNL-taulep-m20' : 1e-4, 'HNL-tauhad-m20' : 1e-4, 'HNL-e-m20' : 1e-4, 'HNL-mu-m20' : 1e-4,
+        'HNL-taulep-m30' : 1e-4, 'HNL-tauhad-m30' : 1e-4, 'HNL-e-m30' : 1e-4, 'HNL-mu-m30' : 1e-4,
+        'HNL-taulep-m40' : 1e-4, 'HNL-tauhad-m40' : 1e-4, 'HNL-e-m40' : 1e-4, 'HNL-mu-m40' : 1e-4,
+        'HNL-taulep-m50' : 1e-4, 'HNL-tauhad-m50' : 1e-4, 'HNL-e-m50' : 1e-4, 'HNL-mu-m50' : 1e-4,
+        'HNL-taulep-m60' : 1e-4, 'HNL-tauhad-m60' : 1e-4, 'HNL-e-m60' : 1e-4, 'HNL-mu-m60' : 1e-4,
+        'HNL-taulep-m70' : 1e-4, 'HNL-tauhad-m70' : 1e-4, 'HNL-e-m70' : 1e-4, 'HNL-mu-m70' : 1e-4,
+        'HNL-taulep-m75' : 1e-4, 'HNL-tauhad-m75' : 1e-4, 'HNL-e-m75' : 1e-4, 'HNL-mu-m75' : 1e-4,
+        'HNL-taulep-m85' : 1e-4, 'HNL-tauhad-m85' : 1e-4, 'HNL-e-m85' : 1e-4, 'HNL-mu-m85' : 1e-4,
+        'HNL-taulep-m100' : 1e-4, 'HNL-tauhad-m100' : 1e-4, 'HNL-e-m100' : 1e-4, 'HNL-mu-m100' : 1e-4,
+        'HNL-taulep-m125' : 1e-4, 'HNL-tauhad-m125' : 1e-4, 'HNL-e-m125' : 1e-4, 'HNL-mu-m125' : 1e-4,
+        'HNL-taulep-m150' : 1e-4, 'HNL-tauhad-m150' : 1e-4, 'HNL-e-m150' : 1e-4, 'HNL-mu-m150' : 1e-4,
+        'HNL-taulep-m175' : 1e-4, 'HNL-tauhad-m175' : 1e-4, 'HNL-e-m175' : 1e-4, 'HNL-mu-m175' : 1e-4,
+        'HNL-taulep-m200' : 1e-4, 'HNL-tauhad-m200' : 1e-4, 'HNL-e-m200' : 1e-4, 'HNL-mu-m200' : 1e-4,
+        'HNL-taulep-m250' : 1e-4, 'HNL-tauhad-m250' : 1e-4, 'HNL-e-m250' : 1e-4, 'HNL-mu-m250' : 1e-4,
+        'HNL-taulep-m300' : 1e-4, 'HNL-tauhad-m300' : 1e-4, 'HNL-e-m300' : 1e-4, 'HNL-mu-m300' : 1e-4,
+        'HNL-taulep-m350' : 1e-4, 'HNL-tauhad-m350' : 1e-4, 'HNL-e-m350' : 1e-4, 'HNL-mu-m350' : 1e-4,
+        'HNL-taulep-m400' : 1e-4, 'HNL-tauhad-m400' : 1e-4, 'HNL-e-m400' : 1e-4, 'HNL-mu-m400' : 1e-4,
+        'HNL-taulep-m450' : 1e-4, 'HNL-tauhad-m450' : 1e-4, 'HNL-e-m450' : 1e-4, 'HNL-mu-m450' : 1e-4,
+        'HNL-taulep-m500' : 1e-4, 'HNL-tauhad-m500' : 1e-4, 'HNL-e-m500' : 1e-4, 'HNL-mu-m500' : 1e-4,
+        'HNL-taulep-m600' : 1e-4, 'HNL-tauhad-m600' : 1e-4, 'HNL-e-m600' : 1e-4, 'HNL-mu-m600' : 1e-4,
+        'HNL-taulep-m700' : 1e-4, 'HNL-tauhad-m700' : 1e-4, 'HNL-e-m700' : 1e-4, 'HNL-mu-m700' : 1e-4,
+        'HNL-taulep-m800' : 1e-4, 'HNL-tauhad-m800' : 1e-4, 'HNL-e-m800' : 1e-4, 'HNL-mu-m800' : 1e-4,
+        'HNL-taulep-m900' : 1e-4, 'HNL-tauhad-m900' : 1e-4, 'HNL-e-m900' : 1e-4, 'HNL-mu-m900' : 1e-4,
+        'HNL-taulep-m1000' : 1e-4, 'HNL-tauhad-m1000' : 1e-4, 'HNL-e-m1000' : 1e-4, 'HNL-mu-m1000' : 1e-4,
+        'HNL-e-m1200' : 1e-4, 'HNL-mu-m1200' : 1e-4,
+        'HNL-e-m1500' : 1e-4, 'HNL-mu-m1500' : 1e-4,
+        'HNLvbf-taulep-m600' : 1e-4, 'HNLvbf-tauhad-m600' : 1e-4, 'HNLvbf-e-m600' : 1e-4, 'HNLvbf-tauhad-m600' : 1e-4,
+        'HNLvbf-taulep-m700' : 1e-4, 'HNLvbf-tauhad-m700' : 1e-4, 'HNLvbf-e-m700' : 1e-4, 'HNLvbf-tauhad-m700' : 1e-4,
+        'HNLvbf-taulep-m800' : 1e-4, 'HNLvbf-tauhad-m800' : 1e-4, 'HNLvbf-e-m800' : 1e-4, 'HNLvbf-tauhad-m800' : 1e-4,
+        'HNLvbf-taulep-m900' : 1e-4, 'HNLvbf-tauhad-m900' : 1e-4, 'HNLvbf-e-m900' : 1e-4, 'HNLvbf-tauhad-m900' : 1e-4,
+        'HNLvbf-taulep-m1000' : 1e-4, 'HNLvbf-tauhad-m1000' : 1e-4, 'HNLvbf-e-m1000' : 1e-4, 'HNLvbf-tauhad-m1000' : 1e-4,
+        'HNLvbf-e-m1200' : 1e-4, 'HNLvbf-tauhad-m1200' : 1e-4,
+        'HNLvbf-e-m1500' : 1e-4, 'HNLvbf-tauhad-m1500' : 1e-4,
+
+       # 30:1e-4,  40:1e-4, 50:1e-4, 60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4, 120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4, 400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4, 800:1e-4, 900:1e-4, 1000:1e-4 },
+       # 'e' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:1e-4, 40:1e-4, 50:1e-4,  60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4,  120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4,  400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4,  600:1e-4,  800:1e-4, 900:1e-4, 1000:1e-4, 1200:1e-4, 1500:1e-4 },
+       # 'mu' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:1e-4, 40:1e-4, 50:1e-4,  60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4,  120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4,  400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4,  600:1e-4,  800:1e-4, 900:1e-4, 1000:1e-4, 1200:1e-4, 1500:1e-4},
 }
 
 final_signal_regions = ['lowMassSR', 'highMassSR']

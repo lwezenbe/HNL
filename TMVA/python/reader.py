@@ -1,4 +1,4 @@
-import ROOT
+from ROOT import TMVA
 from HNL.TMVA.mvaVariables import getVariableNames, getVariableValue
 from array import array
 import numpy as np
@@ -15,7 +15,7 @@ DEFAULT_PATH_TO_WEIGHTS = lambda era, region, signalname: os.path.join(os.path.e
 class Reader:
 
     def __init__(self, chain, method_name, name_to_book, region, era, path_to_weights = None, cut_string = None):
-        self.reader = ROOT.TMVA.Reader("Silent")
+        self.reader = TMVA.Reader("Silent")
         self.chain = chain
         self.method_name = method_name
         from HNL.Analysis.analysisTypes import final_signal_regions
