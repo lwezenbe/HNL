@@ -287,7 +287,7 @@ if not args.makePlots and not args.makeDataCards:
     # Set event range
     #
     if args.isTest:
-        up_limit = 2000 if args.systematics != 'full' else 2000
+        up_limit = 20000 if args.systematics != 'full' else 2000
         if len(sample.getEventRange(0)) < up_limit:
             event_range = sample.getEventRange(0)
         else:
@@ -344,8 +344,7 @@ if not args.makePlots and not args.makeDataCards:
         for entry in event_range:
 
             chain.GetEntry(entry)
-            if args.isTest: progress(entry - event_range[0], len(event_range))
-            progress(entry - event_range[0], len(event_range))
+            progress(entry - event_range[0], len(event_range), print_every = None if args.isTest else 10000)
  
             cutter.cut(True, 'Total')
             #
@@ -892,7 +891,6 @@ else:
                     from decimal import Decimal
                     et_flavor = args.flavor if args.flavor == 'e' else '#'+args.flavor
                     default_coupling = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][args.masses[0]]
-                    print default_coupling
                     extra_text.append(extraTextFormat('|V_{'+et_flavor+'N}|^{2} = '+'%.0E' % Decimal(str(default_coupling)), textsize = 0.7))
         
                 # Plots that display chosen for chosen signal masses and backgrounds the distributions for the different variables
