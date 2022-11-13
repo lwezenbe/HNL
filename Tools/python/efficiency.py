@@ -59,6 +59,10 @@ class Efficiency(object):
     def getDenominator(self):
         return self.efficiency_denom.getHist().Clone()
 
+    def getTEfficiency(self):
+        from ROOT import TEfficiency
+        return TEfficiency(self.getNumerator(), self.getDenominator())
+
     def getEfficiency(self, inPercent = False, hist_object=False):
         if self.efficiency is None:
             eff = self.getNumerator().Clone('tmp_'+self.name)

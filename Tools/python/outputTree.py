@@ -140,8 +140,12 @@ class EfficiencyTree(OutputTree):
     def getDenominator(self, vname, hname, condition = None):
         return super(EfficiencyTree, self).getHistFromTree(vname, hname, self.bins, condition) 
    
-    def getEfficiency(self, vname, hname, condition = None, passed_name = 'passed'):
+    def getEfficiency(self, vname, hname, condition = None, passed_name = 'passed', output = 'default'):
         num = self.getNumerator(vname, hname, condition, passed_name = passed_name).Clone('tmp_'+hname)
         denom = self.getDenominator(vname, hname, condition).Clone('tmp_denom_'+hname)
-        from HNL.Tools.efficiency import Efficiency
-        return Efficiency(hname, vname, vname, None, efficiency_num = num, efficiency_denom = denom)
+        if output != 'TEfficiency':
+            from HNL.Tools.efficiency import Efficiency
+            return Efficiency(hname, vname, vname, None, efficiency_num = num, efficiency_denom = denom)
+        else:
+            from ROOT import TEfficiency
+            return TEfficiency(num, denom)

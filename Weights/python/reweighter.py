@@ -54,8 +54,8 @@ class Reweighter:
             electron_wp = checkElectronWP(self.sample.chain, None)
             self.electronIDSF = ElectronIDSF(sample.chain.era, sample.chain.year, electron_wp)
 
-            from HNL.Weights.triggerSF import TriggerSF
-            self.triggerSF = TriggerSF(sample.chain.era, sample.chain.year)
+            from HNL.Weights.triggerSF import CombinedTriggerSF
+            self.triggerSF = CombinedTriggerSF()
 
             if 'displacedHNL' in sample.name:
                 from HNL.Weights.displacementTools import DisplacementReweighter
