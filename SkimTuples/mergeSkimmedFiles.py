@@ -99,11 +99,11 @@ for mf in merge_files:
     new_name = name.split('_', 1)[1]+'.root'
     if not args.isTest and args.backupName != 'nobackup':
         if isValidRootFile(pnfs_base+'/'+new_name):
-    #        continue
+            continue
             if isValidRootFile(pnfs_backup_base+'/'+new_name):
                 os.system('rm -f '+ pnfs_backup_base+'/'+new_name)
             os.system('scp '+pnfs_base+'/'+new_name + ' '+ pnfs_backup_base+'/'+new_name)
-    
+   
     sub_files = glob.glob(mf+'/*')
     tot_size = 0
     for sf in sub_files:

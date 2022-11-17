@@ -53,6 +53,7 @@ argParser.add_argument('--combineYears',   action='store_true',     default=Fals
 argParser.add_argument('--submitPlotting',   action='store_true',     default=False,  help='Send the plotting code to HTCondor')
 argParser.add_argument('--unblind',   action='store_true',     default=False,  help='Also plot the observed data in signal region')
 argParser.add_argument('--plotDirac',   action='store_true',     default=False,  help='plot dirac type HNL')
+argParser.add_argument('--plotDisplaced',   action='store_true',     default=False,  help='plot dirac type HNL')
 
 args = argParser.parse_args()
 
@@ -357,7 +358,7 @@ if not args.makePlots and not args.makeDataCards:
                 chain.obj_sel['tau_wp'] = 'FO'            
        
             is_sideband_event = False
-            passed_tight_selection = event.passedFilter(cutter, sample.name, sideband = [2] if args.tag == 'TauFakes' else None, for_training = 'ForTraining' in args.region, manually_blinded = True, calculate_weights = True)
+            passed_tight_selection = event.passedFilter(cutter, sample.name, sideband = [2] if args.tag == 'TauFakes' else None, for_training = 'ForTraining' in args.region, manually_blinded = True, calculate_weights = args.tag != 'TauFakes') #Dont calculate weights if we're trying to find the tau fake fractions or you'll get an error because the fractions arent stored yet...
             if need_sideband is None:
                 if not passed_tight_selection: continue
             else:
@@ -411,7 +412,7 @@ if not args.makePlots and not args.makeDataCards:
             for v in var.keys():
                 output_tree.setTreeVariable(v, var[v][0](chain))
         
-            output_tree.setTreeVariable('weight', event.reweighter.getTotalWeight(sideband = is_sideband_event, tau_fake_method = 'TauFakesDY' if args.region == 'ZZCR' else None))
+            output_tree.setTreeVariable('weight', event.reweighter.getTotalWeight(sideband = is_sideband_event if args.tag != 'TauFakes' else False, tau_fake_method = 'TauFakesDY' if args.region == 'ZZCR' else None))
             output_tree.setTreeVariable('isprompt', chain.is_prompt)
             output_tree.setTreeVariable('category', chain.category)
             output_tree.setTreeVariable('searchregion', srm[args.region].getSearchRegion(chain))
@@ -512,6 +513,7 @@ else:
             if sample_name not in sample_manager.sample_outputs:              continue    
             if args.masses is not None and sample_mass not in args.masses:  continue 
             if args.flavor != '' and '-'+args.flavor not in sample_name:  continue 
+            if not args.plotDisplaced and 'displaced' in sample_name: continue
             tmp_signal_list.append(s)
 
         signal_list = [x for x in tmp_signal_list]
@@ -765,7 +767,7 @@ else:
                                         hist_for_datacard[ac][v]['bkgr'][bkgr_name][syst].write(out_path, write_name=bkgr_name, subdirs = [bin_name.rsplit('-', 1)[0]+syst], append=True)
                                     bkgr_names.append(bkgr_name)
                             
-                            data_hist_tmp = hist_for_datacard[ac][v]['signal'][original_sample_name]['nominal'].clone('Ditau')
+                            data_hist_tmp = hist_for_datacard[ac][v]['data']['signalregion']['nominal'].clone('Ditau')
                             data_hist_tmp.replaceZeroBins()
                             data_hist_tmp.write(out_path, write_name='data_obs', append=True, subdirs = [bin_name.rsplit('-', 1)[0]])
                           
@@ -916,6 +918,9 @@ else:
                                         list_of_hist[year][c][v]['bkgr'][bk]['total_syst'] = makeSystErrorHist(list_of_hist[year][c][v]['bkgr'][bk], bk, c, year, 'non-prompt' if args.includeData == 'includeSideband' else None)
                 
                                     syst_hist.append(list_of_hist[year][c][v]['bkgr'][bk]['total_syst'])
+
+                    if args.systematics != 'full' or args.ignoreSystematics:
+                        syst_hist = None
     
                     # Make list of signal histograms for the plot object
                     signal_legendnames = []
@@ -929,7 +934,11 @@ else:
                             #     signal_legendnames.append('HNL m_{N} = 30 GeV w Pythia filter')
                             # else:
                             # signal_legendnames.append('HNL '+ sk.split('-')[1] +' m_{N} = '+sk.split('-m')[-1]+ ' GeV')
-                            signal_legendnames.append('HNL m_{N}='+sk.split('-m')[-1]+ 'GeV')
+                            if not 'displaced' in sk:
+                                signal_legendnames.append('HNL m_{N}='+sk.split('-m')[-1]+ 'GeV')
+                            else:
+                                signal_legendnames.append('displaced HNL m_{N}='+sk.split('-m')[-1]+ 'GeV')
+                                
     
                     if args.includeData is not None and not 'Weight' in v:
                         observed_hist = list_of_hist[year][c][v]['data']['signalregion']['nominal']
@@ -958,14 +967,14 @@ else:
                         #     signal_names = [s + ' V^{2}=' + str(signal_couplingsquared[s.split('-')[1]][int(s.split('-m')[-1])])  for s in signal_names]
                            
                         if args.region == 'lowMassSR':
-                            plotLowMassRegions(signal_hist, bkgr_hist, legend_names, 
-                                out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c), extra_text = [x for x in extra_text], year = year, era = args.era)
+                            plotLowMassRegions(signal_hist, bkgr_hist, syst_hist, legend_names, 
+                                out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c), extra_text = [x for x in extra_text], year = year, era = args.era, observed_hist = observed_hist)
                         if args.region == 'lowMassSRloose':
-                            plotLowMassRegionsLoose(signal_hist, bkgr_hist, legend_names, 
-                                out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c), extra_text = [x for x in extra_text], year = year, era = args.era)
+                            plotLowMassRegionsLoose(signal_hist, bkgr_hist, syst_hist, legend_names, 
+                                out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c), extra_text = [x for x in extra_text], year = year, era = args.era, observed_hist = observed_hist)
                         if args.region == 'highMassSR':
-                            plotHighMassRegions(signal_hist, bkgr_hist, legend_names, 
-                                out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c), extra_text = [x for x in extra_text], year = year, era = args.era)
+                            plotHighMassRegions(signal_hist, bkgr_hist, syst_hist, legend_names, 
+                                out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c), extra_text = [x for x in extra_text], year = year, era = args.era, observed_hist = observed_hist)
     
                     else:
     
@@ -993,6 +1002,7 @@ else:
                                 #else:
                                 #    normalize_signal = None
                                 normalize_signal = 'med'
+                                #normalize_signal = None
                             p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = normalize_signal, draw_option='EHist', min_cutoff = 1)
                             #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = 'med', draw_option='EHist', min_cutoff = 1)
                             #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = None, draw_option='EHist', min_cutoff = 1)

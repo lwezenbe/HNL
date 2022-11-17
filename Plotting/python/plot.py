@@ -351,13 +351,12 @@ class Plot(object):
 
     def calculateRatio(self):
         ratios = []
-        if self.observed is not None:
-            ratios.append(self.observed.Clone('ratio'))
-            ratios[0].Divide(self.total_b)
-            #To be implemented once we start using observed in histograms as well
         for i, s in enumerate(self.s):
             ratios.append(s.Clone('ratio'))
             ratios[i].Divide(self.total_b)
+        if self.observed is not None:
+            ratios.append(self.observed.Clone('ratio'))
+            ratios[-1].Divide(self.total_b)
 
         return ratios
 
@@ -399,11 +398,11 @@ class Plot(object):
         #Set axis: if significance is also drawn, no x-axis
         #self.tot_err.SetMinimum(0.3)
         #self.tot_err.SetMaximum(1.7)
-        self.tot_err.SetMinimum(max(0., 0.95*pt.getOverallMinimum(ratios, zero_not_allowed = True,  include_error=False)))
+        self.tot_err.SetMinimum(max(0., 0.7*pt.getOverallMinimum(ratios if self.observed is None else [ratios[-1]], zero_not_allowed = True,  include_error=True)))
         if just_errors:
             self.tot_err.SetMaximum(2.)
         else:
-            self.tot_err.SetMaximum(min(6, 1.1*pt.getOverallMaximum(ratios, include_error=False)))
+            self.tot_err.SetMaximum(min(6, 1.3*pt.getOverallMaximum(ratios if self.observed is None else [ratios[-1]], include_error=True)))
         self.tot_err.GetXaxis().SetTitleSize(.18)
         self.tot_err.GetYaxis().SetTitleSize(.18)
         self.tot_err.GetXaxis().SetLabelSize(.18)
