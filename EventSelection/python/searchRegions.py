@@ -224,7 +224,6 @@ def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hi
     for group in region_groups[region_name].keys():
         grouped_signal_hist[group] = [] 
         grouped_bkgr_hist[group] = []
-        grouped_syst_hist[group] = []
         if signal_hist is not None:
             for ish, sh in enumerate(signal_hist):
                 grouped_signal_hist[group].append(ROOT.TH1D('tmp_signal_'+str(ish)+'_'+group, 'tmp_signal', len(region_groups[region_name][group]), 0.5, len(region_groups[region_name][group])+0.5))
@@ -260,6 +259,7 @@ def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hi
             grouped_observed_hist = None
 
         if syst_hist is not None and grouped_syst_hist is not None:
+            grouped_syst_hist[group] = []
             for ish, sh in enumerate(syst_hist):
                 grouped_syst_hist[group].append(ROOT.TH1D('tmp_syst_'+str(ish)+'_'+group, 'tmp_syst', len(region_groups[region_name][group]), 0.5, len(region_groups[region_name][group])+0.5))
                 for ib, b in enumerate(region_groups[region_name][group]):
@@ -270,7 +270,7 @@ def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hi
                         grouped_syst_hist[group][ish].SetBinContent(ib+1, sh.GetBinContent(b))
                         grouped_syst_hist[group][ish].SetBinError(ib+1, sh.GetBinError(b))    
         else:
-            grouped_syst_hist  
+            grouped_syst_hist = None 
                     
     return grouped_signal_hist, grouped_bkgr_hist, grouped_syst_hist, grouped_observed_hist
 
@@ -354,6 +354,8 @@ def combineGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, groups, obs
                 else:
                     grouped_observed_hist.SetBinContent(getBinsNb(igroup, ib), observed_hist[group].GetBinContent(ib+1))
                     grouped_observed_hist.SetBinError(getBinsNb(igroup, ib), observed_hist[group].GetBinError(ib+1))
+    else:
+        grouped_observed_hist = None
     
     return grouped_signal_hist, grouped_bkgr_hist, grouped_syst_hist, grouped_observed_hist
 
