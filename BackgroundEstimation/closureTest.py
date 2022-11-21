@@ -230,7 +230,8 @@ if not args.makePlots:
     else:
         event_range = sample.getEventRange(args.subJob)    
 
-    chain.HNLmass = sample.getMass()
+    from HNL.Samples.sample import Sample
+    chain.HNLmass = Sample.getSignalMass(sample.name)
 
     from HNL.EventSelection.event import ClosureTestEvent
     if args.isCheck:

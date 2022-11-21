@@ -106,7 +106,6 @@ if not args.merge:
     reweighter = Reweighter(sample, sample_manager)
     from HNL.Weights.fakeRateWeights import returnFakeRateCollection
     fakerates = {
-        'lowMassSR' : returnFakeRateCollection(chain, region = 'lowMassSR'),
         'lowMassSRloose' : returnFakeRateCollection(chain, region = 'lowMassSRloose'),
         'highMassSR' : returnFakeRateCollection(chain,region =  'highMassSR'),
     }
@@ -148,7 +147,7 @@ if not args.merge:
     new_branches = []
     new_branches.extend(getAllVariableList())
     new_branches.extend(['is_signal/O', 'event_weight/F', 'HNL_mass/F', 'HNL_lowmass/F', 'HNL_highmass/F', 'eventNb/I', 'entry/I'])
-    new_branches.extend(['fake_weight_lowMassSR/F', 'fake_weight_lowMassSRloose/F', 'fake_weight_highMassSR/F'])
+    new_branches.extend(['fake_weight_lowMassSRloose/F', 'fake_weight_highMassSR/F'])
 
     from HNL.Tools.makeBranches import makeBranches
     new_vars = {}
@@ -215,11 +214,9 @@ if not args.merge:
             outtree.eventNb = chain._eventNb
             outtree.entry = entry
             if chain.is_sideband_event: 
-                outtree.fake_weight_lowMassSR = fakerates['lowMassSR'].getFakeWeight()
                 outtree.fake_weight_highMassSR = fakerates['highMassSR'].getFakeWeight()
                 outtree.fake_weight_lowMassSRloose = fakerates['lowMassSRloose'].getFakeWeight()
             else:
-                outtree.fake_weight_lowMassSR = 1.
                 outtree.fake_weight_highMassSR = 1.
                 outtree.fake_weight_lowMassSRloose = 1.
 

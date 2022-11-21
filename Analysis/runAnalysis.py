@@ -93,6 +93,7 @@ from HNL.EventSelection.bitCutter import Cutter
 from HNL.Weights.reweighter import Reweighter
 from HNL.TMVA.reader import ReaderArray
 from HNL.Samples.sampleManager import SampleManager
+from HNL.Samples.sample import Sample
 from HNL.EventSelection.event import Event
 from HNL.Triggers.triggerSelection import passTriggers
 from ROOT import TFile
@@ -406,7 +407,7 @@ if not args.makePlots and not args.makeDataCards:
             #
             # Fill tree
             #
-            if 'displacedHNL' in sample.name:
+            if Sample.getSignalDisplacedString(sample.name):
                 output_tree.setTreeVariable('ctauHN', chain._ctauHN)
             event.reweighter.fillTreeWithWeights(output_tree)
             for v in var.keys():
@@ -447,7 +448,7 @@ else:
     from ROOT import gROOT
     gROOT.SetBatch(True)
     import glob
-    from HNL.Analysis.analysisTypes import signal_couplingsquared, signal_couplingsquaredinsample
+    from HNL.Analysis.analysisTypes import signal_couplingsquared
     from HNL.Tools.helpers import getHistFromTree
 
 
@@ -508,12 +509,12 @@ else:
         tmp_bkgr_list = []
         for i_s, s in enumerate(signal_list):
             sample_name = s.split('/')[-1]
-            sample_mass = float(sample_name.split('-m')[-1])
+            sample_mass = Sample.getSignalMass(sample_name)
             if args.sample is not None and args.sample != sample_name:      continue
             if sample_name not in sample_manager.sample_outputs:              continue    
             if args.masses is not None and sample_mass not in args.masses:  continue 
             if args.flavor != '' and '-'+args.flavor not in sample_name:  continue 
-            if not args.plotDisplaced and 'displaced' in sample_name: continue
+            if not args.plotDisplaced and Sample.getSignalDisplacedString(sample_name) == 'displaced': continue
             tmp_signal_list.append(s)
 
         signal_list = [x for x in tmp_signal_list]
@@ -580,7 +581,7 @@ else:
                 for isignal, s in enumerate(signal):
                     progress(isignal, len(signal))
                     sample_name = s.split('/')[-1]
-                    sample_mass = float(sample_name.split('-m')[-1])
+                    sample_mass = Sample.getSignalMass(sample_name)
                     cleaned_sample_name = sample_name
                     #if 'HNL-tau' in sample_name: cleaned_sample_name = 'HNL-tau-m{0}'.format(int(sample_mass))
                     if '-tau' in sample_name: 
@@ -591,7 +592,7 @@ else:
 
                     additional_condition_to_use = additional_condition if not args.plotDirac else additional_condition+'&&isDiracType'
                     coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
-                    additional_weight = str(coupling_squared/signal_couplingsquaredinsample[sample_name])
+                    additional_weight = str(coupling_squared/Sample.getSignalCouplingSquared(sample_name))
                     if args.plotDirac: additional_weight *= "diracSF"
                     for syst, corr_syst in zip(syst_to_run, split_syst_to_run):
                         intree = OutputTree('events_{0}'.format(syst), s+'/variables.root')
@@ -599,7 +600,7 @@ else:
                             if 'taulep' in sample_name and not isLightLeptonFinalState(c): continue
                             if 'tauhad' in sample_name and isLightLeptonFinalState(c): continue
                             for v in var_dict.keys():
-                                if not for_datacards or not 'displacedHNL' in sample_name:
+                                if not for_datacards or  Sample.getSignalDisplacedString(sample_name) == 'prompt':
                                     if syst == 'nominal':
                                         tmp_list_of_hist[c][v]['signal'][cleaned_sample_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, include_systematics, split_corr = split_corr, additional_weight = additional_weight)
                                     else:
@@ -607,22 +608,14 @@ else:
                                 else:
                                     for iv, vsquared in enumerate(np.ndarray(intree.getTreeVariable('displacement_ncouplings', 0), 'f', intree.getTreeVariable('displacement_vsquared', 0))):
                                         vsquared_translated = str(vsquared)
-                                        vsquared_translated = vsquared_translated.replace('.', 'p').replace('e-', 'em')
-                                        new_name = 'displacedHNL'+vsquared_translated+cleaned_sample_name.split('HNL')[1]
+                                        vsquared_translated = vsquared_translated.replace('e-', 'em')
+                                        new_name = cleaned_sample_name.split('-Vsq')[0]+'-Vsq'+vsquared_translated + '-' + Sample.getSignalDisplacedString(cleaned_sample_name)
                                         additional_weight_corrected = '(displacement_lumiweight[{0}]/lumiWeight)'.format(iv) if additional_weight is None else additional_weight+'(displacement_lumiweight[{0}]/lumiWeight)'.format(iv)
                                         if syst == 'nominal':
                                             tmp_list_of_hist[c][v]['signal'][new_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year)+'-'+vsquared_translated, getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, include_systematics, split_corr = split_corr, additional_weight = additional_weight_corrected)
                                         else:
                                             tmp_list_of_hist[c][v]['signal'][new_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year)+'-'+vsquared_translated, getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, split_corr = split_corr, additional_weight = additional_weight_corrected)['nominal'] 
 
-                #for c, cc in zip(categories_to_use, category_conditions): 
-                #    for v in var_dict.keys():
-                #        for sample_name in tmp_list_of_hist[c][v]['signal'].keys():
-                #            if 'displacedHNL' in sample_name: continue
-                #            sample_mass = float(sample_name.split('-m')[-1])
-                #            for syst in tmp_list_of_hist[c][v]['signal'][sample_name].keys():
-                #                coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
-                #                tmp_list_of_hist[c][v]['signal'][sample_name][syst].hist.Scale(coupling_squared/signal_couplingsquaredinsample[sample_name])
                 print '\n'
 
             if args.includeData is not None:
@@ -648,7 +641,7 @@ else:
                         for iv, v in enumerate(var_dict.keys()): 
                             tmp_list_of_hist[c][v]['bkgr'][b] = {}
 
-
+                print background
                 for ib, b in enumerate(background):
                     progress(ib, len(background))
                     if not args.individualSamples:
@@ -736,25 +729,23 @@ else:
                     print 'Filling', ac
                     for v in var_for_datacard.keys():
                         for sample_name in hist_for_datacard[ac][v]['signal'].keys():
-                            sample_mass = float(sample_name.split('-m')[-1])
+                            sample_mass = Sample.getSignalMass(sample_name)
                             if sample_mass not in args.masses: continue
-                            original_sample_name = sample_name
-                            if 'displacedHNL' in sample_name:
-                                coupling_squared = float(sample_name.split('HNL')[-1].split('-')[0].replace('p', '.').replace('em', 'e-'))
-                                sample_name = 'HNL-'+sample_name.split('-', 1)[1]
+                            if Sample.getSignalDisplacedString(sample_name) == 'displaced':
+                                coupling_squared = Sample.getSignalCouplingSquared(sample_name)
                             else:
                                 coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
                             
                             bin_name = sr+'-'+ac+'-'+v
                             out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([args.selection, args.region]), 
-                                                    args.era+str(year), args.flavor, original_sample_name, 'Dirac' if args.plotDirac else 'Majorana', bin_name+'.shapes.root')
+                                                    args.era+str(year), args.flavor, sample_name, 'Dirac' if args.plotDirac else 'Majorana', bin_name+'.shapes.root')
                             makeDirIfNeeded(out_path)
-                            hist_for_datacard[ac][v]['signal'][original_sample_name]['nominal'].replaceZeroBins()
-                            hist_for_datacard[ac][v]['signal'][original_sample_name]['nominal'].write(out_path, write_name=sample_name, subdirs = [bin_name.rsplit('-', 1)[0]])
-                            for syst in hist_for_datacard[ac][v]['signal'][original_sample_name].keys():
+                            hist_for_datacard[ac][v]['signal'][sample_name]['nominal'].replaceZeroBins()
+                            hist_for_datacard[ac][v]['signal'][sample_name]['nominal'].write(out_path, write_name=sample_name, subdirs = [bin_name.rsplit('-', 1)[0]])
+                            for syst in hist_for_datacard[ac][v]['signal'][sample_name].keys():
                                 if syst == 'nominal': continue
-                                hist_for_datacard[ac][v]['signal'][original_sample_name][syst].replaceZeroBins()
-                                hist_for_datacard[ac][v]['signal'][original_sample_name][syst].write(out_path, write_name=sample_name, subdirs = [bin_name.rsplit('-', 1)[0]+syst], append=True)
+                                hist_for_datacard[ac][v]['signal'][sample_name][syst].replaceZeroBins()
+                                hist_for_datacard[ac][v]['signal'][sample_name][syst].write(out_path, write_name=sample_name, subdirs = [bin_name.rsplit('-', 1)[0]+syst], append=True)
                             bkgr_names = []
                             for ib, b in enumerate(background_collection):
                                 bkgr_name = b.split('/')[-1]
@@ -770,8 +761,9 @@ else:
                             data_hist_tmp = hist_for_datacard[ac][v]['data']['signalregion']['nominal'].clone('Ditau')
                             data_hist_tmp.replaceZeroBins()
                             data_hist_tmp.write(out_path, write_name='data_obs', append=True, subdirs = [bin_name.rsplit('-', 1)[0]])
-                          
-                            makeDataCard(bin_name, args.flavor, args.era, year, 0, sample_name, bkgr_names, args.selection, args.region, ac, shapes=True, coupling_sq = coupling_squared, nonprompt_from_sideband = args.includeData == 'includeSideband', majorana_str = 'Majorana' if not args.plotDirac else 'Dirac', tag = 'displaced' if 'displacedHNL' in original_sample_name else 'prompt', shapes_path=out_path)
+                         
+                            new_signal_name = sample_name.split('-Vsq')+'-Vsq'+str(coupling_squared)+'-'+Sample.getSignalDisplacedString(sample_name) 
+                            makeDataCard(bin_name, args.flavor, args.era, year, 0, sample_name, bkgr_names, args.selection, args.region, ac, shapes=True, nonprompt_from_sideband = args.includeData == 'includeSideband', majorana_str = 'Majorana' if not args.plotDirac else 'Dirac', shapes_path=out_path)
     
         if args.makePlots:
             print "Creating list of histograms"
@@ -935,9 +927,9 @@ else:
                             # else:
                             # signal_legendnames.append('HNL '+ sk.split('-')[1] +' m_{N} = '+sk.split('-m')[-1]+ ' GeV')
                             if not 'displaced' in sk:
-                                signal_legendnames.append('HNL m_{N}='+sk.split('-m')[-1]+ 'GeV')
+                                signal_legendnames.append('HNL m_{N}='+str(Sample.getSignalMass(sk))+ 'GeV')
                             else:
-                                signal_legendnames.append('displaced HNL m_{N}='+sk.split('-m')[-1]+ 'GeV')
+                                signal_legendnames.append('displaced HNL m_{N}='+str(Sample.getSignalMass(sk))+ 'GeV')
                                 
     
                     if args.includeData is not None and not 'Weight' in v:

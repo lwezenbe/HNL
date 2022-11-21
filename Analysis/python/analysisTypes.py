@@ -197,52 +197,6 @@ signal_couplingsquared = {
 #        'mu' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:1e-4, 40:1e-4, 50:1e-4,  60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4,  120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4,  400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4,  600:1e-4,  800:1e-4, 900:1e-4, 1000:1e-4, 1200:1e-4, 1500:1e-4},
 #}
 
-signal_couplingsquaredinsample = {
-        'displacedHNL-e-m10' : 1e-5, 'displacedHNL-mu-m10' : 1e-5, 'displacedHNL-taulep-m10' : 1e-3, 'displacedHNL-tauhad-m10' : 1e-3,
-        'displacedHNL-e-m12.5' : 1e-5, 'displacedHNL-mu-m12.5' : 1e-5, 'displacedHNL-taulep-m12.5' : 1e-3, 'displacedHNL-tauhad-m12.5' : 1e-3,
-        'displacedHNL-e-m15' : 1e-5, 'displacedHNL-mu-m15' : 1e-5, 'displacedHNL-taulep-m15' : 1e-3, 'displacedHNL-tauhad-m15' : 1e-3,
-        'displacedHNL-e-m17.5' : 1e-5, 'displacedHNL-mu-m17.5' : 1e-5, 'displacedHNL-taulep-m17.5' : 1e-3, 'displacedHNL-tauhad-m17.5' : 1e-3,
-        'displacedHNL-e-m20' : 1e-5, 'displacedHNL-mu-m20' : 1e-5, 'displacedHNL-taulep-m20' : 1e-3, 'displacedHNL-tauhad-m20' : 1e-3,
-        'HNL-e-m10' : 1e-4, 'HNL-mu-m10' : 1e-4,
-        'HNL-taulep-m20' : 1e-4, 'HNL-tauhad-m20' : 1e-4, 'HNL-e-m20' : 1e-4, 'HNL-mu-m20' : 1e-4,
-        'HNL-taulep-m30' : 1e-4, 'HNL-tauhad-m30' : 1e-4, 'HNL-e-m30' : 1e-4, 'HNL-mu-m30' : 1e-4,
-        'HNL-taulep-m40' : 1e-4, 'HNL-tauhad-m40' : 1e-4, 'HNL-e-m40' : 1e-4, 'HNL-mu-m40' : 1e-4,
-        'HNL-taulep-m50' : 1e-4, 'HNL-tauhad-m50' : 1e-4, 'HNL-e-m50' : 1e-4, 'HNL-mu-m50' : 1e-4,
-        'HNL-taulep-m60' : 1e-4, 'HNL-tauhad-m60' : 1e-4, 'HNL-e-m60' : 1e-4, 'HNL-mu-m60' : 1e-4,
-        'HNL-taulep-m70' : 1e-4, 'HNL-tauhad-m70' : 1e-4, 'HNL-e-m70' : 1e-4, 'HNL-mu-m70' : 1e-4,
-        'HNL-taulep-m75' : 1e-4, 'HNL-tauhad-m75' : 1e-4, 'HNL-e-m75' : 1e-4, 'HNL-mu-m75' : 1e-4,
-        'HNL-taulep-m85' : 1e-4, 'HNL-tauhad-m85' : 1e-4, 'HNL-e-m85' : 1e-4, 'HNL-mu-m85' : 1e-4,
-        'HNL-taulep-m100' : 1e-4, 'HNL-tauhad-m100' : 1e-4, 'HNL-e-m100' : 1e-4, 'HNL-mu-m100' : 1e-4,
-        'HNL-taulep-m125' : 1e-4, 'HNL-tauhad-m125' : 1e-4, 'HNL-e-m125' : 1e-4, 'HNL-mu-m125' : 1e-4,
-        'HNL-taulep-m150' : 1e-4, 'HNL-tauhad-m150' : 1e-4, 'HNL-e-m150' : 1e-4, 'HNL-mu-m150' : 1e-4,
-        'HNL-taulep-m175' : 1e-4, 'HNL-tauhad-m175' : 1e-4, 'HNL-e-m175' : 1e-4, 'HNL-mu-m175' : 1e-4,
-        'HNL-taulep-m200' : 1e-4, 'HNL-tauhad-m200' : 1e-4, 'HNL-e-m200' : 1e-4, 'HNL-mu-m200' : 1e-4,
-        'HNL-taulep-m250' : 1e-4, 'HNL-tauhad-m250' : 1e-4, 'HNL-e-m250' : 1e-4, 'HNL-mu-m250' : 1e-4,
-        'HNL-taulep-m300' : 1e-4, 'HNL-tauhad-m300' : 1e-4, 'HNL-e-m300' : 1e-4, 'HNL-mu-m300' : 1e-4,
-        'HNL-taulep-m350' : 1e-4, 'HNL-tauhad-m350' : 1e-4, 'HNL-e-m350' : 1e-4, 'HNL-mu-m350' : 1e-4,
-        'HNL-taulep-m400' : 1e-4, 'HNL-tauhad-m400' : 1e-4, 'HNL-e-m400' : 1e-4, 'HNL-mu-m400' : 1e-4,
-        'HNL-taulep-m450' : 1e-4, 'HNL-tauhad-m450' : 1e-4, 'HNL-e-m450' : 1e-4, 'HNL-mu-m450' : 1e-4,
-        'HNL-taulep-m500' : 1e-4, 'HNL-tauhad-m500' : 1e-4, 'HNL-e-m500' : 1e-4, 'HNL-mu-m500' : 1e-4,
-        'HNL-taulep-m600' : 1e-4, 'HNL-tauhad-m600' : 1e-4, 'HNL-e-m600' : 1e-4, 'HNL-mu-m600' : 1e-4,
-        'HNL-taulep-m700' : 1e-4, 'HNL-tauhad-m700' : 1e-4, 'HNL-e-m700' : 1e-4, 'HNL-mu-m700' : 1e-4,
-        'HNL-taulep-m800' : 1e-4, 'HNL-tauhad-m800' : 1e-4, 'HNL-e-m800' : 1e-4, 'HNL-mu-m800' : 1e-4,
-        'HNL-taulep-m900' : 1e-4, 'HNL-tauhad-m900' : 1e-4, 'HNL-e-m900' : 1e-4, 'HNL-mu-m900' : 1e-4,
-        'HNL-taulep-m1000' : 1e-4, 'HNL-tauhad-m1000' : 1e-4, 'HNL-e-m1000' : 1e-4, 'HNL-mu-m1000' : 1e-4,
-        'HNL-e-m1200' : 1e-4, 'HNL-mu-m1200' : 1e-4,
-        'HNL-e-m1500' : 1e-4, 'HNL-mu-m1500' : 1e-4,
-        'HNLvbf-taulep-m600' : 1e-4, 'HNLvbf-tauhad-m600' : 1e-4, 'HNLvbf-e-m600' : 1e-4, 'HNLvbf-tauhad-m600' : 1e-4,
-        'HNLvbf-taulep-m700' : 1e-4, 'HNLvbf-tauhad-m700' : 1e-4, 'HNLvbf-e-m700' : 1e-4, 'HNLvbf-tauhad-m700' : 1e-4,
-        'HNLvbf-taulep-m800' : 1e-4, 'HNLvbf-tauhad-m800' : 1e-4, 'HNLvbf-e-m800' : 1e-4, 'HNLvbf-tauhad-m800' : 1e-4,
-        'HNLvbf-taulep-m900' : 1e-4, 'HNLvbf-tauhad-m900' : 1e-4, 'HNLvbf-e-m900' : 1e-4, 'HNLvbf-tauhad-m900' : 1e-4,
-        'HNLvbf-taulep-m1000' : 1e-4, 'HNLvbf-tauhad-m1000' : 1e-4, 'HNLvbf-e-m1000' : 1e-4, 'HNLvbf-tauhad-m1000' : 1e-4,
-        'HNLvbf-e-m1200' : 1e-4, 'HNLvbf-tauhad-m1200' : 1e-4,
-        'HNLvbf-e-m1500' : 1e-4, 'HNLvbf-tauhad-m1500' : 1e-4,
-
-       # 30:1e-4,  40:1e-4, 50:1e-4, 60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4, 120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4, 400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4, 800:1e-4, 900:1e-4, 1000:1e-4 },
-       # 'e' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:1e-4, 40:1e-4, 50:1e-4,  60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4,  120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4,  400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4,  600:1e-4,  800:1e-4, 900:1e-4, 1000:1e-4, 1200:1e-4, 1500:1e-4 },
-       # 'mu' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:1e-4, 40:1e-4, 50:1e-4,  60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4,  120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4,  400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4,  600:1e-4,  800:1e-4, 900:1e-4, 1000:1e-4, 1200:1e-4, 1500:1e-4},
-}
-
 final_signal_regions = ['lowMassSR', 'highMassSR']
 
 if __name__ == '__main__':

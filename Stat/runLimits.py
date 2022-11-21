@@ -84,13 +84,12 @@ if not args.useExistingLimits:
     for card in cards_to_read:
         print '\x1b[6;30;42m', 'Processing datacard "' +str(card)+ '"', '\x1b[0m'
         for mass in args.masses:
-            signal_name = 'HNL-'+args.flavor+'-m'+str(mass)
             couplings = returnCouplings(mass)
             for coupling in couplings:
-                print datacard_manager.checkMassAvailability(mass, coupling)
+                signal_name = 'HNL-'+args.flavor+'-m'+str(mass)+'-Vsq'+str(coupling)+'-'+ 'prompt' if not args.displaced else 'displaced'
                 if not datacard_manager.checkMassAvailability(mass, coupling): continue
                 print '\x1b[6;30;42m', 'Processing mN =', str(mass), 'GeV with V2 = ', str(coupling), '\x1b[0m'
-                runLimit(datacard_manager, signal_name, coupling, card)
+                runLimit(datacard_manager, signal_name, card)
 
 compare_dict = {
     'cutbased-AN2017014': 'Replicated AN2017014 selection',
@@ -114,7 +113,7 @@ for card in cards_to_read:
         couplings = returnCouplings(mass)
         input_folders = []
         for c in couplings:
-            tmp_folder = datacard_manager.getDatacardPath('HNL-'+args.flavor+'-m'+str(mass), card, c)
+            tmp_folder = datacard_manager.getDatacardPath('HNL-'+args.flavor+'-m'+str(mass)+'-Vsq'+c+'-'+'prompt' if not args.displaced else 'displaced', card)
             tmp_folder = tmp_folder.replace('dataCards', 'output').rsplit('/', 1)[0] +'/'+asymptotic_str+'/'+card
             if args.tag is not None: tmp_folder += '-'+args.tag
             tmp_folder += '/higgsCombineTest.AsymptoticLimits.mH120.root'

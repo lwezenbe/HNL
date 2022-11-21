@@ -158,7 +158,7 @@ if not args.makePlots:
     sample = sample_manager.getSample(args.sample)
     if not args.inData and 'Data' in sample.name: exit(0)
     chain = sample.initTree(needhcount = False)
-    chain.HNLmass = sample.getMass()
+    chain.HNLmass = sample.getSignalMass(sample.name)
     chain.year = args.year
     chain.era = args.era
     chain.analysis = args.analysis

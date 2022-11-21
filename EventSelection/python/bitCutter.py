@@ -2,6 +2,7 @@ from HNL.Tools.helpers import isValidRootFile, rootFileContent, getObjFromFile, 
 from ROOT import TFile, TH1F
 import numpy as np
 from HNL.EventSelection.eventCategorization import CATEGORIES
+from HNL.Samples.sample import Sample
 
 class Cutter():
 
@@ -176,10 +177,10 @@ def printCutFlow(in_file_paths, out_file_path, subdir = None, ignore_weights = F
         if ifp_to_use not in list_of_cut_values.keys(): list_of_cut_values[ifp_to_use] = []
 
         if not is_bkgr and not ignore_weights:
-            flavor = ifp.split('HNL-')[-1].split('-m')[0]
+            flavor = Sample.getSignalFlavor(ifp.split('/')[-1])
             if 'tau' in flavor: flavor = 'tau'
-            mass = int(ifp.split('-m')[-1])
-            from HNL.Analysis.analysisTypes import signal_couplingsquared, signal_couplingsquaredinsample
+            mass = Sample.getSignalMass(ifp.split('/')[-1])
+            from HNL.Analysis.analysisTypes import signal_couplingsquared 
 
         def getBinContent(hist, b):
             val = hist.GetBinContent(b)
@@ -191,7 +192,7 @@ def printCutFlow(in_file_paths, out_file_path, subdir = None, ignore_weights = F
         for ic, c in enumerate(categories):
             for isfp, sfp in enumerate(in_file_paths[ifp]):
                 tmp_hist = getObjFromFile(sfp, subdir+'/'+weight_string+'_cutflow_'+c)
-                if not is_bkgr and not ignore_weights: tmp_hist.Scale(signal_couplingsquared[flavor][mass]/signal_couplingsquaredinsample[ifp.split('/')[-1]])
+                if not is_bkgr and not ignore_weights: tmp_hist.Scale(signal_couplingsquared[flavor][mass]/Sample.getSignalCouplingSquared(ifp.split('/')[-1]))
                 for icut, cut in enumerate(cut_names):
                     if ic == 0 and isfp == 0:
                         list_of_cut_values[ifp_to_use].append(0.)
@@ -222,7 +223,7 @@ def printCutFlow(in_file_paths, out_file_path, subdir = None, ignore_weights = F
     makeDirIfNeeded(out_file_path+'/cutflowtable.txt')
     out_file = open(out_file_path+'/cutflowtable.txt', 'w')
     
-    signal_path_names = sorted([x for x in list_of_cut_values.keys() if 'HNL' in x], key = lambda x: int(x.split('-m')[-1]))
+    signal_path_names = sorted([x for x in list_of_cut_values.keys() if 'HNL' in x], key = lambda x: Sample.getSignalMass(x))
     background_path_names = [x for x in list_of_cut_values.keys() if not 'HNL' in x]
     total_path_names = background_path_names + signal_path_names
     
