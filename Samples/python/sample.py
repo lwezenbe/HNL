@@ -24,7 +24,7 @@ class Sample(object):
         self.hcount             = None
         self.chain              = None
         self.output             = output
-        self.mass               = self.getMass()
+        self.mass               = self.getSignalMass(self.name)
         self.is_signal          = 'HNL' in name
         self.list_of_files      = self.getListOfFiles()
 
@@ -34,7 +34,7 @@ class Sample(object):
         if self.path.endswith('.root'):
             list_of_files         = [sub_path]
         else:
-            if not 'displacedHNL' in self.name:
+            if not 'displaced' in self.name:
                 list_of_files         = sorted(glob.glob(sub_path + '*/*/*/*.root'))
             else:
                 list_of_files         = sorted(glob.glob(sub_path + '*/*.root'))
@@ -49,6 +49,40 @@ class Sample(object):
         file_size = file_info.st_size
         file_size_MB = 0.000001*file_size
         return file_size_MB
+
+    #
+    # Universal methods to get information on the HNL properties
+    # Signal names are organized as follows: HNL-flavor-mX-VsqY-prompt(/displaced)
+    #
+    @staticmethod
+    def getSignalFlavor(name):
+        if 'HNL' in name:
+            return name.split('-')[1].split('-m')[0]
+        else:
+            return None
+    
+    @staticmethod
+    def getSignalMass(name):
+        if 'HNL' in name:
+            return float(name.split('-m')[-1].split('-Vsq')[0])
+        else:
+            return None
+
+    @staticmethod
+    def getSignalCouplingSquared(name):
+        if 'HNL' in name:
+            coupling_squared = name.split('-Vsq')[1].split('-')[0]
+            if 'em' in coupling_squared: coupling_squared = coupling_squared.replace('m', '-')
+            return float(coupling_squared)
+        else:
+            return None
+
+    @staticmethod
+    def getSignalDisplacedString(name):
+        if 'HNL' in name:
+            return name.split('-')[-1]
+        else:
+            return None
 
     def shavedName(self):
         if 'ext' in self.name:
@@ -144,14 +178,6 @@ class Sample(object):
         self.split_jobs         = self.returnSplitJobs()
         limits = [entry*self.chain.GetEntries()/self.split_jobs for entry in range(self.split_jobs)] + [self.chain.GetEntries()]
         return xrange(limits[int(subjob)], limits[int(subjob)+1])
-
-    def getMass(self):
-        if 'HNL' in self.name:
-            return float(self.name.rsplit('-m', 1)[-1])
-        else:
-            return None
-
-
 
 class SkimSample(Sample):
 

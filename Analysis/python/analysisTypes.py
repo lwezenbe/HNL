@@ -36,13 +36,13 @@ var_reco_3l = {
         'l1eta':      (lambda c : c.l_eta[0],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l1)', 'Events')),
         'l2eta':      (lambda c : c.l_eta[1],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l2)', 'Events')),
         'l3eta':      (lambda c : c.l_eta[2],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l3)', 'Events')),
-        'minMos':        (lambda c : c.minMos,   np.arange(0., 210., 10.),         ('min(M_{OS}) [GeV]', 'Events')),
+        'minMos':        (lambda c : c.minMos,   np.arange(0., 210., 10.),         ('min m(2l|OS) [GeV]', 'Events')),
         'met':          (lambda c : c.met,     np.arange(0., 90., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
-        'mtOther':      (lambda c : c.mtOther,  np.arange(0., 365., 15.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
-        'mt3':   (lambda c : c.mt3,      np.arange(0., 415., 15.),         ('M_{T}(3l) [GeV]', 'Events')),
+        'mtOther':      (lambda c : c.mtOther,  np.arange(0., 365., 15.),       ('m_{T} [GeV])', 'Events')),
+        'mt3':   (lambda c : c.mt3,      np.arange(0., 415., 15.),         ('m_{T}(3l) [GeV]', 'Events')),
         
         # Full SR (mainly for BDT variables)
-        'm3l':          (lambda c : c.M3l,      np.arange(0., 415., 15.),         ('M_{3l} [GeV]', 'Events')),
+        'm3l':          (lambda c : c.M3l,      np.arange(0., 415., 15.),         ('m(3l) [GeV]', 'Events')),
         'j1pt':      (lambda c : c.j_pt[0],       np.arange(0., 160., 15.),       ('p_{T} (j1) [GeV]', 'Events')),
         'j2pt':      (lambda c : c.j_pt[1],       np.arange(0., 160., 15.),       ('p_{T} (j2) [GeV]', 'Events')),
         'j1eta':      (lambda c : c.j_eta[0],       np.arange(-2.5, 3.0, 0.5),       ('#eta (j1)', 'Events')),
@@ -55,11 +55,11 @@ var_reco_3l = {
         'NJet':      (lambda c : c.njets,       np.arange(0., 6., 1.),       ('#Jets', 'Events')),
         'LT':   (lambda c : c.LT,      np.arange(0., 915., 15.),         ('L_{T} [GeV]', 'Events')),
         'HT':   (lambda c : c.HT,      np.arange(0., 915., 15.),         ('H_{T} [GeV]', 'Events')),
-        'mzossf':          (lambda c : c.MZossf,      np.arange(0., 240., 5.),         ('M_{ll,Z} [GeV]', 'Events')),
-        'maxMossf':   (lambda c : c.maxMossf,      np.arange(0., 75., 5.),         ('max(M_{OSSF}) [GeV]', 'Events')),
-        'ml1l2':   (lambda c : c.Ml12,      np.arange(75., 205., 5.),         ('M_{l1l2} [GeV]', 'Events')),
-        'ml1l3':   (lambda c : c.Ml13,      np.arange(75., 205., 5.),         ('M_{l1l3} [GeV]', 'Events')),
-        'ml2l3':   (lambda c : c.Ml23,      np.arange(75., 205., 5.),         ('M_{l2l3} [GeV]', 'Events')),
+        'mzossf':          (lambda c : c.MZossf,      np.arange(0., 240., 5.),         ('m_{ll,Z} [GeV]', 'Events')),
+        'maxMossf':   (lambda c : c.maxMossf,      np.arange(0., 75., 5.),         ('max(m_{OSSF}) [GeV]', 'Events')),
+        'ml1l2':   (lambda c : c.Ml12,      np.arange(75., 205., 5.),         ('m_{l1l2} [GeV]', 'Events')),
+        'ml1l3':   (lambda c : c.Ml13,      np.arange(75., 205., 5.),         ('m_{l1l3} [GeV]', 'Events')),
+        'ml2l3':   (lambda c : c.Ml23,      np.arange(75., 205., 5.),         ('m_{l2l3} [GeV]', 'Events')),
         'drl1l2':      (lambda c : c.dr_l1l2,       np.arange(0., 4.5, .25),       ('#Delta R(l1,l2)', 'Events')),
         'drl1l3':      (lambda c : c.dr_l1l3,       np.arange(0., 4.5, .25),       ('#Delta R(l1,l3)', 'Events')),
         'drl2l3':      (lambda c : c.dr_l2l3,       np.arange(0., 4.5, .25),       ('#Delta R(l2,l3)', 'Events')),
@@ -74,17 +74,17 @@ var_reco_3l = {
         'dphij2met':      (lambda c : abs(c.dphi_j2met),       np.arange(0., 3.5, .25),       ('#Delta #phi(j2,met)', 'Events')),
 
         #Remainder
-        'mtl1':          (lambda c : c.mtl1,      np.arange(0., 240., 5.),         ('M_{l1l3} [GeV]', 'Events')),
-        'mtl2':          (lambda c : c.mtl2,      np.arange(0., 240., 5.),         ('M_{l1l3} [GeV]', 'Events')),
-        'mtl3':          (lambda c : c.mtl3,      np.arange(0., 240., 5.),         ('M_{l1l3} [GeV]', 'Events')),
+        'mtl1':          (lambda c : c.mtl1,      np.arange(0., 240., 5.),         ('m_T(l1) [GeV]', 'Events')),
+        'mtl2':          (lambda c : c.mtl2,      np.arange(0., 240., 5.),         ('m_T(l2) [GeV]', 'Events')),
+        'mtl3':          (lambda c : c.mtl3,      np.arange(0., 240., 5.),         ('m_T(l3) [GeV]', 'Events')),
         'drmaxossf':      (lambda c : c.dr_maxOSSF,       np.arange(0., 5.5, .25),       ('#Delta R(max(OSSF))', 'Events')),
-        'mtnonossf':          (lambda c : c.mtNonZossf,      np.arange(0., 240., 5.),         ('M_{ll,Z} [GeV]', 'Events')),
+        'mtnonossf':          (lambda c : c.mtNonZossf,      np.arange(0., 240., 5.),         ('m_{ll,Z} [GeV]', 'Events')),
     }
 
 var_reco_4l = {
-        'minMos':        (lambda c : c.minMos,   np.arange(0., 120., 12.),         ('min(M_{OS}) [GeV]', 'Events')),
+        'minMos':        (lambda c : c.minMos,   np.arange(0., 120., 12.),         ('min m(2l|OS) [GeV]', 'Events')),
         #'m4l':          (lambda c : c.M4l,      np.arange(0., 303., 3.),         ('M_{4l} [GeV]', 'Events')),
-        'm4l':          (lambda c : c.M4l,      np.arange(150., 350., 20.),         ('M_{4l} [GeV]', 'Events')),
+        'm4l':          (lambda c : c.M4l,      np.arange(150., 350., 20.),         ('m(4l) [GeV]', 'Events')),
         'met':          (lambda c : c.met,     np.arange(0., 155., 5.),         ('p_{T}^{miss} [GeV]', 'Events')),
         'l1pt':      (lambda c : c.l_pt[0],       np.arange(0., 300., 15.),       ('p_{T} (l1) [GeV]', 'Events')),
         'l2pt':      (lambda c : c.l_pt[1],       np.arange(0., 300., 15.),       ('p_{T} (l2) [GeV]', 'Events')),
@@ -96,13 +96,13 @@ var_reco_4l = {
         'l4eta':      (lambda c : c.l_eta[3],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l4)', 'Events')),
         'NJet':      (lambda c : c.njets,       np.arange(0., 12., 1.),       ('#Jets', 'Events')),
         'NbJet':      (lambda c : c.nbjets,       np.arange(0., 12., 1.),       ('#B Jets', 'Events')),
-        'MllZ1':       (lambda c : c.Mll_Z1,      np.arange(70., 112., 2.),         ('M_{ll}(Z_{1}) [GeV]', 'Events')), 
-        'MllZ2':       (lambda c : c.Mll_Z2,      np.arange(70., 112., 2.),         ('M_{ll}(Z_{2}) [GeV]', 'Events')),
+        'MllZ1':       (lambda c : c.Mll_Z1,      np.arange(70., 112., 2.),         ('m_{ll}(Z_{1}) [GeV]', 'Events')), 
+        'MllZ2':       (lambda c : c.Mll_Z2,      np.arange(70., 112., 2.),         ('m_{ll}(Z_{2}) [GeV]', 'Events')),
         # 'ptConeLeading':   (lambda c : c.pt_cone[0],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(leading) [GeV]', 'Events'))
     }
 
-var_gen_4l = {'minMos':        (lambda c : c.minMos,   np.arange(0., 120., 12.),         ('min(M_{OS}) [GeV]', 'Events')),
-        'm4l':          (lambda c : c.M4l,      np.arange(0., 240., 5.),         ('M_{4l} [GeV]', 'Events')),
+var_gen_4l = {'minMos':        (lambda c : c.minMos,   np.arange(0., 120., 12.),         ('min m(2l|OS) [GeV]', 'Events')),
+        'm4l':          (lambda c : c.M4l,      np.arange(0., 240., 5.),         ('m(4l) [GeV]', 'Events')),
         'met':          (lambda c : c._gen_met,     np.arange(0., 300., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
         'l1pt':      (lambda c : c.l_pt[l1],       np.arange(0., 300., 5.),       ('p_{T} (l1) [GeV]', 'Events')),
         'l2pt':      (lambda c : c.l_pt[l2],       np.arange(0., 300., 5.),       ('p_{T} (l2) [GeV]', 'Events')),
@@ -186,58 +186,11 @@ def returnVariables(nl, is_reco, include_mva = None):
 
 
 signal_couplingsquared = {
-        'tau' : {5 : 0.1, 10 : 0.1, 20:0.1, 30:0.1,  40:0.1, 50:0.1, 60:0.1, 70:0.1, 75:0.1, 80:0.1, 85:0.1,  100:0.1, 120:0.1, 125:0.1, 150:0.1,  200:0.1, 250:0.1, 300:0.1, 350:0.1, 400:0.1, 450:0.1, 500:0.1, 600:0.1, 700:0.1, 800:0.1, 900:0.1, 1000:0.1 },
-        'e' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:1e-4, 40:1e-4, 50:1e-4,  60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:0.1,  120:0.1, 125:0.1, 150:0.1,  200:0.1, 250:0.1, 300:0.1, 350:0.1,  400:0.1, 450:0.1, 500:0.1, 600:0.1, 700:0.1,  600:0.1,  800:0.1, 900:0.1, 1000:0.1, 1200:1., 1500:1. },
-        'mu' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:10e-4, 40:1e-4, 50:1e-4,  60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:0.1,  120:0.1, 125:0.1, 150:0.1,  200:0.1, 250:0.1, 300:0.1, 350:0.1,  400:0.1, 450:0.1, 500:0.1, 600:0.1, 700:0.1,  600:0.1,  800:0.1, 900:0.1, 1000:0.1, 1200:1., 1500:1.},
+        'tau' : {5 : 5e-4, 10 : 5e-4, 20:5e-4, 30:5e-4,  40:6e-4, 50:7e-4, 60:2e-3, 70:2e-2, 75:3e-2, 80:0.1, 85:1.,  100:0.2, 125:0.2, 150:0.2,  200:0.4, 250:0.5, 300:0.7, 350:0.9, 400:1.0, 450:1.0, 500:1.0, 600:1.0, 700:1.0, 800:1.0, 900:1.0, 1000:1.0 },
+        'e' : {5 : 4e-6, 10 : 4e-6, 20:4e-6, 30:4e-6, 40:6e-6, 50:1e-5,  60:2e-5, 70:6e-5, 75:5e-4, 80:1e-3, 85:1e-3,  100:1e-3, 125:2e-3, 150:3e-3,  200:5e-3, 250:5e-3, 300:1e-2, 350:2e-2,  400:2e-2, 450:5e-2, 500:5e-2, 600:6e-2, 700:0.1, 800:0.2, 900:0.2, 1000:0.3, 1200:1., 1500:1.},
+        'mu' : {5 : 2e-6, 10 : 2e-6, 20:2e-6, 30:2e-6, 40:2e-6, 50:3e-6,  60:6e-6, 70:5e-5, 75:1e-4, 80:4e-4, 85:7e-4,  100:8e-4, 125:1e-3, 150:2e-3,  200:4e-3, 250:5e-3, 300:8e-3, 350:1e-2,  400:2e-2, 450:2e-2, 500:3e-2, 600:4e-2, 700:7e-2, 800:0.1, 900:0.2, 1000:0.2, 1200:1., 1500:1.},
 }
 
-#signal_couplingsquaredinsample = {
-#        'tau' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:1e-4,  40:1e-4, 50:1e-4, 60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4, 120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4, 400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4, 800:1e-4, 900:1e-4, 1000:1e-4 },
-#        'e' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:1e-4, 40:1e-4, 50:1e-4,  60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4,  120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4,  400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4,  600:1e-4,  800:1e-4, 900:1e-4, 1000:1e-4, 1200:1e-4, 1500:1e-4 },
-#        'mu' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:1e-4, 40:1e-4, 50:1e-4,  60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4,  120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4,  400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4,  600:1e-4,  800:1e-4, 900:1e-4, 1000:1e-4, 1200:1e-4, 1500:1e-4},
-#}
-
-signal_couplingsquaredinsample = {
-        'displacedHNL-e-m10' : 1e-5, 'displacedHNL-mu-m10' : 1e-5,
-        'HNL-e-m10' : 1e-4, 'HNL-mu-m10' : 1e-4,
-        'HNL-taulep-m20' : 1e-4, 'HNL-tauhad-m20' : 1e-4, 'HNL-e-m20' : 1e-4, 'HNL-mu-m20' : 1e-4,
-        'HNL-taulep-m30' : 1e-4, 'HNL-tauhad-m30' : 1e-4, 'HNL-e-m30' : 1e-4, 'HNL-mu-m30' : 1e-4,
-        'HNL-taulep-m40' : 1e-4, 'HNL-tauhad-m40' : 1e-4, 'HNL-e-m40' : 1e-4, 'HNL-mu-m40' : 1e-4,
-        'HNL-taulep-m50' : 1e-4, 'HNL-tauhad-m50' : 1e-4, 'HNL-e-m50' : 1e-4, 'HNL-mu-m50' : 1e-4,
-        'HNL-taulep-m60' : 1e-4, 'HNL-tauhad-m60' : 1e-4, 'HNL-e-m60' : 1e-4, 'HNL-mu-m60' : 1e-4,
-        'HNL-taulep-m70' : 1e-4, 'HNL-tauhad-m70' : 1e-4, 'HNL-e-m70' : 1e-4, 'HNL-mu-m70' : 1e-4,
-        'HNL-taulep-m75' : 1e-4, 'HNL-tauhad-m75' : 1e-4, 'HNL-e-m75' : 1e-4, 'HNL-mu-m75' : 1e-4,
-        'HNL-taulep-m85' : 1e-4, 'HNL-tauhad-m85' : 1e-4, 'HNL-e-m85' : 1e-4, 'HNL-mu-m85' : 1e-4,
-        'HNL-taulep-m100' : 1e-4, 'HNL-tauhad-m100' : 1e-4, 'HNL-e-m100' : 1e-4, 'HNL-mu-m100' : 1e-4,
-        'HNL-taulep-m125' : 1e-4, 'HNL-tauhad-m125' : 1e-4, 'HNL-e-m125' : 1e-4, 'HNL-mu-m125' : 1e-4,
-        'HNL-taulep-m150' : 1e-4, 'HNL-tauhad-m150' : 1e-4, 'HNL-e-m150' : 1e-4, 'HNL-mu-m150' : 1e-4,
-        'HNL-taulep-m175' : 1e-4, 'HNL-tauhad-m175' : 1e-4, 'HNL-e-m175' : 1e-4, 'HNL-mu-m175' : 1e-4,
-        'HNL-taulep-m200' : 1e-4, 'HNL-tauhad-m200' : 1e-4, 'HNL-e-m200' : 1e-4, 'HNL-mu-m200' : 1e-4,
-        'HNL-taulep-m250' : 1e-4, 'HNL-tauhad-m250' : 1e-4, 'HNL-e-m250' : 1e-4, 'HNL-mu-m250' : 1e-4,
-        'HNL-taulep-m300' : 1e-4, 'HNL-tauhad-m300' : 1e-4, 'HNL-e-m300' : 1e-4, 'HNL-mu-m300' : 1e-4,
-        'HNL-taulep-m350' : 1e-4, 'HNL-tauhad-m350' : 1e-4, 'HNL-e-m350' : 1e-4, 'HNL-mu-m350' : 1e-4,
-        'HNL-taulep-m400' : 1e-4, 'HNL-tauhad-m400' : 1e-4, 'HNL-e-m400' : 1e-4, 'HNL-mu-m400' : 1e-4,
-        'HNL-taulep-m450' : 1e-4, 'HNL-tauhad-m450' : 1e-4, 'HNL-e-m450' : 1e-4, 'HNL-mu-m450' : 1e-4,
-        'HNL-taulep-m500' : 1e-4, 'HNL-tauhad-m500' : 1e-4, 'HNL-e-m500' : 1e-4, 'HNL-mu-m500' : 1e-4,
-        'HNL-taulep-m600' : 1e-4, 'HNL-tauhad-m600' : 1e-4, 'HNL-e-m600' : 1e-4, 'HNL-mu-m600' : 1e-4,
-        'HNL-taulep-m700' : 1e-4, 'HNL-tauhad-m700' : 1e-4, 'HNL-e-m700' : 1e-4, 'HNL-mu-m700' : 1e-4,
-        'HNL-taulep-m800' : 1e-4, 'HNL-tauhad-m800' : 1e-4, 'HNL-e-m800' : 1e-4, 'HNL-mu-m800' : 1e-4,
-        'HNL-taulep-m900' : 1e-4, 'HNL-tauhad-m900' : 1e-4, 'HNL-e-m900' : 1e-4, 'HNL-mu-m900' : 1e-4,
-        'HNL-taulep-m1000' : 1e-4, 'HNL-tauhad-m1000' : 1e-4, 'HNL-e-m1000' : 1e-4, 'HNL-mu-m1000' : 1e-4,
-        'HNL-e-m1200' : 1e-4, 'HNL-mu-m1200' : 1e-4,
-        'HNL-e-m1500' : 1e-4, 'HNL-mu-m1500' : 1e-4,
-        'HNLvbf-taulep-m600' : 1e-4, 'HNLvbf-tauhad-m600' : 1e-4, 'HNLvbf-e-m600' : 1e-4, 'HNLvbf-tauhad-m600' : 1e-4,
-        'HNLvbf-taulep-m700' : 1e-4, 'HNLvbf-tauhad-m700' : 1e-4, 'HNLvbf-e-m700' : 1e-4, 'HNLvbf-tauhad-m700' : 1e-4,
-        'HNLvbf-taulep-m800' : 1e-4, 'HNLvbf-tauhad-m800' : 1e-4, 'HNLvbf-e-m800' : 1e-4, 'HNLvbf-tauhad-m800' : 1e-4,
-        'HNLvbf-taulep-m900' : 1e-4, 'HNLvbf-tauhad-m900' : 1e-4, 'HNLvbf-e-m900' : 1e-4, 'HNLvbf-tauhad-m900' : 1e-4,
-        'HNLvbf-taulep-m1000' : 1e-4, 'HNLvbf-tauhad-m1000' : 1e-4, 'HNLvbf-e-m1000' : 1e-4, 'HNLvbf-tauhad-m1000' : 1e-4,
-        'HNLvbf-e-m1200' : 1e-4, 'HNLvbf-tauhad-m1200' : 1e-4,
-        'HNLvbf-e-m1500' : 1e-4, 'HNLvbf-tauhad-m1500' : 1e-4,
-
-       # 30:1e-4,  40:1e-4, 50:1e-4, 60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4, 120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4, 400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4, 800:1e-4, 900:1e-4, 1000:1e-4 },
-       # 'e' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:1e-4, 40:1e-4, 50:1e-4,  60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4,  120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4,  400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4,  600:1e-4,  800:1e-4, 900:1e-4, 1000:1e-4, 1200:1e-4, 1500:1e-4 },
-       # 'mu' : {5 : 1e-4, 10 : 1e-4, 20:1e-4, 30:1e-4, 40:1e-4, 50:1e-4,  60:1e-4, 70:1e-4, 75:1e-4, 80:1e-4, 85:1e-4,  100:1e-4,  120:1e-4, 125:1e-4, 150:1e-4,  200:1e-4, 250:1e-4, 300:1e-4, 350:1e-4,  400:1e-4, 450:1e-4, 500:1e-4, 600:1e-4, 700:1e-4,  600:1e-4,  800:1e-4, 900:1e-4, 1000:1e-4, 1200:1e-4, 1500:1e-4},
-}
 
 final_signal_regions = ['lowMassSR', 'highMassSR']
 

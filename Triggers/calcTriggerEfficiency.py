@@ -286,6 +286,54 @@ else:
             original_dict[new_key].add(histogram)
 
     combined_years = '-'.join(sorted(args.year))
+    if args.storeSF:
+        bins = np.array([10., 25., 35., 45., 100.])
+        efficiency_WZ = None
+        efficiency_data = None
+        for year in args.year:
+            efficiency_tree_WZ = EfficiencyTree('trigger_efficiency', getOutputName(year, 'WZ').rsplit('/', 2)[0]+'/efficiency.root')
+            efficiency_tree_WZ.setBins(bins)
+            efficiency_tree_data = EfficiencyTree('trigger_efficiency', getOutputName(year, 'Data').rsplit('/', 2)[0]+'/efficiency.root')
+            efficiency_tree_data.setBins(bins)
+        
+            if efficiency_WZ is None:
+                efficiency_WZ = efficiency_tree_WZ.getEfficiency('light1pt', 'light1pt-15.0toinf-total', condition = 'l1pt>15.0', passed_name = 'passed')
+            else:
+                efficiency_WZ.add(efficiency_tree_WZ.getEfficiency('light1pt', 'light1pt-15.0toinf-total', condition = 'l1pt>15.0', passed_name = 'passed'))
+        
+            if efficiency_data is None:
+                efficiency_data = efficiency_tree_data.getEfficiency('light1pt', 'light1pt-15.0toinf-total', condition = 'l1pt>15.0', passed_name = 'passed')
+            else:
+                efficiency_data.add(efficiency_tree_data.getEfficiency('light1pt', 'light1pt-15.0toinf-total', condition = 'l1pt>15.0', passed_name = 'passed'))
+        
+        tefficiency_WZ = efficiency_WZ.getTEfficiency()
+        tefficiency_data = efficiency_data.getTEfficiency()
+        from ROOT import TH1D
+        sf_nominal = TH1D('sf_nominal', 'sf_nominal', len(bins)-1, bins)
+        sf_up = TH1D('sf_up', 'sf_up', len(bins)-1, bins)
+        sf_down = TH1D('sf_down', 'sf_down', len(bins)-1, bins)
+
+        def getDivideError(v1, v2, e1, e2):
+            return abs(v1/v2)*np.sqrt( (e1/v1)**2+(e2/v2)**2 )
+            
+        for b in xrange(1, len(bins)):
+            sf_nominal.SetBinContent(b, tefficiency_data.GetEfficiency(b)/tefficiency_WZ.GetEfficiency(b))
+            sf_up.SetBinContent(b, getDivideError(tefficiency_data.GetEfficiency(b), tefficiency_WZ.GetEfficiency(b), tefficiency_data.GetEfficiencyErrorUp(b), tefficiency_WZ.GetEfficiencyErrorUp(b)))
+            sf_down.SetBinContent(b, getDivideError(tefficiency_data.GetEfficiency(b), tefficiency_WZ.GetEfficiency(b), tefficiency_data.GetEfficiencyErrorLow(b), tefficiency_WZ.GetEfficiencyErrorLow(b)))
+ 
+        sf_output_name = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Weights', 'data', 'triggerSF', 'triggerSF.root'))
+        from HNL.Tools.helpers import makeDirIfNeeded
+        makeDirIfNeeded(sf_output_name)
+        from ROOT import TFile
+        out_file = TFile(sf_output_name, 'RECREATE')
+        sf_nominal.Write()
+        sf_up.Write()
+        sf_down.Write()
+        out_file.Close()
+  
+        exit(0) 
+             
+    #Here starts the actual plotting code
     efficiencies = {combined_years : {}}
     for year in args.year:
         base_path_in = getOutputBase(year, '*')
@@ -298,13 +346,13 @@ else:
         samples_to_plot = ['WZ']
 
         efficiencies[year] = {}
-
+        
         triggers_to_run = ['total']
         #triggers_to_run = []
         if args.separateTriggers == 'single':
             efficiency_tree = EfficiencyTree('trigger_efficiency', getOutputName(year, list(samples_to_plot)[0]).rsplit('/', 2)[0]+'/efficiency.root')
             triggers_to_run += [b.GetName() for b in efficiency_tree.tree.GetListOfBranches() if 'trigger' in b.GetName()]
-        
+       
         for trigger in triggers_to_run:
             print "Working on", trigger, 'for', year
             passed_name = 'passed' if trigger == 'total' else trigger
@@ -346,18 +394,6 @@ else:
     
     
 
-            if args.storeSF:
-                sf_output_name = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Weights', 'data', 'triggerSF', args.era+year, 'triggerSF.root'))
-                from HNL.Tools.helpers import makeDirIfNeeded
-                makeDirIfNeeded(sf_output_name)
-                from ROOT import TFile
-                out_file = TFile(sf_output_name, 'RECREATE')
-                for cat in ['LeadingLightLepElectron', 'LeadingLightLepMuon']:
-                    sf_to_store = efficiencies[year]['total']['Data']['light1pt'][leading_lep_cat[-1]][cat].getEfficiency().Clone()
-                    sf_to_store.Divide(efficiencies[year]['total']['WZ']['light1pt'][leading_lep_cat[-1]][cat].getEfficiency())
-                    sf_to_store.Write(cat)
-                out_file.Close()
-    
         
     years_to_plot = [combined_years] if len(args.year)>1 else []    
     years_to_plot.extend(args.year)     

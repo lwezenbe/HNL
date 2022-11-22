@@ -57,15 +57,13 @@ def determineWeights(eras, years, selections, regions, strategy):
                             infile.Close()
 
                         for dy_c in DY_contributions:
-                            print in_file_path(era, year, selection, region, dy_c, strategy)
                             infile = TFile(in_file_path(era, year, selection, region, dy_c, strategy), 'read')
                             intree = infile.Get('events_nominal')
                             tmp_dy_hist = getHistFromTree(intree, 'searchregion', dy_c, np.arange(0., 2., 1.), '(!isprompt)')
-                            print dy_tot, tmp_dy_hist.GetSumOfWeights()
                             dy_tot += tmp_dy_hist.GetSumOfWeights()
                             infile.Close()
                     weights[era][year][selection][region] = {'DY' : dy_tot/(tt_tot+dy_tot), 'TT' : tt_tot/(tt_tot+dy_tot)}            
-                    print weights[era][year][selection][region]
+                    print region, weights[era][year][selection][region]
 
     json_f = json.dumps(weights)
     out_file = open(out_file_path, 'w')
@@ -87,7 +85,7 @@ if __name__ == '__main__':
     argParser.add_argument('--selections',   action='store', nargs='*', default=['default'],  help='Select the type of selection for objects', 
                                 choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
     argParser.add_argument('--strategy',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
-    argParser.add_argument('--regions',   action='store', nargs='*', default=['highMassSR', 'lowMassSR'],  help='Choose the selection region')
+    argParser.add_argument('--regions',   action='store', nargs='*', default=['highMassSR', 'lowMassSRloose'],  help='Choose the selection region')
     args = argParser.parse_args()
 
     determineWeights(args.eras, args.years, args.selections, args.regions, args.strategy)

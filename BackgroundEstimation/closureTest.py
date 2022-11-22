@@ -230,7 +230,8 @@ if not args.makePlots:
     else:
         event_range = sample.getEventRange(args.subJob)    
 
-    chain.HNLmass = sample.getMass()
+    from HNL.Samples.sample import Sample
+    chain.HNLmass = Sample.getSignalMass(sample.name)
 
     from HNL.EventSelection.event import ClosureTestEvent
     if args.isCheck:
@@ -429,12 +430,8 @@ else:
             backgrounds.append(bkgr_collection[b])
             background_names.append(b)
 
-        syst_hist = backgrounds[0].Clone("syst hist")
-        for b in xrange(1, syst_hist.GetNbinsX()+1):
-            syst_hist.SetBinError(b, 0.3*syst_hist.GetBinContent(b))
-    
         p = Plot(name = v, bkgr_hist = backgrounds, observed_hist = observed_h, color_palette='Black', tex_names = background_names, 
-                    draw_ratio = True, year = args.year, era = args.era, x_name = var[v][2][0], y_name = var[v][2][1], syst_hist = syst_hist)
+                    draw_ratio = True, year = args.year, era = args.era, x_name = var[v][2][0], y_name = var[v][2][1], syst_hist = 0.3)
         p.setLegend(x1 = 0.5, ncolumns = 2)
         p.drawHist(output_dir = output_dir+'/Stacked/total', observed_name = 'Observed')
 

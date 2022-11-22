@@ -273,7 +273,8 @@ def getMinWithErr(hist, zero_not_allowed=False, syst_hist = None):
 
 
 def getMassRange(list_of_names):
-    all_masses = sorted([k for k in {float(name.rsplit('-m', 1)[-1]) for name in list_of_names if 'HNL' in name}])
+    from HNL.Samples.sample import Sample
+    all_masses = sorted([k for k in {Sample.getSignalMass(name) for name in list_of_names if 'HNL' in name}])
     m_range = []
     if len(all_masses) == 1:
         m_range = [all_masses[0]/2, all_masses[0]*1.5]

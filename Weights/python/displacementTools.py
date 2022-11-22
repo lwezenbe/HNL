@@ -20,9 +20,9 @@ class DisplacementReweighter:
             
             self.original_meanctau.append(self.getMeanLifetime(sample.name))
             self.original_xsec.append(sample.xsec)
-
-            from HNL.Analysis.analysisTypes import signal_couplingsquaredinsample
-            self.original_coupling_squared.append(signal_couplingsquaredinsample[sample.name])
+            
+            from HNL.Samples.sample import Sample
+            self.original_coupling_squared.append(Sample.getSignalCouplingSquared(sample.name))
 
     def getMeanLifetimeDict(self): 
         import os, json

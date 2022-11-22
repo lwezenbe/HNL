@@ -29,15 +29,18 @@ coupling_dict = {'tau':'#tau', 'mu':'#mu', 'e':'e', '2l':'l'}
 # Function to write out a data card, these data cards all contain 1 bin to be clear, readable and flexible
 # and should be combined later on
 #
-def makeDataCard(bin_name, flavor, era, year, obs_yield, sig_name, bkgr_names, selection, region, final_state, nonprompt_from_sideband = True, sig_yield=None, bkgr_yields= None, shapes=False, coupling_sq = 1e-4, is_test=False, majorana_str = 'Majorana', tag = 'prompt', shapes_path = None):
-
+from HNL.Samples.sample import Sample
+def makeDataCard(bin_name, flavor, era, year, obs_yield, sig_name, bkgr_names, selection, region, final_state, nonprompt_from_sideband = True, sig_yield=None, bkgr_yields= None, shapes=False, is_test=False, majorana_str = 'Majorana', shapes_path = None):
     if not shapes and len(bkgr_yields) != len(bkgr_names):
         raise RuntimeError("length of background yields and names is inconsistent")
 
+    from HNL.Samples.sample import Sample
+    coupling_sq = Sample.getSignalCouplingSquared(sig_name)
+
     if not shapes:
-        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'testArea' if is_test else '', 'dataCards', majorana_str, era+str(year), '-'.join([selection, region]), flavor, sig_name, tag+'-{:.2e}'.format(coupling_sq), 'cutAndCount',  bin_name+'.txt')
+        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'testArea' if is_test else '', 'dataCards', majorana_str, era+str(year), '-'.join([selection, region]), flavor, sig_name, 'cutAndCount',  bin_name+'.txt')
     else:
-        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'testArea' if is_test else '', 'dataCards', majorana_str, era+str(year), '-'.join([selection, region]), flavor, sig_name, tag+'-{:.2e}'.format(coupling_sq), 'shapes', bin_name+'.txt')
+        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'testArea' if is_test else '', 'dataCards', majorana_str, era+str(year), '-'.join([selection, region]), flavor, sig_name, 'shapes', bin_name+'.txt')
     makeDirIfNeeded(out_name)
     out_file = open(out_name, 'w')
 
@@ -59,7 +62,7 @@ def makeDataCard(bin_name, flavor, era, year, obs_yield, sig_name, bkgr_names, s
         out_file.write('observation     '+str(obs_yield)+ ' \n')
     out_file.write('-'*400 + '\n')
     out_file.write(tab(['bin', '']+ [bin_name.rsplit('-', 1)[0]]*(len(bkgr_names)+1)))
-    out_file.write(tab(['process', '']+ bkgr_names + [sig_name], '25'))
+    out_file.write(tab(['process', '']+ bkgr_names + [sig_name], '50'))
     out_file.write(tab(['process', '']+ [str(i) for i in xrange(1, len(bkgr_names)+1)] + ['0']))
     if shapes:
         out_file.write(tab(['rate', '']+ ['-1']*(len(bkgr_names)+1)))

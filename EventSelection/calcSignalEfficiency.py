@@ -56,7 +56,7 @@ if args.compareTriggerCuts is not None and args.divideByCategory != 'gen':
 #
 if args.isTest: 
     args.isChild = True
-    if args.sample is None: args.sample = 'HNL-e-m200'
+    if args.sample is None: args.sample = 'HNL-e-m200-Vsq1em4-prompt'
     if args.subJob is None: args.subJob = '0'
     if args.year is None: args.year = '2017'
     if args.flavor is None: args.flavor = 'e'
@@ -191,7 +191,8 @@ if not args.makePlots:
     else:
         event_range = sample.getEventRange(args.subJob)    
 
-    chain.HNLmass = sample.getMass()
+    from HNL.Samples.sample import Sample
+    chain.HNLmass = Sample.getSignalMass(sample.name)
     chain.year = args.year
     chain.era = args.era
     chain.selection = args.selection
