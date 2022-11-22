@@ -85,9 +85,8 @@ if not args.useExistingLimits:
         print '\x1b[6;30;42m', 'Processing datacard "' +str(card)+ '"', '\x1b[0m'
         for mass in args.masses:
             couplings = returnCouplings(mass)
-            print couplings
             for coupling in couplings:
-                signal_name = 'HNL-'+args.flavor+'-m'+str(mass)+'-Vsq'+('{:.1e}'.format(coupling).replace('-', 'm'))+'-'+ 'prompt' if not args.displaced else 'displaced'
+                signal_name = 'HNL-'+args.flavor+'-m'+str(mass)+'-Vsq'+('{:.1e}'.format(coupling).replace('-', 'm'))+'-'+ ('prompt' if not args.displaced else 'displaced')
                 if not datacard_manager.checkMassAvailability(signal_name): continue
                 print '\x1b[6;30;42m', 'Processing mN =', str(mass), 'GeV with V2 = ', str(coupling), '\x1b[0m'
                 runLimit(datacard_manager, signal_name, card)

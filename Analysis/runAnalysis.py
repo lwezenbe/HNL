@@ -1124,41 +1124,41 @@ else:
 
         
 
-        if args.makePlots:    
-            print "plotting cutflow"
-            in_files = {}
-            for sample_name in background_collection+signal_names: 
-                if not args.individualSamples:
-                    if args.flavor != 'tau' or not 'HNL' in sample_name:
-                        in_path = lambda y : getOutputName('signal' if 'HNL' in sample_name else 'bkgr', y, args.tag)+'/'+sample_name+'/variables.root'
-                    else:
-                        extra_name = sample_name.replace('tau', 'tauhad')
-                        in_path = lambda y : getOutputName('signal' if 'HNL' in sample_name else 'bkgr', y, args.tag)+'/'+sample_name+'/variables-{0}.root'.format(extra_name)
-                else:
-                    in_path = lambda y : getOutputName('bkgr', y, args.tag)+'/'+sample_manager.output_dict[sample_name]+'/variables-'+sample_name+'.root'
-    
-                from HNL.Tools.helpers import isValidRootFile
-                #print in_path(year), isValidRootFile(in_path(year))
-                if not '-' in year:
-                    if not isValidRootFile(in_path(year)): continue
-                    in_files[sample_name] = [in_path(year)]
-                else:
-                    valid_for_all_years = True
-                    for y in args.year:
-                        if not isValidRootFile(in_path(y)): 
-                            valid_for_all_years = False
-                            print 'not valid for', sample_name, 'in', y
-                            break
-                    if valid_for_all_years:
-                        in_files[sample_name] = [in_path(y) for y in args.year]
-    
-                from HNL.EventSelection.bitCutter import plotCutFlow
-            #    plotCutFlow([in_path], os.path.join(output_dir, 'Yields', 'CutFlow'), [sample_name], ignore_weights=True, output_name = sample_name, subdir = 'nominal')
-            for c in category_dict[args.categoriesToPlot][0]:
-                #plotCutFlow(in_files, os.path.join(output_dir, 'Yields', 'CutFlow', c), ignore_weights=True, output_name = 'all', subdir = 'nominal', categories = category_dict[args.categoriesToPlot][2][c])
-                from HNL.EventSelection.bitCutter import printCutFlow
-                split_output_dir = output_dir.split('/src/')[1]
-                public_output_dir = '/user/lwezenbe/public_html/'+split_output_dir.split('/data/Results/')[0]+'/'+split_output_dir.split('/data/Results/')[1]
-                #printCutFlow(in_files, os.path.join(public_output_dir.rsplit('/', 1)[0], 'Yields', 'CutFlow', c), subdir = 'nominal', categories = category_dict[args.categoriesToPlot][2][c], group_backgrounds=False)
-                #printCutFlow(in_files, os.path.join(public_output_dir.rsplit('/', 1)[0], 'Yields', 'CutFlow', c), subdir = 'nominal', group_backgrounds = False)
-                printCutFlow(in_files, os.path.join(public_output_dir.rsplit('/', 1)[0], 'Yields', 'CutFlow', c), subdir = 'nominal', categories = category_dict[args.categoriesToPlot][2][c])
+#        if args.makePlots:    
+#            print "plotting cutflow"
+#            in_files = {}
+#            for sample_name in background_collection+signal_names: 
+#                if not args.individualSamples:
+#                    if args.flavor != 'tau' or not 'HNL' in sample_name:
+#                        in_path = lambda y : getOutputName('signal' if 'HNL' in sample_name else 'bkgr', y, args.tag)+'/'+sample_name+'/variables.root'
+#                    else:
+#                        extra_name = sample_name.replace('tau', 'tauhad')
+#                        in_path = lambda y : getOutputName('signal' if 'HNL' in sample_name else 'bkgr', y, args.tag)+'/'+sample_name+'/variables-{0}.root'.format(extra_name)
+#                else:
+#                    in_path = lambda y : getOutputName('bkgr', y, args.tag)+'/'+sample_manager.output_dict[sample_name]+'/variables-'+sample_name+'.root'
+#    
+#                from HNL.Tools.helpers import isValidRootFile
+#                #print in_path(year), isValidRootFile(in_path(year))
+#                if not '-' in year:
+#                    if not isValidRootFile(in_path(year)): continue
+#                    in_files[sample_name] = [in_path(year)]
+#                else:
+#                    valid_for_all_years = True
+#                    for y in args.year:
+#                        if not isValidRootFile(in_path(y)): 
+#                            valid_for_all_years = False
+#                            print 'not valid for', sample_name, 'in', y
+#                            break
+#                    if valid_for_all_years:
+#                        in_files[sample_name] = [in_path(y) for y in args.year]
+#    
+#                from HNL.EventSelection.bitCutter import plotCutFlow
+#            #    plotCutFlow([in_path], os.path.join(output_dir, 'Yields', 'CutFlow'), [sample_name], ignore_weights=True, output_name = sample_name, subdir = 'nominal')
+#            for c in category_dict[args.categoriesToPlot][0]:
+#                #plotCutFlow(in_files, os.path.join(output_dir, 'Yields', 'CutFlow', c), ignore_weights=True, output_name = 'all', subdir = 'nominal', categories = category_dict[args.categoriesToPlot][2][c])
+#                from HNL.EventSelection.bitCutter import printCutFlow
+#                split_output_dir = output_dir.split('/src/')[1]
+#                public_output_dir = '/user/lwezenbe/public_html/'+split_output_dir.split('/data/Results/')[0]+'/'+split_output_dir.split('/data/Results/')[1]
+#                #printCutFlow(in_files, os.path.join(public_output_dir.rsplit('/', 1)[0], 'Yields', 'CutFlow', c), subdir = 'nominal', categories = category_dict[args.categoriesToPlot][2][c], group_backgrounds=False)
+#                #printCutFlow(in_files, os.path.join(public_output_dir.rsplit('/', 1)[0], 'Yields', 'CutFlow', c), subdir = 'nominal', group_backgrounds = False)
+#                printCutFlow(in_files, os.path.join(public_output_dir.rsplit('/', 1)[0], 'Yields', 'CutFlow', c), subdir = 'nominal', categories = category_dict[args.categoriesToPlot][2][c])
