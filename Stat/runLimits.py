@@ -36,8 +36,8 @@ from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped, getObjFromFi
 from HNL.Analysis.analysisTypes import signal_couplingsquared
 from numpy import sqrt
 
-def runAsymptoticLimit(card_manager, signal_name, coupling_sq, cardname):
-    datacard = card_manager.getDatacardPath(signal_name, coupling_sq, cardname)
+def runAsymptoticLimit(card_manager, signal_name, cardname):
+    datacard = card_manager.getDatacardPath(signal_name, cardname)
 
     output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname
     if args.tag is not None: output_folder += '-'+args.tag
@@ -57,11 +57,11 @@ def runHybridNew(mass):
     #TODO: Finish this
     return datacard_massbase
 
-def runLimit(card_manager, signal_name, coupling_sq, cardname):
-    datacard_manager.prepareAllCards(signal_name, coupling_sq, card, args.lod, args.strategy)
+def runLimit(card_manager, signal_name, cardname):
+    datacard_manager.prepareAllCards(signal_name, card, args.lod, args.strategy)
     
     if args.asymptotic: 
-        runAsymptoticLimit(datacard_manager, signal_name, coupling_sq, card)
+        runAsymptoticLimit(datacard_manager, signal_name, card)
     else:
         raise RuntimeError('To be implemented')
 
@@ -71,7 +71,7 @@ cards_to_read = [args.datacard] if args.datacard != '' else ['NoTau', 'SingleTau
 # Create datacard manager
 from HNL.Stat.datacardManager import DatacardManager
 tag = 'displaced' if args.displaced else 'prompt'
-datacard_manager = DatacardManager(args.year, args.era, args.strategy, args.flavor, args.selection, args.masstype, tag)
+datacard_manager = DatacardManager(args.year, args.era, args.strategy, args.flavor, args.selection, args.masstype)
 
 def returnCouplings(mass):
     if args.couplings is None or mass > displaced_mass_threshold:
@@ -85,9 +85,10 @@ if not args.useExistingLimits:
         print '\x1b[6;30;42m', 'Processing datacard "' +str(card)+ '"', '\x1b[0m'
         for mass in args.masses:
             couplings = returnCouplings(mass)
+            print couplings
             for coupling in couplings:
-                signal_name = 'HNL-'+args.flavor+'-m'+str(mass)+'-Vsq'+str(coupling)+'-'+ 'prompt' if not args.displaced else 'displaced'
-                if not datacard_manager.checkMassAvailability(mass, coupling): continue
+                signal_name = 'HNL-'+args.flavor+'-m'+str(mass)+'-Vsq'+('{:.1e}'.format(coupling).replace('-', 'm'))+'-'+ 'prompt' if not args.displaced else 'displaced'
+                if not datacard_manager.checkMassAvailability(signal_name): continue
                 print '\x1b[6;30;42m', 'Processing mN =', str(mass), 'GeV with V2 = ', str(coupling), '\x1b[0m'
                 runLimit(datacard_manager, signal_name, card)
 
@@ -113,7 +114,7 @@ for card in cards_to_read:
         couplings = returnCouplings(mass)
         input_folders = []
         for c in couplings:
-            tmp_folder = datacard_manager.getDatacardPath('HNL-'+args.flavor+'-m'+str(mass)+'-Vsq'+c+'-'+'prompt' if not args.displaced else 'displaced', card)
+            tmp_folder = datacard_manager.getDatacardPath('HNL-'+args.flavor+'-m'+str(mass)+'-Vsq'+('{:.1e}'.format(c).replace('-', 'm'))+'-'+'prompt' if not args.displaced else 'displaced', card)
             tmp_folder = tmp_folder.replace('dataCards', 'output').rsplit('/', 1)[0] +'/'+asymptotic_str+'/'+card
             if args.tag is not None: tmp_folder += '-'+args.tag
             tmp_folder += '/higgsCombineTest.AsymptoticLimits.mH120.root'

@@ -1,6 +1,7 @@
 def returnTheoryUnc(sample_name):
-    coupling_flavor = sample_name.split('-')[1]
-    mass = int(sample_name.split('-m')[-1])
+    from HNL.Samples.sample import Sample
+    coupling_flavor = Sample.getSignalFlavor(sample_name)
+    mass = Sample.getSignalMass(sample_name)
     
     if mass < 80:
         return 1.04
@@ -13,7 +14,7 @@ def returnTheoryUnc(sample_name):
         with open(in_path, 'r') as openfile:
             # Reading from json file
             json_object = json.load(openfile)
-        frac = json_object[str(mass)]
+        frac = json_object[str(int(mass))]
         return round(1 + (0.03*(1-frac)+0.15*frac), 2)
 
 def returnUncFunc(function_name, kwargs):

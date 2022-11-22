@@ -7,6 +7,7 @@ from HNL.ObjectSelection.muonSelector import checkMuonWP
 from HNL.ObjectSelection.electronSelector import checkElectronWP
 from HNL.Weights.fakeRateWeights import returnFakeRateCollection
 import numpy as np
+from HNL.Samples.sample import Sample
 
 var_weights = { 
         'lumiWeight':          (lambda c : c.lumiWeight,      np.arange(0., 2., .1),         ('lumi weight', 'Events')), 
@@ -57,7 +58,7 @@ class Reweighter:
             from HNL.Weights.triggerSF import CombinedTriggerSF
             self.triggerSF = CombinedTriggerSF()
 
-            if 'displacedHNL' in sample.name:
+            if Sample.getSignalDisplacedString(sample.name) == 'displaced':
                 from HNL.Weights.displacementTools import DisplacementReweighter
                 self.displacement_weighter = DisplacementReweighter(sample)
             else:

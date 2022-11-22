@@ -610,7 +610,7 @@ else:
                                         vsquared_translated = str(vsquared)
                                         vsquared_translated = vsquared_translated.replace('e-', 'em')
                                         new_name = cleaned_sample_name.split('-Vsq')[0]+'-Vsq'+vsquared_translated + '-' + Sample.getSignalDisplacedString(cleaned_sample_name)
-                                        additional_weight_corrected = '(displacement_lumiweight[{0}]/lumiWeight)'.format(iv) if additional_weight is None else additional_weight+'(displacement_lumiweight[{0}]/lumiWeight)'.format(iv)
+                                        additional_weight_corrected = '(displacement_lumiweight[{0}]/lumiWeight)'.format(iv) if additional_weight is None else additional_weight+'*(displacement_lumiweight[{0}]/lumiWeight)'.format(iv)
                                         if syst == 'nominal':
                                             tmp_list_of_hist[c][v]['signal'][new_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year)+'-'+vsquared_translated, getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, include_systematics, split_corr = split_corr, additional_weight = additional_weight_corrected)
                                         else:
@@ -737,15 +737,16 @@ else:
                                 coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
                             
                             bin_name = sr+'-'+ac+'-'+v
+                            new_signal_name = sample_name.split('-Vsq')[0]+'-Vsq'+('{:.1e}'.format(coupling_squared).replace('-', 'm'))+'-'+Sample.getSignalDisplacedString(sample_name) 
                             out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([args.selection, args.region]), 
-                                                    args.era+str(year), args.flavor, sample_name, 'Dirac' if args.plotDirac else 'Majorana', bin_name+'.shapes.root')
+                                                    args.era+str(year), args.flavor, new_signal_name, 'Dirac' if args.plotDirac else 'Majorana', bin_name+'.shapes.root')
                             makeDirIfNeeded(out_path)
                             hist_for_datacard[ac][v]['signal'][sample_name]['nominal'].replaceZeroBins()
-                            hist_for_datacard[ac][v]['signal'][sample_name]['nominal'].write(out_path, write_name=sample_name, subdirs = [bin_name.rsplit('-', 1)[0]])
+                            hist_for_datacard[ac][v]['signal'][sample_name]['nominal'].write(out_path, write_name=new_signal_name, subdirs = [bin_name.rsplit('-', 1)[0]])
                             for syst in hist_for_datacard[ac][v]['signal'][sample_name].keys():
                                 if syst == 'nominal': continue
                                 hist_for_datacard[ac][v]['signal'][sample_name][syst].replaceZeroBins()
-                                hist_for_datacard[ac][v]['signal'][sample_name][syst].write(out_path, write_name=sample_name, subdirs = [bin_name.rsplit('-', 1)[0]+syst], append=True)
+                                hist_for_datacard[ac][v]['signal'][sample_name][syst].write(out_path, write_name=new_signal_name, subdirs = [bin_name.rsplit('-', 1)[0]+syst], append=True)
                             bkgr_names = []
                             for ib, b in enumerate(background_collection):
                                 bkgr_name = b.split('/')[-1]
@@ -762,8 +763,7 @@ else:
                             data_hist_tmp.replaceZeroBins()
                             data_hist_tmp.write(out_path, write_name='data_obs', append=True, subdirs = [bin_name.rsplit('-', 1)[0]])
                          
-                            new_signal_name = sample_name.split('-Vsq')+'-Vsq'+str(coupling_squared)+'-'+Sample.getSignalDisplacedString(sample_name) 
-                            makeDataCard(bin_name, args.flavor, args.era, year, 0, sample_name, bkgr_names, args.selection, args.region, ac, shapes=True, nonprompt_from_sideband = args.includeData == 'includeSideband', majorana_str = 'Majorana' if not args.plotDirac else 'Dirac', shapes_path=out_path)
+                            makeDataCard(bin_name, args.flavor, args.era, year, 0, new_signal_name, bkgr_names, args.selection, args.region, ac, shapes=True, nonprompt_from_sideband = args.includeData == 'includeSideband', majorana_str = 'Majorana' if not args.plotDirac else 'Dirac', shapes_path=out_path)
     
         if args.makePlots:
             print "Creating list of histograms"

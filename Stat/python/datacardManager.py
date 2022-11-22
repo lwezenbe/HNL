@@ -34,8 +34,8 @@ class SingleYearDatacardManager:
         return os.path.join(data_card_base(self.era, self.year, self.selection, self.getHNLmass(signal_name), self.flavor, self.masstype), signal_name, 'shapes', self.strategy if define_strategy else '', card_name+'.txt')
 
     def getHNLmass(self, signal_name):
-        from HNL.Samples.sample import getSignalMass
-        return getSignalMass(signal_name)
+        from HNL.Samples.sample import Sample
+        return Sample.getSignalMass(signal_name)
 
     def getCutbasedName(self, sr, final_state):
         return sr+'-'+final_state+'-searchregion'
@@ -160,6 +160,7 @@ class DatacardManager:
     def checkMassAvailability(self, signal_name):
         exists = True
         for iyear, year in enumerate(self.years):
+            print self.singleyear_managers[iyear].getDatacardPath(signal_name, 'x', define_strategy = False).rsplit('/', 1)[0]
             if not os.path.exists(self.singleyear_managers[iyear].getDatacardPath(signal_name, 'x', define_strategy = False).rsplit('/', 1)[0]): exists = False
 
         return exists
