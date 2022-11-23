@@ -338,5 +338,49 @@
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : true,
             "Description"   : "Uncorrelated JETMET syst"
+        },
+    "electronScale"  :
+        {
+            "Type"              : "rerun",
+            "Value"             : 1.0,
+            "FinalStates"       : "*",
+            "Processes"         : "MC",
+            "Year"              : ["2016pre", "2016post", "2017", "2018"],
+            "Activate"          : true,
+            "Correlated"    : true,
+            "Description"   : "Electron energy scale systematics"
+        },
+    "electronRes"  :
+        {
+            "Type"              : "rerun",
+            "Value"             : 1.0,
+            "FinalStates"       : "*",
+            "Processes"         : "MC",
+            "Year"              : ["2016pre", "2016post", "2017", "2018"],
+            "Activate"          : true,
+            "Correlated"        : true,
+            "Description"   : "Electron resolution smearing"
+        },
+    "muonScale"  :
+        {
+            "Type"              : "rerun",
+            "Value"             : 1.0,
+            "FinalStates"       : "*",
+            "Processes"         : "MC",
+            "Year"              : ["2016pre", "2016post", "2017", "2018"],
+            "Activate"          : true,
+            "Correlated"    : true,
+            "Description"   : "Muon energy scale systematics"
+        },
+    "muonRes"  :
+        {
+            "Type"              : "rerun",
+            "Value"             : 1.0,
+            "FinalStates"       : "*",
+            "Processes"         : "MC",
+            "Year"              : ["2016pre", "2016post", "2017", "2018"],
+            "Activate"          : false,
+            "Correlated"        : true,
+            "Description"   : "Muon resolution smearing"
         }
 }

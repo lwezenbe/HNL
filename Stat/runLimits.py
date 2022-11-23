@@ -113,7 +113,7 @@ for card in cards_to_read:
         couplings = returnCouplings(mass)
         input_folders = []
         for c in couplings:
-            tmp_folder = datacard_manager.getDatacardPath('HNL-'+args.flavor+'-m'+str(mass)+'-Vsq'+('{:.1e}'.format(c).replace('-', 'm'))+'-'+'prompt' if not args.displaced else 'displaced', card)
+            tmp_folder = datacard_manager.getDatacardPath('HNL-'+args.flavor+'-m'+str(mass)+'-Vsq'+('{:.1e}'.format(c).replace('-', 'm'))+'-'+('prompt' if not args.displaced else 'displaced'), card)
             tmp_folder = tmp_folder.replace('dataCards', 'output').rsplit('/', 1)[0] +'/'+asymptotic_str+'/'+card
             if args.tag is not None: tmp_folder += '-'+args.tag
             tmp_folder += '/higgsCombineTest.AsymptoticLimits.mH120.root'
@@ -134,7 +134,7 @@ for card in cards_to_read:
             
     graphs = makeGraphs(passed_masses, limits=limits)
 
-    out_path_base = lambda sample, era, sname, cname, tag : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.masstype+'-'+'prompt' if not args.displaced else 'displaced', era, sname, args.flavor, sample, 'shapes', asymptotic_str+'/'+cname+(('-'+tag) if tag is not None else ''))
+    out_path_base = lambda sample, era, sname, cname, tag : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.masstype+'-'+('prompt' if not args.displaced else 'displaced'), era, sname, args.flavor, sample, 'shapes', asymptotic_str+'/'+cname+(('-'+tag) if tag is not None else ''))
     print out_path_base('Combined', args.era+year_to_read, args.strategy +'-'+ args.selection, card, args.tag)+"/limits.root"
     saveGraphs(graphs, out_path_base('Combined', args.era+year_to_read, args.strategy +'-'+ args.selection, card, args.tag)+"/limits.root")
 

@@ -378,6 +378,18 @@ if not args.makePlots and not args.makeDataCards:
             if args.region in signal_regions and chain.is_data and not is_sideband_event and args.blindStorage:
                 continue            
 
+            ll1 = chain.l_indices[0]
+            from HNL.ObjectSelection.leptonSelector import getLeptonPt
+            from HNL.ObjectSelection.electronSelector import getElectronPt
+            from HNL.ObjectSelection.muonSelector import getMuonPt
+
+            if chain._lFlavor[ll1] == 0:
+                print 'l1: electron', chain.l_pt[0], chain._lPtCorr[ll1], getElectronPt(chain, ll1), getLeptonPt(chain, ll1)
+            if chain._lFlavor[ll1] == 1:
+                print 'l1: muon', chain.l_pt[0], chain._lPtCorr[ll1], getMuonPt(chain, ll1), getLeptonPt(chain, ll1)
+            if chain._lFlavor[ll1] == 2:
+                print 'l1: tau', chain.l_pt[0], chain._lPt[ll1], getLeptonPt(chain, ll1)
+
             #
             # Determine if it is a prompt event
             # Depending on the previous step, the selection should be the tight or the FO (because of rerunning)
