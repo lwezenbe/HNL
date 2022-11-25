@@ -562,13 +562,13 @@ else:
         #Add entry for the search regions in the var dictionary
         from HNL.Weights.reweighter import var_weights
         var.update(var_weights)
-        #var['searchregion'] = (lambda c : c.searchregion, np.arange(0.5, srm[args.region].getNumberOfSearchRegions()+1.5, 1.), ('Search Region', 'Events'))
-        var = {
-            'leadingFakeLeptonPt' : (lambda c : c.leadingFakeLeptonPt[0],       np.arange(0., 300., 15.),       ('p_{T} (leading fake lepton) [GeV]', 'Events')),
-            'leadingFakeElectronPt' : (lambda c : c.leadingFakeElectronPt[0],       np.arange(0., 300., 15.),       ('p_{T} (leading fake electron) [GeV]', 'Events')),
-            'leadingFakeMuonPt' : (lambda c : c.leadingFakeMuonPt[0],       np.arange(0., 300., 15.),       ('p_{T} (leading fake muon) [GeV]', 'Events')),
-            'l1pt':      (lambda c : c.l_pt[0],       np.arange(0., 300., 15.),       ('p_{T} (l1) [GeV]', 'Events'))
-        }
+        var['searchregion'] = (lambda c : c.searchregion, np.arange(0.5, srm[args.region].getNumberOfSearchRegions()+1.5, 1.), ('Search Region', 'Events'))
+        #var = {
+        #    'leadingFakeLeptonPt' : (lambda c : c.leadingFakeLeptonPt[0],       np.arange(0., 300., 15.),       ('p_{T} (leading fake lepton) [GeV]', 'Events')),
+        #    'leadingFakeElectronPt' : (lambda c : c.leadingFakeElectronPt[0],       np.arange(0., 300., 15.),       ('p_{T} (leading fake electron) [GeV]', 'Events')),
+        #    'leadingFakeMuonPt' : (lambda c : c.leadingFakeMuonPt[0],       np.arange(0., 300., 15.),       ('p_{T} (leading fake muon) [GeV]', 'Events')),
+        #    'l1pt':      (lambda c : c.l_pt[0],       np.arange(0., 300., 15.),       ('p_{T} (l1) [GeV]', 'Events'))
+        #}
 
         # Custom Var that you can create from existing var (i.e. 2D plots)
         # var['l3pt-met'] = (lambda c : [c.l3pt, c.met], (np.array([20., 25., 35., 50., 70., 100.]), np.array([0., 20., 35., 50., 100.])), ('p_{T}(l3) [GeV]', 'met'))
@@ -1026,7 +1026,7 @@ else:
                                 #else:
                                 #    normalize_signal = None
                                 #normalize_signal = 'med'
-                                normalize_signal = None
+                                normalize_signal = 'bkgr'
                             p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = normalize_signal, draw_option='EHist', min_cutoff = 1)
                             #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = 'med', draw_option='EHist', min_cutoff = 1)
                             #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = None, draw_option='EHist', min_cutoff = 1)
