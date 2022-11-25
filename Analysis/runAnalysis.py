@@ -45,7 +45,7 @@ argParser.add_argument('--cutFlowOnly',   action='store_true',   default=False, 
 argParser.add_argument('--signalOnly',   action='store_true',   default=False,  help='Run or plot a only the signal')
 argParser.add_argument('--plotBkgrOnly',   action='store_true',     default=False,  help='Plot only the background')
 argParser.add_argument('--plotSingleBin',   action='store_true',     default=False,  help='Run or plot a only the background')
-argParser.add_argument('--categoriesToPlot',   action='store',     default='super',  help='What categories to use', choices=['original', 'analysis', 'super', 'splitanalysis'])
+argParser.add_argument('--categoriesToPlot',   action='store',     default='super',  help='What categories to use', choices=['original', 'analysis', 'super', 'splitanalysis', 'leadingflavor'])
 argParser.add_argument('--category',   action='store',     default=None,  help='What specific category to use')
 argParser.add_argument('--additionalCondition',   action='store',     default=None,  help='Additional condition for selection')
 argParser.add_argument('--ignoreSystematics',   action='store_true',     default=False,  help='ignore systematics in plots')
@@ -324,6 +324,8 @@ if not args.makePlots and not args.makeDataCards:
         branches.extend(event.systematics.returnBranches(args.sample))
         if sample.is_signal:
             branches.extend(['isDiracType/O', 'diracSF/F'])
+        if args.tag == 'fakePtTest':
+            branches.extend(['leadingFakeLeptonPt/F', 'leadingFakeMuonPt/F', 'leadingFakeElectronPt/F'])
         output_tree = OutputTree('events_{0}'.format(systematic), output_name_full, branches = branches, branches_already_defined = systematic != 'nominal')
 
         #
@@ -378,18 +380,6 @@ if not args.makePlots and not args.makeDataCards:
             if args.region in signal_regions and chain.is_data and not is_sideband_event and args.blindStorage:
                 continue            
 
-            ll1 = chain.l_indices[0]
-            from HNL.ObjectSelection.leptonSelector import getLeptonPt
-            from HNL.ObjectSelection.electronSelector import getElectronPt
-            from HNL.ObjectSelection.muonSelector import getMuonPt
-
-            if chain._lFlavor[ll1] == 0:
-                print 'l1: electron', chain.l_pt[0], chain._lPtCorr[ll1], getElectronPt(chain, ll1), getLeptonPt(chain, ll1)
-            if chain._lFlavor[ll1] == 1:
-                print 'l1: muon', chain.l_pt[0], chain._lPtCorr[ll1], getMuonPt(chain, ll1), getLeptonPt(chain, ll1)
-            if chain._lFlavor[ll1] == 2:
-                print 'l1: tau', chain.l_pt[0], chain._lPt[ll1], getLeptonPt(chain, ll1)
-
             #
             # Determine if it is a prompt event
             # Depending on the previous step, the selection should be the tight or the FO (because of rerunning)
@@ -416,6 +406,24 @@ if not args.makePlots and not args.makeDataCards:
             if args.strategy == 'MVA':
                 tmva.predictAndWriteAll(chain)
      
+            if args.tag == 'fakePtTest': 
+                if is_sideband_event:
+                    leading_fake_index = -1
+                    for l in xrange(len(chain.l_pt)):
+                        if chain.l_isFO[l] and not chain.l_istight[l]:
+                            if leading_fake_index == -1: leading_fake_index = l
+                            else:
+                                leading_fake_index = l if chain.l_pt[l] > chain.l_pt[leading_fake_index] else leading_fake_index
+                    chain.leadingFakeLeptonPt = chain.l_pt[leading_fake_index] if leading_fake_index > -1 else -1.
+                    chain.leadingFakeElectronPt = chain.l_pt[leading_fake_index] if leading_fake_index > -1 and chain.l_flavor[leading_fake_index] == 0 else -1.
+                    chain.leadingFakeMuonPt = chain.l_pt[leading_fake_index] if leading_fake_index > -1 and chain.l_flavor[leading_fake_index] == 1 else -1.
+                else:
+                    chain.leadingFakeLeptonPt = -1.
+                    chain.leadingFakeElectronPt = -1.
+                    chain.leadingFakeMuonPt = -1.
+                    
+                
+
             #
             # Fill tree
             #
@@ -425,7 +433,7 @@ if not args.makePlots and not args.makeDataCards:
             for v in var.keys():
                 output_tree.setTreeVariable(v, var[v][0](chain))
         
-            output_tree.setTreeVariable('weight', event.reweighter.getTotalWeight(sideband = is_sideband_event if args.tag != 'TauFakes' else False, tau_fake_method = 'TauFakesDY' if args.region == 'ZZCR' else None))
+            output_tree.setTreeVariable('weight', event.reweighter.getTotalWeight(sideband = is_sideband_event if args.tag not in ['TauFakes', 'fakePtTest'] else False, tau_fake_method = 'TauFakesDY' if args.region == 'ZZCR' else None))
             output_tree.setTreeVariable('isprompt', chain.is_prompt)
             output_tree.setTreeVariable('category', chain.category)
             output_tree.setTreeVariable('searchregion', srm[args.region].getSearchRegion(chain))
@@ -438,7 +446,12 @@ if not args.makePlots and not args.makeDataCards:
             if sample.is_signal:
                 output_tree.setTreeVariable('isDiracType', chain._gen_isDiracType)
                 output_tree.setTreeVariable('diracSF', event.reweighter.lumiweighter.getDiracTypeSF())
-                                   
+            if args.tag == 'fakePtTest':
+                output_tree.setTreeVariable('leadingFakeLeptonPt', chain.leadingFakeLeptonPt)
+                output_tree.setTreeVariable('leadingFakeElectronPt', chain.leadingFakeElectronPt)
+                output_tree.setTreeVariable('leadingFakeMuonPt', chain.leadingFakeMuonPt)
+                                                  
+ 
             event.systematics.storeAllSystematicsForShapes(output_tree, args.sample)
             output_tree.fill()
  
@@ -533,6 +546,7 @@ else:
 
         sorted_analysis_categories = cat.ANALYSIS_CATEGORIES.keys() if args.category is None else args.category
         sorted_splitanalysis_categories = cat.ANALYSIS_SPLITOSSF_CATEGORIES.keys() if args.category is None else args.category
+        sorted_leadingflavor_categories = cat.LEADING_FLAVOR_CATEGORIES.keys() if args.category is None else args.category
         from HNL.Analysis.analysisTypes import getRelevantSuperCategories
         sorted_super_categories = getRelevantSuperCategories(cat.SUPER_CATEGORIES.keys(), args.region) if args.category is None else args.category
 
@@ -541,14 +555,20 @@ else:
             'original' : ([x for x in categories], ['(category=={0})'.format(x) for x in categories], {y : [str(y)] for y in categories}),
             'analysis': (sorted_analysis_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.ANALYSIS_CATEGORIES[y]])+')' for y in sorted_analysis_categories], {y :[str(x) for x in cat.ANALYSIS_CATEGORIES[y]] for y in sorted_analysis_categories}),
             'splitanalysis': (sorted_splitanalysis_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.ANALYSIS_SPLITOSSF_CATEGORIES[y]])+')' for y in sorted_splitanalysis_categories], {y :[str(x) for x in cat.ANALYSIS_SPLITOSSF_CATEGORIES[y]] for y in sorted_splitanalysis_categories}),
+            'leadingflavor': (sorted_leadingflavor_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.LEADING_FLAVOR_CATEGORIES[y]])+')' for y in sorted_leadingflavor_categories], {y :[str(x) for x in cat.LEADING_FLAVOR_CATEGORIES[y]] for y in sorted_leadingflavor_categories}),
             'super' : (sorted_super_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.SUPER_CATEGORIES[y]])+')' for y in sorted_super_categories], {y:[str(x) for x in cat.SUPER_CATEGORIES[y]] for y in sorted_super_categories})
         } 
 
         #Add entry for the search regions in the var dictionary
         from HNL.Weights.reweighter import var_weights
         var.update(var_weights)
-        var['searchregion'] = (lambda c : c.searchregion, np.arange(0.5, srm[args.region].getNumberOfSearchRegions()+1.5, 1.), ('Search Region', 'Events'))
-        #var = {'searchregion' : (lambda c : c.searchregion, np.arange(0.5, srm[args.region].getNumberOfSearchRegions()+1.5, 1.), ('Search Region', 'Events'))}
+        #var['searchregion'] = (lambda c : c.searchregion, np.arange(0.5, srm[args.region].getNumberOfSearchRegions()+1.5, 1.), ('Search Region', 'Events'))
+        var = {
+            'leadingFakeLeptonPt' : (lambda c : c.leadingFakeLeptonPt[0],       np.arange(0., 300., 15.),       ('p_{T} (leading fake lepton) [GeV]', 'Events')),
+            'leadingFakeElectronPt' : (lambda c : c.leadingFakeElectronPt[0],       np.arange(0., 300., 15.),       ('p_{T} (leading fake electron) [GeV]', 'Events')),
+            'leadingFakeMuonPt' : (lambda c : c.leadingFakeMuonPt[0],       np.arange(0., 300., 15.),       ('p_{T} (leading fake muon) [GeV]', 'Events')),
+            'l1pt':      (lambda c : c.l_pt[0],       np.arange(0., 300., 15.),       ('p_{T} (l1) [GeV]', 'Events'))
+        }
 
         # Custom Var that you can create from existing var (i.e. 2D plots)
         # var['l3pt-met'] = (lambda c : [c.l3pt, c.met], (np.array([20., 25., 35., 50., 70., 100.]), np.array([0., 20., 35., 50., 100.])), ('p_{T}(l3) [GeV]', 'met'))
@@ -1005,8 +1025,8 @@ else:
                                 #    normalize_signal = 'med'
                                 #else:
                                 #    normalize_signal = None
-                                normalize_signal = 'med'
-                                #normalize_signal = None
+                                #normalize_signal = 'med'
+                                normalize_signal = None
                             p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = normalize_signal, draw_option='EHist', min_cutoff = 1)
                             #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = 'med', draw_option='EHist', min_cutoff = 1)
                             #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = None, draw_option='EHist', min_cutoff = 1)

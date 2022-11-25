@@ -438,3 +438,13 @@ def makeList(item):
         item = [item]
     return item
 
+def contractAllBins(hist):
+    out_hist = ROOT.TH1D(hist.GetName()+'-contraction', hist.GetName()+'-contraction', 1, 0., 1.)
+    out_hist.SetBinContent(1, hist.GetSumOfWeights())
+    tot_err = 0.
+    import numpy as np
+    for b in xrange(1, hist.GetNbinsX()+1):
+        tot_err = np.sqrt(tot_err**2 + hist.GetBinError(b)**2)
+    out_hist.SetBinError(1, tot_err)
+    return out_hist
+
