@@ -241,10 +241,10 @@ class Plot(object):
 
             self.plotpad.Update()
 
-    def setLegend(self, x1=0.4, y1=.7, x2=.9, y2=.9, ncolumns = 2):
+    def setLegend(self, x1=0.4, y1=.7, x2=.9, y2=.9, ncolumns = 2, textsize=0.03):
         self.legend = ROOT.TLegend(x1, y1, x2, y2)
         self.legend.SetNColumns(ncolumns)
-        self.legend.SetTextSize(.03)
+        self.legend.SetTextSize(textsize)
         self.legend.SetFillStyle(0)
         self.legend.SetBorderSize(0)
         return self.legend
@@ -849,6 +849,7 @@ class Plot(object):
         # Calculate ranges of axis and set to log if requested
         #
         self.setAxisLog(stacked = (len(self.b) > 0 and 'Stack' in bkgr_draw_option) or 'Stack' in draw_option, min_cutoff = min_cutoff, max_cutoff = max_cutoff, include_errors=error_option is not None and bkgr_error_option is not None)
+        #self.setAxisLog(stacked = (len(self.b) > 0 and 'Stack' in bkgr_draw_option) or 'Stack' in draw_option, min_cutoff = min_cutoff, max_cutoff = max_cutoff, include_errors=False)
 
         #
         # Set custom labels if needed

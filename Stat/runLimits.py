@@ -4,8 +4,8 @@
 import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
-submission_parser.add_argument('--year',     action='store', nargs='*',       default=None,   help='Select year', required=True)
-submission_parser.add_argument('--era',     action='store',       default='UL', choices = ['UL', 'prelegacy'],   help='Select era', required=True)
+submission_parser.add_argument('--year',     action='store', nargs='*',       default=None,   help='Select year')
+submission_parser.add_argument('--era',     action='store',       default='UL', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
 submission_parser.add_argument('--couplings', nargs='*', type=float,  help='Only run or plot signal samples with coupling squared given in this list')
 submission_parser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
@@ -20,9 +20,20 @@ submission_parser.add_argument('--lod',   type=str,  help='"Level of detail": De
 submission_parser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
 submission_parser.add_argument('--tag', type = str, default=None,  help='Add a file with a message in the plotting folder')
 submission_parser.add_argument('--masstype', type = str, default=None,  help='Choose what type of limits you want', choices = ['Dirac', 'Majorana'])
-argParser.add_argument('--displaced', action='store_true', default=False,  help='run limit for displaced sample')
+submission_parser.add_argument('--displaced', action='store_true', default=False,  help='run limit for displaced sample')
+submission_parser.add_argument('--logLevel',  action='store', default='INFO',  help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
+submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
+submission_parser.add_argument('--dryRun',   action='store_true',       default=False,  help='do not launch subjobs, only show them')
+submission_parser.add_argument('--subJob',   action='store',            default=None,   help='The number of the subjob for this sample')
+submission_parser.add_argument('--isChild',  action='store_true',       default=False,  help='mark as subjob, will never submit subjobs by itself')
+
+argParser.add_argument('--checkLogs', action='store_true', default=False,  help='Add a file with a message in the plotting folder')
 argParser.add_argument('--dryplot', action='store_true', default=False,  help='Add a file with a message in the plotting folder')
+argParser.add_argument('--submitPlotting', action='store_true', default=False,  help='Submit the fits to condor')
 args = argParser.parse_args()
+
+from HNL.Tools.logger import getLogger, closeLogger
+log = getLogger(args.logLevel)
 
 if args.masstype is None:
     raise RuntimeError("Forgot to specify masstype")
@@ -81,6 +92,37 @@ def returnCouplings(mass):
 
 from HNL.Analysis.analysisTypes import signal_couplingsquared
 if not args.useExistingLimits:
+
+    #Prepare to submit jobs
+    if args.submitPlotting:
+        jobs = []
+        for mass in args.masses:
+            jobs += [(mass, 0)]
+
+        if not args.isChild and not args.checkLogs:
+            from HNL.Tools.jobSubmitter import submitJobs
+            submitJobs(__file__, ['masses', 'subJob'], jobs, argParser, jobLabel = 'runlimits-{0}'.format(args.flavor))
+            exit(0)
+
+        if args.checkLogs:
+            from HNL.Tools.jobSubmitter import checkCompletedJobs, disableShouldMerge
+            failed_jobs = checkCompletedJobs(__file__, jobs, argParser)
+            if failed_jobs is not None and len(failed_jobs) != 0:   
+                should_resubmit = raw_input("Would you like to resubmit the failed jobs? (y/n) \n")
+                if should_resubmit == 'y' or should_resubmit == 'Y':
+                    print 'resubmitting:'
+                    submitJobs(__file__, ('sample', 'subJob'), failed_jobs, argParser, jobLabel = 'skim', resubmission=True)
+                else:
+                    pass    
+                exit(0)
+            else:
+                remove_logs = raw_input("Would you like to remove log files? (y/n) \n")
+                if remove_logs in ['y', 'Y']:
+                    from HNL.Tools.jobSubmitter import cleanJobFiles
+                    cleanJobFiles(argParser, __file__)
+                    disableShouldMerge(__file__, argParser)
+            exit(0)
+
     for card in cards_to_read:
         print '\x1b[6;30;42m', 'Processing datacard "' +str(card)+ '"', '\x1b[0m'
         for mass in args.masses:
@@ -91,6 +133,12 @@ if not args.useExistingLimits:
                 print '\x1b[6;30;42m', 'Processing mN =', str(mass), 'GeV with V2 = ', str(coupling), '\x1b[0m'
                 runLimit(datacard_manager, signal_name, card)
 
+    closeLogger(log)
+
+
+if args.submitPlotting or args.isChild:
+    exit(0)    
+
 compare_dict = {
     'cutbased-AN2017014': 'Replicated AN2017014 selection',
     'cutbased-default': 'Search region binning',
@@ -98,22 +146,37 @@ compare_dict = {
     'MVA-default': 'BDT',
     'custom-default' : '',
 }
+compare_era_dict = {
+    'UL2016pre-2016post-2017-2018': 'Full Run-II',
+    'UL2016pre-2016post': '2016',
+    'UL2016pre': '2016 Pre VFP',
+    'UL2016post': '2016 Post VFP',
+    'UL2017': '2017',
+    'UL2018': '2018',
+}
+compare_reg_dict = {
+    'NoTau': 'Light leptons only',
+    'SingleTau': 'll#tau',
+    'MaxOneTau': 'All final states',
+}
 
 asymptotic_str = 'asymptotic' if args.asymptotic else ''
 
 year_to_read = args.year[0] if len(args.year) == 1 else '-'.join(args.year)
 
 for card in cards_to_read:
+    print card
     destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/Results/runAsymptoticLimits/'+args.masstype+'-'+('prompt' if not args.displaced else 'displaced')+'/'+args.strategy+'-'+args.selection+(('-'+args.tag) if args.tag is not None else '')+'/'+args.flavor+'/'+card+'/'+ args.era+year_to_read))
 
     #Make and save graph objects
     passed_masses = []
     limits = {}
+    print 'start'
     for mass in args.masses:
         couplings = returnCouplings(mass)
         input_folders = []
         for c in couplings:
-            tmp_folder = datacard_manager.getDatacardPath('HNL-'+args.flavor+'-m'+str(mass)+'-Vsq'+('{:.1e}'.format(c).replace('-', 'm'))+'-'+'prompt' if not args.displaced else 'displaced', card)
+            tmp_folder = datacard_manager.getDatacardPath('HNL-'+args.flavor+'-m'+str(mass)+'-Vsq'+('{:.1e}'.format(c).replace('-', 'm'))+'-'+('prompt' if not args.displaced else 'displaced'), card)
             tmp_folder = tmp_folder.replace('dataCards', 'output').rsplit('/', 1)[0] +'/'+asymptotic_str+'/'+card
             if args.tag is not None: tmp_folder += '-'+args.tag
             tmp_folder += '/higgsCombineTest.AsymptoticLimits.mH120.root'
@@ -132,12 +195,13 @@ for card in cards_to_read:
             passed_masses.append(mass)
             limits[mass] = tmp_limit
             
+    print 'made graphs'
     graphs = makeGraphs(passed_masses, limits=limits)
 
-    out_path_base = lambda sample, era, sname, cname, tag : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.masstype+'-'+'prompt' if not args.displaced else 'displaced', era, sname, args.flavor, sample, 'shapes', asymptotic_str+'/'+cname+(('-'+tag) if tag is not None else ''))
-    print out_path_base('Combined', args.era+year_to_read, args.strategy +'-'+ args.selection, card, args.tag)+"/limits.root"
+    out_path_base = lambda sample, era, sname, cname, tag : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.masstype+'-'+('prompt' if not args.displaced else 'displaced'), era, sname, args.flavor, sample, 'shapes', asymptotic_str+'/'+cname+(('-'+tag) if tag is not None else ''))
     saveGraphs(graphs, out_path_base('Combined', args.era+year_to_read, args.strategy +'-'+ args.selection, card, args.tag)+"/limits.root")
 
+    print 'loading compare graphs'
     #Load in other graph objects to compare
     compare_graphs = {}
     if args.compareToCards is not None:
@@ -168,6 +232,7 @@ for card in cards_to_read:
             era_to_read = era if '201' in era else era+year_to_read
             file_name  = out_path_base('Combined', era_to_read, sname, cname, tag) +'/limits.root'       
             compare_graphs[sname + ' ' +cname+ ' ' + era] = getObjFromFile(file_name, 'expected_central')
+    print 'loaded all compare graphs'
 
     if args.flavor == 'e':
         #observed_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsElectronMixing.root'), 'observed_promptDecays')
@@ -200,10 +265,10 @@ for card in cards_to_read:
             compare_sel, compare_reg, compare_era = compare_key.split(' ')
             if bkgr_hist is None:
                 bkgr_hist = [compare_graphs[compare_key]]
-                tex_names = [compare_era+ ' ' +compare_dict[compare_sel] + ' ' +compare_reg]
+                tex_names = [compare_era_dict[compare_era]+ ' ' +compare_dict[compare_sel] + ' ' +compare_reg_dict[compare_reg]]
             else:
                 bkgr_hist.append(compare_graphs[compare_key])
-                tex_names.append(compare_era+ ' ' +compare_dict[compare_sel] + ' ' +compare_reg)
+                tex_names.append(compare_era_dict[compare_era]+ ' ' +compare_dict[compare_sel] + ' ' +compare_reg_dict[compare_reg])
 
     if len(args.year) == 1:
         year = args.year[0]
@@ -211,6 +276,7 @@ for card in cards_to_read:
         year = '2016'
     else:
         year = 'all'
-    
+   
+    print 'Plotting' 
     p = Plot(graphs, tex_names, 'limits', bkgr_hist = bkgr_hist, y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', era = 'UL', year = year)
     p.drawBrazilian(output_dir = destination, ignore_bands = args.dryplot)

@@ -51,15 +51,17 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
 
     collection = chain._nL if not chain.obj_sel['notau'] else chain._nLight
     chain.leptons = []
+    from HNL.ObjectSelection.leptonSelector import getLeptonPt, getLeptonE
     from HNL.ObjectSelection.electronSelector import getElectronPt, getElectronE
+    from HNL.ObjectSelection.muonSelector import getMuonPt, getMuonE
 
     for l in xrange(collection):
         if chain._lFlavor[l] == 0: 
             workingpoint = chain.obj_sel['ele_wp']
-            pt_to_use = getElectronPt(chain, l)
+            pt_to_use = getLeptonPt(chain, l)
         elif chain._lFlavor[l] == 1: 
             workingpoint = chain.obj_sel['mu_wp']
-            pt_to_use = chain._lPt[l]
+            pt_to_use = getLeptonPt(chain, l)
         elif chain._lFlavor[l] == 2: 
             workingpoint = chain.obj_sel['tau_wp']
             pt_to_use = chain._lPt[l]
@@ -104,7 +106,7 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         new_chain.l_pt[i] = ptAndIndex[i][0]
         new_chain.l_eta[i] = chain._lEta[ptAndIndex[i][1]]
         new_chain.l_phi[i] = chain._lPhi[ptAndIndex[i][1]]
-        new_chain.l_e[i] = getElectronE(chain, ptAndIndex[i][1]) if new_chain.l_flavor[i] < 1 else chain._lE[ptAndIndex[i][1]]
+        new_chain.l_e[i] = getLeptonE(chain, ptAndIndex[i][1]) if new_chain.l_flavor[i] < 2 else chain._lE[ptAndIndex[i][1]]
         new_chain.l_charge[i] = chain._lCharge[ptAndIndex[i][1]]
         new_chain.l_isFO[i] = isGoodLepton(chain, ptAndIndex[i][1], 'FO')
         new_chain.l_istight[i] = isGoodLepton(chain, ptAndIndex[i][1], 'tight')
@@ -117,7 +119,7 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
             new_chain.light_pt[light_index] = ptAndIndex[i][0]
             new_chain.light_eta[light_index] = chain._lEta[ptAndIndex[i][1]]
             new_chain.light_phi[light_index] = chain._lPhi[ptAndIndex[i][1]]
-            new_chain.light_e[light_index] = getElectronE(chain, ptAndIndex[i][1]) if new_chain.l_flavor[i] < 1 else chain._lE[ptAndIndex[i][1]]
+            new_chain.light_e[light_index] = getLeptonE(chain, ptAndIndex[i][1])
             new_chain.light_charge[light_index] = chain._lCharge[ptAndIndex[i][1]]
             light_index += 1
     

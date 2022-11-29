@@ -145,6 +145,10 @@ ANALYSIS_CATEGORIES = {
     'OneTau-SSSF': [1, 2, 3, 7, 8, 9], 
     'EEE-Mu': [19, 21, 22, 23, 24, 25, 26], 
     'MuMuMu-E': [20, 27, 28, 29, 30, 31, 32], 
+    #'EEE': [19], 
+    #'EEMu': [ 21, 22, 23, 24, 25, 26], 
+    #'MuMuMu': [20], 
+    #'MuMuE': [27, 28, 29, 30, 31, 32], 
     }
 
 ANALYSIS_CATEGORIES_TEX = {
@@ -153,6 +157,10 @@ ANALYSIS_CATEGORIES_TEX = {
     'OneTau-SSSF'       : 'l^{#pm}l^{#pm}#tau_{h}',
     'EEE-Mu'            : 'eee/#mu',
     'MuMuMu-E'          : '#mu#mu#mu/e'
+    #'EEE'               : 'eee',
+    #'EEMu'              : 'ee#mu',
+    #'MuMuMu'            : '#mu#mu#mu',
+    #'MuMuE'             : '#mu#mu e',
 }
 mutual_exclusive_analysiscategories = ['OneTau-OSSF', 'OneTau-SSSF', 'OneTau-OF', 'EEE-Mu', 'MuMuMu-E']
 
@@ -174,6 +182,16 @@ ANALYSIS_SPLITOSSF_CATEGORIES_TEX = {
     'EEE-Mu-nOSSF'      : 'e^{#pm}e^{#pm}e/#mu',
     'MuMuMu-E-OSSF'     : '#mu^{+}#mu^{-}#mu/e',
     'MuMuMu-E-nOSSF'    : '#mu^{#pm}#mu^{#pm}#mu/e'
+}
+
+LEADING_FLAVOR_CATEGORIES = {
+    'LeadingElectron': [19, 21, 22, 24, 25, 27, 30], 
+    'LeadingMuon': [20, 23, 26, 28, 29, 31, 32], 
+    }
+
+LEADING_FLAVOR_CATEGORIES_TEX = {
+    'LeadingElectron'           : 'ell',
+    'LeadingMuon'               : '#mu ll'
 }
 
 def isLightLeptonFinalState(cat_key):

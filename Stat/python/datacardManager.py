@@ -95,7 +95,7 @@ class SingleYearDatacardManager:
                             return [self.getCutbasedName('A', final_state), self.getCutbasedName('B', final_state)]
                         else:
                             return [self.getCutbasedName('A', final_state), self.getCutbasedName('B', final_state), self.getMVAName('C', final_state, signal_name), self.getMVAName('D', final_state, signal_name)]
-                    elif mass_point <= 400:
+                    elif mass_point <= 400 and not 'tau' in signal_name:
                         return self.getStandardDatacardList(signal_name, final_state, 'MVA')
                     else:
                         return self.getStandardDatacardList(signal_name, final_state, 'cutbased') 
@@ -139,7 +139,7 @@ class DatacardManager:
 
     def getDatacardPath(self, signal_name, card_name, define_strategy = True):
         from HNL.Stat.combineTools import displaced_mass_threshold
-        return os.path.join(data_card_base(self.era, '-'.join(self.years), self.selection, self.singleyear_managers[0].getHNLmass(signal_name), self.flavor, self.masstype), signal_name, 'shapes', self.strategy if define_strategy else '', card_name+'.txt')
+        return os.path.join(data_card_base(self.era, '-'.join(sorted(self.years)), self.selection, self.singleyear_managers[0].getHNLmass(signal_name), self.flavor, self.masstype), signal_name, 'shapes', self.strategy if define_strategy else '', card_name+'.txt')
     
     def mergeYears(self, signal_name, card_name):
         if len(self.years) == 1:
@@ -149,7 +149,7 @@ class DatacardManager:
             from HNL.Tools.helpers import makeDirIfNeeded
             makeDirIfNeeded(out_path)
             from HNL.Stat.combineTools import runCombineCommand
-            runCombineCommand('combineCards.py '+' '.join([sm.getDatacardPath(signal_nameo, card_name) for sm in self.singleyear_managers])+' > '+out_path)
+            runCombineCommand('combineCards.py '+' '.join([sm.getDatacardPath(signal_name, card_name) for sm in self.singleyear_managers])+' > '+out_path)
 
     def prepareAllCards(self, signal_name, final_state, lod, strategy = 'cutbased'):
         for iyear, year in enumerate(self.years):
@@ -160,7 +160,7 @@ class DatacardManager:
     def checkMassAvailability(self, signal_name):
         exists = True
         for iyear, year in enumerate(self.years):
-            print self.singleyear_managers[iyear].getDatacardPath(signal_name, 'x', define_strategy = False).rsplit('/', 1)[0]
             if not os.path.exists(self.singleyear_managers[iyear].getDatacardPath(signal_name, 'x', define_strategy = False).rsplit('/', 1)[0]): exists = False
+            print self.singleyear_managers[iyear].getDatacardPath(signal_name, 'x', define_strategy = False).rsplit('/', 1)[0], exists
 
         return exists

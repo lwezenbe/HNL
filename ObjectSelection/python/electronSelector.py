@@ -11,7 +11,7 @@ def getElectronPt(chain, index, syst = None):
         return chain._lPtScaleDown[index]
     elif syst == 'electronResUp':
         return chain._lPtResUp[index]
-    elif syst == 'electronScaleDown':
+    elif syst == 'electronResDown':
         return chain._lPtResDown[index]
     else:
         return chain._lPtCorr[index]
@@ -25,7 +25,7 @@ def getElectronE(chain, index, syst = None):
         return chain._lEScaleDown[index]
     elif syst == 'electronResUp':
         return chain._lEResUp[index]
-    elif syst == 'electronScaleDown':
+    elif syst == 'electronResDown':
         return chain._lEResDown[index]
     else:
         return chain._lECorr[index]

@@ -212,7 +212,7 @@ def makeSystErrorHist(in_hist, process_name, final_state, year, datadriven_proce
         syst_error_hist.getHist().SetBinError(b, 0.)
         for flat_unc in reader.getFlats(year, process_name, final_state):
            # if reader.systIsCorrelated(flat_unc): continue
-            percentage = abs(1.-reader.getValue(flat_unc, year))
+            percentage = abs(1.-reader.getValue(flat_unc, year, process=process_name))
             syst_error_hist.getHist().SetBinError(b, sqrErr(syst_error_hist.getHist().GetBinError(b), nominal_hist.getHist().GetBinContent(b)*percentage)) 
 
         for weight in reader.getWeights(year, process_name, final_state, split_syst = False):
