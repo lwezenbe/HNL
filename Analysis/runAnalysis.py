@@ -755,7 +755,6 @@ else:
                     for mva in list_of_mvas:
                         var_for_datacard[mva] = [x for x in var[mva]]
 
-                print signal_list
                 hist_for_datacard = createVariableDistributions(category_dict[args.categoriesToPlot], var_for_datacard, signal_list, background_collection, data_list, sample_manager, '||'.join(['searchregion=={0}'.format(x) for x in srm[args.region].getGroupValues(sr)]), include_systematics = args.systematics, sr=sr, split_corr=True, for_datacards=True)
                    
                 for ac in category_dict[args.categoriesToPlot][0]:
