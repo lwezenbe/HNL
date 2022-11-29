@@ -755,6 +755,7 @@ else:
                     for mva in list_of_mvas:
                         var_for_datacard[mva] = [x for x in var[mva]]
 
+                print signal_list
                 hist_for_datacard = createVariableDistributions(category_dict[args.categoriesToPlot], var_for_datacard, signal_list, background_collection, data_list, sample_manager, '||'.join(['searchregion=={0}'.format(x) for x in srm[args.region].getGroupValues(sr)]), include_systematics = args.systematics, sr=sr, split_corr=True, for_datacards=True)
                    
                 for ac in category_dict[args.categoriesToPlot][0]:
@@ -1026,6 +1027,10 @@ else:
                                 #else:
                                 #    normalize_signal = None
                                 #normalize_signal = 'med'
+                                normalize_signal = 'bkgr'
+                            if 'analysis' in args.categoriesToPlot:
+                                normalize_signal = 'med'
+                            else:
                                 normalize_signal = 'bkgr'
                             p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = normalize_signal, draw_option='EHist', min_cutoff = 1)
                             #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = 'med', draw_option='EHist', min_cutoff = 1)

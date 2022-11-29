@@ -140,9 +140,9 @@ SUPER_CATEGORIES_TEX = {
 mutual_exclusive_supercategories = ['SingleTau', 'NoTau']
 
 ANALYSIS_CATEGORIES = {
-    'OneTau-OSSF': [4, 5, 6, 10, 11, 12],
-    'OneTau-OF' : [13, 14, 15, 16, 17, 18],
-    'OneTau-SSSF': [1, 2, 3, 7, 8, 9], 
+#    'OneTau-OSSF': [4, 5, 6, 10, 11, 12],
+#    'OneTau-OF' : [13, 14, 15, 16, 17, 18],
+#    'OneTau-SSSF': [1, 2, 3, 7, 8, 9], 
     'EEE-Mu': [19, 21, 22, 23, 24, 25, 26], 
     'MuMuMu-E': [20, 27, 28, 29, 30, 31, 32], 
     #'EEE': [19], 
