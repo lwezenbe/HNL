@@ -31,8 +31,10 @@ ALGOLIB = {'HNL' : 'DeepTau2017v2p1VSjet',
 
 UNC_LIB = {
     'nominal' : None,
-    'up' : 'Up',
-    'down' : 'Down'
+    'tauEnergyScale-eUp' : 'Up',
+    'tauEnergyScale-eDown' : 'Down',
+    'tauEnergyScale-tauUp' : 'Up',
+    'tauEnergyScale-tauDown' : 'Down'
 }
 
 class TauEnergyScale:
@@ -55,12 +57,22 @@ class TauEnergyScale:
     #tlv is four vector to correct
     def readES(self, tlv, dm, genmatch, syst = 'nominal'):
         if genmatch == 1 or genmatch == 3:
-            if dm == 0 or dm == 1:
-                return self.tfestool.getFES(tlv.Eta(), dm, genmatch, UNC_LIB[syst])
+            if syst in ['tauEnergyScale-eUp', 'tauEnergyScale-eDown']:
+                if dm == 0 or dm == 1:
+                    return self.tfestool.getFES(tlv.Eta(), dm, genmatch, UNC_LIB[str(syst)])
+                else:
+                    return 1.
             else:
-                return 1.
+                if dm == 0 or dm == 1:
+                    return self.tfestool.getFES(tlv.Eta(), dm, genmatch, UNC_LIB['nominal'])
+                else:
+                    return 1.
+                
         elif genmatch == 5:
-            return self.testool.getTES(tlv.Pt(), dm, genmatch, UNC_LIB[syst])
+            if syst in ['tauEnergyScale-tauUp', 'tauEnergyScale-tauDown']:
+                return self.testool.getTES(tlv.Pt(), dm, genmatch, UNC_LIB[str(syst)])
+            else:
+                return self.testool.getTES(tlv.Pt(), dm, genmatch, UNC_LIB['nominal'])
         else:
             return 1.
     

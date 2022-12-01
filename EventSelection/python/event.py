@@ -31,6 +31,7 @@ class Event(object):
         self.event_selector = EventSelector(self.chain.region, self.chain, self.new_chain, is_reco_level=is_reco_level, event_categorization=self.event_category, additional_options=self.additional_options)
 
         self.tau_energy_scale = TauEnergyScale(self.chain.era, self.chain.year, self.chain.obj_sel['tau_algo'])
+        self.tau_energy_scale_syst = 'nominal'
 
         self.original_object_selection = {k:self.chain.obj_sel[k] for k in self.chain.obj_sel.keys()}
 
@@ -39,7 +40,7 @@ class Event(object):
         self.reweighter = Reweighter(self.sample, self.sample_manager)
         self.systematics = Systematics(self.sample, self.reweighter)
 
-    def initEvent(self, reset_obj_sel = False, tau_energy_scale = 'nominal'):
+    def initEvent(self, reset_obj_sel = False):
         if reset_obj_sel: self.chain.obj_sel = {k:self.original_object_selection[k] for k in self.chain.obj_sel.keys()} #reset object selection
         self.chain.category = None
         self.chain.weight = None
@@ -47,7 +48,7 @@ class Event(object):
         self.chain.is_FO_lepton = [None]*self.chain._nL
         self.chain.is_tight_lepton = [None]*self.chain._nL
         self.chain.conecorrection_applied = False
-        self.processLeptons(tau_energy_scale)
+        self.processLeptons(tau_energy_scale = self.tau_energy_scale_syst)
 
         from HNL.ObjectSelection.jetSelector import getMET
         self.chain.met, self.chain.metPhi = getMET(self.chain)
@@ -75,10 +76,9 @@ class Event(object):
             if not self.chain.is_data:
                 from HNL.Tools.helpers import getFourVec
                 tlv = getFourVec(self.chain._lPt[l], self.chain._lEta[l], self.chain._lPhi[l], self.chain._lE[l])
-                es = self.tau_energy_scale.readES(tlv, self.chain._tauDecayMode[l], self.chain._tauGenStatus[l])
+                es = self.tau_energy_scale.readES(tlv, self.chain._tauDecayMode[l], self.chain._tauGenStatus[l], syst=energy_scale_syst)
                 self.chain._lPt[l] *= es
                 self.chain._lE[l] *= es
-
 
             self.chain.is_loose_lepton[l] = (isGoodLepton(self.chain, l, 'loose'), self.chain.obj_sel['tau_algo'])
             self.chain.is_FO_lepton[l] = (isGoodLepton(self.chain, l, 'FO'), self.chain.obj_sel['tau_algo'])

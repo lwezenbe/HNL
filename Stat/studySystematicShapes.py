@@ -57,23 +57,23 @@ class SystShape:
         self.up         = None
         self.down       = None
         for isample, sample in enumerate(self.sample_names):
-            tmp_nominal    = getObjFromFile(path_to_shapes, self.category+'/'+sample)
-            tmp_up         = getObjFromFile(path_to_shapes, self.category+self.systematic+'Up/'+sample)
-            tmp_down       = getObjFromFile(path_to_shapes, self.category+self.systematic+'Down/'+sample)
+            tmp_nominal    = getObjFromFile(self.path_to_shapes, self.category+'/'+sample)
+            tmp_up         = getObjFromFile(self.path_to_shapes, self.category+self.systematic+'Up/'+sample)
+            tmp_down       = getObjFromFile(self.path_to_shapes, self.category+self.systematic+'Down/'+sample)
             
             if tmp_nominal is not None:     
                 if self.nominal is not None: 
-                    self.nominal.Add(getObjFromFile(path_to_shapes, self.category+'/'+sample))
+                    self.nominal.Add(getObjFromFile(self.path_to_shapes, self.category+'/'+sample))
                 else:
                     self.nominal = tmp_nominal.Clone()
             if tmp_up is not None:    
                 if self.up is not None:      
-                    self.up.Add(getObjFromFile(path_to_shapes, self.category+self.systematic+'Up/'+sample))
+                    self.up.Add(getObjFromFile(self.path_to_shapes, self.category+self.systematic+'Up/'+sample))
                 else:
                     self.up = tmp_up.Clone()
             if tmp_down is not None:
                 if self.down is not None:        
-                    self.down.Add(getObjFromFile(path_to_shapes, self.category+self.systematic+'Down/'+sample))
+                    self.down.Add(getObjFromFile(self.path_to_shapes, self.category+self.systematic+'Down/'+sample))
                 else:
                     self.down = tmp_down.Clone()
 
