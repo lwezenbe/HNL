@@ -53,6 +53,9 @@ class LumiWeight:
             self.lumi_weight = rerun_chain.original_weight * (rerun_chain.lumiWeight/abs(rerun_chain.lumiWeight))*(self.sample.xsec*LUMINOSITY_MAP[self.sample.chain.era+self.sample.chain.year])/self.total_hcount
             return self.lumi_weight
 
+    def getLumi(self):
+        return LUMINOSITY_MAP[self.sample.chain.era+self.sample.chain.year]
+
     def getDiracTypeSF(self):
         return self.total_hcount/self.total_hcount_dirac
 

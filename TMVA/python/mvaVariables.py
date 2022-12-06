@@ -8,7 +8,7 @@ mass_ranges = {
 }
 
 mass_ranges_for_validation= {
-    'lowestmass' : [10, 20, 30, 40],
+    'lowestmass' : [10, 12.5, 15, 17.5, 20, 30, 40],
     'lowmass' : [50, 60, 70, 75],
     'mediummass85100' : [85, 100],
     'mediummass150200' : [125, 150, 200],

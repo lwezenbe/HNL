@@ -6,7 +6,7 @@ argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
 submission_parser.add_argument('--year',     action='store', nargs='*',       default=None,   help='Select year')
 submission_parser.add_argument('--era',     action='store',       default='UL', choices = ['UL', 'prelegacy'],   help='Select era')
-submission_parser.add_argument('--masses', type=int, nargs='*',  help='Only run or plot signal samples with mass given in this list')
+submission_parser.add_argument('--masses', type=float, nargs='*',  help='Only run or plot signal samples with mass given in this list')
 submission_parser.add_argument('--couplings', nargs='*', type=float,  help='Only run or plot signal samples with coupling squared given in this list')
 submission_parser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
 submission_parser.add_argument('--asymptotic',   action='store_true', default=False,  help='Use the -M AsymptoticLimits option in Combine')
@@ -97,11 +97,13 @@ if not args.useExistingLimits:
     if args.submitPlotting:
         jobs = []
         for mass in args.masses:
-            jobs += [(mass, 0)]
+            couplings = returnCouplings(mass)
+            for coupling in couplings:
+                jobs += [(mass, coupling, 0)]
 
         if not args.isChild and not args.checkLogs:
             from HNL.Tools.jobSubmitter import submitJobs
-            submitJobs(__file__, ['masses', 'subJob'], jobs, argParser, jobLabel = 'runlimits-{0}'.format(args.flavor))
+            submitJobs(__file__, ['masses', 'couplings', 'subJob'], jobs, argParser, jobLabel = 'runlimits-{0}'.format(args.flavor))
             exit(0)
 
         if args.checkLogs:
@@ -128,7 +130,8 @@ if not args.useExistingLimits:
         for mass in args.masses:
             couplings = returnCouplings(mass)
             for coupling in couplings:
-                signal_name = 'HNL-'+args.flavor+'-m'+str(mass)+'-Vsq'+('{:.1e}'.format(coupling).replace('-', 'm'))+'-'+ ('prompt' if not args.displaced else 'displaced')
+                mass_str = str(mass) if not mass.is_integer() else str(int(mass))
+                signal_name = 'HNL-'+args.flavor+'-m'+mass_str+'-Vsq'+('{:.1e}'.format(coupling).replace('-', 'm'))+'-'+ ('prompt' if not args.displaced else 'displaced')
                 if not datacard_manager.checkMassAvailability(signal_name): continue
                 print '\x1b[6;30;42m', 'Processing mN =', str(mass), 'GeV with V2 = ', str(coupling), '\x1b[0m'
                 runLimit(datacard_manager, signal_name, card)

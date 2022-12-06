@@ -38,7 +38,7 @@ class DisplacementReweighter:
             self.getMeanLifetimeDict()
             return self.getMeanLifetime(sample_name)
 
-    def calculateNewLumiWeight(self, target_coupling_squared, ct):
+    def calculateNewLumiWeightBase(self, target_coupling_squared, ct):
     #    print 'NEW:'
     #    print '---'
     #    print 'V2: \t', self.original_coupling_squared[0], '->', target_coupling_squared
@@ -55,12 +55,12 @@ class DisplacementReweighter:
         return new_xsec / new_mean_ctau * exp( -ct / new_mean_ctau) / exp_sum
         
 
-    def getRangeOfNewLumiWeights(self, ct, range_of_targets = None):
+    def getRangeOfNewLumiWeights(self, ct, lumi, range_of_targets = None):
         if range_of_targets is None:
-            range_of_targets = [1e-2, 5e-2, 1e-3, 5e-3, 1e-4, 5e-4, 1e-5, 5e-5, 1e-6, 5e-6, 1e-7, 5e-7, 1e-8, 5e-8]
+            range_of_targets = [1e-1, 2.5e-1, 5e-1, 7.5e-1, 1e-2, 2.5e-2, 5e-2, 7.5e-2, 1e-3, 2.5e-3, 5e-3, 7.5e-3, 1e-4, 2.5e-4, 5e-4, 7.5e-4, 1e-5, 2.5e-5, 5e-5, 7.5e-5, 1e-6, 2.5e-6, 5e-6, 1e-7, 5e-7, 1e-8, 5e-8]
     
         range_of_targets = sorted(range_of_targets)
-        lumi_weights = [self.calculateNewLumiWeight(target, ct) for target in range_of_targets]
+        lumi_weights = [self.calculateNewLumiWeightBase(target, ct)*lumi for target in range_of_targets]
         return range_of_targets, lumi_weights
 
 

@@ -623,21 +623,22 @@ else:
                     split_syst_to_run = getSystToRun(year, sample_name, split_corr=split_corr) if include_systematics in ['full'] else ['nominal']           
 
                     additional_condition_to_use = additional_condition if not args.plotDirac else additional_condition+'&&isDiracType'
-                    coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
-                    additional_weight = str(coupling_squared/Sample.getSignalCouplingSquared(sample_name))
-                    if args.plotDirac: additional_weight *= "diracSF"
                     for syst, corr_syst in zip(syst_to_run, split_syst_to_run):
                         intree = OutputTree('events_{0}'.format(syst), s+'/variables.root')
                         for c, cc in zip(categories_to_use, category_conditions): 
                             if 'taulep' in sample_name and not isLightLeptonFinalState(c): continue
                             if 'tauhad' in sample_name and isLightLeptonFinalState(c): continue
                             for v in var_dict.keys():
-                                if not for_datacards or  Sample.getSignalDisplacedString(sample_name) == 'prompt':
+                                if not for_datacards or Sample.getSignalDisplacedString(sample_name) == 'prompt':
+                                    coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
+                                    additional_weight = str(coupling_squared/Sample.getSignalCouplingSquared(sample_name))
+                                    if args.plotDirac: additional_weight *= 'diracSF'
                                     if syst == 'nominal':
                                         tmp_list_of_hist[c][v]['signal'][cleaned_sample_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, include_systematics, split_corr = split_corr, additional_weight = additional_weight)
                                     else:
                                         tmp_list_of_hist[c][v]['signal'][cleaned_sample_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, split_corr = split_corr, additional_weight = additional_weight)['nominal'] 
                                 else:
+                                    additional_weight = 'diracSF' if args.plotDirac else None
                                     for iv, vsquared in enumerate(np.ndarray(intree.getTreeVariable('displacement_ncouplings', 0), 'f', intree.getTreeVariable('displacement_vsquared', 0))):
                                         vsquared_translated = str(vsquared)
                                         vsquared_translated = vsquared_translated.replace('e-', 'em')
@@ -673,7 +674,6 @@ else:
                         for iv, v in enumerate(var_dict.keys()): 
                             tmp_list_of_hist[c][v]['bkgr'][b] = {}
 
-                print background
                 for ib, b in enumerate(background):
                     progress(ib, len(background))
                     if not args.individualSamples:
