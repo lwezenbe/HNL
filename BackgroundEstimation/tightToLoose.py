@@ -165,11 +165,6 @@ if not args.makePlots:
     chain.selection = args.selection
 
     #
-    # Initialize reweighter
-    #
-    reweighter = Reweighter(sample, sample_manager)
-
-    #
     # Import and create cutter to provide cut flow
     #
     from HNL.EventSelection.bitCutter import Cutter
@@ -193,7 +188,7 @@ if not args.makePlots:
     #
     # Define event selection
     #
-    event = Event(sample, chain, sample_manager, is_reco_level=True, selection=args.selection, strategy='MVA', region=region_to_select, analysis = args.analysis, year = args.year, era = args.era)    
+    event = Event(sample, chain, sample_manager, is_reco_level=True, selection=args.selection, strategy='MVA', region=region_to_select, analysis = args.analysis, year = args.year, era = args.era, ignore_fakerates=True)    
 
     #
     # Create fake rate objects
@@ -228,11 +223,11 @@ if not args.makePlots:
         if args.inData and not chain.is_data:
             if not chain._lIsPrompt[chain.l_indices[fake_index]]: continue
             passed = isGoodLepton(chain, chain.l_indices[fake_index], 'tight')
-            fakerate.setTreeVariable('weight', -1.*reweighter.getTotalWeight())
+            fakerate.setTreeVariable('weight', -1.*event.reweighter.getTotalWeight())
         else:
             if not chain.is_data and not cutter.cut(chain.l_isfake[fake_index], 'fake lepton'): continue
             passed = isGoodLepton(chain, chain.l_indices[fake_index], 'tight')
-            fakerate.setTreeVariable('weight', reweighter.getTotalWeight())
+            fakerate.setTreeVariable('weight', event.reweighter.getTotalWeight())
 
         fakerate.setTreeVariable('met', chain.met)
         fakerate.setTreeVariable('l_pt', chain.l_pt[fake_index])

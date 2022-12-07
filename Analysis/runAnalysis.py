@@ -308,7 +308,7 @@ if not args.makePlots and not args.makeDataCards:
         #
         # Load in sample and chain
         #
-        event = Event(sample, chain, sample_manager, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = year, era = args.era)
+        event = Event(sample, chain, sample_manager, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = year, era = args.era, ignore_fakerates = args.tag != 'sidebandInMC' and args.includeData != 'includeSideband')
 
         #
         # Prepare output tree
@@ -433,7 +433,7 @@ if not args.makePlots and not args.makeDataCards:
             for v in var.keys():
                 output_tree.setTreeVariable(v, var[v][0](chain))
         
-            output_tree.setTreeVariable('weight', event.reweighter.getTotalWeight(sideband = is_sideband_event if args.tag not in ['TauFakes', 'fakePtTest'] else False, tau_fake_method = 'TauFakesDY' if args.region == 'ZZCR' else None))
+            output_tree.setTreeVariable('weight', event.reweighter.getTotalWeight())
             output_tree.setTreeVariable('isprompt', chain.is_prompt)
             output_tree.setTreeVariable('category', chain.category)
             output_tree.setTreeVariable('searchregion', srm[args.region].getSearchRegion(chain))
@@ -462,7 +462,8 @@ if not args.makePlots and not args.makeDataCards:
         
         cutter.saveCutFlow(output_name, arg_string = arg_string if args.isTest else None)
   
-    for syst in getSystToRun(year, args.sample): 
+    #for syst in getSystToRun(year, args.sample): 
+    for syst in ['nominal']: 
         print 'Running {0}'.format(syst)
         runEventLoop(chain, output_name_full, syst)
     

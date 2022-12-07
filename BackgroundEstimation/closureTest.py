@@ -246,7 +246,7 @@ if not args.makePlots:
     # Get luminosity weight
     #
     from HNL.Weights.reweighter import Reweighter
-    reweighter = Reweighter(sample, sample_manager)
+    reweighter = Reweighter(sample, sample_manager, ignore_fakerates=True)
 
     fakerate = {}
     if 'tau' in args.flavorToTest:

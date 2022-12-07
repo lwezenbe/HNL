@@ -200,12 +200,6 @@ if not args.makePlots:
     chain.analysis = args.analysis
 
     #
-    # Get luminosity weight
-    #
-    from HNL.Weights.reweighter import Reweighter
-    lw = Reweighter(sample, sample_manager)
-
-    #
     # Import and create cutter to provide cut flow
     #
     from HNL.EventSelection.bitCutter import Cutter
@@ -228,9 +222,9 @@ if not args.makePlots:
     from HNL.EventSelection.event import Event
     if args.region == 'mix':
         region_to_select = 'lowMassSR' if chain.HNLmass <= 80 else 'highMassSR'
-        event = Event(sample, chain, sample_manager, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=region_to_select, analysis=args.analysis, year = args.year, era = args.era)
+        event = Event(sample, chain, sample_manager, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=region_to_select, analysis=args.analysis, year = args.year, era = args.era, ignore_fakerates=True)
     else:
-        event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = args.year, era = args.era)
+        event = Event(chain, chain, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = args.year, era = args.era, ignore_fakerates=True)
 
     for entry in event_range:
         
@@ -273,7 +267,7 @@ if not args.makePlots:
         else:
             passed = True
             
-        weight = lw.getLumiWeight()
+        weight = event.reweighter.getLumiWeight()
         if args.divideByCategory is not None:
 
             cat_to_use = ec.returnCategory() if args.divideByCategory == 'reco' else true_cat 

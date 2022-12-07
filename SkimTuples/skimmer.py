@@ -231,7 +231,7 @@ if not args.checkLogs:
     from HNL.EventSelection.event import Event
     #if args.region is not None:
     if args.region is None:
-        event = Event(sample, new_vars, sample_manager, is_reco_level=not args.genSkim, selection=args.skimSelection, strategy=args.strategy, region=args.region if args.region is not None else 'NoSelection', year = args.year, era = args.era, analysis = args.analysis, obj_sel = obj_sel, additional_options = {'for_skim':True})
+        event = Event(sample, new_vars, sample_manager, is_reco_level=not args.genSkim, selection=args.skimSelection, strategy=args.strategy, region=args.region if args.region is not None else 'NoSelection', year = args.year, era = args.era, analysis = args.analysis, obj_sel = obj_sel, additional_options = {'for_skim':True}, ignore_fakerates = True)
     else:
         event = Event(sample, new_vars, sample_manager, is_reco_level=not args.genSkim, selection=args.skimSelection, strategy=args.strategy, region=args.region if args.region is not None else 'NoSelection', year = args.year, era = args.era, analysis = args.analysis)
     chain.strategy = 'MVA' if args.region != 'AN2017014' else 'cutbased'
