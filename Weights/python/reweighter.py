@@ -168,11 +168,8 @@ class Reweighter:
 
     def getTotalWeight(self, sideband=False, tau_fake_method = None):
         tot_weight = 1.
-        print 'NEW WEIGHT'
         for weight in self.WEIGHTS_TO_USE:
-            print weight, self.returnWeight(weight)
             tot_weight *= self.returnWeight(weight)
-        print tot_weight
         return tot_weight
 
     def fillTreeWithWeights(self, chain):

@@ -176,10 +176,11 @@ for card in cards_to_read:
     limits = {}
     print 'start'
     for mass in args.masses:
+        mass_str = str(mass) if not mass.is_integer() else str(int(mass))
         couplings = returnCouplings(mass)
         input_folders = []
         for c in couplings:
-            tmp_folder = datacard_manager.getDatacardPath('HNL-'+args.flavor+'-m'+str(mass)+'-Vsq'+('{:.1e}'.format(c).replace('-', 'm'))+'-'+('prompt' if not args.displaced else 'displaced'), card)
+            tmp_folder = datacard_manager.getDatacardPath('HNL-'+args.flavor+'-m'+mass_str+'-Vsq'+('{:.1e}'.format(c).replace('-', 'm'))+'-'+('prompt' if not args.displaced else 'displaced'), card)
             tmp_folder = tmp_folder.replace('dataCards', 'output').rsplit('/', 1)[0] +'/'+asymptotic_str+'/'+card
             if args.tag is not None: tmp_folder += '-'+args.tag
             tmp_folder += '/higgsCombineTest.AsymptoticLimits.mH120.root'
@@ -188,11 +189,11 @@ for card in cards_to_read:
         if args.displaced and mass <= displaced_mass_threshold:
             tmp_limit = extractScaledLimitsDisplacedHNL(input_folders, couplings)
             from HNL.Stat.combineTools import drawSignalStrengthPerCouplingDisplaced
-            drawSignalStrengthPerCouplingDisplaced(input_folders, couplings, destination+'/components', 'm'+str(mass), year_to_read, args.flavor)
+            drawSignalStrengthPerCouplingDisplaced(input_folders, couplings, destination+'/components', 'm'+mass_str, year_to_read, args.flavor)
         else:
             tmp_limit = extractScaledLimitsPromptHNL(input_folders[0], couplings[0])
             from HNL.Stat.combineTools import drawSignalStrengthPerCouplingPrompt
-            drawSignalStrengthPerCouplingPrompt(input_folders[0], couplings[0], destination+'/components', 'm'+str(mass), year_to_read, args.flavor)
+            drawSignalStrengthPerCouplingPrompt(input_folders[0], couplings[0], destination+'/components', 'm'+mass_str, year_to_read, args.flavor)
 
         if tmp_limit is not None and len(tmp_limit) > 4: 
             passed_masses.append(mass)

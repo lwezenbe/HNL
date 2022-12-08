@@ -29,6 +29,7 @@ class LeptonIDSF(object):
         elif pt <= self.ptMin: pt = self.ptMin + 1.
 
         if syst == 'nominal':
+            print "WEE", self.sf_hist.FindBin(eta, pt), self.sf_hist.GetBinContent(self.sf_hist.FindBin(eta, pt)), "WOO"
             return self.sf_hist.GetBinContent(self.sf_hist.FindBin(eta, pt))
         elif syst == 'statup':
             if flavor == 1:

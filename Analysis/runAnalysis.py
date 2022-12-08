@@ -462,8 +462,7 @@ if not args.makePlots and not args.makeDataCards:
         
         cutter.saveCutFlow(output_name, arg_string = arg_string if args.isTest else None)
   
-    #for syst in getSystToRun(year, args.sample): 
-    for syst in ['nominal']: 
+    for syst in getSystToRun(year, args.sample): 
         print 'Running {0}'.format(syst)
         runEventLoop(chain, output_name_full, syst)
     
