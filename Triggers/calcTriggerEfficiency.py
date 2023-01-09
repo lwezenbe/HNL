@@ -64,7 +64,7 @@ log = getLogger(args.logLevel)
 from HNL.Samples.sampleManager import SampleManager
 def getSampleManager(year):
     if not args.noskim:
-        return SampleManager(args.era, year, 'auto', 'Triggers/triggerlist_'+args.era+str(year), skim_selection=args.selection, region = args.region)
+        return SampleManager(args.era, year, 'Reco', 'Triggers/triggerlist_'+args.era+str(year), skim_selection=args.selection, region = args.region)
     else:
         return SampleManager(args.era, year, 'noskim', 'Triggers/triggerlist_'+args.era+str(year))
 
@@ -136,12 +136,12 @@ var = {
 #    'abs(l3eta)' : (lambda c : abs(c.l_eta[2]),                          np.arange(0., 3., .5),                  ('|#eta|(l3) [GeV]', 'Efficiency')),
     'abs(light1eta)' : (lambda c : abs(c.light_eta[0]),                          np.arange(0., 3., .2),                  ('|#eta|(light lep 1) [GeV]', 'Efficiency')),
     'abs(light2eta)' : (lambda c : abs(c.light_eta[1]),                          np.arange(0., 3., .2),                  ('|#eta|(light lep 2) [GeV]', 'Efficiency')),
-#    'l1pt-abs(l1eta)' : (lambda c : (c.l_pt[0], abs(c.l_eta[0])),      (np.arange(0., 100., 15.), np.arange(0., 3., .5)), ('p_{T}(l1) [GeV]', '|#eta|(l1)')),
-#    'l2pt-abs(l2eta)' : (lambda c : (c.l_pt[1], abs(c.l_eta[1])),      (np.arange(5., 40., 5.), np.arange(0., 3., .5)), ('p_{T}(l2) [GeV]', '|#eta|(subleading)')),
-#    'l3pt-abs(l3eta)' : (lambda c : (c.l_pt[2], abs(c.l_eta[2])),      (np.arange(5., 40., 5.), np.arange(0., 3., .5)), ('p_{T}(l3) [GeV]', '|#eta|(subleading)')),
-#    'l3pt-l2pt' : (lambda c : (c.l_pt[2], c.l_pt[1]),      (np.arange(5., 50., 5.), np.arange(5., 50., 5.)), ('p_{T}(l3) [GeV]', 'p_{T}(l2) [GeV]')),
-#    'l3pt-l2pt' : (lambda c : (c.l_pt[2], c.l_pt[1]),      (np.arange(10., 32., 2.), np.arange(10., 32., 2.)), ('p_{T}(l3) [GeV]', 'p_{T}(l2) [GeV]')),
-#    'l2pt-l1pt' : (lambda c : (c.l_pt[1], c.l_pt[0]),      (np.arange(10., 34., 4.), np.arange(15., 35., 4.)), ('p_{T}(l2) [GeV]', 'p_{T}(l1) [GeV]')),
+    #'l1pt-abs(l1eta)' : (lambda c : (c.l_pt[0], abs(c.l_eta[0])),      (np.arange(0., 100., 15.), np.arange(0., 3., .5)), ('p_{T}(l1) [GeV]', '|#eta|(l1)')),
+    #'l2pt-abs(l2eta)' : (lambda c : (c.l_pt[1], abs(c.l_eta[1])),      (np.arange(5., 40., 5.), np.arange(0., 3., .5)), ('p_{T}(l2) [GeV]', '|#eta|(subleading)')),
+    #'l3pt-abs(l3eta)' : (lambda c : (c.l_pt[2], abs(c.l_eta[2])),      (np.arange(5., 40., 5.), np.arange(0., 3., .5)), ('p_{T}(l3) [GeV]', '|#eta|(subleading)')),
+    #'l3pt-l2pt' : (lambda c : (c.l_pt[2], c.l_pt[1]),      (np.arange(5., 50., 5.), np.arange(5., 50., 5.)), ('p_{T}(l3) [GeV]', 'p_{T}(l2) [GeV]')),
+    'l3pt-l2pt' : (lambda c : (c.l_pt[2], c.l_pt[1]),      (np.arange(10., 50., 5.), np.arange(10., 50., 5.)), ('p_{T}(l3) [GeV]', 'p_{T}(l2) [GeV]')),
+    #'l2pt-l1pt' : (lambda c : (c.l_pt[1], c.l_pt[0]),      (np.arange(10., 34., 4.), np.arange(15., 35., 4.)), ('p_{T}(l2) [GeV]', 'p_{T}(l1) [GeV]')),
 }
 
 from HNL.Triggers.triggerSelection import returnTriggers 
