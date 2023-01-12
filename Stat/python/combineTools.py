@@ -92,12 +92,13 @@ def runCombineCommand(command, output = None):
     os.chdir(currentDir)
 
 from ROOT import TGraph
-def extractRawLimits(input_file_path):
+def extractRawLimits(input_file_path, blind=False):
     in_file = ROOT.TFile(input_file_path, 'read')
     tree = in_file.Get('limit')
     limits = {}
+    expected_entries = 6 if not blind else 5
     try:
-        if tree.GetEntries() < 5:
+        if tree.GetEntries() < expected_entries:
             limits = None
         for entry in xrange(tree.GetEntries()):
             tree.GetEntry(entry)
@@ -107,13 +108,13 @@ def extractRawLimits(input_file_path):
         limits = None
     return limits
 
-def extractRawLimitsRange(in_file_paths, x_values):
+def extractRawLimitsRange(in_file_paths, x_values, blind=False):
     if len(in_file_paths) != len(x_values):
         raise RuntimeError("Size of in_file_paths and x_values is not the same")
 
     limits = {}
     for x, p in zip(x_values, in_file_paths):
-        limits[x] = extractRawLimits(p)
+        limits[x] = extractRawLimits(p, blind)
     return limits
 
 def extractScaledLimitsPromptHNL(input_file_path, coupling):
@@ -170,7 +171,7 @@ def extrapolateExclusionLimit(limits, quantile):
     y2 = limits[x2][quantile]
     return linearExtrapolationX(x1, x2, y1, y2) 
 
-def extractScaledLimitsDisplacedHNL(input_file_paths, couplings):
+def extractScaledLimitsDisplacedHNL(input_file_paths, couplings, blind=False):
     limits = extractRawLimitsRange(input_file_paths, couplings)
 
     #Gather all points in between which the coupling strength crosses one
@@ -180,9 +181,12 @@ def extractScaledLimitsDisplacedHNL(input_file_paths, couplings):
     out_limits[0.84] = extrapolateExclusionLimit(limits, 0.84)
     out_limits[0.025] = extrapolateExclusionLimit(limits, 0.025)
     out_limits[0.975] = extrapolateExclusionLimit(limits, 0.975)
+    if not blind: 
+        out_limits[-1.] = extrapolateExclusionLimit(limits, -1.)
+
     return out_limits    
 
-def makeGraphs(x_values, limits):
+def makeGraphs(x_values, limits, blind=False):
     passed_masses = x_values
     npoints = len(passed_masses)
 
@@ -191,6 +195,8 @@ def makeGraphs(x_values, limits):
         '1sigma': TGraph(npoints*2),
         '2sigma': TGraph(npoints*2)
     }
+    if not blind:
+        graphs['observed'] = TGraph(npoints)
 
 
     for i, m in enumerate(passed_masses):
@@ -200,10 +206,15 @@ def makeGraphs(x_values, limits):
             graphs['expected'].SetPoint(i, m, limits[m][0.5])
             graphs['1sigma'].SetPoint(npoints*2-1-i, m, limits[m][0.16])
             graphs['2sigma'].SetPoint(npoints*2-1-i, m, limits[m][0.025])
+            if not blind:
+                graphs['observed'].SetPoint(i, m, limits[m][-1.])
         except:
             pass
 
-    return [graphs['expected'], graphs['1sigma'], graphs['2sigma']]
+    out_graphs = [graphs['expected'], graphs['1sigma'], graphs['2sigma']]
+    if not blind:
+        out_graphs.append(graphs['observed'])
+    return out_graphs 
 
 def saveGraphs(graphs, outpath):
     makeDirIfNeeded(outpath)
@@ -211,28 +222,36 @@ def saveGraphs(graphs, outpath):
     graphs[0].Write('expected_central')
     graphs[1].Write('expected_1sigma')
     graphs[2].Write('expected_2sigma')
+    try:
+        graphs[3].Write('observed')
+    except:
+        pass
     out_file.Close()
 
-def drawSignalStrengthPerCouplingDisplaced(input_file_paths, couplings, out_path, out_name, year, flavor):
-    limits = extractRawLimitsRange(input_file_paths, couplings)
+#Functions purely to draw signal strength for a specific mass as function of coupling, not for final exclusion limit plots
+def drawSignalStrengthPerCouplingDisplaced(input_file_paths, couplings, out_path, out_name, year, flavor, blind=False):
+    limits = extractRawLimitsRange(input_file_paths, couplings, blind=blind)
 
     cleaned_couplings = [c for c in couplings if limits[c] is not None]
     
-    graphs = makeGraphs(cleaned_couplings, limits)
+    graphs = makeGraphs(cleaned_couplings, limits, blind=blind)
     from HNL.Plotting.plot import Plot
     p = Plot(graphs, name=out_name, y_log = True, x_log=True, x_name = '|V_{'+coupling_dict[flavor]+' N}|^{2}', y_name = 'Signal Strength', era = 'UL', year = year)
     p.drawBrazilian(output_dir = out_path)
    
-def drawSignalStrengthPerCouplingPrompt(input_file_path, coupling, out_path, out_name, year, flavor):
+def drawSignalStrengthPerCouplingPrompt(input_file_path, coupling, out_path, out_name, year, flavor, blind=False):
     limits = {}
+    quantiles = [0.025, 0.16, 0.5, 0.84, 0.975]
+    if not blind:
+        quantiles.append(-1.)
     limits[coupling] = extractRawLimits(input_file_path)
     for probe_coupling in [0.01*coupling, 0.05*coupling, 0.1*coupling, 0.5*coupling, 5*coupling, 10*coupling, 50*coupling, 100*coupling]:
         limits[probe_coupling] = {}
-        for quantile in [0.025, 0.16, 0.5, 0.84, 0.975]:
+        for quantile in quantiles:
             limits[probe_coupling][quantile] = inverseExtrapolationY(coupling, limits[coupling][quantile], probe_coupling) 
 
     sorted_couplings = sorted(limits.keys())
-    graphs = makeGraphs(sorted_couplings, limits)
+    graphs = makeGraphs(sorted_couplings, limits, blind=blind)
     from HNL.Plotting.plot import Plot
     p = Plot(graphs, name=out_name, y_log = True, x_log=True, x_name = '|V_{'+coupling_dict[flavor]+' N}|^{2}', y_name = 'Signal Strength', era = 'UL', year = year)
     p.drawBrazilian(output_dir = out_path)
