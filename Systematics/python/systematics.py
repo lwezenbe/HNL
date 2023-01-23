@@ -104,9 +104,10 @@ class SystematicJSONreader:
             if 'Data' in proc: return False
             if self.datadriven_processes is not None and proc in self.datadriven_processes: return False
             return True
+        elif raw_processes == 'data':
+            return 'Data' in proc or (self.datadriven_processes is not None and proc in self.datadriven_processes)
         elif raw_processes == 'signal':
             return 'HNL' in proc
-            
         else:
             return proc in raw_processes
         

@@ -38,7 +38,6 @@ log = getLogger(args.logLevel)
 import ROOT
 import os
 from HNL.Tools.helpers import isValidRootFile, makeDirIfNeeded
-from HNL.Weights.reweighter import Reweighter
 from random import randrange
 nl = 3 if args.region != 'ZZCR' else 4
 
@@ -103,13 +102,6 @@ if not args.merge:
     chain.analysis = args.analysis
     chain.region = args.region
 
-    reweighter = Reweighter(sample, sample_manager)
-    from HNL.Weights.fakeRateWeights import returnFakeRateCollection
-    fakerates = {
-        'lowMassSRloose' : returnFakeRateCollection(chain, region = 'lowMassSRloose'),
-        'highMassSR' : returnFakeRateCollection(chain,region =  'highMassSR'),
-    }
-
     # Import and create cutter to provide cut flow
     #
     from HNL.EventSelection.bitCutter import CutterCollection
@@ -169,7 +161,14 @@ if not args.merge:
     from HNL.EventSelection.event import Event
 
     #prepare object  and event selection
-    event =  Event(sample, chain, sample_manager, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = args.year, era = args.era)
+    event =  Event(sample, chain, sample_manager, is_reco_level=True, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = args.year, era = args.era, ignore_fakerates=True)
+
+    from HNL.Weights.fakeRateWeights import FakeRateWeighter
+    fakerates = {
+        'lowMassSRloose' : FakeRateWeighter(chain, region = 'lowMassSRloose').fake_collection,
+        'highMassSR' : FakeRateWeighter(chain,region =  'highMassSR').fake_collection,
+    }
+
 
     for entry in event_range:
         chain.GetEntry(entry)
@@ -196,7 +195,7 @@ if not args.merge:
    
         prompt_str = 'prompt' if nprompt == nl else 'nonprompt'
 
-        weight = reweighter.getLumiWeight()
+        weight = event.reweighter.getLumiWeight()
 
         chain.weight = weight
         chain.entry = entry

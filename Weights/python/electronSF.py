@@ -119,3 +119,18 @@ class ElectronRecoSFJSON:
                 sf *= self.getSingleRecoSF(chain, e, syst)
 
         return sf
+
+def getElectronScaleMinimal(chain, syst = 'nominal'):
+    if syst == 'nominal':
+        return 1.
+    else:
+        out_val = 1
+        for f in chain.l_flavor:
+            if f == 0:
+                if syst == 'up':
+                    out_val += 0.03
+                elif syst == 'down':
+                    out_val -= 0.03
+                else:
+                    raise RuntimeError('Unknown syst: {0}'.format(syst)) 
+        return out_val

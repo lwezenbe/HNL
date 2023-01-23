@@ -15,6 +15,7 @@ submission_parser.add_argument('--useExistingLimits',   action='store_true', def
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA', 'custom'])
 submission_parser.add_argument('--datacard', action='store', default='', type=str,  help='What type of analysis do you want to run?', choices=['MaxOneTau', 'Combined', 'Ditau', 'NoTau', 'SingleTau', 'TauFinalStates', 'EEE-Mu'])
+submission_parser.add_argument('--compareToExternal',   type=str, nargs='*',  help='Compare to a specific experiment')
 submission_parser.add_argument('--compareToCards',   type=str, nargs='*',  help='Compare to a specific card if it exists. If you want different selection use "selection/card" otherwise just "card"')
 submission_parser.add_argument('--lod',   type=str,  help='"Level of detail": Describes how binned you want you analysis categories to be.', choices = ['analysis', 'super'])
 submission_parser.add_argument('--message', type = str, default=None,  help='Add a file with a message in the plotting folder')
@@ -176,23 +177,24 @@ for card in cards_to_read:
     limits = {}
     print 'start'
     for mass in args.masses:
+        mass_str = str(mass) if not mass.is_integer() else str(int(mass))
         couplings = returnCouplings(mass)
         input_folders = []
         for c in couplings:
-            tmp_folder = datacard_manager.getDatacardPath('HNL-'+args.flavor+'-m'+str(mass)+'-Vsq'+('{:.1e}'.format(c).replace('-', 'm'))+'-'+('prompt' if not args.displaced else 'displaced'), card)
+            tmp_folder = datacard_manager.getDatacardPath('HNL-'+args.flavor+'-m'+mass_str+'-Vsq'+('{:.1e}'.format(c).replace('-', 'm'))+'-'+('prompt' if not args.displaced else 'displaced'), card)
             tmp_folder = tmp_folder.replace('dataCards', 'output').rsplit('/', 1)[0] +'/'+asymptotic_str+'/'+card
             if args.tag is not None: tmp_folder += '-'+args.tag
             tmp_folder += '/higgsCombineTest.AsymptoticLimits.mH120.root'
             input_folders.append(tmp_folder)
 
         if args.displaced and mass <= displaced_mass_threshold:
-            tmp_limit = extractScaledLimitsDisplacedHNL(input_folders, couplings)
+            tmp_limit = extractScaledLimitsDisplacedHNL(input_folders, couplings, blind=args.blind)
             from HNL.Stat.combineTools import drawSignalStrengthPerCouplingDisplaced
-            drawSignalStrengthPerCouplingDisplaced(input_folders, couplings, destination+'/components', 'm'+str(mass), year_to_read, args.flavor)
+            drawSignalStrengthPerCouplingDisplaced(input_folders, couplings, destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
         else:
             tmp_limit = extractScaledLimitsPromptHNL(input_folders[0], couplings[0])
             from HNL.Stat.combineTools import drawSignalStrengthPerCouplingPrompt
-            drawSignalStrengthPerCouplingPrompt(input_folders[0], couplings[0], destination+'/components', 'm'+str(mass), year_to_read, args.flavor)
+            drawSignalStrengthPerCouplingPrompt(input_folders[0], couplings[0], destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
 
         if tmp_limit is not None and len(tmp_limit) > 4: 
             passed_masses.append(mass)
@@ -237,32 +239,12 @@ for card in cards_to_read:
             compare_graphs[sname + ' ' +cname+ ' ' + era] = getObjFromFile(file_name, 'expected_central')
     print 'loaded all compare graphs'
 
-    if args.flavor == 'e':
-        #observed_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsElectronMixing.root'), 'observed_promptDecays')
-        observed_AN = None
-        expected_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsElectronMixing.root'), 'expected_central')
-    #    tex_names = ['observed (EXO-17-012)', 'expected (EXO-17-012)']
-        tex_names = ['expected (EXO-17-012)']
-    elif args.flavor == 'mu':
-        #observed_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsMuonMixing.root'), 'observed_promptDecays')
-        observed_AN = None
-        expected_AN = getObjFromFile(os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'limitsMuonMixing.root'), 'expected_central')
-        #tex_names = ['observed (EXO-17-012)', 'expected (EXO-17-012)']
-        tex_names = ['expected (EXO-17-012)']
-    else:
-        observed_AN = None
-        expected_AN = None
-        tex_names = None
-
-
+    if args.compareToExternal is not None:
+        from HNL.Stat.stateOfTheArt import makeGraphList
+        bkgr_hist, tex_names = makeGraphList(args.flavor, args.compareToExternal, args.masses)
+    
     from HNL.Stat.combineTools import coupling_dict
     from HNL.Plotting.plot import Plot
-    if (observed_AN is None and expected_AN is None) or args.dryplot:
-        bkgr_hist = None
-    else:
-        #bkgr_hist = [observed_AN, expected_AN]
-        bkgr_hist = [expected_AN]
-
     if args.compareToCards is not None:
         for compare_key in compare_graphs.keys():
             compare_sel, compare_reg, compare_era = compare_key.split(' ')

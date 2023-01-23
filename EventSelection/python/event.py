@@ -37,7 +37,9 @@ class Event(object):
 
         from HNL.Weights.reweighter import Reweighter
         from HNL.Systematics.systematics import Systematics
-        self.reweighter = Reweighter(self.sample, self.sample_manager)
+        tau_method = kwargs.get('tau_method', 'TauFakesDY' if self.chain.region == 'ZZCR' else None)
+        ignore_fakerates = kwargs.get('ignore_fakerates', False)
+        self.reweighter = Reweighter(self.sample, self.sample_manager, tau_method = tau_method, ignore_fakerates = ignore_fakerates)
         self.systematics = Systematics(self.sample, self.reweighter)
 
     def initEvent(self, reset_obj_sel = False):
@@ -101,7 +103,7 @@ class ClosureTestEvent(Event):
     def __init__(self, sample, new_chain, sample_manager, strategy, region, selection, flavors_of_interest, in_data, analysis, year, era, is_reco_level = True):
         self.flavors_of_interest = flavors_of_interest
         self.translated_flavors_of_interest = [self.flavor_dict[i] for i in self.flavors_of_interest]
-        super(ClosureTestEvent, self).__init__(sample, new_chain, sample_manager, is_reco_level, strategy=strategy, region=region, selection=selection, analysis=analysis, year=year, era=era, additional_options={'fake_flavors' : self.translated_flavors_of_interest})
+        super(ClosureTestEvent, self).__init__(sample, new_chain, sample_manager, is_reco_level, strategy=strategy, region=region, selection=selection, analysis=analysis, year=year, era=era, additional_options={'fake_flavors' : self.translated_flavors_of_interest}, ignore_fakerates = True) #ignore_fakerates set to True because they are calculated elsewhere in the closure tests, quite messy, I know
         self.in_data = in_data
         if self.flavors_of_interest is None: 
             raise RuntimeError('Input for ClosureTestMC for flavors_of_interest is None')

@@ -141,22 +141,32 @@
             "Correlated"    : true,
             "Description"   : "TTXnorm"
         },
-    "nonpromptTau" :
+    "nonprompt_tau" :
         {
-            "Type"          : "flat",
-            "Value"         : 1.3,
+            "Type"          : "weight",
+            "Value"         : 1.0,
             "FinalStates"   : ["SingleTau", "Ditau"],
-            "Processes"     : "non-prompt",
+            "Processes"     : "data",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
             "Activate"     : true,
             "Description"   : "nonprompt tau"
         },
-    "nonpromptLightlep" :
+    "nonprompt_muon" :
         {
-            "Type"          : "flat",
-            "Value"         : 1.3,
+            "Type"          : "weight",
+            "Value"         : 1.0,
             "FinalStates"   : "*",
-            "Processes"     : "non-prompt",
+            "Processes"     : "data",
+            "Year"          : ["2016pre", "2016post", "2017", "2018"],
+            "Activate"     : true,
+            "Description"   : "nonprompt light lep"
+        },
+    "nonprompt_electron" :
+        {
+            "Type"          : "weight",
+            "Value"         : 1.0,
+            "FinalStates"   : "*",
+            "Processes"     : "data",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
             "Activate"     : true,
             "Description"   : "nonprompt light lep"
@@ -224,7 +234,47 @@
             "Activate"          : true,
             "Description"   : "Tau efficiency"
         },
-    "tauEnergyScale-tau"  :
+    "tauEnergyScale-tau-dm0"  :
+        {
+            "Type"              : "rerun",
+            "Value"             : 1.0,
+            "FinalStates"       : ["SingleTau", "Ditau"],
+            "Processes"         : "MC",
+            "Year"              : ["2016pre", "2016post", "2017", "2018"], 
+            "Activate"          : true,
+            "Description"   : "Tau efficiency"
+        },
+    "tauEnergyScale-tau-dm1"  :
+        {
+            "Type"              : "rerun",
+            "Value"             : 1.0,
+            "FinalStates"       : ["SingleTau", "Ditau"],
+            "Processes"         : "MC",
+            "Year"              : ["2016pre", "2016post", "2017", "2018"], 
+            "Activate"          : true,
+            "Description"   : "Tau efficiency"
+        },
+    "tauEnergyScale-tau-dm10"  :
+        {
+            "Type"              : "rerun",
+            "Value"             : 1.0,
+            "FinalStates"       : ["SingleTau", "Ditau"],
+            "Processes"         : "MC",
+            "Year"              : ["2016pre", "2016post", "2017", "2018"], 
+            "Activate"          : true,
+            "Description"   : "Tau efficiency"
+        },
+    "tauEnergyScale-tau-dm11"  :
+        {
+            "Type"              : "rerun",
+            "Value"             : 1.0,
+            "FinalStates"       : ["SingleTau", "Ditau"],
+            "Processes"         : "MC",
+            "Year"              : ["2016pre", "2016post", "2017", "2018"], 
+            "Activate"          : true,
+            "Description"   : "Tau efficiency"
+        },
+    "tauEnergyScale-e-dm0"  :
         {
             "Type"              : "rerun",
             "Value"             : 1.0,
@@ -234,7 +284,7 @@
             "Activate"          : false,
             "Description"   : "Tau efficiency"
         },
-    "tauEnergyScale-e"  :
+    "tauEnergyScale-e-dm1"  :
         {
             "Type"              : "rerun",
             "Value"             : 1.0,
@@ -361,8 +411,8 @@
         },
     "electronScale"  :
         {
-            "Type"              : "flat",
-            "Value"             : 1.01,
+            "Type"              : "weight",
+            "Value"             : 1.0,
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
@@ -372,12 +422,12 @@
         },
     "electronRes"  :
         {
-            "Type"              : "false",
+            "Type"              : "flat",
             "Value"             : 1.001,
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
-            "Activate"          : true,
+            "Activate"          : false,
             "Correlated"        : true,
             "Description"   : "Electron resolution smearing"
         },

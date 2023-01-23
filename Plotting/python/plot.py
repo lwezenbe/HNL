@@ -1231,16 +1231,16 @@ class Plot(object):
         median.SetLineStyle(2)
         median.Draw('Lsame')
 
-        if observed is not None:
-            observed.SetLineColor(ROOT.kBlack)
-            observed.SetLineWidth(2)
-            observed.Draw('Lsame')
-
         if len(self.b) > 0:
             for i_bkgr, bkgr in enumerate(self.b):
-                bkgr.SetLineColor(ps.getColor('StackTauPOG', i_bkgr))
+                bkgr.SetLineColor(ps.getColor('Stack', i_bkgr))
                 bkgr.SetLineWidth(2)
                 bkgr.Draw('Lsame')
+
+        if observed is not None:
+            observed.SetLineColor(ROOT.kBlack)
+            observed.SetLineWidth(4)
+            observed.Draw('Lsame')
 
         frame.Draw('sameaxis')
 
@@ -1261,6 +1261,8 @@ class Plot(object):
         legend.AddEntry(median, "Asymptotic CL_{s} expected",'L')
         legend.AddEntry(green, "#pm 1 std. deviation",'f')
         legend.AddEntry(yellow, "#pm 2 std. deviation",'f')
+        if observed is not None:
+            legend.AddEntry(observed, "Observed",'L')
         if self.tex_names is not None and len(self.b) > 0:
             for l, b in zip(self.tex_names, self.b):
                 legend.AddEntry(b, l)

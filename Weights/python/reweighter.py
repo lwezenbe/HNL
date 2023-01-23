@@ -5,7 +5,6 @@ from HNL.Weights.electronSF import ElectronRecoSFJSON
 from HNL.ObjectSelection.tauSelector import getTauAlgoWP
 from HNL.ObjectSelection.muonSelector import checkMuonWP
 from HNL.ObjectSelection.electronSelector import checkElectronWP
-from HNL.Weights.fakeRateWeights import returnFakeRateCollection
 import numpy as np
 from HNL.Samples.sample import Sample
 
@@ -19,12 +18,14 @@ var_weights = {
         'btagWeight':          (lambda c : c.btagWeight,      np.arange(0.5, 1.5, .01),         ('btag weight', 'Events')), 
         'prefireWeight':          (lambda c : c.prefireWeight,      np.arange(0.5, 1.5, .01),         ('prefire weight', 'Events')), 
         'triggerSFWeight':          (lambda c : c.triggerSFWeight,      np.arange(0.5, 1.5, .01),         ('trigger SF', 'Events')), 
+        'electronScale':          (lambda c : c.electronScale,      np.arange(0.5, 1.5, .01),         ('electron scale weight', 'Events')), 
+        'nonprompt':          (lambda c : c.nonprompt,      np.arange(0.5, 1.5, .01),         ('nonprompt weight', 'Events')), 
 } 
 
 class Reweighter:
     
 
-    def __init__(self, sample, sample_manager):
+    def __init__(self, sample, sample_manager, **kwargs):
         self.WEIGHTS_TO_USE = var_weights.keys()
         self.sample = sample
         self.sample_manager = sample_manager
@@ -64,7 +65,11 @@ class Reweighter:
             else:
                 self.displacement_weighter = None
 
-        self.fakerate_collection = None
+        from HNL.Weights.fakeRateWeights import FakeRateWeighter
+        tau_method = kwargs.get('tau_method', None)
+        self.ignore_fakerates = kwargs.get('ignore_fakerates', False)
+        if not self.ignore_fakerates:
+            self.fakerateweighter = FakeRateWeighter(sample.chain, self.sample.chain.region, tau_method)
 
     def returnBranches(self):
         branches = ['{0}/F'.format(weight) for weight in self.WEIGHTS_TO_USE]
@@ -93,12 +98,11 @@ class Reweighter:
         else:
             return 1.
 
-    def getFakeRateWeight(self, tau_method = None):
-        try:
-            return self.fakerate_collection.getFakeWeight()
-        except:
-            self.fakerate_collection = returnFakeRateCollection(self.sample.chain, tau_method = tau_method)
-            return self.fakerate_collection.getFakeWeight()
+    def getFakeRateWeight(self, syst = 'nominal'):
+        if not self.ignore_fakerates:
+            return self.fakerateweighter.returnFakeRateWeight(self.sample.chain, syst)
+        else:
+            return 1.
 
     def getBTagWeight(self, syst = 'nominal'):
         if not self.sample.is_data and self.sample.chain.is_reco_level and self.sample.chain.era != 'prelegacy':
@@ -156,13 +160,16 @@ class Reweighter:
             return self.getPrefireWeight(syst=syst)
         if weight_name == 'triggerSFWeight':
             return self.getTriggerSF(syst=syst)
+        if weight_name == 'electronScale':
+            from HNL.Weights.electronSF import getElectronScaleMinimal
+            return getElectronScaleMinimal(self.sample.chain, syst=syst)
+        if weight_name == 'nonprompt':
+            return self.getFakeRateWeight(syst=syst)
 
     def getTotalWeight(self, sideband=False, tau_fake_method = None):
         tot_weight = 1.
         for weight in self.WEIGHTS_TO_USE:
             tot_weight *= self.returnWeight(weight)
-        if sideband:
-            tot_weight *= self.getFakeRateWeight(tau_method = tau_fake_method)
         return tot_weight
 
     def fillTreeWithWeights(self, chain):

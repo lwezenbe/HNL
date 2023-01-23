@@ -31,10 +31,18 @@ ALGOLIB = {'HNL' : 'DeepTau2017v2p1VSjet',
 
 UNC_LIB = {
     'nominal' : None,
-    'tauEnergyScale-eUp' : 'Up',
-    'tauEnergyScale-eDown' : 'Down',
-    'tauEnergyScale-tauUp' : 'Up',
-    'tauEnergyScale-tauDown' : 'Down'
+    'tauEnergyScale-e-dm0Up' : 'Up',
+    'tauEnergyScale-e-dm1Up' : 'Up',
+    'tauEnergyScale-e-dm0Down' : 'Down',
+    'tauEnergyScale-e-dm1Down' : 'Down',
+    'tauEnergyScale-tau-dm1Up' : 'Up',
+    'tauEnergyScale-tau-dm1Down' : 'Down',
+    'tauEnergyScale-tau-dm0Up' : 'Up',
+    'tauEnergyScale-tau-dm0Down' : 'Down',
+    'tauEnergyScale-tau-dm10Up' : 'Up',
+    'tauEnergyScale-tau-dm10Down' : 'Down',
+    'tauEnergyScale-tau-dm11Up' : 'Up',
+    'tauEnergyScale-tau-dm11Down' : 'Down',
 }
 
 class TauEnergyScale:
@@ -57,20 +65,28 @@ class TauEnergyScale:
     #tlv is four vector to correct
     def readES(self, tlv, dm, genmatch, syst = 'nominal'):
         if genmatch == 1 or genmatch == 3:
-            if syst in ['tauEnergyScale-eUp', 'tauEnergyScale-eDown']:
-                if dm == 0 or dm == 1:
+            if 'tauEnergyScale-e' in syst:
+                if dm == 0 and 'dm0' in syst:
+                    return self.tfestool.getFES(tlv.Eta(), dm, genmatch, UNC_LIB[str(syst)])
+                elif dm == 1 and 'dm1' in syst:
                     return self.tfestool.getFES(tlv.Eta(), dm, genmatch, UNC_LIB[str(syst)])
                 else:
-                    return 1.
-            else:
-                if dm == 0 or dm == 1:
                     return self.tfestool.getFES(tlv.Eta(), dm, genmatch, UNC_LIB['nominal'])
-                else:
-                    return 1.
+            else:
+                return self.tfestool.getFES(tlv.Eta(), dm, genmatch, UNC_LIB['nominal'])
                 
         elif genmatch == 5:
-            if syst in ['tauEnergyScale-tauUp', 'tauEnergyScale-tauDown']:
-                return self.testool.getTES(tlv.Pt(), dm, genmatch, UNC_LIB[str(syst)])
+            if 'tauEnergyScale-tau' in syst:
+                if dm == 0 and 'dm0' in syst:
+                    return self.testool.getTES(tlv.Pt(), dm, genmatch, UNC_LIB[str(syst)])
+                elif dm == 1 and 'dm1' in syst:
+                    return self.testool.getTES(tlv.Pt(), dm, genmatch, UNC_LIB[str(syst)])
+                elif dm == 10 and 'dm10' in syst:
+                    return self.testool.getTES(tlv.Pt(), dm, genmatch, UNC_LIB[str(syst)])
+                elif dm == 11 and 'dm11' in syst:
+                    return self.testool.getTES(tlv.Pt(), dm, genmatch, UNC_LIB[str(syst)])
+                else:
+                    return self.testool.getTES(tlv.Pt(), dm, genmatch, UNC_LIB['nominal'])
             else:
                 return self.testool.getTES(tlv.Pt(), dm, genmatch, UNC_LIB['nominal'])
         else:
