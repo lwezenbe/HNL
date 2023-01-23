@@ -131,6 +131,7 @@ class Plot(object):
             #
             self.tot_totbkgr_error = self.stat_totbkgr_error.Clone('Total Error on background')
 
+            print self.syst_hist
             if self.syst_hist is not None:
                 if isList(self.syst_hist):
                     self.syst_totbkgr_error = self.syst_hist[0].Clone('syst_totbgkr_error')
@@ -146,10 +147,11 @@ class Plot(object):
                             self.syst_totbkgr_error.SetBinError(b, syst_factor * self.syst_totbkgr_error.GetBinContent(b))
                 else:
                     self.syst_totbkgr_error = None
-                
+            
             else:
                 self.syst_totbkgr_error = None
 
+            print self.syst_totbkgr_error.GetBinContent(7), self.syst_totbkgr_error.GetBinError(7)    
             if self.syst_totbkgr_error is not None:
                 for b in xrange(1, self.tot_totbkgr_error.GetNbinsX()+1):
                     bin_stat_error = self.stat_totbkgr_error.GetBinError(b)
@@ -351,9 +353,10 @@ class Plot(object):
 
     def calculateRatio(self):
         ratios = []
-        for i, s in enumerate(self.s):
-            ratios.append(s.Clone('ratio'))
-            ratios[i].Divide(self.total_b)
+        if self.observed is None:
+            for i, s in enumerate(self.s):
+                ratios.append(s.Clone('ratio'))
+                ratios[i].Divide(self.total_b)
         if self.observed is not None:
             ratios.append(self.observed.Clone('ratio'))
             ratios[-1].Divide(self.total_b)
@@ -1233,8 +1236,9 @@ class Plot(object):
 
         if len(self.b) > 0:
             for i_bkgr, bkgr in enumerate(self.b):
-                bkgr.SetLineColor(ps.getColor('Stack', i_bkgr))
-                bkgr.SetLineWidth(2)
+                bkgr.SetLineColor(ps.getColor('Limit', i_bkgr))
+                bkgr.SetLineWidth(3)
+                bkgr.SetMarkerStyle(1)
                 bkgr.Draw('Lsame')
 
         if observed is not None:

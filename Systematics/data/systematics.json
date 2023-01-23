@@ -145,7 +145,7 @@
         {
             "Type"          : "weight",
             "Value"         : 1.0,
-            "FinalStates"   : ["SingleTau", "Ditau"],
+            "FinalStates"   : "Tau",
             "Processes"     : "data",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
             "Activate"     : true,
@@ -228,7 +228,7 @@
         {
             "Type"              : "weight",
             "Value"             : 1.0,
-            "FinalStates"       : ["SingleTau", "Ditau"],
+            "FinalStates"       : "Tau",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
@@ -238,7 +238,7 @@
         {
             "Type"              : "rerun",
             "Value"             : 1.0,
-            "FinalStates"       : ["SingleTau", "Ditau"],
+            "FinalStates"       : "Tau",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
@@ -248,7 +248,7 @@
         {
             "Type"              : "rerun",
             "Value"             : 1.0,
-            "FinalStates"       : ["SingleTau", "Ditau"],
+            "FinalStates"       : "Tau",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
@@ -258,7 +258,7 @@
         {
             "Type"              : "rerun",
             "Value"             : 1.0,
-            "FinalStates"       : ["SingleTau", "Ditau"],
+            "FinalStates"       : "Tau",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
@@ -268,7 +268,7 @@
         {
             "Type"              : "rerun",
             "Value"             : 1.0,
-            "FinalStates"       : ["SingleTau", "Ditau"],
+            "FinalStates"       : "Tau",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
@@ -278,7 +278,7 @@
         {
             "Type"              : "rerun",
             "Value"             : 1.0,
-            "FinalStates"       : ["SingleTau", "Ditau"],
+            "FinalStates"       : "Tau",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : false,
@@ -288,7 +288,7 @@
         {
             "Type"              : "rerun",
             "Value"             : 1.0,
-            "FinalStates"       : ["SingleTau", "Ditau"],
+            "FinalStates"       : "Tau",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : false,

@@ -248,6 +248,7 @@ def drawSignalStrengthPerCouplingPrompt(input_file_path, coupling, out_path, out
     for probe_coupling in [0.01*coupling, 0.05*coupling, 0.1*coupling, 0.5*coupling, 5*coupling, 10*coupling, 50*coupling, 100*coupling]:
         limits[probe_coupling] = {}
         for quantile in quantiles:
+            print coupling, limits[coupling][quantile], probe_coupling
             limits[probe_coupling][quantile] = inverseExtrapolationY(coupling, limits[coupling][quantile], probe_coupling) 
 
     sorted_couplings = sorted(limits.keys())

@@ -15,18 +15,18 @@ l3 = 2
 # All categories in this analysis. This is where you add more categories if wanted
 # CATEGORY_FROM_NAME is just the inverse for easier use
 #
-CATEGORY_NAMES = {1: 'SS-TauEleEle',
+CATEGORY_NAMES = {1: 'SS-EleEleTau',
                 2: 'SS-EleTauEle',
-                3: 'SS-EleEleTau',
-                4: 'OS-TauEleEle',
+                3: 'SS-TauEleEle',
+                4: 'OS-EleEleTau',
                 5: 'OS-EleTauEle',
-                6: 'OS-EleEleTau',
-                7: 'SS-TauMuMu',
+                6: 'OS-TauEleEle',
+                7: 'SS-MuMuTau',
                 8: 'SS-MuTauMu',
-                9: 'SS-MuMuTau',
-                10: 'OS-TauMuMu',
+                9: 'SS-TauMuMu',
+                10: 'OS-MuMuTau',
                 11: 'OS-MuTauMu',
-                12: 'OS-MuMuTau',
+                12: 'OS-TauMuMu',
                 13: 'EleMuTau',
                 14: 'MuEleTau',
                 15: 'EleTauMu',
@@ -49,18 +49,18 @@ CATEGORY_NAMES = {1: 'SS-TauEleEle',
                 32: 'OS-MuMuE',
                 33: 'Other'}
 
-CATEGORY_FROM_NAME = {'SS-TauEleEle':1,
+CATEGORY_FROM_NAME = {'SS-EleEleTau':1,
                 'SS-EleTauEle':2,
-                'SS-EleEleTau':3,
-                'OS-TauEleEle':4,
+                'SS-TauEleEle':3,
+                'OS-EleEleTau':4,
                 'OS-EleTauEle':5,
-                'OS-EleEleTau':6,
-                'SS-TauMuMu':7,
+                'OS-TauEleEle':6,
+                'SS-MuMuTau':7,
                 'SS-MuTauMu':8,
-                'SS-MuMuTau':9,
-                'OS-TauMuMu':10,
+                'SS-TauMuMu':9,
+                'OS-MuMuTau':10,
                 'OS-MuTauMu':11,
-                'OS-MuMuTau':12,
+                'OS-TauMuMu':12,
                 'EleMuTau':13,
                 'MuEleTau':14,
                 'EleTauMu':15,
@@ -187,11 +187,17 @@ ANALYSIS_SPLITOSSF_CATEGORIES_TEX = {
 LEADING_FLAVOR_CATEGORIES = {
     'LeadingElectron': [19, 21, 22, 24, 25, 27, 30], 
     'LeadingMuon': [20, 23, 26, 28, 29, 31, 32], 
-    }
+    'LeadingTau':  [3, 4, 9, 10, 17, 18],
+    'SubleadingTau' : [2, 5, 8, 11, 15, 16],
+    'TrailingTau' : [1, 6, 7, 12, 13, 14],
+}
 
 LEADING_FLAVOR_CATEGORIES_TEX = {
     'LeadingElectron'           : 'ell',
-    'LeadingMuon'               : '#mu ll'
+    'LeadingMuon'               : '#mu ll',
+    'LeadingTau'                : '#tau ll',
+    'SubleadingTau'             : 'l#tau l',
+    'TrailingTau'               : 'll#tau',
 }
 
 def isLightLeptonFinalState(cat_key):
@@ -199,8 +205,12 @@ def isLightLeptonFinalState(cat_key):
         return cat_key == 'NoTau'
     elif cat_key in ANALYSIS_CATEGORIES.keys() or cat_key in ANALYSIS_SPLITOSSF_CATEGORIES.keys():
         return not 'OneTau' in cat_key
+    elif cat_key in LEADING_FLAVOR_CATEGORIES.keys():
+        return not 'Electron' in cat_key and not 'Muon' in cat_key
+    elif cat_key in TRIGGER_CATEGORIES.keys():
+        return not 'Tau' in cat_key
     else:
-        return cat_key in SUPER_CATEGORIES[cat_key]
+        return float(cat_key) > 18
 
 def translateCategories(in_cat):
     if in_cat in SUPER_CATEGORIES.keys():
@@ -241,6 +251,18 @@ TRIGGER_CATEGORIES = {
 #    'DoubleElectrons' : [2, 3, 5, 6, 19, 21, 22, 24, 25],
 #    'DoubleMuons' : [8, 9, 11, 12, 20, 28, 29, 31, 32]
     } 
+
+TRIGGER_CATEGORIES_TEX = {
+    'TauEE': 'ee#tau', 
+    'TauMuMu': '#mu#mu#tau', 
+    'TauEMu': 'e#mu#tau', 
+    'EEE': 'eee', 
+    'MuMuMu': '#mu#mu#mu', 
+    'EEMu': 'ee#mu', 
+    'EMuMu': 'e#mu#mu',
+    'LeadingLightLepElectron' : 'ell', 
+    'LeadingLightLepMuon' : '#mu ll'
+}
 
 def filterSuperCategory(super_category_name, category):
     if category in SUPER_CATEGORIES[super_category_name]: return True

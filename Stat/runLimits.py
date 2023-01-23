@@ -169,7 +169,6 @@ asymptotic_str = 'asymptotic' if args.asymptotic else ''
 year_to_read = args.year[0] if len(args.year) == 1 else '-'.join(args.year)
 
 for card in cards_to_read:
-    print card
     destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/Results/runAsymptoticLimits/'+args.masstype+'-'+('prompt' if not args.displaced else 'displaced')+'/'+args.strategy+'-'+args.selection+(('-'+args.tag) if args.tag is not None else '')+'/'+args.flavor+'/'+card+'/'+ args.era+year_to_read))
 
     #Make and save graph objects
@@ -189,12 +188,12 @@ for card in cards_to_read:
 
         if args.displaced and mass <= displaced_mass_threshold:
             tmp_limit = extractScaledLimitsDisplacedHNL(input_folders, couplings, blind=args.blind)
-            from HNL.Stat.combineTools import drawSignalStrengthPerCouplingDisplaced
-            drawSignalStrengthPerCouplingDisplaced(input_folders, couplings, destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
+#            from HNL.Stat.combineTools import drawSignalStrengthPerCouplingDisplaced
+#            drawSignalStrengthPerCouplingDisplaced(input_folders, couplings, destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
         else:
             tmp_limit = extractScaledLimitsPromptHNL(input_folders[0], couplings[0])
-            from HNL.Stat.combineTools import drawSignalStrengthPerCouplingPrompt
-            drawSignalStrengthPerCouplingPrompt(input_folders[0], couplings[0], destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
+#            from HNL.Stat.combineTools import drawSignalStrengthPerCouplingPrompt
+#            drawSignalStrengthPerCouplingPrompt(input_folders[0], couplings[0], destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
 
         if tmp_limit is not None and len(tmp_limit) > 4: 
             passed_masses.append(mass)
@@ -239,6 +238,8 @@ for card in cards_to_read:
             compare_graphs[sname + ' ' +cname+ ' ' + era] = getObjFromFile(file_name, 'expected_central')
     print 'loaded all compare graphs'
 
+    bkgr_hist = None
+    tex_names = None
     if args.compareToExternal is not None:
         from HNL.Stat.stateOfTheArt import makeGraphList
         bkgr_hist, tex_names = makeGraphList(args.flavor, args.compareToExternal, args.masses)

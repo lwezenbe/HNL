@@ -108,6 +108,7 @@ for sample_name in sample_manager.sample_names:
     for njob in xrange(sample.returnSplitJobs()):
         jobs += [(sample.name, str(njob))]
 
+
 from HNL.BackgroundEstimation.fakerate import FakeRate
 from HNL.BackgroundEstimation.fakerateEmulator import FakeRateEmulator
 from HNL.BackgroundEstimation.closureObject import ClosureObject
@@ -278,8 +279,8 @@ if not args.makePlots:
         fakerate[2] = None
 
     luka_year_dict = {
-        '2016pre' : '2016PreVFP',    
-        '2016post' : '2016PostVFP',    
+        '2016pre' : '2016Merged',    
+        '2016post' : '2016Merged',    
         '2017' : '2017',    
         '2018' : '2018',    
     }

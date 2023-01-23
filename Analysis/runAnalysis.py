@@ -45,15 +45,17 @@ argParser.add_argument('--cutFlowOnly',   action='store_true',   default=False, 
 argParser.add_argument('--signalOnly',   action='store_true',   default=False,  help='Run or plot a only the signal')
 argParser.add_argument('--plotBkgrOnly',   action='store_true',     default=False,  help='Plot only the background')
 argParser.add_argument('--plotSingleBin',   action='store_true',     default=False,  help='Run or plot a only the background')
-argParser.add_argument('--categoriesToPlot',   action='store',     default='super',  help='What categories to use', choices=['original', 'analysis', 'super', 'splitanalysis', 'leadingflavor'])
+argParser.add_argument('--categoriesToPlot',   action='store',     default='super',  help='What categories to use', choices=['original', 'analysis', 'super', 'splitanalysis', 'leadingflavor', 'trigger'])
 argParser.add_argument('--category',   action='store',     default=None,  help='What specific category to use')
 argParser.add_argument('--additionalCondition',   action='store',     default=None,  help='Additional condition for selection')
+argParser.add_argument('--variables', nargs='*',  help='list of variables to process')
 argParser.add_argument('--ignoreSystematics',   action='store_true',     default=False,  help='ignore systematics in plots')
 argParser.add_argument('--combineYears',   action='store_true',     default=False,  help='combine all years specified in year arg in plots')
 argParser.add_argument('--submitPlotting',   action='store_true',     default=False,  help='Send the plotting code to HTCondor')
 argParser.add_argument('--unblind',   action='store_true',     default=False,  help='Also plot the observed data in signal region')
 argParser.add_argument('--plotDirac',   action='store_true',     default=False,  help='plot dirac type HNL')
-argParser.add_argument('--plotDisplaced',   action='store_true',     default=False,  help='plot dirac type HNL')
+argParser.add_argument('--plotDisplaced',   action='store_true',     default=False,  help='plot displaced type HNL')
+argParser.add_argument('--ignoreSideband',   action='store_true',     default=False,  help='if there is a sideband nonprompt selection, please ignore it in the plotting')
 
 args = argParser.parse_args()
 
@@ -135,12 +137,87 @@ else:
     arg_string = None
 
 #
+# Some constants to make referring to signal leptons more readable
+#
+l1 = 0
+l2 = 1
+l3 = 2
+l4 = 3
+
+nl = 3 if args.region != 'ZZCR' else 4
+
+import HNL.EventSelection.eventCategorization as cat
+
+#
+# Define categories to use
+#
+def listOfCategories(region):
+    if nl == 3:
+        return cat.CATEGORIES
+    else:
+        return [max(cat.CATEGORIES)]
+
+categories = listOfCategories(args.region) if args.category is None else [args.category]
+reco_or_gen_str = 'reco' if not args.genLevel else 'gen'
+
+import HNL.Analysis.analysisTypes as at
+if args.region == 'NoSelection':
+    var = at.var_noselection
+elif args.strategy == 'MVA':
+    var = at.returnVariables(nl, not args.genLevel, args.region)
+else:
+    var = at.returnVariables(nl, not args.genLevel)
+
+#Loading something in for plot jobs
+if args.makePlots or args.makeDataCards:
+    sorted_analysis_categories = cat.ANALYSIS_CATEGORIES.keys() if args.category is None else [args.category]
+    sorted_splitanalysis_categories = cat.ANALYSIS_SPLITOSSF_CATEGORIES.keys() if args.category is None else [args.category]
+    sorted_leadingflavor_categories = cat.LEADING_FLAVOR_CATEGORIES.keys() if args.category is None else [args.category]
+    sorted_trigger_categories = cat.TRIGGER_CATEGORIES.keys() if args.category is None else [args.category]
+    from HNL.Analysis.analysisTypes import getRelevantSuperCategories
+    sorted_super_categories = getRelevantSuperCategories(cat.SUPER_CATEGORIES.keys(), args.region) if args.category is None else [args.category]
+
+    #Reset list_of_hist
+    category_dict = {}
+    if args.categoriesToPlot == 'analysis':
+        category_dict['analysis'] = (sorted_analysis_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.ANALYSIS_CATEGORIES[y]])+')' for y in sorted_analysis_categories], {y :[str(x) for x in cat.ANALYSIS_CATEGORIES[y]] for y in sorted_analysis_categories})
+    if args.categoriesToPlot == 'splitanalysis':
+        category_dict['splitanalysis'] = (sorted_splitanalysis_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.ANALYSIS_SPLITOSSF_CATEGORIES[y]])+')' for y in sorted_splitanalysis_categories], {y :[str(x) for x in cat.ANALYSIS_SPLITOSSF_CATEGORIES[y]] for y in sorted_splitanalysis_categories})
+    if args.categoriesToPlot == 'leadingflavor':
+        category_dict['leadingflavor'] = (sorted_leadingflavor_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.LEADING_FLAVOR_CATEGORIES[y]])+')' for y in sorted_leadingflavor_categories], {y :[str(x) for x in cat.LEADING_FLAVOR_CATEGORIES[y]] for y in sorted_leadingflavor_categories})
+    if args.categoriesToPlot == 'super':
+        category_dict['super'] = (sorted_super_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.SUPER_CATEGORIES[y]])+')' for y in sorted_super_categories], {y:[str(x) for x in cat.SUPER_CATEGORIES[y]] for y in sorted_super_categories})
+    if args.categoriesToPlot == 'trigger':
+        category_dict['trigger'] = (sorted_trigger_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.TRIGGER_CATEGORIES[y]])+')' for y in sorted_trigger_categories], {y:[str(x) for x in cat.TRIGGER_CATEGORIES[y]] for y in sorted_trigger_categories})
+    category_dict['original'] = ([x for x in categories], ['(category=={0})'.format(x) for x in categories], {y : [str(y)] for y in categories})
+
+#
 # Prepare jobs
 #
 if not args.isTest:
     jobs = {}
     if (args.makeDataCards or args.makePlots) and args.submitPlotting and not args.isChild:
-        jobs = [['0']]
+
+        if args.variables is None:
+            subjob_var = var.keys()
+        else:
+            subjob_var = args.variables
+        subjob_var.append('searchregion')
+        subjob_var = [subjob_var[i:i+8] for i in range(0, len(subjob_var), 8)]
+        
+        if args.category is None:
+            subjob_cat = [x for x in category_dict[args.categoriesToPlot][0]]
+        else:
+            subjob_cat = [args.category] 
+       
+        jobs = [] 
+        if args.makePlots:
+            for c in subjob_cat:
+                for v in subjob_var:
+                    jobs += [(c, v)]
+        else:
+            for c in subjob_cat:
+                jobs += [(c, '0')]
     else:
         for year in args.year:
             jobs[year] = []
@@ -161,7 +238,11 @@ if not args.isTest:
 from HNL.Tools.jobSubmitter import submitJobs, checkShouldMerge
 if (args.makeDataCards or args.makePlots) and args.submitPlotting and not args.isChild:
     label = 'datacards' if args.makeDataCards else 'plotting'
-    submitJobs(__file__, ['subJob'], jobs, argParser, jobLabel='runAnalysis-'+label+'-'+args.region, include_all_groups = True)
+    if args.makeDataCards:
+        args_of_interest = ['category', 'subJob']
+    else:
+        args_of_interest = ['category', 'variables']
+    submitJobs(__file__, args_of_interest, jobs, argParser, jobLabel='runAnalysis-'+label+'-'+args.region, include_all_groups = True)
     exit(0)
 
 if not args.isChild and not args.makePlots and not args.makeDataCards:
@@ -171,37 +252,7 @@ if not args.isChild and not args.makePlots and not args.makeDataCards:
         submitJobs(__file__, ('sample', 'subJob'), jobs[year], argParser, jobLabel = 'runAnalysis-'+str(year)+'-'+args.region, additionalArgs= [('year', year)])
     exit(0)
 
-#
-# Some constants to make referring to signal leptons more readable
-#
-l1 = 0
-l2 = 1
-l3 = 2
-l4 = 3
-
-nl = 3 if args.region != 'ZZCR' else 4
-
-import HNL.Analysis.analysisTypes as at
-if args.region == 'NoSelection':
-    var = at.var_noselection
-elif args.strategy == 'MVA':
-    var = at.returnVariables(nl, not args.genLevel, args.region)
-else:
-    var = at.returnVariables(nl, not args.genLevel)
-
 from HNL.EventSelection.eventSelector import signal_regions
-#
-# Define categories to use
-#
-import HNL.EventSelection.eventCategorization as cat
-def listOfCategories(region):
-    if nl == 3:
-        return cat.CATEGORIES
-    else:
-        return [max(cat.CATEGORIES)]
-
-categories = listOfCategories(args.region)
-reco_or_gen_str = 'reco' if not args.genLevel else 'gen'
 
 #
 # Extra imports for dividing by region
@@ -476,6 +527,7 @@ else:
     from HNL.Analysis.analysisTypes import signal_couplingsquared
     from HNL.Tools.helpers import getHistFromTree
 
+    ignore_sideband = args.includeData != 'includeSideband' or args.ignoreSideband 
 
     # Merge and collect histograms
     list_of_hist = {}
@@ -544,21 +596,7 @@ else:
 
         signal_list = [x for x in tmp_signal_list]
 
-        sorted_analysis_categories = cat.ANALYSIS_CATEGORIES.keys() if args.category is None else args.category
-        sorted_splitanalysis_categories = cat.ANALYSIS_SPLITOSSF_CATEGORIES.keys() if args.category is None else args.category
-        sorted_leadingflavor_categories = cat.LEADING_FLAVOR_CATEGORIES.keys() if args.category is None else args.category
-        from HNL.Analysis.analysisTypes import getRelevantSuperCategories
-        sorted_super_categories = getRelevantSuperCategories(cat.SUPER_CATEGORIES.keys(), args.region) if args.category is None else args.category
-
-        #Reset list_of_hist
-        category_dict = {
-            'original' : ([x for x in categories], ['(category=={0})'.format(x) for x in categories], {y : [str(y)] for y in categories}),
-            'analysis': (sorted_analysis_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.ANALYSIS_CATEGORIES[y]])+')' for y in sorted_analysis_categories], {y :[str(x) for x in cat.ANALYSIS_CATEGORIES[y]] for y in sorted_analysis_categories}),
-            'splitanalysis': (sorted_splitanalysis_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.ANALYSIS_SPLITOSSF_CATEGORIES[y]])+')' for y in sorted_splitanalysis_categories], {y :[str(x) for x in cat.ANALYSIS_SPLITOSSF_CATEGORIES[y]] for y in sorted_splitanalysis_categories}),
-            'leadingflavor': (sorted_leadingflavor_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.LEADING_FLAVOR_CATEGORIES[y]])+')' for y in sorted_leadingflavor_categories], {y :[str(x) for x in cat.LEADING_FLAVOR_CATEGORIES[y]] for y in sorted_leadingflavor_categories}),
-            'super' : (sorted_super_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.SUPER_CATEGORIES[y]])+')' for y in sorted_super_categories], {y:[str(x) for x in cat.SUPER_CATEGORIES[y]] for y in sorted_super_categories})
-        } 
-
+        
         #Add entry for the search regions in the var dictionary
         from HNL.Weights.reweighter import var_weights
         var.update(var_weights)
@@ -577,7 +615,7 @@ else:
         # Create variable distributions
         #
 
-        def createSingleVariableDistributions(tree, vname, hname, bins, condition, proc, include_systematics = 'nominal', split_corr = False, additional_weight = None):
+        def createSingleVariableDistributions(tree, vname, hname, bins, condition, proc, include_systematics = 'nominal', split_corr = False, additional_weight = None, ignore_sideband = False):
             out_dict = {}
             weight = 'weight'
             if additional_weight is not None:
@@ -585,11 +623,11 @@ else:
             out_dict['nominal'] = Histogram(tree.getHistFromTree(vname, hname, bins, condition, weight=weight))
             if include_systematics != 'nominal':
                 from HNL.Systematics.systematics import returnWeightShapes
-                out_dict.update(returnWeightShapes(tree, vname, hname, bins, condition, year, proc, ['non-prompt'] if args.includeData == 'includeSideband' else None, split_corr = split_corr, additional_weight=additional_weight))
+                out_dict.update(returnWeightShapes(tree, vname, hname, bins, condition, year, proc, ['non-prompt'] if not ignore_sideband else None, split_corr = split_corr, additional_weight=additional_weight))
             return out_dict 
 
 
-        def createVariableDistributions(categories_dict, var_dict, signal, background, data, sample_manager, additional_condition = None, include_systematics = 'nominal', sr = None, split_corr = False, for_datacards = False):
+        def createVariableDistributions(categories_dict, var_dict, signal, background, data, sample_manager, additional_condition = None, include_systematics = 'nominal', sr = None, split_corr = False, for_datacards = False, ignore_sideband = False):
             if additional_condition is None:
                 additional_condition = ''
             else:
@@ -634,9 +672,9 @@ else:
                                     additional_weight = str(coupling_squared/Sample.getSignalCouplingSquared(sample_name))
                                     if args.plotDirac: additional_weight *= 'diracSF'
                                     if syst == 'nominal':
-                                        tmp_list_of_hist[c][v]['signal'][cleaned_sample_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, include_systematics, split_corr = split_corr, additional_weight = additional_weight)
+                                        tmp_list_of_hist[c][v]['signal'][cleaned_sample_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, include_systematics, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband)
                                     else:
-                                        tmp_list_of_hist[c][v]['signal'][cleaned_sample_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, split_corr = split_corr, additional_weight = additional_weight)['nominal'] 
+                                        tmp_list_of_hist[c][v]['signal'][cleaned_sample_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband)['nominal'] 
                                 else:
                                     additional_weight = 'diracSF' if args.plotDirac else None
                                     for iv, vsquared in enumerate(np.ndarray(intree.getTreeVariable('displacement_ncouplings', 0), 'f', intree.getTreeVariable('displacement_vsquared', 0))):
@@ -645,27 +683,27 @@ else:
                                         new_name = cleaned_sample_name.split('-Vsq')[0]+'-Vsq'+vsquared_translated + '-' + Sample.getSignalDisplacedString(cleaned_sample_name)
                                         additional_weight_corrected = '(displacement_lumiweight[{0}]/lumiWeight)'.format(iv) if additional_weight is None else additional_weight+'*(displacement_lumiweight[{0}]/lumiWeight)'.format(iv)
                                         if syst == 'nominal':
-                                            tmp_list_of_hist[c][v]['signal'][new_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year)+'-'+vsquared_translated, getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, include_systematics, split_corr = split_corr, additional_weight = additional_weight_corrected)
+                                            tmp_list_of_hist[c][v]['signal'][new_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year)+'-'+vsquared_translated, getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, include_systematics, split_corr = split_corr, additional_weight = additional_weight_corrected, ignore_sideband=ignore_sideband)
                                         else:
-                                            tmp_list_of_hist[c][v]['signal'][new_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year)+'-'+vsquared_translated, getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, split_corr = split_corr, additional_weight = additional_weight_corrected)['nominal'] 
+                                            tmp_list_of_hist[c][v]['signal'][new_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year)+'-'+vsquared_translated, getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, split_corr = split_corr, additional_weight = additional_weight_corrected, ignore_sideband=ignore_sideband)['nominal'] 
 
                 print '\n'
 
             if args.includeData is not None:
                 print "Loading data"
-                syst_to_run = getSystToRun(year, 'non-prompt') if args.includeData == 'includeSideband' and include_systematics in ['full'] else ['nominal']    
-                split_syst_to_run = getSystToRun(year, 'non-prompt', split_corr=split_corr) if args.includeData == 'includeSideband' and include_systematics in ['full'] else ['nominal']           
+                syst_to_run = getSystToRun(year, 'non-prompt') if not ignore_sideband and include_systematics in ['full'] else ['nominal']    
+                split_syst_to_run = getSystToRun(year, 'non-prompt', split_corr=split_corr) if not ignore_sideband and include_systematics in ['full'] else ['nominal']           
                 for isyst, (syst, corr_syst) in enumerate(zip(syst_to_run, split_syst_to_run)):
                     progress(isyst, len(syst_to_run))
                     intree = OutputTree('events_{0}'.format(syst), data_list[0]+'/variables.root')
                     for ic, (c, cc) in enumerate(zip(categories_to_use, category_conditions)):
                         for v in var_dict:
-                            proc_to_use = 'non-prompt' if args.includeData == 'includeSideband' else 'Data'
+                            proc_to_use = 'non-prompt' if not ignore_sideband else 'Data'
                             if syst == 'nominal':
-                                tmp_list_of_hist[c][v]['data']['sideband'] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&issideband)'+additional_condition, proc_to_use, include_systematics, split_corr=split_corr)
+                                tmp_list_of_hist[c][v]['data']['sideband'] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&issideband)'+additional_condition, proc_to_use, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
                                 tmp_list_of_hist[c][v]['data']['signalregion'] = {'nominal' : Histogram(intree.getHistFromTree(v, str(c)+'-'+v+'-'+'-nominal-Data-signalregion'+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!issideband)'+additional_condition))}
                             else:
-                                tmp_list_of_hist[c][v]['data']['sideband'][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&issideband)'+additional_condition, proc_to_use, split_corr=split_corr)['nominal']
+                                tmp_list_of_hist[c][v]['data']['sideband'][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&issideband)'+additional_condition, proc_to_use, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']
 
             if not args.signalOnly:
                 print "Loading background histograms"
@@ -686,15 +724,15 @@ else:
                             for c, cc in zip(categories_to_use, category_conditions):
                                 for iv, v in enumerate(var_dict.keys()): 
                                     if syst == 'nominal': 
-                                        tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, include_systematics, split_corr=split_corr)
+                                        tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
                                     else:
-                                        tmp_list_of_hist[c][v]['bkgr'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, split_corr=split_corr)['nominal']
+                                        tmp_list_of_hist[c][v]['bkgr'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']
                                                
-                                    if args.includeData != 'includeSideband':
+                                    if ignore_sideband:
                                         if syst == 'nominal': 
-                                            tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np'+syst+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!isprompt&&!issideband)'+additional_condition, 'non-prompt', include_systematics)
+                                            tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np'+syst+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!isprompt&&!issideband)'+additional_condition, 'non-prompt', include_systematics, ignore_sideband=ignore_sideband)
                                         else:
-                                            tmp_hist = {corr_syst : createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np'+syst+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!isprompt&&!issideband)'+additional_condition, b)['nominal']}
+                                            tmp_hist = {corr_syst : createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np'+syst+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&!isprompt&&!issideband)'+additional_condition, b, ignore_sideband=ignore_sideband)['nominal']}
                
                                         if corr_syst not in tmp_list_of_hist[c][v]['bkgr']['non-prompt'].keys():
                                             tmp_list_of_hist[c][v]['bkgr']['non-prompt'].update(tmp_hist)
@@ -710,11 +748,11 @@ else:
                             for c, cc in zip(categories_to_use, category_conditions):
                                 for iv, v in enumerate(var_dict.keys()):
                                     if syst == 'nominal': 
-                                        tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'t'+syst+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, include_systematics, split_corr=split_corr)
+                                        tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'t'+syst+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
                                     else:
-                                        tmp_list_of_hist[c][v]['bkgr'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'t'+syst+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, split_corr=split_corr)['nominal']
+                                        tmp_list_of_hist[c][v]['bkgr'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'t'+syst+'-'+str(sr)+'-'+str(year), getBinning(v, args.region, var_dict[v][1]), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']
 
-                if args.includeData == 'includeSideband':
+                if not ignore_sideband:
                     for c, cc in zip(categories_to_use, category_conditions):
                         for iv, v in enumerate(var_dict.keys()):
                             tmp_list_of_hist[c][v]['bkgr']['non-prompt'] = tmp_list_of_hist[c][v]['data']['sideband']
@@ -755,7 +793,7 @@ else:
                     for mva in list_of_mvas:
                         var_for_datacard[mva] = [x for x in var[mva]]
 
-                hist_for_datacard = createVariableDistributions(category_dict[args.categoriesToPlot], var_for_datacard, signal_list, background_collection, data_list, sample_manager, '||'.join(['searchregion=={0}'.format(x) for x in srm[args.region].getGroupValues(sr)]), include_systematics = args.systematics, sr=sr, split_corr=True, for_datacards=True)
+                hist_for_datacard = createVariableDistributions(category_dict[args.categoriesToPlot], var_for_datacard, signal_list, background_collection, data_list, sample_manager, '||'.join(['searchregion=={0}'.format(x) for x in srm[args.region].getGroupValues(sr)]), include_systematics = args.systematics, sr=sr, split_corr=True, for_datacards=True, ignore_sideband = ignore_sideband)
                    
                 for ac in category_dict[args.categoriesToPlot][0]:
                     print 'Filling', ac
@@ -796,12 +834,19 @@ else:
                             data_hist_tmp.write(out_path, write_name='data_obs', append=True, subdirs = [bin_name.rsplit('-', 1)[0]])
                          
                             makeDataCard(bin_name, args.flavor, args.era, year, 0, new_signal_name, bkgr_names, args.selection, args.region, ac, shapes=True, nonprompt_from_sideband = args.includeData == 'includeSideband', majorana_str = 'Majorana' if not args.plotDirac else 'Dirac', shapes_path=out_path)
-    
+   
         if args.makePlots:
             print "Creating list of histograms"
-            list_of_hist[year] = createVariableDistributions(category_dict[args.categoriesToPlot], var, signal_list, background_collection, data_list, sample_manager, additional_condition = args.additionalCondition, include_systematics = args.systematics if not args.ignoreSystematics else 'nominal')
+            var_to_use = {}
+            if args.variables is None:
+                var_to_use = var
+            else:
+                for v in var:
+                    if v in args.variables:
+                        var_to_use[v] = var[v]
+            list_of_hist[year] = createVariableDistributions(category_dict[args.categoriesToPlot], var_to_use, signal_list, background_collection, data_list, sample_manager, additional_condition = args.additionalCondition, include_systematics = args.systematics if not args.ignoreSystematics else 'nominal', ignore_sideband = ignore_sideband)
 #            print "Making Bar Charts"
-#            list_of_hist_forbar[year] = createVariableDistributions(category_dict['original'], {'searchregion' : var['searchregion']}, signal_list, background_collection, data_list, sample_manager, additional_condition = args.additionalCondition)
+#            list_of_hist_forbar[year] = createVariableDistributions(category_dict['original'], {'searchregion' : var['searchregion']}, signal_list, background_collection, data_list, sample_manager, additional_condition = args.additionalCondition, ignore_sideband = ignore_sideband)
 
 
 
@@ -839,6 +884,9 @@ else:
  
         list_of_hist[years_to_plot[-1]] = combineYears(list_of_hist)
 #        list_of_hist_forbar[years_to_plot[-1]] = combineYears(list_of_hist_forbar, False)
+
+#    from HNL.Analysis.outputConversion import writeYieldTable 
+#    writeYieldTable(list_of_hist, 'Other', 'searchregion', os.path.join(os.getcwd(), 'data', 'testArea' if args.isTest else '', 'Results', 'runAnalysis', args.analysis+'-'+args.tag if args.tag is not None else args.analysis, '-'.join([args.strategy, args.selection, args.region, cleanName(args.additionalCondition) if args.additionalCondition is not None else ''])), split_bkgr = True)
 
     for year in years_to_plot:
         
@@ -901,13 +949,19 @@ else:
             # for c in list_of_hist.keys():
             for c in category_dict[args.categoriesToPlot][0]:
                 if args.categoriesToPlot == 'original':
-                    c_name = CATEGORY_NAMES[c]
+                    c_name = CATEGORY_NAMES[float(c)]
                 elif args.categoriesToPlot == 'analysis':
                     from HNL.EventSelection.eventCategorization import ANALYSIS_CATEGORIES_TEX
                     c_name = ANALYSIS_CATEGORIES_TEX[c] 
                 elif args.categoriesToPlot == 'splitanalysis':
                     from HNL.EventSelection.eventCategorization import ANALYSIS_SPLITOSSF_CATEGORIES_TEX
                     c_name = ANALYSIS_SPLITOSSF_CATEGORIES_TEX[c] 
+                elif args.categoriesToPlot == 'leadingflavor':
+                    from HNL.EventSelection.eventCategorization import LEADING_FLAVOR_CATEGORIES_TEX
+                    c_name = LEADING_FLAVOR_CATEGORIES_TEX[c] 
+                elif args.categoriesToPlot == 'trigger':
+                    from HNL.EventSelection.eventCategorization import TRIGGER_CATEGORIES_TEX
+                    c_name = TRIGGER_CATEGORIES_TEX[c] 
                 else:
                     from HNL.EventSelection.eventCategorization import SUPER_CATEGORIES_TEX
                     c_name = SUPER_CATEGORIES_TEX[c] 
@@ -921,7 +975,7 @@ else:
         
                 # Plots that display chosen for chosen signal masses and backgrounds the distributions for the different variables
                 # S and B in same canvas for each variable
-                for v in var.keys():
+                for v in var_to_use.keys():
                     syst_hist = []
                     bkgr_legendnames = []
                     # Make list of background histograms for the plot object (or None if no background)
@@ -940,6 +994,7 @@ else:
                                     if 'total_syst' not in list_of_hist[year][c][v]['bkgr'][bk].keys():
                                         from HNL.Systematics.systematics import makeSystErrorHist
                                         list_of_hist[year][c][v]['bkgr'][bk]['total_syst'] = makeSystErrorHist(list_of_hist[year][c][v]['bkgr'][bk], bk, c, year, 'non-prompt' if args.includeData == 'includeSideband' else None)
+                                        print bk, list_of_hist[year][c][v]['bkgr'][bk]['total_syst'].GetBinContent(7), list_of_hist[year][c][v]['bkgr'][bk]['total_syst'].GetBinError(7)
                 
                                     syst_hist.append(list_of_hist[year][c][v]['bkgr'][bk]['total_syst'])
 
@@ -989,7 +1044,7 @@ else:
                         from HNL.EventSelection.searchRegions import plotLowMassRegions, plotHighMassRegions, plotLowMassRegionsLoose
                         # else:
                         #     signal_names = [s + ' V^{2}=' + str(signal_couplingsquared[s.split('-')[1]][int(s.split('-m')[-1])])  for s in signal_names]
-                           
+                          
                         if args.region == 'lowMassSR':
                             plotLowMassRegions(signal_hist, bkgr_hist, syst_hist, legend_names, 
                                 out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c), extra_text = [x for x in extra_text], year = year, era = args.era, observed_hist = observed_hist)

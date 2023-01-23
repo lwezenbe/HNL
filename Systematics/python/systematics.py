@@ -115,11 +115,14 @@ class SystematicJSONreader:
         return self.json_data[syst]['FinalStates']
 
     def filterFinalStates(self, syst, final_state):
+        from HNL.EventSelection.eventCategorization import isLightLeptonFinalState
         fs = self.getFinalStates(syst)
         if fs == '*':
             return True
+        elif fs == 'Tau':
+            return not isLightLeptonFinalState(final_state)
         else:
-            return final_state in fs
+            raise RuntimeError("Undefined final state")
 
     def systIsCorrelated(self, syst):
         return self.json_data[syst].get('Correlated', False)

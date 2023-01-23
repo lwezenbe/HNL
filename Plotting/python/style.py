@@ -46,6 +46,8 @@ def getColor(palette, index):
         return getLargeArrayColors(index)
     elif palette == 'Syst':
         return getSystColors(index)
+    elif palette == 'Limit':
+        return getLimitColors(index)
     else:
         return getHistColor(index)
 
@@ -271,6 +273,14 @@ def getLineColor(index):
     if index == 0:      return TColor.GetColor("#B9BAA3")
     if index == 1:      return TColor.GetColor("#685762")
     if index == 2:      return TColor.GetColor("#E8C547")
+
+def getLimitColors(index):
+    if index == 1:      return TColor.GetColor("#ED474A")
+    if index == 0:      return TColor.GetColor("#FF00FF")
+    if index == 2:      return TColor.GetColor("#72DDF7")
+    if index == 3:      return TColor.GetColor("#0000ff")
+    if index == 4:      return TColor.GetColor("#685762")
+    if index == 5:      return TColor.GetColor("#E8C547")
 
 def getBlackColor():
     return ROOT.kBlack

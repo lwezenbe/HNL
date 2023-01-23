@@ -149,7 +149,7 @@ class EventSelector:
         if self.name != 'NoSelection':
             passed = self.selector.passedFilter(cutter, kwargs)
             if not passed: return False
-            if not cutter.cut(not self.removeOverlapDYandZG(self.new_chain.is_prompt, sample_name, cutter), 'Clean DY and ZG'): return False
+            if not cutter.cut(not self.removeOverlapDYandZG(self.new_chain.is_prompt, sample_name, cutter), 'Clean Nonprompt ZG'): return False
             return True
         else:
             return True

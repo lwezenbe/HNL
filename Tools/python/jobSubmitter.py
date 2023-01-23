@@ -196,7 +196,11 @@ def submitJobs(script, subjob_args, subjob_list, argparser, **kwargs):
 
     for i, subJob in enumerate(subjob_list):
         for arg, value in zip(subjob_args, subJob):
-            if value: submit_args[arg] = str(value)
+            if value: 
+                if not isinstance(value, list):
+                    submit_args[arg] = str(value)
+                else:
+                    submit_args[arg] = value
             else:
                 try:    submit_args.pop(arg)
                 except: pass
