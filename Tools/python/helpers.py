@@ -43,6 +43,7 @@ def getHistFromTree(tree, vname, hname, bins, condition, weight = 'weight'):
     ROOT.gROOT.SetBatch(True)
     # print ROOT.gROOT.pwd()
 
+    print tree
     htmp = ROOT.TH1D(hname, hname, len(bins)-1, bins)
     if 'Weight' in vname: 
         tree.Draw(vname+">>"+hname, condition+'*lumiWeight')

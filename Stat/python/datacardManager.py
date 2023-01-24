@@ -14,9 +14,10 @@ combined_final_states = {
 }
 
 forbidden_combinations = {
-    'OneTau-OF' : ['E', 'C', 'D'],
-    'OneTau-OSSF': ['F', 'A', 'B'],
-    'OneTau-SSSF': ['E', 'C', 'D']   
+    'TauEMu' : ['E', 'C', 'D'],
+#    'OneTau-OF' : ['E', 'C', 'D'],
+#    'OneTau-OSSF': ['F', 'A', 'B'],
+#    'OneTau-SSSF': ['E', 'C', 'D']   
 }
 
 class SingleYearDatacardManager:
@@ -89,12 +90,7 @@ class SingleYearDatacardManager:
                 if strategy == 'custom':
                     mass_point = self.getHNLmass(signal_name)
                     if mass_point <= 80:
-                        if final_state == 'OneTau-OSSF':
-                            return [self.getMVAName('C', final_state, signal_name), self.getMVAName('D', final_state, signal_name)]
-                        elif final_state == 'OneTau-OF' or final_state == 'OneTau-SSSF':
-                            return [self.getCutbasedName('A', final_state), self.getCutbasedName('B', final_state)]
-                        else:
-                            return [self.getCutbasedName('A', final_state), self.getCutbasedName('B', final_state), self.getMVAName('C', final_state, signal_name), self.getMVAName('D', final_state, signal_name)]
+                        return [self.getCutbasedName('A', final_state), self.getCutbasedName('B', final_state), self.getMVAName('C', final_state, signal_name), self.getMVAName('D', final_state, signal_name)]
                     elif mass_point <= 400 and not 'tau' in signal_name:
                         return self.getStandardDatacardList(signal_name, final_state, 'MVA')
                     else:

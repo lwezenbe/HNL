@@ -140,9 +140,12 @@ SUPER_CATEGORIES_TEX = {
 mutual_exclusive_supercategories = ['SingleTau', 'NoTau']
 
 ANALYSIS_CATEGORIES = {
-    'OneTau-OSSF': [4, 5, 6, 10, 11, 12],
-    'OneTau-OF' : [13, 14, 15, 16, 17, 18],
-    'OneTau-SSSF': [1, 2, 3, 7, 8, 9], 
+#    'OneTau-OSSF': [4, 5, 6, 10, 11, 12],
+#    'OneTau-OF' : [13, 14, 15, 16, 17, 18],
+#    'OneTau-SSSF': [1, 2, 3, 7, 8, 9], 
+    'TauEE' : [1, 2, 3, 4, 5, 6],
+    'TauMuMu' : [7, 8, 9, 10, 11, 12],
+    'TauEMu' : [13, 14, 15, 16, 17, 18],
     'EEE-Mu': [19, 21, 22, 23, 24, 25, 26], 
     'MuMuMu-E': [20, 27, 28, 29, 30, 31, 32], 
     #'EEE': [19], 
@@ -152,9 +155,12 @@ ANALYSIS_CATEGORIES = {
     }
 
 ANALYSIS_CATEGORIES_TEX = {
-    'OneTau-OSSF'       : 'l^{+}l^{-}#tau_{h}',
-    'OneTau-OF'         : 'e#mu#tau_{h}',
-    'OneTau-SSSF'       : 'l^{#pm}l^{#pm}#tau_{h}',
+    #'OneTau-OSSF'       : 'l^{+}l^{-}#tau_{h}',
+    #'OneTau-OF'         : 'e#mu#tau_{h}',
+    #'OneTau-SSSF'       : 'l^{#pm}l^{#pm}#tau_{h}',
+    'TauEE'             : 'ee#tau_{h}',
+    'TauMuMu'           : '#mu#mu#tau_{h}',
+    'TauEMu'           : '#e#mu#tau_{h}',
     'EEE-Mu'            : 'eee/#mu',
     'MuMuMu-E'          : '#mu#mu#mu/e'
     #'EEE'               : 'eee',
