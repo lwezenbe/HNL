@@ -451,7 +451,7 @@ class EventCategory():
         cat = self.returnCategory()
         for k in ANALYSIS_CATEGORIES.keys():
             if cat in ANALYSIS_CATEGORIES[k]: return k
-        return None
+        return 33
 
     def returnSuperCategory(self):
         cat = self.returnCategory()
@@ -567,7 +567,13 @@ def returnCategoryPtCuts(cat):
         return [(22, None, None), (None, None, 27), (12, None, 23), (None, 20, 19)]
     
     return [(None, None, None)]
-    
+   
+def returnAnalysisCategory(cat):
+    for k in ANALYSIS_CATEGORIES.keys():
+        if cat in ANALYSIS_CATEGORIES[k]: return k
+    return 33
+
+ 
 def categoryName(c):
     if c > len(CATEGORY_NAMES):      return 'all'
     return CATEGORY_NAMES[c]

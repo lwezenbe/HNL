@@ -994,8 +994,6 @@ else:
                                     if 'total_syst' not in list_of_hist[year][c][v]['bkgr'][bk].keys():
                                         from HNL.Systematics.systematics import makeSystErrorHist
                                         list_of_hist[year][c][v]['bkgr'][bk]['total_syst'] = makeSystErrorHist(list_of_hist[year][c][v]['bkgr'][bk], bk, c, year, 'non-prompt' if args.includeData == 'includeSideband' else None)
-                                        print bk, list_of_hist[year][c][v]['bkgr'][bk]['total_syst'].GetBinContent(7), list_of_hist[year][c][v]['bkgr'][bk]['total_syst'].GetBinError(7)
-                
                                     syst_hist.append(list_of_hist[year][c][v]['bkgr'][bk]['total_syst'])
 
                     if args.systematics != 'full' or args.ignoreSystematics:

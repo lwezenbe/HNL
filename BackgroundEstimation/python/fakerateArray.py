@@ -26,8 +26,9 @@ class SingleFlavorFakeRateCollection:
 
     def getFractionalFakeFactor(self, chain, index, manual_var_entry = None):
         fake_factor = 0.
+        from HNL.EventSelection.eventCategorization import returnAnalysisCategory
         for n in self.frac_names:
-            fake_factor += self.frac_weights[n]*self.fakerates[n].returnFakeFactor(chain, index, manual_var_entry)
+            fake_factor += self.frac_weights[str(returnAnalysisCategory(chain.category))][n]*self.fakerates[n].returnFakeFactor(chain, index, manual_var_entry)
         return fake_factor
 
     def getOSSFFakeFactor(self, chain, index, manual_var_entry = None):
