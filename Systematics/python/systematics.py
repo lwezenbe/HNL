@@ -153,6 +153,14 @@ class SystematicJSONreader:
     def getDescription(self, syst, year):
         return self.json_data[syst]['Description']
 
+    def compileListOfShapeSystematics(self, proc, years):
+        final_syst = set()
+        for year in years:
+            final_syst.update(self.getWeights(year, proc, final_state = None, split_correlations = True)+self.getReruns(year, proc, final_state = None, split_correlations = True))
+        return [x for x in final_syst]
+        
+        
+
 def prepareForRerunSyst(chain, event, systematic = 'nominal'):
     if not 'tauEnergyScale' in systematic:
         event.chain.obj_sel['systematic'] = systematic
@@ -223,7 +231,7 @@ def makeSystErrorHist(in_hist, process_name, final_state, year, datadriven_proce
         for flat_unc in reader.getFlats(year, process_name, final_state):
            # if reader.systIsCorrelated(flat_unc): continue
             percentage = abs(1.-reader.getValue(flat_unc, year, process=process_name))
-            syst_error_hist.getHist().SetBinError(b, sqrErr(syst_error_hist.getHist().GetBinError(b), nominal_hist.getHist().GetBinContent(b)*percentage)) 
+            syst_error_hist.getHist().SetBinError(b, sqrErr(syst_error_hist.getHist().GetBinError(b), nominal_hist.getHist().GetBinContent(b)*percentage)), '('+ str(nominal_hist.getHist().GetBinContent(b)/nominal_hist.getHist().GetBinContent(b)*percentage) if nominal_hist.getHist().GetBinContent(b)*percentage != 0 else '0'+')'
 
         for weight in reader.getWeights(year, process_name, final_state, split_syst = False):
             #if reader.systIsCorrelated(weight): continue
@@ -241,6 +249,8 @@ def makeSystErrorHist(in_hist, process_name, final_state, year, datadriven_proce
             
     return syst_error_hist
 
+def addYears(original_syst, syst_to_add, syst_name, datadriven_processes = None):
+    reader = SystematicJSONreader(datadriven_processes)
 
 if __name__ == '__main__':
     sr = SystematicJSONreader()

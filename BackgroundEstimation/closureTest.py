@@ -13,7 +13,7 @@ from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped
 import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
-submission_parser.add_argument('--flavorToTest',   action='store', nargs='*', default = None,  help='Select flavor to perform closure test on', choices=['ele', 'mu', 'tau'])
+submission_parser.add_argument('--flavorToTest',   action='store', nargs='*', default = None,  help='Select flavor to perform closure test on')
 submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
 submission_parser.add_argument('--era',     action='store',       default='UL', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
@@ -56,19 +56,19 @@ else:
 #
 # Throws exceptions if arguments do not add up
 #
-if args.flavorToTest != ['tau']:
-    if args.isCheck:
-        raise RuntimeError("Nothing to check, you are using an imported fakerate")
-
-if args.flavorToTest == ['tau']:
-    if args.region is None:
-        raise RuntimeError("Region should be defined for tau fakes")
-
-if args.selection == 'AN2017014':
-    raise RuntimeError("selection AN2017014 currently not supported")
-
-if args.inData and args.flavorToTest == 'ele' or args.flavorToTest == 'mu':
-    raise RuntimeError("Closure test in data currently not supported for light leptons")
+#if args.flavorToTest != ['tau']:
+#    if args.isCheck:
+#        raise RuntimeError("Nothing to check, you are using an imported fakerate")
+#
+#if args.flavorToTest == ['tau']:
+#    if args.region is None:
+#        raise RuntimeError("Region should be defined for tau fakes")
+#
+#if args.selection == 'AN2017014':
+#    raise RuntimeError("selection AN2017014 currently not supported")
+#
+#if args.inData and args.flavorToTest == 'ele' or args.flavorToTest == 'mu':
+#    raise RuntimeError("Closure test in data currently not supported for light leptons")
 
 from HNL.Tools.logger import getLogger, closeLogger
 log = getLogger(args.logLevel)
@@ -104,7 +104,7 @@ for sample_name in sample_manager.sample_names:
     if args.sample and args.sample not in sample_name: continue
     if 'HNL' in sample_name: continue
     sample = sample_manager.getSample(sample_name)
-    if not args.inData and args.application == 'TauFakesDY' and not 'DY' in sample.name: continue
+#    if not args.inData and args.application == 'TauFakesDY' and not 'DY' in sample.name: continue
     for njob in xrange(sample.returnSplitJobs()):
         jobs += [(sample.name, str(njob))]
 

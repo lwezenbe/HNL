@@ -180,7 +180,8 @@ def returnVariables(nl, is_reco, include_mva = None):
                 from HNL.TMVA.mvaDefinitions import getMVAdict
                 MVA_dict = getMVAdict(include_mva)
                 for k in MVA_dict[include_mva].keys():
-                        var_of_choice[cleanName(k)] = (MVA_dict[include_mva][k][2],   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events'))
+                        #var_of_choice[cleanName(k)] = (MVA_dict[include_mva][k][2],   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events'))
+                        var_of_choice[cleanName(k)] = (MVA_dict[include_mva][k][2],   'rebin-ewkino',         ('MVA score', 'Events'))
         
         return var_of_choice
 

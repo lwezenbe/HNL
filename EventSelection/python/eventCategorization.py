@@ -210,7 +210,7 @@ def isLightLeptonFinalState(cat_key):
     if cat_key in SUPER_CATEGORIES.keys():
         return cat_key == 'NoTau'
     elif cat_key in ANALYSIS_CATEGORIES.keys() or cat_key in ANALYSIS_SPLITOSSF_CATEGORIES.keys():
-        return not 'OneTau' in cat_key
+        return not 'Tau' in cat_key
     elif cat_key in LEADING_FLAVOR_CATEGORIES.keys():
         return not 'Electron' in cat_key and not 'Muon' in cat_key
     elif cat_key in TRIGGER_CATEGORIES.keys():

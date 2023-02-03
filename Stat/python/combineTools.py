@@ -61,7 +61,8 @@ def makeDataCard(bin_name, flavor, era, year, obs_yield, sig_name, bkgr_names, s
     else:
         out_file.write('observation     '+str(obs_yield)+ ' \n')
     out_file.write('-'*400 + '\n')
-    out_file.write(tab(['bin', '']+ [bin_name.rsplit('-', 1)[0]]*(len(bkgr_names)+1)))
+    #out_file.write(tab(['bin', '']+ [bin_name.rsplit('-', 1)[0]]*(len(bkgr_names)+1)))
+    out_file.write(tab(['bin', '']+ [bin_name.rsplit('-', 1)[0]]*(len(bkgr_names)+1), '30'))
     out_file.write(tab(['process', '']+ bkgr_names + [sig_name], '50'))
     out_file.write(tab(['process', '']+ [str(i) for i in xrange(1, len(bkgr_names)+1)] + ['0']))
     if shapes:
@@ -248,7 +249,6 @@ def drawSignalStrengthPerCouplingPrompt(input_file_path, coupling, out_path, out
     for probe_coupling in [0.01*coupling, 0.05*coupling, 0.1*coupling, 0.5*coupling, 5*coupling, 10*coupling, 50*coupling, 100*coupling]:
         limits[probe_coupling] = {}
         for quantile in quantiles:
-            print coupling, limits[coupling][quantile], probe_coupling
             limits[probe_coupling][quantile] = inverseExtrapolationY(coupling, limits[coupling][quantile], probe_coupling) 
 
     sorted_couplings = sorted(limits.keys())
