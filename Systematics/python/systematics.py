@@ -10,7 +10,7 @@ class Systematics:
 
     def returnBranches(self, proc):
         branches = []
-        for syst in self.sjr.getWeights(self.chain.year, proc):
+        for syst in self.sjr.getWeights(self.chain.year, proc, split_correlations=True):
             branches.append('{0}Up/F'.format(syst))
             branches.append('{0}UpRaw/F'.format(syst))
             branches.append('{0}Down/F'.format(syst))
@@ -153,10 +153,10 @@ class SystematicJSONreader:
     def getDescription(self, syst, year):
         return self.json_data[syst]['Description']
 
-    def compileListOfShapeSystematics(self, proc, years):
+    def compileListOfGeneralSystematics(self, syst_type, proc, years):
         final_syst = set()
         for year in years:
-            final_syst.update(self.getWeights(year, proc, final_state = None, split_correlations = True)+self.getReruns(year, proc, final_state = None, split_correlations = True))
+            final_syst.update(self.getGeneral(syst_type, year, proc, final_state = None, split_correlations = True))
         return [x for x in final_syst]
         
         
