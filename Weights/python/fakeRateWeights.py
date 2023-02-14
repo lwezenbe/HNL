@@ -78,6 +78,7 @@ class FakeRateWeighter:
             raise RuntimeError('Unknown method "{}"in fakeRateWeights.py'.format(tau_method))
 
     def returnFakeRateWeight(self, chain, syst = 'nominal'):
+    #    print syst, self.fake_collection.getFakeWeight(), self.returnNonpromptSyst(chain, syst)
         return self.fake_collection.getFakeWeight() * self.returnNonpromptSyst(chain, syst)
 
     def returnNonpromptSyst(self, chain, syst_name = 'nominal'):

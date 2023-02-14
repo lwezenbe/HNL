@@ -360,6 +360,36 @@ def add1Doverflow(hist):
     overflow.SetBinError(nbinsx, hist.GetBinError(nbinsx+1))
     hist.Add(overflow)
     return hist
+
+def removeNegativeBins1D(hist):
+    nbinsx = hist.GetNbinsX()
+    for bx in xrange(1, nbinsx+1):
+        if hist.GetBinContent(bx) <= 0.:
+            hist.SetBinContent(bx, 0.)
+            hist.SetBinError(bx, 1.)
+    return hist
+
+def removeNegativeBins2D(hist):
+    nbinsx = hist.GetNbinsX()
+    nbinsy = hist.GetNbinsY()
+    for bx in xrange(1, nbinsx+1):
+        for by in xrange(1, nbinsy+1):
+            if hist.GetBinContent(bx, by) <= 0.:
+                hist.SetBinContent(bx, by, 0.)
+                hist.SetBinError(bx, by, 0.)
+    return hist
+
+def removeNegativeBins3D(hist):
+    nbinsx = hist.GetNbinsX()
+    nbinsy = hist.GetNbinsY()
+    nbinsz = hist.GetNbinsZ()
+    for bx in xrange(1, nbinsx+1):
+        for by in xrange(1, nbinsy+1):
+            for bz in xrange(1, nbinsz+1):
+                if hist.GetBinContent(bx, by, bz) <= 0.:
+                    hist.SetBinContent(bx, by, bz, 0.)
+                    hist.SetBinError(bx, by, bz, 0.)
+    return hist
  
 def add2Doverflow(hist):
     overflow=hist.Clone()

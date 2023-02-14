@@ -79,6 +79,9 @@ var_reco_3l = {
         'mtl3':          (lambda c : c.mtl3,      np.arange(0., 240., 5.),         ('m_T(l3) [GeV]', 'Events')),
         'drmaxossf':      (lambda c : c.dr_maxOSSF,       np.arange(0., 5.5, .25),       ('#Delta R(max(OSSF))', 'Events')),
         'mtnonossf':          (lambda c : c.mtNonZossf,      np.arange(0., 240., 5.),         ('m_{ll,Z} [GeV]', 'Events')),
+        
+        #Fakes
+        #'leadingfakept':        
     }
 
 var_reco_4l = {
@@ -122,14 +125,34 @@ var_gen_4l = {'minMos':        (lambda c : c.minMos,   np.arange(0., 120., 12.),
         }
 
 
+#binning = {
+#    'minMos'    : {'ConversionCR' : np.arange(0., 95., 5.), 'WZCR' : np.arange(0., 130., 10.), 'lowMassSRloose' : np.arange(0., 65., 5.), 'highMassSR' : np.arange(0., 210., 10.)},
+#    'm3l'       : {'ConversionCR' : np.arange(70., 115., 5.), 'WZCR' : np.arange(85., 500., 15.), 'lowMassSRloose' : np.arange(0., 120., 5.), 'highMassSR' : np.arange(0., 415., 15.)},
+#    'met'       : {'ConversionCR' : np.arange(0., 85., 5.), 'WZCR' : np.arange(50., 185., 15.), 'lowMassSRloose' : np.arange(0., 95., 5.), 'highMassSR' : np.arange(0., 415., 15.)},   
+#    'mtOther'   : {'ConversionCR' : np.arange(0., 135., 15.), 'WZCR' : np.arange(0., 350., 15.), 'lowMassSRloose' : np.arange(0., 125., 5.), 'highMassSR' : np.arange(0., 350., 10.)},   
+#    'l1pt'      : {'ConversionCR' : np.arange(0., 95., 5.), 'WZCR' : np.arange(0., 300., 15.), 'lowMassSRloose' : np.arange(10., 65., 5.), 'highMassSR' : np.arange(50., 315., 15.)},   
+#    'l2pt'      : {'ConversionCR' : np.arange(10., 55., 5.), 'WZCR' : np.arange(0., 200., 10.), 'lowMassSRloose' : np.arange(10., 47., 2.), 'highMassSR' : np.arange(0., 210., 10.)},   
+#    'l3pt'      : {'ConversionCR' : np.arange(10., 45., 5.), 'WZCR' : np.arange(0., 125., 5.), 'lowMassSRloose' : np.arange(10., 36., 1.), 'highMassSR' : np.arange(0., 155., 5.)},   
+#    'j1pt'      : {'ConversionCR' : np.arange(0., 120., 15.), 'WZCR' : np.arange(0., 200., 15.), 'lowMassSRloose' : np.arange(0., 110., 10.), 'highMassSR' : np.arange(0., 160., 15.)},   
+#    'j2pt'      : {'ConversionCR' : np.arange(0., 75., 15.), 'WZCR' : np.arange(0., 205., 15.), 'lowMassSRloose' : np.arange(0., 90., 10.), 'highMassSR' : np.arange(0., 90., 15.)},   
+#    'NJet'      : {'ConversionCR' : np.arange(0., 5., 1.), 'WZCR' : np.arange(0., 5., 1.), 'lowMassSRloose' : np.arange(0., 6., 1.), 'highMassSR' : np.arange(0., 6., 1.)},   
+#    'mt3'       : {'ConversionCR' : np.arange(70., 315., 15.), 'WZCR' : np.arange(150., 800., 15.), 'lowMassSRloose' : np.arange(30., 270., 15.), 'highMassSR' : np.arange(0., 415., 15.)},   
+#    'LT'        : {'ConversionCR' : np.arange(0., 260., 15.), 'WZCR' : np.arange(50., 600., 15.), 'lowMassSRloose' : np.arange(0., 270., 15.), 'highMassSR' : np.arange(0., 915., 15.)},   
+#    'HT'        : {'ConversionCR' : np.arange(0., 165., 15.), 'WZCR' : np.arange(0., 250., 15.), 'lowMassSRloose' : np.arange(0., 105., 15.), 'highMassSR' : np.arange(0., 200., 15.)},   
+#    'mzossf'    : {'ConversionCR' : np.arange(0., 95., 5.), 'WZCR' : np.arange(70., 115., 5.), 'lowMassSRloose' : np.arange(70., 115., 5.), 'highMassSR' : np.arange(0., 250., 15.)},   
+#    'maxMossf'  : {'ConversionCR' : np.arange(0., 100., 10.), 'WZCR' : np.arange(60., 300., 15.), 'lowMassSRloose' : np.arange(0., 75., 5.), 'highMassSR' : np.arange(0., 250., 15.)},   
+#    'ml1l2'     : {'ConversionCR' : np.arange(0., 95., 5.), 'WZCR' : np.arange(70., 300., 15.), 'lowMassSRloose' : np.arange(0., 75., 5.), 'highMassSR' : np.arange(0., 250., 15.)},   
+#    'ml1l3'     : {'ConversionCR' : np.arange(0., 95., 5.), 'WZCR' : np.arange(0., 250., 15.), 'lowMassSRloose' : np.arange(0., 75., 5.), 'highMassSR' : np.arange(0., 250., 15.)},   
+#    'ml2l3'     : {'ConversionCR' : np.arange(0., 95., 5.), 'WZCR' : np.arange(0., 200., 15.), 'lowMassSRloose' : np.arange(0., 75., 5.), 'highMassSR' : np.arange(0., 250., 15.)},   
+#}
 binning = {
-    'minMos'    : {'ConversionCR' : np.arange(0., 95., 5.), 'WZCR' : np.arange(0., 130., 10.), 'lowMassSRloose' : np.arange(0., 65., 5.), 'highMassSR' : np.arange(0., 210., 10.)},
-    'm3l'       : {'ConversionCR' : np.arange(70., 115., 5.), 'WZCR' : np.arange(85., 500., 15.), 'lowMassSRloose' : np.arange(0., 120., 5.), 'highMassSR' : np.arange(0., 415., 15.)},
-    'met'       : {'ConversionCR' : np.arange(0., 85., 5.), 'WZCR' : np.arange(50., 185., 15.), 'lowMassSRloose' : np.arange(0., 95., 5.), 'highMassSR' : np.arange(0., 415., 15.)},   
-    'mtOther'   : {'ConversionCR' : np.arange(0., 135., 15.), 'WZCR' : np.arange(0., 350., 15.), 'lowMassSRloose' : np.arange(0., 125., 5.), 'highMassSR' : np.arange(0., 350., 10.)},   
-    'l1pt'      : {'ConversionCR' : np.arange(0., 95., 5.), 'WZCR' : np.arange(0., 300., 15.), 'lowMassSRloose' : np.arange(10., 65., 5.), 'highMassSR' : np.arange(50., 315., 15.)},   
-    'l2pt'      : {'ConversionCR' : np.arange(10., 55., 5.), 'WZCR' : np.arange(0., 200., 10.), 'lowMassSRloose' : np.arange(10., 47., 2.), 'highMassSR' : np.arange(0., 210., 10.)},   
-    'l3pt'      : {'ConversionCR' : np.arange(10., 45., 5.), 'WZCR' : np.arange(0., 125., 5.), 'lowMassSRloose' : np.arange(10., 36., 1.), 'highMassSR' : np.arange(0., 155., 5.)},   
+    'minMos'    : {'ConversionCR' : np.arange(0., 95., 5.), 'WZCR' : np.arange(0., 130., 10.), 'lowMassSRloose' : np.arange(0., 65., 5.), 'highMassSR' : np.arange(0., 220., 20.)},
+    'm3l'       : {'ConversionCR' : np.arange(70., 115., 5.), 'WZCR' : np.arange(85., 500., 15.), 'lowMassSRloose' : np.arange(0., 120., 5.), 'highMassSR' : np.arange(50., 420., 30.)},
+    'met'       : {'ConversionCR' : np.arange(0., 85., 5.), 'WZCR' : np.arange(50., 185., 15.), 'lowMassSRloose' : np.arange(0., 95., 5.), 'highMassSR' : np.arange(0., 220., 20.)},   
+    'mtOther'   : {'ConversionCR' : np.arange(0., 135., 15.), 'WZCR' : np.arange(0., 350., 15.), 'lowMassSRloose' : np.arange(0., 125., 5.), 'highMassSR' : np.arange(0., 275., 25.)},   
+    'l1pt'      : {'ConversionCR' : np.arange(0., 95., 5.), 'WZCR' : np.arange(0., 300., 15.), 'lowMassSRloose' : np.arange(10., 65., 5.), 'highMassSR' : np.arange(50., 215., 15.)},   
+    'l2pt'      : {'ConversionCR' : np.arange(10., 55., 5.), 'WZCR' : np.arange(0., 200., 10.), 'lowMassSRloose' : np.arange(10., 47., 2.), 'highMassSR' : np.arange(0., 135., 15.)},   
+    'l3pt'      : {'ConversionCR' : np.arange(10., 45., 5.), 'WZCR' : np.arange(0., 125., 5.), 'lowMassSRloose' : np.arange(10., 36., 1.), 'highMassSR' : np.arange(10., 90., 10.)},   
     'j1pt'      : {'ConversionCR' : np.arange(0., 120., 15.), 'WZCR' : np.arange(0., 200., 15.), 'lowMassSRloose' : np.arange(0., 110., 10.), 'highMassSR' : np.arange(0., 160., 15.)},   
     'j2pt'      : {'ConversionCR' : np.arange(0., 75., 15.), 'WZCR' : np.arange(0., 205., 15.), 'lowMassSRloose' : np.arange(0., 90., 10.), 'highMassSR' : np.arange(0., 90., 15.)},   
     'NJet'      : {'ConversionCR' : np.arange(0., 5., 1.), 'WZCR' : np.arange(0., 5., 1.), 'lowMassSRloose' : np.arange(0., 6., 1.), 'highMassSR' : np.arange(0., 6., 1.)},   
@@ -142,6 +165,7 @@ binning = {
     'ml1l3'     : {'ConversionCR' : np.arange(0., 95., 5.), 'WZCR' : np.arange(0., 250., 15.), 'lowMassSRloose' : np.arange(0., 75., 5.), 'highMassSR' : np.arange(0., 250., 15.)},   
     'ml2l3'     : {'ConversionCR' : np.arange(0., 95., 5.), 'WZCR' : np.arange(0., 200., 15.), 'lowMassSRloose' : np.arange(0., 75., 5.), 'highMassSR' : np.arange(0., 250., 15.)},   
 }
+
 
 def getBinning(v, region, original_bins):
     if v not in binning.keys() or region not in binning[v].keys():
@@ -167,6 +191,7 @@ var_noselection = {
 
 from HNL.Tools.helpers import mergeTwoDictionaries
 from HNL.Tools.outputTree import cleanName
+var_to_rebin = ['lowestmass-e', 'lowmass-e', 'lowestmass-mu', 'lowmass-mu', 'mediummass250400-e', 'mediummass250400-mu', 'mediummass85100-e', 'mediummass85100-mu']
 def returnVariables(nl, is_reco, include_mva = None):
         var_of_choice = {}
         if is_reco:
@@ -180,8 +205,10 @@ def returnVariables(nl, is_reco, include_mva = None):
                 from HNL.TMVA.mvaDefinitions import getMVAdict
                 MVA_dict = getMVAdict(include_mva)
                 for k in MVA_dict[include_mva].keys():
-                        #var_of_choice[cleanName(k)] = (MVA_dict[include_mva][k][2],   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events'))
-                        var_of_choice[cleanName(k)] = (MVA_dict[include_mva][k][2],   'rebin-ewkino',         ('MVA score', 'Events'))
+                        if k not in var_to_rebin:
+                            var_of_choice[cleanName(k)] = (MVA_dict[include_mva][k][2],   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events'))
+                        else:
+                            var_of_choice[cleanName(k)] = (MVA_dict[include_mva][k][2],   'rebin-ewkino',         ('MVA score', 'Events'))
         
         return var_of_choice
 

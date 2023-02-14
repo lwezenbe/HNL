@@ -61,8 +61,8 @@ def makeDataCard(bin_name, flavor, era, year, obs_yield, sig_name, bkgr_names, s
     else:
         out_file.write('observation     '+str(obs_yield)+ ' \n')
     out_file.write('-'*400 + '\n')
-    #out_file.write(tab(['bin', '']+ [bin_name.rsplit('-', 1)[0]]*(len(bkgr_names)+1)))
-    out_file.write(tab(['bin', '']+ [bin_name.rsplit('-', 1)[0]]*(len(bkgr_names)+1), '30'))
+    out_file.write(tab(['bin', '']+ [bin_name.rsplit('-', 1)[0]]*(len(bkgr_names)+1)))
+    #out_file.write(tab(['bin', '']+ [bin_name.rsplit('-', 1)[0]]*(len(bkgr_names)+1), '30'))
     out_file.write(tab(['process', '']+ bkgr_names + [sig_name], '50'))
     out_file.write(tab(['process', '']+ [str(i) for i in xrange(1, len(bkgr_names)+1)] + ['0']))
     if shapes:

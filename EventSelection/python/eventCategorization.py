@@ -162,12 +162,13 @@ ANALYSIS_CATEGORIES_TEX = {
     'TauMuMu'           : '#mu#mu#tau_{h}',
     'TauEMu'           : '#e#mu#tau_{h}',
     'EEE-Mu'            : 'eee/#mu',
-    'MuMuMu-E'          : '#mu#mu#mu/e'
+    'MuMuMu-E'          : '#mu#mu#mu/e',
     #'EEE'               : 'eee',
     #'EEMu'              : 'ee#mu',
     #'MuMuMu'            : '#mu#mu#mu',
     #'MuMuE'             : '#mu#mu e',
 }
+
 mutual_exclusive_analysiscategories = ['OneTau-OSSF', 'OneTau-SSSF', 'OneTau-OF', 'EEE-Mu', 'MuMuMu-E']
 
 ANALYSIS_SPLITOSSF_CATEGORIES = {

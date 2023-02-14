@@ -104,7 +104,6 @@ class SingleYearDatacardManager:
             else:
                 sub_strategy = None
 
-            print strategy, sub_strategy
             if strategy == 'custom':
                 mass_point = self.getHNLmass(signal_name)
                 if mass_point <= 80:
@@ -125,7 +124,6 @@ class SingleYearDatacardManager:
                 if mass_point <= 80:
                     return self.getCustomDatacardList(signal_name, final_state, 'custom')
                 else:
-                    print 'here', self.getMVAName('Combined', final_state, signal_name)
                     return [self.getMVAName('Combined', final_state, signal_name)]
                 
 
@@ -140,7 +138,6 @@ class SingleYearDatacardManager:
         from HNL.Tools.helpers import makeDirIfNeeded
         makeDirIfNeeded(self.getDatacardPath(signal_name, out_card_name))
         from HNL.Stat.combineTools import runCombineCommand
-        print 'combineCards.py '+' '.join([self.getDatacardPath(signal_name, ic, define_strategy = not initial_merge) for ic in in_card_names])+' > '+self.getDatacardPath(signal_name, out_card_name)
         runCombineCommand('combineCards.py '+' '.join([self.getDatacardPath(signal_name, ic, define_strategy = not initial_merge) for ic in in_card_names])+' > '+self.getDatacardPath(signal_name, out_card_name))
  
     def initializeCards(self, signal_name, final_states, strategy = 'custom'):

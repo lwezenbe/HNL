@@ -26,7 +26,7 @@ submission_parser.add_argument('--noskim', action='store_true', default=False,  
 submission_parser.add_argument('--isCheck', action='store_true', default=False,  help='Check the setup by using the exact same region as the ttl measurement')
 submission_parser.add_argument('--splitInCategories', action='store_true', default=False,  help='Split into different categories')
 submission_parser.add_argument('--inData',   action='store_true', default=False,  help='Run in data')
-submission_parser.add_argument('--region', action='store', default=None, type=str,  help='What region was the tau fake closure test you want to use measured in?', choices=['TauFakesDYCT', 'TauFakesTT', 'MCCT', 'LightLepFakesDY', 'LightLepFakesTT', 'TauMixCT', 'TauFakesDYCTnomet', 'TauFakesTTCT'])
+submission_parser.add_argument('--region', action='store', default=None, type=str,  help='What region was the tau fake closure test you want to use measured in?', choices=['TauFakesDYCT', 'TauFakesTT', 'MCCT', 'LightLepFakesDYCT', 'LightLepFakesTTCT', 'TauMixCT', 'TauFakesDYCTnomet', 'TauFakesTTCT', 'highMassSRnoOSSF', 'highMassSROSSF'])
 submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino'])
 submission_parser.add_argument('--application', action='store', default=None, type=str,  help='What region was the tau fake rate you want to use applied for?', 
     choices=['TauFakesDY', 'TauFakesDYnomet', 'TauFakesTT', 'WeightedMix', 'OSSFsplitMix'])
@@ -125,8 +125,8 @@ else:
             #'met':                  (lambda c : c._met,         np.arange(0., 90., 3.),         ('p_{T}^{miss} [GeV]', 'Events')),
             #'met':                  (lambda c : c._met,         np.arange(50., 123., 3.),         ('p_{T}^{miss} [GeV]', 'Events')),
             'mtOther':              (lambda c : c.mtOther,      np.arange(0., 230., 15.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
-            #'ptFakes':              (lambda c, i : c.l_pt[i],         np.arange(0., 300., 15.),       ('p_{T} [GeV]', 'Events')),
-            #'etaFakes':             (lambda c, i : c.l_eta[i],        np.arange(-2.5, 3.0, 0.5),       ('#eta', 'Events')),
+            'ptFakes':              (lambda c, i : c.l_pt[i],         np.arange(0., 300., 15.),       ('p_{T} [GeV]', 'Events')),
+            'etaFakes':             (lambda c, i : c.l_eta[i],        np.arange(-2.5, 3.0, 0.5),       ('#eta', 'Events')),
             'ptLeading':            (lambda c : c.l_pt[0],         np.arange(0., 100., 15.),       ('p_{T}(leading) [GeV]', 'Events')),
             'ptLeadingLukabins':    (lambda c : c.l_pt[0],         np.linspace(10., 200., num = 10),       ('p_{T}(leading) [GeV]', 'Events')),
             'etaLeading':           (lambda c : abs(c.l_eta[0]),        np.arange(0., 3.0, 0.5),       ('|#eta(leading)|', 'Events')),
@@ -176,6 +176,8 @@ def getOutputBase():
 
     if args.flavorToTest == ['tau']:
         output_name = os.path.join(output_name, args.region, str(args.application))
+    else:
+        output_name = os.path.join(output_name, args.region)
 
     if args.isCheck:
         output_name += '/isCheck'
@@ -339,8 +341,8 @@ if not args.makePlots:
         event.initEvent()
         if not event.passedFilter(cutter, sample.name): continue
 
+        fake_index = event.getFakeIndex()
         if args.inData and not chain.is_data:
-            fake_index = event.getFakeIndex()
             if any([chain.l_isfake[i] for i in fake_index]): continue
    
         cat = event.event_category.returnCategory()
@@ -352,7 +354,7 @@ if not args.makePlots:
             try:
                 co.setTreeVariable(v, var[v][0](chain))   
             except:
-                co.setTreeVariable(v, var[v][0](chain, chain.l_indices[2]))   
+                co.setTreeVariable(v, var[v][0](chain, fake_index[0]))   
         co.setTreeVariable('category', cat)
         co.fill(weight, fake_factor)
 

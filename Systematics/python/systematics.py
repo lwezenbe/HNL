@@ -2,11 +2,15 @@ import os
 json_location = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Systematics', 'data', 'systematics.json'))
 
 class Systematics:
-    def __init__(self, sample, reweighter, datadriven_processes = None):
+    def __init__(self, sample, reweighter, datadriven_processes = None, year = None):
         self.sample = sample
         self.chain = self.sample.chain
         self.reweighter = reweighter
         self.sjr = SystematicJSONreader(datadriven_processes)
+        if year is None:
+            self.year = self.chain.year
+        else:
+            self.year = year
 
     def returnBranches(self, proc):
         branches = []
@@ -32,17 +36,19 @@ class Systematics:
 
     def storeFullWeightSystematics(self, weight, output_tree):
         weight_up, weight_down = self.getWeightSystematics(weight)
-        output_tree.setTreeVariable('{0}UpRaw'.format(weight), weight_up)
-        output_tree.setTreeVariable('{0}DownRaw'.format(weight), weight_down)
+        weight_name = self.sjr.getCorrName(weight, self.year)
+        output_tree.setTreeVariable('{0}UpRaw'.format(weight_name), weight_up)
+        output_tree.setTreeVariable('{0}DownRaw'.format(weight_name), weight_down)
         for original_weight in self.reweighter.WEIGHTS_TO_USE:
             if original_weight == self.splitSystName(weight)[0]: continue
             weight_up *= getattr(output_tree.tree, original_weight)
             weight_down *= getattr(output_tree.tree, original_weight)
-        output_tree.setTreeVariable('{0}Up'.format(weight), weight_up)
-        output_tree.setTreeVariable('{0}Down'.format(weight), weight_down)
+        output_tree.setTreeVariable('{0}Up'.format(weight_name), weight_up)
+        output_tree.setTreeVariable('{0}Down'.format(weight_name), weight_down)
 
     def storeAllSystematicsForShapes(self, output_tree, proc):
         for syst in self.sjr.getWeights(self.chain.year, proc):
+            print syst
             short_syst = self.splitSystName(syst)[0]
             if short_syst in self.reweighter.WEIGHTS_TO_USE:
                 self.storeFullWeightSystematics(syst, output_tree)   
@@ -70,8 +76,8 @@ class SystematicJSONreader:
             if self.getType(k) != syst_type or not self.isActive(k) or year not in self.getYear(k): continue
             if proc is not None and not self.filterProcesses(k, proc): continue
             if final_state is not None and not self.filterFinalStates(k, final_state): continue
-            if split_correlations and not self.systIsCorrelated(k):
-                syst_name = k+'_'+str(year)
+            if split_correlations: 
+                syst_name = self.getCorrName(k, year)
             else:
                 syst_name = k
             if split_syst:
@@ -81,14 +87,32 @@ class SystematicJSONreader:
                 final_list.append(syst_name)
         return final_list
 
+    def getCorrName(self, syst, year):
+        syst = str(syst)
+        if not self.systIsCorrelated(syst):
+            if syst.endswith('Up'):
+                return syst.split('Up')[0]+'_'+str(year)+'Up'
+            elif syst.endswith('Down'):
+                return syst.split('Down')[0]+'_'+str(year)+'Down'
+            else:
+                return syst+'_'+str(year)
+        else:
+            return syst 
+
     def getFlats(self, year, proc = None, final_state = None, split_correlations=False):
         return self.getGeneral("flat", year, proc, final_state, split_correlations = split_correlations)
 
     def getWeights(self, year, proc = None, final_state = None, split_syst = False, split_correlations=False):
-        return self.getGeneral("weight", year, proc, final_state, split_syst, split_correlations = split_correlations)
+        if '-' in year:
+            return self.compileListOfGeneralSystematics('weight', proc, year.split('-'), final_state = final_state, split_syst = split_syst, split_corr = split_correlations)
+        else:
+            return self.getGeneral("weight", year, proc, final_state, split_syst, split_correlations = split_correlations)
 
     def getReruns(self, year, proc = None, final_state = None, split_syst = False, split_correlations=False):
-        return self.getGeneral("rerun", year, proc, final_state, split_syst, split_correlations = split_correlations)
+        if '-' in year:
+            return self.compileListOfGeneralSystematics('rerun', proc, year.split('-'), final_state = final_state, split_syst = split_syst, split_corr = split_correlations)
+        else:
+            return self.getGeneral("rerun", year, proc, final_state, split_syst, split_correlations = split_correlations)
     
     def getAllSources(self, year, proc = None, final_state = None, split_correlations=False):
         return self.getFlats(year, proc, final_state, split_correlations = split_correlations)+self.getWeights(year, proc, final_state, split_correlations = split_correlations)+self.getReruns(year, proc, final_state, split_correlations = split_correlations)
@@ -125,7 +149,12 @@ class SystematicJSONreader:
             raise RuntimeError("Undefined final state")
 
     def systIsCorrelated(self, syst):
-        return self.json_data[syst].get('Correlated', False)
+        base_syst = syst
+        if syst.endswith('Up'):
+            base_syst = syst.split('Up')[0]
+        elif syst.endswith('Down'):
+            base_syst = syst.split('Down')[0]
+        return self.json_data[base_syst].get('Correlated', False)
     
     def getFunc(self, syst):
         return self.json_data[syst].get('Func', None)
@@ -153,10 +182,10 @@ class SystematicJSONreader:
     def getDescription(self, syst, year):
         return self.json_data[syst]['Description']
 
-    def compileListOfGeneralSystematics(self, syst_type, proc, years):
+    def compileListOfGeneralSystematics(self, syst_type, proc, years, final_state = None, split_syst=False, split_corr = True):
         final_syst = set()
         for year in years:
-            final_syst.update(self.getGeneral(syst_type, year, proc, final_state = None, split_correlations = True))
+            final_syst.update(self.getGeneral(syst_type, year, proc, final_state = final_state, split_correlations = split_corr, split_syst=split_syst))
         return [x for x in final_syst]
         
         
@@ -180,28 +209,39 @@ def insertSystematics(out_file, bkgr_names, sig_name, year, final_state, datadri
     from HNL.EventSelection.eventCategorization import translateCategories
     final_state = translateCategories(final_state)    
 
-    for syst_name, syst in zip(reader.getAllSources(year, split_correlations=True), reader.getAllSources(year, split_correlations=False)):
-        out_str = [syst_name, 'lnN' if syst in reader.getFlats(year) else 'shape']
-        for proc in bkgr_names + [sig_name]:
-            if not reader.filterProcesses(syst, proc) or not reader.filterFinalStates(syst, final_state):
-                out_str += ['-']
-            else:
-                out_str += [reader.getValue(syst, year, process = proc)]
+    for syst in reader.getAllSources(year, split_correlations=False):
+        if not '-' in year or syst in reader.getFlats(year) or reader.systIsCorrelated(syst):
+            out_str = [reader.getCorrName(syst, year), 'lnN' if syst in reader.getFlats(year) else 'shape']
+            for proc in bkgr_names + [sig_name]:
+                if not reader.filterProcesses(syst, proc) or not reader.filterFinalStates(syst, final_state):
+                    out_str += ['-']
+                elif not '-' in year or syst in reader.getFlats(year):
+                    out_str += [reader.getValue(syst, year, process = proc)]
+                else:
+                    out_str += ['1.0']
+            out_file.write(tab(out_str))        
+        else:
+            for y in [x for x in reader.getYear(syst) if x in year.split('-')]:
+                out_str = [reader.getCorrName(syst, y), 'shape']
+                for proc in bkgr_names + [sig_name]:
+                    if not reader.filterProcesses(syst, proc) or not reader.filterFinalStates(syst, final_state):
+                        out_str += ['-']
+                    else:
+                        out_str += ['1.0']
+                out_file.write(tab(out_str))        
     
-        out_file.write(tab(out_str))        
          
-def returnWeightShapes(tree, vname, hname, bins, condition, year, proc, datadriven_processes = None, split_corr = False, additional_weight = None):
+def returnWeightShapes(tree, vname, hname, bins, condition, year, proc, datadriven_processes = None, additional_weight = None):
     reader = SystematicJSONreader(datadriven_processes)
-    all_weights = reader.getWeights(year, proc, split_syst=True)
-    all_corr_weights = reader.getWeights(year, proc, split_syst=True, split_correlations=True)
+    #all_corr_weights = reader.getWeights(year, proc, split_syst=True, split_correlations=True)
+    all_corr_weights = reader.compileListOfGeneralSystematics('weight', proc, year.split('-'), split_syst=True)
     out_dict = {}
     from HNL.Tools.histogram import Histogram
-    #print all_weights, all_corr_weights
-    for weight, corr_weight in zip(all_weights, all_corr_weights):
-        weight_for_name = corr_weight if split_corr else weight
+    for weight in all_corr_weights:
+        weight_for_name = weight
         if additional_weight is not None:
             weight += '*'+additional_weight
-        out_dict[weight_for_name] = Histogram(tree.getHistFromTree(vname, hname + weight_for_name, bins, condition, weight = weight))
+        out_dict[weight_for_name] = Histogram(tree.getHistFromTree(vname, hname + weight, bins, condition, weight = weight))
     return out_dict     
 
 def checkSyst(chain, syst = None):
@@ -233,14 +273,14 @@ def makeSystErrorHist(in_hist, process_name, final_state, year, datadriven_proce
             percentage = abs(1.-reader.getValue(flat_unc, year, process=process_name))
             syst_error_hist.getHist().SetBinError(b, sqrErr(syst_error_hist.getHist().GetBinError(b), nominal_hist.getHist().GetBinContent(b)*percentage)), '('+ str(nominal_hist.getHist().GetBinContent(b)/nominal_hist.getHist().GetBinContent(b)*percentage) if nominal_hist.getHist().GetBinContent(b)*percentage != 0 else '0'+')'
 
-        for weight in reader.getWeights(year, process_name, final_state, split_syst = False):
+        for weight in reader.getWeights(year, process_name, final_state, split_syst = False, split_correlations=True):
             #if reader.systIsCorrelated(weight): continue
             err_up = abs(in_hist[weight+'Up'].getHist().GetBinContent(b) - in_hist['nominal'].getHist().GetBinContent(b))
             err_down = abs(in_hist[weight+'Down'].getHist().GetBinContent(b) - in_hist['nominal'].getHist().GetBinContent(b))
             bin_error = max(err_up, err_down)
             syst_error_hist.getHist().SetBinError(b, sqrErr(syst_error_hist.getHist().GetBinError(b), bin_error))
 
-        for rerun in reader.getReruns(year, process_name, final_state, split_syst = False):
+        for rerun in reader.getReruns(year, process_name, final_state, split_syst = False, split_correlations=True):
             #if reader.systIsCorrelated(rerun): continue
             err_up = abs(in_hist[rerun+'Up'].getHist().GetBinContent(b) - in_hist['nominal'].getHist().GetBinContent(b))
             err_down = abs(in_hist[rerun+'Down'].getHist().GetBinContent(b) - in_hist['nominal'].getHist().GetBinContent(b))

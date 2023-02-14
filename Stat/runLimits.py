@@ -65,10 +65,22 @@ def runAsymptoticLimit(card_manager, signal_name, cardname):
     print 'Finished running asymptotic limits for {0}'.format(signal_name)
     return
 
-def runHybridNew(mass):
-    datacard_massbase = os.path.join(datacards_base, 'HNL-'+args.flavor+'-m'+str(mass), 'shapes')
-    #TODO: Finish this
-    return datacard_massbase
+def runHybridNew(card_manager, signal_name, cardname):
+    datacard = card_manager.getDatacardPath(signal_name, cardname)
+
+    output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/hybridNew/'+cardname
+    if args.tag is not None: output_folder += '-'+args.tag
+    makeDirIfNeeded(output_folder+'/x')
+    print 'Running Combine for {0}'.format(signal_name)
+
+    if args.blind:
+        runCombineCommand('combine -M HybridNew -t 50 -d'+datacard+ ' --run blind', output_folder)
+    else:
+        runCombineCommand('combine -M HybridNew -t 50 -d'+datacard, output_folder)
+    
+    print 'Finished running toy limits for {0}'.format(signal_name)
+    return
+
 
 def runLimit(card_manager, signal_name, cardnames):
     datacard_manager.prepareAllCards(signal_name, cardnames, args.strategy)
@@ -76,7 +88,7 @@ def runLimit(card_manager, signal_name, cardnames):
     if args.asymptotic:
         runAsymptoticLimit(datacard_manager, signal_name, getOutDataCardName(cardnames))
     else:
-        raise RuntimeError('To be implemented')
+        runHybridNew(datacard_manager, signal_name, getOutDataCardName(cardnames))
 
 # Create datacard manager
 from HNL.Stat.datacardManager import DatacardManager
@@ -160,6 +172,7 @@ asymptotic_str = 'asymptotic' if args.asymptotic else ''
 year_to_read = args.year[0] if len(args.year) == 1 else '-'.join(args.year)
 
 card = getOutDataCardName(args.datacards) 
+method_name = 'runAsymptoticLimits' if args.asymptotic else 'HybridNew'
 destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/Results/runAsymptoticLimits/'+args.masstype+'-'+('prompt' if not args.displaced else 'displaced')+'/'+args.strategy+'-'+args.selection+(('-'+args.tag) if args.tag is not None else '')+'/'+args.flavor+'/'+card+'/'+ args.era+year_to_read))
 
 #Make and save graph objects

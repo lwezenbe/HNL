@@ -104,14 +104,17 @@ class OutputTree(object):
         res = htmp.Clone()
         #Add overflow and underflow bins
         if dim == 1:
-            from HNL.Tools.helpers import add1Doverflow
+            from HNL.Tools.helpers import add1Doverflow, removeNegativeBins1D
             res = add1Doverflow(res)
+            res = removeNegativeBins1D(res)
         if dim == 2:
-            from HNL.Tools.helpers import add2Doverflow
+            from HNL.Tools.helpers import add2Doverflow, removeNegativeBins2D
             res = add2Doverflow(res)
+            res = removeNegativeBins2D(res)
         if dim == 3:
-            from HNL.Tools.helpers import add3Doverflow
+            from HNL.Tools.helpers import add3Doverflow, removeNegativeBins3D
             res = add3Doverflow(res)
+            res = removeNegativeBins3D(res)
         return res 
 
     def closeTree(self):

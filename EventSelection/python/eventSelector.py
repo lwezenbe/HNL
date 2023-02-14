@@ -52,9 +52,9 @@ class FilterObject(object):
 
 from HNL.EventSelection.signalRegionSelector import SignalRegionSelector
 from HNL.EventSelection.controlRegionSelector import ZZCRfilter, WZCRfilter, ConversionCRfilter, TauFakeEnrichedDY, TauFakeEnrichedTT, LightLeptonFakeMeasurementRegion, ClosureTestMC, GeneralMCCTRegion
-from HNL.EventSelection.controlRegionSelector import TauMixCTfilter, GeneralTrileptonFilter, LightLepFakeEnrichedDY, LightLepFakeEnrichedTT
+from HNL.EventSelection.controlRegionSelector import TauMixCTfilter, GeneralTrileptonFilter, LightLepFakeEnrichedDY, LightLepFakeEnrichedTT, HighMassWithBJetfilter
 
-signal_regions = ['baseline', 'lowMassSR', 'highMassSR', 'lowMassSRloose']
+signal_regions = ['baseline', 'lowMassSR', 'highMassSR', 'lowMassSRloose', 'highMassSROSSF', 'highMassSRnoOSSF']
 
 class EventSelector:
 
@@ -107,6 +107,8 @@ class EventSelector:
             self.selector = TauMixCTfilter(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization, additional_options={'high_met' : True, 'no_met' : False})
         elif self.name == 'MCCT':
             self.selector = GeneralMCCTRegion(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
+        elif self.name == 'HighMassWithB':
+            self.selector = HighMassWithBJetfilter(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
         elif self.name == 'NoSelection':
             #if chain.is_data and not ('sideband' in additional_options or 'for_skim' in additional_options):
             #    raise RuntimeError("Running this would mean unblinding. Dont do this.")

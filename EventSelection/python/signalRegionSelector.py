@@ -29,6 +29,10 @@ class SignalRegionSelector(FilterObject):
             return passLowMassSelection(self.chain, self.new_chain, cutter, loose_selection = True)
         elif region == 'highMassSR':
             return passHighMassSelection(self.chain, self.new_chain, cutter)
+        elif region == 'highMassSRnoOSSF':
+            return passHighMassSelection(self.chain, self.new_chain, cutter, ossf = False)
+        elif region == 'highMassSROSSF':
+            return passHighMassSelection(self.chain, self.new_chain, cutter, ossf = True)
         elif region == 'baseline':
             return True
         else:

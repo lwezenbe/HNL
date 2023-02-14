@@ -39,6 +39,7 @@ def mergeSinglePath(path, groups_to_merge=None):
 
     for p in merge_paths:
         for group_id in getListOfGroupID(p):
+            print p, group_id
             gname, gid = group_id
             if groups_to_merge is not None and group_id not in groups_to_merge: continue
             os.system('hadd  -f '+ p.rsplit('/', 1)[0]+ '/'+gid+'-'+gname+'.root '+p+'/'+gname+'_'+gid+'_*root')
@@ -90,7 +91,6 @@ def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False
                     pass    
                 if should_resubmit != 'skip': exit(0)
 
-        cleanJobFiles(argparser, script)
 
     # First clean up the directory
     for f in paths:
@@ -98,4 +98,6 @@ def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False
     #    moveToBackup(f)
         mergeSinglePath(f, groups_to_merge=groups_to_merge)
 
-    if not istest: disableShouldMerge(script, argparser, additionalArgs=additionalArgs)
+    if not istest: 
+        cleanJobFiles(argparser, script)
+        disableShouldMerge(script, argparser, additionalArgs=additionalArgs)
