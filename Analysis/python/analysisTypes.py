@@ -208,7 +208,8 @@ def returnVariables(nl, is_reco, include_mva = None):
                         if k not in var_to_rebin:
                             var_of_choice[cleanName(k)] = (MVA_dict[include_mva][k][2],   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events'))
                         else:
-                            var_of_choice[cleanName(k)] = (MVA_dict[include_mva][k][2],   'rebin-ewkino',         ('MVA score', 'Events'))
+                            var_of_choice[cleanName(k)] = (MVA_dict[include_mva][k][2],   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events'))
+                            #var_of_choice[cleanName(k)] = (MVA_dict[include_mva][k][2],   'rebin-ewkino',         ('MVA score', 'Events'))
         
         return var_of_choice
 

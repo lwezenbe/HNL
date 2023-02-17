@@ -9,7 +9,7 @@ submission_parser.add_argument('--era',     action='store',       default='UL', 
 submission_parser.add_argument('--masses', type=float, nargs='*',  help='Only run or plot signal samples with mass given in this list')
 submission_parser.add_argument('--couplings', nargs='*', type=float,  help='Only run or plot signal samples with coupling squared given in this list')
 submission_parser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
-submission_parser.add_argument('--asymptotic',   action='store_true', default=False,  help='Use the -M AsymptoticLimits option in Combine')
+submission_parser.add_argument('--method',   action='store', default='',  help='What method should we use?', choices = ['asymptotic', 'hybrid', 'significance'])
 submission_parser.add_argument('--blind',   action='store_true', default=False,  help='activate --blind option of combine')
 submission_parser.add_argument('--useExistingLimits',   action='store_true', default=False,  help='Dont run combine, just plot')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
@@ -81,14 +81,32 @@ def runHybridNew(card_manager, signal_name, cardname):
     print 'Finished running toy limits for {0}'.format(signal_name)
     return
 
+def runSignificance(card_manager, signal_name, cardname):
+    datacard = card_manager.getDatacardPath(signal_name, cardname)
+
+    output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/Significance/'+cardname
+    if args.tag is not None: output_folder += '-'+args.tag
+    makeDirIfNeeded(output_folder+'/x')
+    print 'Running Combine for {0}'.format(signal_name)
+
+    if args.blind:
+        runCombineCommand('combine -M Significance -t 50 -d'+datacard+ ' --run blind', output_folder)
+    else:
+        runCombineCommand('combine -M Significance -t 50 -d'+datacard, output_folder)
+    
+    print 'Finished running toy limits for {0}'.format(signal_name)
+    return
+
 
 def runLimit(card_manager, signal_name, cardnames):
     datacard_manager.prepareAllCards(signal_name, cardnames, args.strategy)
     
-    if args.asymptotic:
+    if args.method == 'asymptotic':
         runAsymptoticLimit(datacard_manager, signal_name, getOutDataCardName(cardnames))
-    else:
+    elif args.method == 'hybrid':
         runHybridNew(datacard_manager, signal_name, getOutDataCardName(cardnames))
+    elif args.method == 'significance':
+        runSignificance(datacard_manager, signal_name, getOutDataCardName(cardnames))
 
 # Create datacard manager
 from HNL.Stat.datacardManager import DatacardManager
@@ -167,12 +185,12 @@ compare_era_dict = {
     'UL2018': '2018',
 }
 
-asymptotic_str = 'asymptotic' if args.asymptotic else ''
+asymptotic_str = args.method
 
 year_to_read = args.year[0] if len(args.year) == 1 else '-'.join(args.year)
 
 card = getOutDataCardName(args.datacards) 
-method_name = 'runAsymptoticLimits' if args.asymptotic else 'HybridNew'
+method_name = args.method
 destination = makePathTimeStamped(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/Results/runAsymptoticLimits/'+args.masstype+'-'+('prompt' if not args.displaced else 'displaced')+'/'+args.strategy+'-'+args.selection+(('-'+args.tag) if args.tag is not None else '')+'/'+args.flavor+'/'+card+'/'+ args.era+year_to_read))
 
 #Make and save graph objects

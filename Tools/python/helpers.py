@@ -390,6 +390,15 @@ def removeNegativeBins3D(hist):
                     hist.SetBinContent(bx, by, bz, 0.)
                     hist.SetBinError(bx, by, bz, 0.)
     return hist
+
+def removeNegativeBins(hist):
+    if isinstance(hist, ROOT.TH1):
+        return removeNegativeBins1D(hist)
+    elif isinstance(hist, ROOT.TH2):
+        return removeNegativeBins2D(hist)
+    elif isinstance(hist, ROOT.TH3):
+        return removeNegativeBins3D(hist)
+
  
 def add2Doverflow(hist):
     overflow=hist.Clone()

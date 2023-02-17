@@ -68,8 +68,9 @@ class Reweighter:
         from HNL.Weights.fakeRateWeights import FakeRateWeighter
         tau_method = kwargs.get('tau_method', None)
         self.ignore_fakerates = kwargs.get('ignore_fakerates', False)
+        fakerate_from_data = kwargs.get('fakerate_from_data', None)
         if not self.ignore_fakerates:
-            self.fakerateweighter = FakeRateWeighter(sample.chain, self.sample.chain.region, tau_method)
+            self.fakerateweighter = FakeRateWeighter(sample.chain, self.sample.chain.region, tau_method, fakerate_from_data)
 
     def returnBranches(self):
         branches = ['{0}/F'.format(weight) for weight in self.WEIGHTS_TO_USE]

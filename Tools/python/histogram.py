@@ -210,6 +210,15 @@ class Histogram:
         tmp_hist.SetBinError(1, self.hist.GetMeanError())
         return Histogram(tmp_hist)
 
+    def removeNegativeBins(self):
+        nbinsx = self.hist.GetNbinsX() 
+        nbinsy = self.hist.GetNbinsY() if self.isTH2 else 1
+        nbinsz = self.hist.GetNbinsZ() if self.isTH3 else 1
+        for bx in xrange(1, nbinsx+1):
+            for by in xrange(1, nbinsy+1):
+                for bz in xrange(1, nbinsz+1):
+                    if self.hist.GetBinContent(bx, by, bz) < 0.0: self.hist.SetBinContent(bx, by, bz, 0.)
+
     def replaceZeroBins(self):
         nbinsx = self.hist.GetNbinsX() 
         nbinsy = self.hist.GetNbinsY() if self.isTH2 else 1

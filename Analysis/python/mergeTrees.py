@@ -12,10 +12,9 @@ def translateTree(input_path, output_path, sample_name, year, list_of_all_years,
     all_syst = reader.compileListOfGeneralSystematics('weight', None, list_of_all_years)
     relevant_syst = reader.compileListOfGeneralSystematics('weight', sample_name, list_of_all_years)
     remaining_syst = [x for x in relevant_syst if x not in year_syst]
- 
+
     from HNL.Tools.helpers import getObjFromFile
     old_nominal = getObjFromFile(input_path, 'events_nominal')
-    old_nominal_to_copy = getObjFromFile(input_path, 'events_nominal')
     new_nominal = old_nominal.CloneTree(0)
   
     all_branches = []
@@ -24,7 +23,8 @@ def translateTree(input_path, output_path, sample_name, year, list_of_all_years,
         all_branches.append('{0}UpRaw/F'.format(syst))     
         all_branches.append('{0}Down/F'.format(syst))     
         all_branches.append('{0}DownRaw/F'.format(syst))     
-    from HNL.Tools.makeBranches import makeBranches, createStruct
+    from HNL.Tools.makeBranches import makeBranches, createStruct, prepareBranches
+    all_branches = prepareBranches(all_branches)
     createStruct(all_branches)
     
  
@@ -48,6 +48,7 @@ def translateTree(input_path, output_path, sample_name, year, list_of_all_years,
     out_file.cd()
     new_nominal.Write('events_nominal')
     
+    old_nominal_to_copy = getObjFromFile(input_path, 'events_nominal')
     #Then the reruns
     year_reruns_correlated = reader.getReruns(year, sample_name, split_syst = True, split_correlations = True)
     all_reruns = reader.compileListOfGeneralSystematics('rerun', sample_name, list_of_all_years, split_syst= True)

@@ -48,7 +48,7 @@ class Systematics:
 
     def storeAllSystematicsForShapes(self, output_tree, proc):
         for syst in self.sjr.getWeights(self.chain.year, proc):
-            print syst
+            #print syst
             short_syst = self.splitSystName(syst)[0]
             if short_syst in self.reweighter.WEIGHTS_TO_USE:
                 self.storeFullWeightSystematics(syst, output_tree)   

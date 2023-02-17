@@ -192,7 +192,7 @@ def printCutFlow(in_file_paths, out_file_path, subdir = None, ignore_weights = F
         for ic, c in enumerate(categories):
             for isfp, sfp in enumerate(in_file_paths[ifp]):
                 tmp_hist = getObjFromFile(sfp, subdir+'/'+weight_string+'_cutflow_'+c)
-                if not is_bkgr and not ignore_weights: tmp_hist.Scale(signal_couplingsquared[flavor][mass]/Sample.getSignalCouplingSquared(ifp.split('/')[-1]))
+                #if not is_bkgr and not ignore_weights: tmp_hist.Scale(signal_couplingsquared[flavor][mass]/Sample.getSignalCouplingSquared(ifp.split('/')[-1]))
                 for icut, cut in enumerate(cut_names):
                     if ic == 0 and isfp == 0:
                         list_of_cut_values[ifp_to_use].append(0.)

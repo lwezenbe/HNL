@@ -46,33 +46,46 @@ TAU_METHOD = 'WeightedMix'
 
 class FakeRateWeighter:
     
-    def __init__(self, chain, region, tau_method = None):
+    def __init__(self, chain, region, tau_method = None, in_data = None, custom_fake_rates = None):
         self.tau_method = tau_method if tau_method is not None else TAU_METHOD
         self.region = region
-        self.fake_collection = self.returnFakeRateCollection(chain)
+        self.fake_collection = self.returnFakeRateCollection(chain, in_data, custom_fake_rates)
 
-    def returnFakeRateCollection(self, chain):
+    def returnFakeRateCollection(self, chain, in_data = None, custom_fake_rates = None):
+        if in_data is None:
+            in_data = chain.is_data
+
         fakerates = {}
-        fakerates[ele] = FakeRateEmulator('fakeRate_electron_'+luka_year_dict[str(chain.year)], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_ele_path(chain.era, str(chain.year), data_dict[(chain.is_data, 'light')]))
-        fakerates[mu] = FakeRateEmulator('fakeRate_muon_'+luka_year_dict[str(chain.year)], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_mu_path(chain.era, str(chain.year), data_dict[(chain.is_data, 'light')]))
+        if custom_fake_rates is not None and ele in custom_fake_rates.keys():
+            fakerates[ele] = custom_fake_rates[ele]
+        else:
+            print in_data
+            fakerates[ele] = FakeRateEmulator('fakeRate_electron_'+luka_year_dict[str(chain.year)], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_ele_path(chain.era, str(chain.year), data_dict[(in_data, 'light')]))
+        if custom_fake_rates is not None and mu in custom_fake_rates.keys():
+            fakerates[mu] = custom_fake_rates[mu]
+        else:
+            fakerates[mu] = FakeRateEmulator('fakeRate_muon_'+luka_year_dict[str(chain.year)], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_mu_path(chain.era, str(chain.year), data_dict[(in_data, 'light')]))
         if not chain.obj_sel['notau']:
-            fakerates[tau] = self.returnTauFR(chain)
+            if custom_fake_rates is not None and tau in custom_fake_rates.keys():
+                fakerates[tau] = custom_fake_rates[tau]
+            else:
+                fakerates[tau] = self.returnTauFR(chain, in_data)
     
         fakerate_collection = FakeRateCollection(chain, fakerates)
     
         return fakerate_collection
 
-    def returnTauFR(self, chain):
+    def returnTauFR(self, chain, in_data):
         if self.tau_method == 'TauFakesDY':
-            return FakeRate('ttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), default_tau_path('DY', chain.era+'-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')]))
+            return FakeRate('ttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), default_tau_path('DY', chain.era+'-'+chain.year, chain.selection, data_dict[(in_data, 'tau')]))
         elif self.tau_method == 'TauFakesTT':
-            return FakeRate('ttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), default_tau_path('TT', chain.era+'-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')]))
+            return FakeRate('ttl', lambda c, i: [c.l_pt[i], abs(c.l_eta[i])], ('pt', 'eta'), default_tau_path('TT', chain.era+'-'+chain.year, chain.selection, data_dict[(in_data, 'tau')]))
         elif self.tau_method == 'WeightedMix':
             from HNL.BackgroundEstimation.getTauFakeContributions import getWeights
-            return SingleFlavorFakeRateCollection([default_tau_path('DY', chain.era+'-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')]), default_tau_path('TT', chain.era+'-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')])], ['ttl', 'ttl'], ['DY', 'TT'], 
+            return SingleFlavorFakeRateCollection([default_tau_path('DY', chain.era+'-'+chain.year, chain.selection, data_dict[(in_data, 'tau')]), default_tau_path('TT', chain.era+'-'+chain.year, chain.selection, data_dict[(in_data, 'tau')])], ['ttl', 'ttl'], ['DY', 'TT'], 
                                                 frac_weights = getWeights(chain.era, chain.year, chain.selection, self.region), frac_names = ['DY', 'TT'])   
         elif self.tau_method == 'OSSFsplitMix':
-            return SingleFlavorFakeRateCollection([default_tau_path('DY', chain.era+'-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')]), default_tau_path('TT', chain.era+'-'+chain.year, chain.selection, data_dict[(chain.is_data, 'tau')])], ['ttl', 'ttl'], ['DY', 'TT'], method = 'OSSFsplitMix',
+            return SingleFlavorFakeRateCollection([default_tau_path('DY', chain.era+'-'+chain.year, chain.selection, data_dict[(in_data, 'tau')]), default_tau_path('TT', chain.era+'-'+chain.year, chain.selection, data_dict[(in_data, 'tau')])], ['ttl', 'ttl'], ['DY', 'TT'], method = 'OSSFsplitMix',
                                                 ossf_map = {True : 'DY', False : 'TT'})  
         else:
             raise RuntimeError('Unknown method "{}"in fakeRateWeights.py'.format(tau_method))

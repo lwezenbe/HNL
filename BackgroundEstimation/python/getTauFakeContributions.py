@@ -11,6 +11,7 @@ import json
 
 cat_dict = {
     'highMassSR' : ['TauEE', 'TauMuMu', 'TauEMu', 33],
+    'HighMassWithB' : ['TauEE', 'TauMuMu', 'TauEMu', 33],
     'lowMassSR' : ['TauEE', 'TauMuMu', 'TauEMu', 33],
     'lowMassSRloose' : ['TauEE', 'TauMuMu', 'TauEMu', 33],
     'WZCR' : ['TauEE', 'TauMuMu', 'TauEMu', 33],
