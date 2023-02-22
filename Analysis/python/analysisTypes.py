@@ -29,9 +29,9 @@ var_gen_3l = {'minMos':        (lambda c : c.minMos,   np.arange(0., 120., 12.),
 var_reco_3l = {
         # WZCR, ConversionCR
         'l1pt':      (lambda c : c.l_pt[0],       np.arange(0., 300., 15.),       ('p_{T} (l1) [GeV]', 'Events')),
-        #'light1pt':      (lambda c : c.light_pt[0],       np.arange(0., 300., 15.),       ('p_{T} (l1) [GeV]', 'Events')),
+        'light1pt':      (lambda c : c.light_pt[0],       np.arange(0., 300., 15.),       ('p_{T} (l1) [GeV]', 'Events')),
         'l2pt':      (lambda c : c.l_pt[1],       np.arange(0., 200., 10.),       ('p_{T} (l2) [GeV]', 'Events')),
-        #'light2pt':      (lambda c : c.light_pt[1],       np.arange(0., 200., 10.),       ('p_{T} (l2) [GeV]', 'Events')),
+        'light2pt':      (lambda c : c.light_pt[1],       np.arange(0., 200., 10.),       ('p_{T} (l2) [GeV]', 'Events')),
         'l3pt':      (lambda c : c.l_pt[2],       np.arange(0., 150., 5.),       ('p_{T} (l3) [GeV]', 'Events')),
         'l1eta':      (lambda c : c.l_eta[0],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l1)', 'Events')),
         'l2eta':      (lambda c : c.l_eta[1],       np.arange(-2.5, 3.0, 0.5),       ('#eta (l2)', 'Events')),
@@ -57,6 +57,9 @@ var_reco_3l = {
         'HT':   (lambda c : c.HT,      np.arange(0., 915., 15.),         ('H_{T} [GeV]', 'Events')),
         'mzossf':          (lambda c : c.MZossf,      np.arange(0., 240., 5.),         ('m_{ll,Z} [GeV]', 'Events')),
         'maxMossf':   (lambda c : c.maxMossf,      np.arange(0., 75., 5.),         ('max(m_{OSSF}) [GeV]', 'Events')),
+        'minMossf':   (lambda c : c.minMossf,      np.arange(0., 75., 5.),         ('min(m_{OSSF}) [GeV]', 'Events')),
+        'maxMsssf':   (lambda c : c.maxMsssf,      np.arange(0., 260., 20.),         ('max(m_{SSSF}) [GeV]', 'Events')),
+        'minMsssf':   (lambda c : c.minMsssf,      np.arange(0., 260., 20.),         ('min(m_{SSSF}) [GeV]', 'Events')),
         'ml1l2':   (lambda c : c.Ml12,      np.arange(75., 205., 5.),         ('m_{l1l2} [GeV]', 'Events')),
         'ml1l3':   (lambda c : c.Ml13,      np.arange(75., 205., 5.),         ('m_{l1l3} [GeV]', 'Events')),
         'ml2l3':   (lambda c : c.Ml23,      np.arange(75., 205., 5.),         ('m_{l2l3} [GeV]', 'Events')),
@@ -80,8 +83,6 @@ var_reco_3l = {
         'drmaxossf':      (lambda c : c.dr_maxOSSF,       np.arange(0., 5.5, .25),       ('#Delta R(max(OSSF))', 'Events')),
         'mtnonossf':          (lambda c : c.mtNonZossf,      np.arange(0., 240., 5.),         ('m_{ll,Z} [GeV]', 'Events')),
         
-        #Fakes
-        #'leadingfakept':        
     }
 
 var_reco_4l = {
@@ -208,8 +209,8 @@ def returnVariables(nl, is_reco, include_mva = None):
                         if k not in var_to_rebin:
                             var_of_choice[cleanName(k)] = (MVA_dict[include_mva][k][2],   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events'))
                         else:
-                            var_of_choice[cleanName(k)] = (MVA_dict[include_mva][k][2],   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events'))
-                            #var_of_choice[cleanName(k)] = (MVA_dict[include_mva][k][2],   'rebin-ewkino',         ('MVA score', 'Events'))
+                            #var_of_choice[cleanName(k)] = (MVA_dict[include_mva][k][2],   np.arange(-1., 1.1, 0.1),         ('MVA score', 'Events'))
+                            var_of_choice[cleanName(k)] = (MVA_dict[include_mva][k][2],   'rebin-ewkino',         ('MVA score', 'Events'))
         
         return var_of_choice
 

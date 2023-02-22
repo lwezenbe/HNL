@@ -5,6 +5,7 @@ sample_tex_names = {
     'non-prompt' : 'Nonprompt',
     'XG' : 'V#gamma',
     'Other' : 'Other',
-    'triboson' : 'Triboson'
+    'triboson' : 'Triboson',
+    'charge-misid' : 'Charge Misid.'
 }
 

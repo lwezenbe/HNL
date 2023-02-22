@@ -165,7 +165,11 @@ def getHNLColor(name):
 
 
 def getHNLfromTau(name):
+    print name
     if 'triboson' in name or 'Triboson' in name:           return TColor.GetColor("#87F1FF")
+    #elif 'Charge' in name:          return TColor.GetColor("#D7BCE8")
+    #elif 'Charge' in name:          return TColor.GetColor("#BAB700")
+    elif 'Charge' in name:          return TColor.GetColor("#F6F5AE")
     elif 'WZ' in name:          return TColor.GetColor("#de5a6a")
     elif 'ZZ-H' in name or 'ZZ' in name:          return TColor.GetColor("#AAFAC8")
     elif 'non-prompt' in name or 'Nonprompt' in name:       return TColor.GetColor("#4496c8")

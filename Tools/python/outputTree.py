@@ -1,7 +1,7 @@
 from ROOT import TFile
 
 def cleanName(in_name):
-    return "".join(i for i in in_name if i not in "\/:*?<>|&- ")
+    return "".join(i for i in in_name if i not in "()\/:*?<>|&- ")
 
 from HNL.Tools.helpers import isValidRootFile
 class OutputTree(object):
