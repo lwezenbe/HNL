@@ -20,6 +20,20 @@ class GeneralTrileptonFilter(FilterObject):
         if not self.initEvent(cutter, kwargs=kwargs):           return False
         return True
 
+class HighMassWithBJetfilter(FilterObject):
+    
+    def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None):
+        super(HighMassWithBJetfilter, self).__init__(name, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
+
+    def initEvent(self, cutter, kwargs={}):
+        return super(HighMassWithBJetfilter, self).initEvent(3, cutter, sort_leptons = True, kwargs=kwargs)
+
+    def passedFilter(self, cutter, kwargs={}):
+        from HNL.EventSelection.eventFilters import passedFilterHighMassWithBjet
+        if not self.initEvent(cutter, kwargs=kwargs):           return False
+        if not passedFilterHighMassWithBjet(self.chain, self.new_chain, cutter):                    return False
+        return True
+
 class ZZCRfilter(FilterObject):
     
     def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization = None):

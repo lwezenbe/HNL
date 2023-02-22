@@ -42,13 +42,23 @@
             "Correlated"    : true,
             "Description"   : "Luminosity"
         },
+    "lumi_13TeV_combined" :
+        {
+            "Type"          : "flat",
+            "Value"         : [1.016],
+            "FinalStates"   : "*",
+            "Processes"     : "MC",
+            "Year"          : ["2016post-2016pre-2017-2018"],
+            "Activate"      : true,
+            "Description"   : "Luminosity"
+        },
     "theory":
         {
             "Type"          : "flat",
             "Value"         : 1.0,
             "FinalStates"   : "*",
             "Processes"     : "signal",
-            "Year"          : ["2016pre", "2016post", "2017", "2018"],
+            "Year"          : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"      : true,
             "Correlated"    : true,
             "Func"          : "theory",
@@ -70,7 +80,7 @@
             "Value"         : 1.03,
             "FinalStates"   : "*",
             "Processes"     : "MC",
-            "Year"          : ["2016pre", "2016post", "2017", "2018"],
+            "Year"          : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"     : true,
             "Correlated"    : true,
             "Description"   : "Triggers"
@@ -81,7 +91,7 @@
             "Value"         : 1.1,
             "FinalStates"   : "*",
             "Processes"     : "WZ",
-            "Year"          : ["2016pre", "2016post", "2017", "2018"],
+            "Year"          : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"     : true,
             "Correlated"    : true,
             "Description"   : "WZnorm"
@@ -92,7 +102,7 @@
             "Value"         : 1.1,
             "FinalStates"   : "*",
             "Processes"     : "ZZ-H",
-            "Year"          : ["2016pre", "2016post", "2017", "2018"],
+            "Year"          : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"     : true,
             "Correlated"    : true,
             "Description"   : "ZZnorm"
@@ -103,7 +113,7 @@
             "Value"         : 1.1,
             "FinalStates"   : "*",
             "Processes"     : "XG",
-            "Year"          : ["2016pre", "2016post", "2017", "2018"],
+            "Year"          : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"     : true,
             "Correlated"    : true,
             "Description"   : "Conversionnorm"
@@ -114,7 +124,7 @@
             "Value"         : 1.1,
             "FinalStates"   : "*",
             "Processes"     : "triboson",
-            "Year"          : ["2016pre", "2016post", "2017", "2018"],
+            "Year"          : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"      : true,
             "Correlated"    : true,
             "Description"   : "Tribosonnorm"
@@ -125,7 +135,7 @@
             "Value"         : 1.1,
             "FinalStates"   : "*",
             "Processes"     : "TT-T+X",
-            "Year"          : ["2016pre", "2016post", "2017", "2018"],
+            "Year"          : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"      : true,
             "Correlated"    : true,
             "Description"   : "TTXnorm"
@@ -136,7 +146,7 @@
             "Value"         : 1.2,
             "FinalStates"   : "*",
             "Processes"     : ["Other", "QCD"],
-            "Year"          : ["2016pre", "2016post", "2017", "2018"],
+            "Year"          : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"      : true,
             "Correlated"    : true,
             "Description"   : "TTXnorm"
@@ -145,7 +155,7 @@
         {
             "Type"          : "weight",
             "Value"         : 1.0,
-            "FinalStates"   : ["SingleTau", "Ditau"],
+            "FinalStates"   : "Tau",
             "Processes"     : "data",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
             "Activate"     : true,
@@ -228,7 +238,7 @@
         {
             "Type"              : "weight",
             "Value"             : 1.0,
-            "FinalStates"       : ["SingleTau", "Ditau"],
+            "FinalStates"       : "Tau",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
@@ -238,7 +248,7 @@
         {
             "Type"              : "rerun",
             "Value"             : 1.0,
-            "FinalStates"       : ["SingleTau", "Ditau"],
+            "FinalStates"       : "Tau",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
@@ -248,7 +258,7 @@
         {
             "Type"              : "rerun",
             "Value"             : 1.0,
-            "FinalStates"       : ["SingleTau", "Ditau"],
+            "FinalStates"       : "Tau",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
@@ -258,7 +268,7 @@
         {
             "Type"              : "rerun",
             "Value"             : 1.0,
-            "FinalStates"       : ["SingleTau", "Ditau"],
+            "FinalStates"       : "Tau",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
@@ -268,7 +278,7 @@
         {
             "Type"              : "rerun",
             "Value"             : 1.0,
-            "FinalStates"       : ["SingleTau", "Ditau"],
+            "FinalStates"       : "Tau",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
@@ -278,7 +288,7 @@
         {
             "Type"              : "rerun",
             "Value"             : 1.0,
-            "FinalStates"       : ["SingleTau", "Ditau"],
+            "FinalStates"       : "Tau",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : false,
@@ -288,7 +298,7 @@
         {
             "Type"              : "rerun",
             "Value"             : 1.0,
-            "FinalStates"       : ["SingleTau", "Ditau"],
+            "FinalStates"       : "Tau",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : false,
@@ -360,10 +370,10 @@
     "JEC"  :
         {
             "Type"              : "flat",
-            "Value"             : [1.03, 1.03, 1.03, 1.03],
+            "Value"             : [1.03, 1.03, 1.03, 1.03, 1.03],
             "FinalStates"       : "*",
             "Processes"         : "MC",
-            "Year"              : ["2016pre", "2016post", "2017", "2018"],
+            "Year"              : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"          : false,
             "Correlated"    : true,
             "Description"   : "Jet Energy Corrections"
@@ -374,7 +384,7 @@
             "Value"             : 1.03,
             "FinalStates"       : "*",
             "Processes"         : "MC",
-            "Year"              : ["2016pre", "2016post", "2017", "2018"],
+            "Year"              : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"          : false,
             "Description"   : "Jet Energy Resolution"
         },
@@ -384,7 +394,7 @@
             "Value"             : 1.03,
             "FinalStates"       : "*",
             "Processes"         : "MC",
-            "Year"              : ["2016pre", "2016post", "2017", "2018"],
+            "Year"              : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"          : false,
             "Description"   : "Unclustered MET variation"
         },
@@ -394,7 +404,7 @@
             "Value"             : 1.03,
             "FinalStates"       : "*",
             "Processes"         : "MC",
-            "Year"              : ["2016pre", "2016post", "2017", "2018"],
+            "Year"              : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"          : true,
             "Correlated"    : true,
             "Description"   : "Correlated JETMET syst"
@@ -405,7 +415,7 @@
             "Value"             : 1.03,
             "FinalStates"       : "*",
             "Processes"         : "MC",
-            "Year"              : ["2016pre", "2016post", "2017", "2018"],
+            "Year"              : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"          : true,
             "Description"   : "Uncorrelated JETMET syst"
         },
@@ -426,7 +436,7 @@
             "Value"             : 1.001,
             "FinalStates"       : "*",
             "Processes"         : "MC",
-            "Year"              : ["2016pre", "2016post", "2017", "2018"],
+            "Year"              : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"          : false,
             "Correlated"        : true,
             "Description"   : "Electron resolution smearing"

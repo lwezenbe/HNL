@@ -64,6 +64,18 @@ LIST_OF_SR_NAMES = ['lowMassSR', 'lowMassSRloose', 'highMassSR']
 region_groups = {} 
 
 #
+# Dictionary for translating to tex
+#
+searchregion_tex = {
+    'A' : 'L1-4',
+    'B' : 'L5-8',
+    'C' : 'L9-12',
+    'D' : 'L13-16',
+    'E' : 'Hb',
+    'F' : 'Ha'
+}
+
+#
 # List of search region functions
 #
 region_groups['lowMassSRloose'] = {

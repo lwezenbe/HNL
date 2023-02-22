@@ -146,7 +146,7 @@ class Plot(object):
                             self.syst_totbkgr_error.SetBinError(b, syst_factor * self.syst_totbkgr_error.GetBinContent(b))
                 else:
                     self.syst_totbkgr_error = None
-                
+            
             else:
                 self.syst_totbkgr_error = None
 
@@ -351,9 +351,10 @@ class Plot(object):
 
     def calculateRatio(self):
         ratios = []
-        for i, s in enumerate(self.s):
-            ratios.append(s.Clone('ratio'))
-            ratios[i].Divide(self.total_b)
+        if self.observed is None:
+            for i, s in enumerate(self.s):
+                ratios.append(s.Clone('ratio'))
+                ratios[i].Divide(self.total_b)
         if self.observed is not None:
             ratios.append(self.observed.Clone('ratio'))
             ratios[-1].Divide(self.total_b)
@@ -782,7 +783,7 @@ class Plot(object):
         #
         # Draw signal
         #
-        if normalize_signal == 'med':
+        if normalize_signal == 'med' and len(self.s) > 0:
             median_index = int(len(self.s)/2)
             denom_normalize_weight = self.s[median_index].GetSumOfWeights()
             if denom_normalize_weight <= 0.:
@@ -1182,7 +1183,7 @@ class Plot(object):
     # or a list of length 4 also containing the observed
     # If you want to add observed and expected from prevous analysis to compare to, add those to background
     #
-    def drawBrazilian(self, output_dir, ignore_bands = False):
+    def drawBrazilian(self, output_dir, ignore_bands = False, multiple_signals = False):
         setDefault()
         
         #Create Canvas
@@ -1192,21 +1193,40 @@ class Plot(object):
         self.plotpad.Draw()
         self.plotpad.cd()
 
-        median = self.s[0]
-        green = self.s[1]
-        yellow = self.s[2]
-        try:
-            observed = self.s[3]
-        except:
-            observed = None
+        if not multiple_signals:
+            median = [self.s[0]]
+            green = [self.s[1]]
+            yellow = [self.s[2]]
+            try:
+                observed = [self.s[3]]
+            except:
+                observed = [None]
+        else:
+            median = []
+            green = []
+            yellow = []
+            observed = []
+            for s in self.s:
+                median.append(s[0]) 
+                green.append(s[1]) 
+                yellow.append(s[2]) 
+                try:
+                    observed.append(s[3])
+                except:
+                    pass
 
-        val_to_check = [v for v in yellow.GetY()]
+
+        val_to_check = []
+        values = []
+        for y, m in zip(yellow, median):
+            val_to_check.extend([v for v in y.GetY()])
+            values.extend([x for x in m.GetX()])
+ 
         if self.b is not None:
             for b in self.b:
                 val_to_check.extend([v for v in b.GetY()])
         max_y = max(val_to_check)
         min_y = min(val_to_check)
-        values = [x for x in median.GetX()]
 
         frame = self.plotpad.DrawFrame(1.4, 0.001, 410, 10)
         frame.GetXaxis().SetNdivisions(508)
@@ -1216,31 +1236,39 @@ class Plot(object):
         frame.SetMaximum(max_y*100)
         frame.GetXaxis().SetLimits(0.95*min(values), 1.05*max(values))
 
-        yellow.SetFillColor(ROOT.kOrange)
-        yellow.SetLineColor(ROOT.kOrange)
-        yellow.SetFillStyle(1001)
-        if not ignore_bands: yellow.Draw('F')
-    
-        green.SetFillColor(ROOT.kGreen+1)
-        green.SetLineColor(ROOT.kGreen+1)
-        green.SetFillStyle(1001)
-        if not ignore_bands: green.Draw('Fsame')
-    
-        median.SetLineColor(1)
-        median.SetLineWidth(2)
-        median.SetLineStyle(2)
-        median.Draw('Lsame')
+        for iy, y in enumerate(yellow):
+            y.SetFillColor(ROOT.kOrange)
+            y.SetLineColor(ROOT.kOrange)
+            y.SetFillStyle(1001)
+            if not ignore_bands: 
+                if iy == 0: 
+                    y.Draw('F')
+                else:
+                    y.Draw('Fsame')
+   
+        for g in green: 
+            g.SetFillColor(ROOT.kGreen+1)
+            g.SetLineColor(ROOT.kGreen+1)
+            g.SetFillStyle(1001)
+            if not ignore_bands: g.Draw('Fsame')
+   
+        for m in median: 
+            m.SetLineColor(1)
+            m.SetLineWidth(2)
+            m.SetLineStyle(2)
+            m.Draw('Lsame')
 
         if len(self.b) > 0:
             for i_bkgr, bkgr in enumerate(self.b):
-                bkgr.SetLineColor(ps.getColor('Stack', i_bkgr))
-                bkgr.SetLineWidth(2)
+                bkgr.SetLineColor(ps.getColor('Limit', i_bkgr))
+                bkgr.SetLineWidth(3)
+                bkgr.SetMarkerStyle(1)
                 bkgr.Draw('Lsame')
 
-        if observed is not None:
-            observed.SetLineColor(ROOT.kBlack)
-            observed.SetLineWidth(4)
-            observed.Draw('Lsame')
+        for obs in observed:
+            obs.SetLineColor(ROOT.kBlack)
+            obs.SetLineWidth(4)
+            obs.Draw('Lsame')
 
         frame.Draw('sameaxis')
 
@@ -1258,11 +1286,11 @@ class Plot(object):
         #Create Legend
         self.canvas.cd()
         legend = ROOT.TLegend(0.5, .7, .9, .9)
-        legend.AddEntry(median, "Asymptotic CL_{s} expected",'L')
-        legend.AddEntry(green, "#pm 1 std. deviation",'f')
-        legend.AddEntry(yellow, "#pm 2 std. deviation",'f')
-        if observed is not None:
-            legend.AddEntry(observed, "Observed",'L')
+        legend.AddEntry(median[0], "Asymptotic CL_{s} expected",'L')
+        legend.AddEntry(green[0], "#pm 1 std. deviation",'f')
+        legend.AddEntry(yellow[0], "#pm 2 std. deviation",'f')
+        if observed is not None and observed != []:
+            legend.AddEntry(observed[0], "Observed",'L')
         if self.tex_names is not None and len(self.b) > 0:
             for l, b in zip(self.tex_names, self.b):
                 legend.AddEntry(b, l)

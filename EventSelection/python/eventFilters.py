@@ -61,7 +61,7 @@ def passLowMassSelection(chain, new_chain, cutter, loose_selection = False):
     return True 
 
 #High mass selection
-def passHighMassSelection(chain, new_chain, cutter):
+def passHighMassSelection(chain, new_chain, cutter, ossf = None):
     if not cutter.cut(new_chain.l_pt[l1] > 55, 'l1pt>55'):        return False
     if not cutter.cut(new_chain.l_pt[l2] > 15, 'l2pt>15'):        return False
     if not cutter.cut(new_chain.l_pt[l3] > 10, 'l3pt>10'):        return False
@@ -69,6 +69,11 @@ def passHighMassSelection(chain, new_chain, cutter):
         if not cutter.cut(abs(new_chain.MZossf-MZ) > 15, 'M2l_OSSF_Z_veto'):        return False
         if not cutter.cut(abs(new_chain.M3l-MZ) > 15, 'M3l_Z_veto'):        return False 
         if not cutter.cut(new_chain.minMossf > 5, 'minMossf'): return False
+    
+    if ossf is not None:
+        if ossf == False and not cutter.cut(not containsOSSF(chain), 'no OSSF'):      return False
+        if ossf == True and not cutter.cut(containsOSSF(chain), 'OSSF'):      return False
+
     return True 
 
     
@@ -76,6 +81,13 @@ def passHighMassSelection(chain, new_chain, cutter):
 #
 # CR filters
 #
+
+def passedFilterHighMassWithBjet(chain, new_chain, cutter):
+    if not cutter.cut(not fourthFOVeto(chain, new_chain, no_tau=chain.obj_sel['notau']), 'Fourth FO veto'):        return False
+    if not cutter.cut(not threeSameSignVeto(new_chain), 'No three same sign'):        return False
+    if not cutter.cut(nBjets(chain, 'tight') > 0, '> 0 b-jets'):      return False
+    return passHighMassSelection(chain, new_chain, cutter)
+
 
 def passedFilterTauMixCT(chain, new_chain, cutter, high_met, b_veto, no_met):
     if not cutter.cut(not fourthFOVeto(chain, new_chain, no_tau=chain.obj_sel['notau']), 'Fourth FO veto'):        return False 

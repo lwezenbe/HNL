@@ -39,13 +39,14 @@ class Event(object):
         from HNL.Systematics.systematics import Systematics
         tau_method = kwargs.get('tau_method', 'TauFakesDY' if self.chain.region == 'ZZCR' else None)
         ignore_fakerates = kwargs.get('ignore_fakerates', False)
+        fakerate_from_data = kwargs.get('fakerate_from_data', None)
         self.reweighter = Reweighter(self.sample, self.sample_manager, tau_method = tau_method, ignore_fakerates = ignore_fakerates)
         self.systematics = Systematics(self.sample, self.reweighter)
 
     def initEvent(self, reset_obj_sel = False):
         if reset_obj_sel: self.chain.obj_sel = {k:self.original_object_selection[k] for k in self.chain.obj_sel.keys()} #reset object selection
         self.chain.category = None
-        self.chain.weight = None
+        self.chain.weight = self.reweighter.getLumiWeight()
         self.chain.is_loose_lepton = [None]*self.chain._nL
         self.chain.is_FO_lepton = [None]*self.chain._nL
         self.chain.is_tight_lepton = [None]*self.chain._nL

@@ -29,8 +29,6 @@ class FilterObject(object):
         reweighter = kwargs.get('reweighter')
         if kwargs.get('calculate_weights', False) and reweighter is not None:
             self.chain.weight = reweighter.getTotalWeight(sideband = self.sideband, tau_fake_method = 'TauFakesDY' if self.region == 'ZZCR' else None)
-        else:
-            self.chain.weight = None
 
         from HNL.Triggers.triggerSelection import passOfflineThresholds
         if offline_thresholds and not cutter.cut(passOfflineThresholds(self.chain, self.new_chain, self.chain.analysis), "Pass offline thresholds"): 
@@ -46,15 +44,14 @@ class FilterObject(object):
             if nfail < 1: return False
 
         calculateEventVariables(self.chain, self.new_chain, nL, is_reco_level=self.is_reco_level)
-        #self.chain.category = max(cat.CATEGORIES)
         return True
 
 
 from HNL.EventSelection.signalRegionSelector import SignalRegionSelector
 from HNL.EventSelection.controlRegionSelector import ZZCRfilter, WZCRfilter, ConversionCRfilter, TauFakeEnrichedDY, TauFakeEnrichedTT, LightLeptonFakeMeasurementRegion, ClosureTestMC, GeneralMCCTRegion
-from HNL.EventSelection.controlRegionSelector import TauMixCTfilter, GeneralTrileptonFilter, LightLepFakeEnrichedDY, LightLepFakeEnrichedTT
+from HNL.EventSelection.controlRegionSelector import TauMixCTfilter, GeneralTrileptonFilter, LightLepFakeEnrichedDY, LightLepFakeEnrichedTT, HighMassWithBJetfilter
 
-signal_regions = ['baseline', 'lowMassSR', 'highMassSR', 'lowMassSRloose']
+signal_regions = ['baseline', 'lowMassSR', 'highMassSR', 'lowMassSRloose', 'highMassSROSSF', 'highMassSRnoOSSF']
 
 class EventSelector:
 
@@ -107,6 +104,8 @@ class EventSelector:
             self.selector = TauMixCTfilter(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization, additional_options={'high_met' : True, 'no_met' : False})
         elif self.name == 'MCCT':
             self.selector = GeneralMCCTRegion(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
+        elif self.name == 'HighMassWithB':
+            self.selector = HighMassWithBJetfilter(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
         elif self.name == 'NoSelection':
             #if chain.is_data and not ('sideband' in additional_options or 'for_skim' in additional_options):
             #    raise RuntimeError("Running this would mean unblinding. Dont do this.")
@@ -149,7 +148,7 @@ class EventSelector:
         if self.name != 'NoSelection':
             passed = self.selector.passedFilter(cutter, kwargs)
             if not passed: return False
-            if not cutter.cut(not self.removeOverlapDYandZG(self.new_chain.is_prompt, sample_name, cutter), 'Clean DY and ZG'): return False
+            if not cutter.cut(not self.removeOverlapDYandZG(self.new_chain.is_prompt, sample_name, cutter), 'Clean Nonprompt ZG'): return False
             return True
         else:
             return True

@@ -15,8 +15,8 @@ def makeGraph(flavor, in_name, masses):
 
 legend_names = {
     'expected_17012_prompt' : 'expected (EXO-17-012)',
-    'observed_17012_prompt' : 'prompt EXO-17-012',
-    'observed_17012_displaced' : 'displaced EXO-17-012',
+    'observed_17012_prompt' : 'EXO-17-012 (prompt)',
+    'observed_17012_displaced' : 'EXO-17-012',
     'delphi_prompt' : 'DELPHI'
 }
 def makeGraphList(flavor, in_names, masses):

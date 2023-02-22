@@ -22,7 +22,6 @@ def isValidRootFile(fname):
 def getObjFromFile(fname, hname):
     assert isValidRootFile(fname)
 
-    #print 'inside', fname, hname
     #if 'pnfs' in fname: fname = 'root://maite.iihe.ac.be/'+ fname         #faster for pnfs file
     try:
         f = ROOT.TFile.Open(fname)
@@ -41,7 +40,6 @@ def getObjFromFile(fname, hname):
 
 def getHistFromTree(tree, vname, hname, bins, condition, weight = 'weight'):
     ROOT.gROOT.SetBatch(True)
-    # print ROOT.gROOT.pwd()
 
     htmp = ROOT.TH1D(hname, hname, len(bins)-1, bins)
     if 'Weight' in vname: 
@@ -359,6 +357,45 @@ def add1Doverflow(hist):
     overflow.SetBinError(nbinsx, hist.GetBinError(nbinsx+1))
     hist.Add(overflow)
     return hist
+
+def removeNegativeBins1D(hist):
+    nbinsx = hist.GetNbinsX()
+    for bx in xrange(1, nbinsx+1):
+        if hist.GetBinContent(bx) <= 0.:
+            hist.SetBinContent(bx, 0.)
+            hist.SetBinError(bx, 1.)
+    return hist
+
+def removeNegativeBins2D(hist):
+    nbinsx = hist.GetNbinsX()
+    nbinsy = hist.GetNbinsY()
+    for bx in xrange(1, nbinsx+1):
+        for by in xrange(1, nbinsy+1):
+            if hist.GetBinContent(bx, by) <= 0.:
+                hist.SetBinContent(bx, by, 0.)
+                hist.SetBinError(bx, by, 0.)
+    return hist
+
+def removeNegativeBins3D(hist):
+    nbinsx = hist.GetNbinsX()
+    nbinsy = hist.GetNbinsY()
+    nbinsz = hist.GetNbinsZ()
+    for bx in xrange(1, nbinsx+1):
+        for by in xrange(1, nbinsy+1):
+            for bz in xrange(1, nbinsz+1):
+                if hist.GetBinContent(bx, by, bz) <= 0.:
+                    hist.SetBinContent(bx, by, bz, 0.)
+                    hist.SetBinError(bx, by, bz, 0.)
+    return hist
+
+def removeNegativeBins(hist):
+    if isinstance(hist, ROOT.TH1):
+        return removeNegativeBins1D(hist)
+    elif isinstance(hist, ROOT.TH2):
+        return removeNegativeBins2D(hist)
+    elif isinstance(hist, ROOT.TH3):
+        return removeNegativeBins3D(hist)
+
  
 def add2Doverflow(hist):
     overflow=hist.Clone()

@@ -1,6 +1,6 @@
 import argparse, os
 
-from HNL.EventSelection.eventCategorization import SUPER_CATEGORIES
+from HNL.EventSelection.eventCategorization import ANALYSIS_CATEGORIES
 from HNL.Tools.helpers import getObjFromFile
 
 in_file_path = lambda era, y, s, r, sample, strategy : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Analysis', 
@@ -10,19 +10,20 @@ out_file_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'W
 import json
 
 cat_dict = {
-    'highMassSR' : SUPER_CATEGORIES['SingleTau'],
-    'lowMassSR' : SUPER_CATEGORIES['SingleTau'],
-    'lowMassSRloose' : SUPER_CATEGORIES['SingleTau'],
-    'WZCR' : SUPER_CATEGORIES['SingleTau'],
-    'ConversionCR' : SUPER_CATEGORIES['SingleTau'],
-    'ZZCR' : [17],
-    'MCCT' : [17],
-    'DataCT' : [17],
-    'TauMixCT' : [17],
-    'TauMixCTM3lcutInverted' : [17],
-    'TauFakesTT' : [17],
-    'TauFakesDYCT' : [17],
-    'TauFakesDY' : [17]
+    'highMassSR' : ['TauEE', 'TauMuMu', 'TauEMu', 33],
+    'HighMassWithB' : ['TauEE', 'TauMuMu', 'TauEMu', 33],
+    'lowMassSR' : ['TauEE', 'TauMuMu', 'TauEMu', 33],
+    'lowMassSRloose' : ['TauEE', 'TauMuMu', 'TauEMu', 33],
+    'WZCR' : ['TauEE', 'TauMuMu', 'TauEMu', 33],
+    'ConversionCR' : ['TauEE', 'TauMuMu', 'TauEMu', 33],
+    'ZZCR' : [33],
+    'MCCT' : [33],
+    'DataCT' : [33],
+    'TauMixCT' : [33],
+    'TauMixCTM3lcutInverted' : [33],
+    'TauFakesTT' : [33],
+    'TauFakesDYCT' : [33],
+    'TauFakesDY' : [33]
 }
 
 TT_contributions = ['TT-T+X']
@@ -46,24 +47,28 @@ def determineWeights(eras, years, selections, regions, strategy):
             for selection in selections:
                 if selection not in weights[era][year].keys():  weights[era][year][selection] = {}
                 for region in regions:
-                    tt_tot = 0.
-                    dy_tot = 0.
+                    weights[era][year][selection][region] = {}
                     for c in cat_dict[region]:
+                        tt_tot = 0.
+                        dy_tot = 0.
+                        if isinstance(c, int):
+                            condition = 'category=={0}'.format(c)
+                        else:
+                            condition = '('+'||'.join(['category=={0}'.format(x) for x in ANALYSIS_CATEGORIES[c]])+')'
                         for tt_c in TT_contributions:
                             infile = TFile(in_file_path(era, year, selection, region, tt_c, strategy), 'read')
                             intree = infile.Get('events_nominal')
-                            tmp_tt_hist = getHistFromTree(intree, 'searchregion', tt_c, np.arange(0., 2., 1.), '(!isprompt)')
+                            tmp_tt_hist = getHistFromTree(intree, 'searchregion', tt_c, np.arange(0., 2., 1.), '('+condition+'&&!isprompt)')
                             tt_tot += tmp_tt_hist.GetSumOfWeights()
                             infile.Close()
 
                         for dy_c in DY_contributions:
                             infile = TFile(in_file_path(era, year, selection, region, dy_c, strategy), 'read')
                             intree = infile.Get('events_nominal')
-                            tmp_dy_hist = getHistFromTree(intree, 'searchregion', dy_c, np.arange(0., 2., 1.), '(!isprompt)')
+                            tmp_dy_hist = getHistFromTree(intree, 'searchregion', dy_c, np.arange(0., 2., 1.), '('+condition+'&&!isprompt)')
                             dy_tot += tmp_dy_hist.GetSumOfWeights()
                             infile.Close()
-                    weights[era][year][selection][region] = {'DY' : dy_tot/(tt_tot+dy_tot), 'TT' : tt_tot/(tt_tot+dy_tot)}            
-                    print region, weights[era][year][selection][region]
+                        weights[era][year][selection][region][c] = {'DY' : dy_tot/(tt_tot+dy_tot), 'TT' : tt_tot/(tt_tot+dy_tot)}            
 
     json_f = json.dumps(weights)
     out_file = open(out_file_path, 'w')

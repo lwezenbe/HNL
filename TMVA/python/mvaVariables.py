@@ -24,7 +24,7 @@ def getNameFromMass(mass):
             return k
     return None
 
-def getAllRelevantNames(mass, flavor):
+def getAllRelevantNames(mass, flavor, region = None):
     relevant_flavors = {
         'e' : ['e'],
         'mu' : ['mu'],
@@ -33,8 +33,10 @@ def getAllRelevantNames(mass, flavor):
  
     from HNL.TMVA.mvaDefinitions import getMVAdict
     from HNL.Stat.datacardManager import getRegionFromMass
-    region = getRegionFromMass(mass)
-    return [getNameFromMass(mass)+fl for fl in relevant_flavors[flavor] if getNameFromMass(mass)+'-'+fl in getMVAdict(region)[region].keys()]
+    region = getRegionFromMass(mass) if region is None else region
+    from HNL.Tools.outputTree import cleanName
+    out_hist = [cleanName(x) for x in getMVAdict(region)[region].keys() if '-'+flavor in x]
+    return out_hist
 
 input_variables = {
     'M3l' : {'type' : 'F', 'var' : lambda c : c.M3l},

@@ -13,7 +13,7 @@ from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped
 import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
-submission_parser.add_argument('--flavorToTest',   action='store', nargs='*', default = None,  help='Select flavor to perform closure test on', choices=['ele', 'mu', 'tau'])
+submission_parser.add_argument('--flavorToTest',   action='store', nargs='*', default = None,  help='Select flavor to perform closure test on')
 submission_parser.add_argument('--year',     action='store',      default=None,   help='Select year')
 submission_parser.add_argument('--era',     action='store',       default='UL', choices = ['UL', 'prelegacy'],   help='Select era')
 submission_parser.add_argument('--isChild',  action='store_true', default=False,  help='mark as subjob, will never submit subjobs by itself')
@@ -26,7 +26,7 @@ submission_parser.add_argument('--noskim', action='store_true', default=False,  
 submission_parser.add_argument('--isCheck', action='store_true', default=False,  help='Check the setup by using the exact same region as the ttl measurement')
 submission_parser.add_argument('--splitInCategories', action='store_true', default=False,  help='Split into different categories')
 submission_parser.add_argument('--inData',   action='store_true', default=False,  help='Run in data')
-submission_parser.add_argument('--region', action='store', default=None, type=str,  help='What region was the tau fake closure test you want to use measured in?', choices=['TauFakesDYCT', 'TauFakesTT', 'MCCT', 'LightLepFakesDY', 'LightLepFakesTT', 'TauMixCT', 'TauFakesDYCTnomet', 'TauFakesTTCT'])
+submission_parser.add_argument('--region', action='store', default=None, type=str,  help='What region was the tau fake closure test you want to use measured in?', choices=['TauFakesDYCT', 'TauFakesTT', 'MCCT', 'LightLepFakesDYCT', 'LightLepFakesTTCT', 'TauMixCT', 'TauFakesDYCTnomet', 'TauFakesTTCT', 'highMassSRnoOSSF', 'highMassSROSSF', 'HighMassWithB'])
 submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino'])
 submission_parser.add_argument('--application', action='store', default=None, type=str,  help='What region was the tau fake rate you want to use applied for?', 
     choices=['TauFakesDY', 'TauFakesDYnomet', 'TauFakesTT', 'WeightedMix', 'OSSFsplitMix'])
@@ -56,19 +56,12 @@ else:
 #
 # Throws exceptions if arguments do not add up
 #
-if args.flavorToTest != ['tau']:
-    if args.isCheck:
-        raise RuntimeError("Nothing to check, you are using an imported fakerate")
-
-if args.flavorToTest == ['tau']:
+if 'tau' in args.flavorToTest:
     if args.region is None:
         raise RuntimeError("Region should be defined for tau fakes")
 
 if args.selection == 'AN2017014':
     raise RuntimeError("selection AN2017014 currently not supported")
-
-if args.inData and args.flavorToTest == 'ele' or args.flavorToTest == 'mu':
-    raise RuntimeError("Closure test in data currently not supported for light leptons")
 
 from HNL.Tools.logger import getLogger, closeLogger
 log = getLogger(args.logLevel)
@@ -104,7 +97,6 @@ for sample_name in sample_manager.sample_names:
     if args.sample and args.sample not in sample_name: continue
     if 'HNL' in sample_name: continue
     sample = sample_manager.getSample(sample_name)
-    if not args.inData and args.application == 'TauFakesDY' and not 'DY' in sample.name: continue
     for njob in xrange(sample.returnSplitJobs()):
         jobs += [(sample.name, str(njob))]
 
@@ -124,8 +116,8 @@ else:
             #'met':                  (lambda c : c._met,         np.arange(0., 90., 3.),         ('p_{T}^{miss} [GeV]', 'Events')),
             #'met':                  (lambda c : c._met,         np.arange(50., 123., 3.),         ('p_{T}^{miss} [GeV]', 'Events')),
             'mtOther':              (lambda c : c.mtOther,      np.arange(0., 230., 15.),       ('M_{T} (other min(M_{OS}) [GeV])', 'Events')),
-            #'ptFakes':              (lambda c, i : c.l_pt[i],         np.arange(0., 300., 15.),       ('p_{T} [GeV]', 'Events')),
-            #'etaFakes':             (lambda c, i : c.l_eta[i],        np.arange(-2.5, 3.0, 0.5),       ('#eta', 'Events')),
+            'ptFakes':              (lambda c, i : c.l_pt[i],         np.arange(0., 300., 15.),       ('p_{T} [GeV]', 'Events')),
+            'etaFakes':             (lambda c, i : c.l_eta[i],        np.arange(-2.5, 3.0, 0.5),       ('#eta', 'Events')),
             'ptLeading':            (lambda c : c.l_pt[0],         np.arange(0., 100., 15.),       ('p_{T}(leading) [GeV]', 'Events')),
             'ptLeadingLukabins':    (lambda c : c.l_pt[0],         np.linspace(10., 200., num = 10),       ('p_{T}(leading) [GeV]', 'Events')),
             'etaLeading':           (lambda c : abs(c.l_eta[0]),        np.arange(0., 3.0, 0.5),       ('|#eta(leading)|', 'Events')),
@@ -175,6 +167,8 @@ def getOutputBase():
 
     if args.flavorToTest == ['tau']:
         output_name = os.path.join(output_name, args.region, str(args.application))
+    else:
+        output_name = os.path.join(output_name, args.region)
 
     if args.isCheck:
         output_name += '/isCheck'
@@ -248,6 +242,10 @@ if not args.makePlots:
     from HNL.Weights.reweighter import Reweighter
     reweighter = Reweighter(sample, sample_manager, ignore_fakerates=True)
 
+    #
+    # Fake rates
+    #
+
     fakerate = {}
     if 'tau' in args.flavorToTest:
         if not args.inData:
@@ -278,32 +276,34 @@ if not args.makePlots:
         fakerate[2] = None
 
     luka_year_dict = {
-        '2016pre' : '2016PreVFP',    
-        '2016post' : '2016PostVFP',    
+        '2016pre' : '2016Merged',    
+        '2016post' : '2016Merged',    
         '2017' : '2017',    
         '2018' : '2018',    
     }
-    if 'ele' in args.flavorToTest: 
-        if args.inData:
-            fakerate[0] = FakeRateEmulator('fakeRate_electron_'+luka_year_dict[args.year], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 
-                                            'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'fakeRateMap_data_electron_'+luka_year_dict[args.year]+'_mT.root'))
-        else:
-            fakerate[0] = FakeRateEmulator('fakeRate_electron_'+luka_year_dict[args.year], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 
-                                            'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'fakeRateMap_MC_electron_'+luka_year_dict[args.year]+'.root'))
-    else:
-        fakerate[0] = None
-    if 'mu' in args.flavorToTest: 
-        if args.inData:
-            fakerate[1] = FakeRateEmulator('fakeRate_muon_'+luka_year_dict[args.year], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 
-                                            'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'fakeRateMap_data_muon_'+luka_year_dict[args.year]+'_mT.root'))
-        else:
-            fakerate[1] = FakeRateEmulator('fakeRate_muon_'+luka_year_dict[args.year], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 
-                                            'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'fakeRateMap_MC_muon_'+luka_year_dict[args.year]+'.root'))
-            
-    else:
-        fakerate[1] = None
+    #if 'ele' in args.flavorToTest: 
+    #    if args.inData:
+    #        fakerate[0] = FakeRateEmulator('fakeRate_electron_'+luka_year_dict[args.year], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 
+    #                                        'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'fakeRateMap_data_electron_'+luka_year_dict[args.year]+'_mT.root'))
+    #    else:
+    #        fakerate[0] = FakeRateEmulator('fakeRate_electron_'+luka_year_dict[args.year], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 
+    #                                        'src', 'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'fakeRateMap_MC_electron_'+luka_year_dict[args.year]+'.root'))
+    #else:
+    #    fakerate[0] = None
+    #if 'mu' in args.flavorToTest: 
+    #    if args.inData:
+    #        fakerate[1] = FakeRateEmulator('fakeRate_muon_'+luka_year_dict[args.year], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 
+    #                                        'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'fakeRateMap_data_muon_'+luka_year_dict[args.year]+'_mT.root'))
+    #    else:
+    #        fakerate[1] = FakeRateEmulator('fakeRate_muon_'+luka_year_dict[args.year], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 
+    #                                        'HNL', 'BackgroundEstimation', 'data', 'FakeRates', args.era+'-'+args.year, 'fakeRateMap_MC_muon_'+luka_year_dict[args.year]+'.root'))
+    #        
+    #else:
+    #    fakerate[1] = None
 
-    fakerate_collection = FakeRateCollection(chain, fakerate)
+
+    from HNL.Weights.fakeRateWeights import FakeRateWeighter
+    frw = FakeRateWeighter(chain, args.region, tau_method = None, in_data = args.inData, custom_fake_rates = fakerate)
 
     co = {}
     branches = []
@@ -338,20 +338,23 @@ if not args.makePlots:
         event.initEvent()
         if not event.passedFilter(cutter, sample.name): continue
 
+        fake_index = event.getFakeIndex()
         if args.inData and not chain.is_data:
-            fake_index = event.getFakeIndex()
             if any([chain.l_isfake[i] for i in fake_index]): continue
-   
+ 
         cat = event.event_category.returnCategory()
 
-        fake_factor = fakerate_collection.getFakeWeight()
-        weight = reweighter.getTotalWeight()
+        fake_factor = frw.returnFakeRateWeight(chain, 'nominal')
+        weight = reweighter.getLumiWeight()
 
         for v in var:
             try:
                 co.setTreeVariable(v, var[v][0](chain))   
             except:
-                co.setTreeVariable(v, var[v][0](chain, chain.l_indices[2]))   
+                if 'Fakes' in v:
+                    co.setTreeVariable(v, var[v][0](chain, fake_index[0]))   
+                else:
+                    co.setTreeVariable(v, var[v][0](chain, chain.l_indices[fake_index[0]]))   
         co.setTreeVariable('category', cat)
         co.fill(weight, fake_factor)
 
