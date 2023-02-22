@@ -22,7 +22,6 @@ def removeAllForbiddenCharacters(original_name):
     return ''.join([x for x in original_name if x not in forbidden_characters])
 
 def prepareBranches(branches):
-    #print branches
     branches = [tuple(branch.split('/')) for branch in branches] 
     for i, (name, t) in enumerate(branches):
         for fc in forbidden_characters:
@@ -32,7 +31,6 @@ def prepareBranches(branches):
     return branches
 
 def createStruct(branches):
-#    branches = prepareBranches(branches)
     if not hasattr(ROOT, 'newVars'): ROOT.gROOT.ProcessLine('struct newVars {' + ';'.join([cType[t] + ' ' + name for name, t in branches]) + ';};')
 
 #

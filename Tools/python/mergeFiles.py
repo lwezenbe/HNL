@@ -39,13 +39,10 @@ def mergeSinglePath(path, groups_to_merge=None):
 
     for p in merge_paths:
         for group_id in getListOfGroupID(p):
-            print p, group_id
             gname, gid = group_id
             if groups_to_merge is not None and group_id not in groups_to_merge: continue
             os.system('hadd  -f '+ p.rsplit('/', 1)[0]+ '/'+gid+'-'+gname+'.root '+p+'/'+gname+'_'+gid+'_*root')
-        print {t[1] for t in getListOfGroupID(p)}
         for x in {t[1] for t in getListOfGroupID(p)}:
-            print x
             os.system('hadd  -f '+ p.rsplit('/', 1)[0]+ '/'+x+'.root '+p.rsplit('/', 1)[0]+'/'+x+'-*root')
             os.system('rm -r '+p+'/*_'+gid+'_*root')
         if len(os.listdir(p)) == 0:

@@ -29,8 +29,6 @@ class FilterObject(object):
         reweighter = kwargs.get('reweighter')
         if kwargs.get('calculate_weights', False) and reweighter is not None:
             self.chain.weight = reweighter.getTotalWeight(sideband = self.sideband, tau_fake_method = 'TauFakesDY' if self.region == 'ZZCR' else None)
-        #else:
-        #    if self.chain.weight = None
 
         from HNL.Triggers.triggerSelection import passOfflineThresholds
         if offline_thresholds and not cutter.cut(passOfflineThresholds(self.chain, self.new_chain, self.chain.analysis), "Pass offline thresholds"): 
@@ -46,7 +44,6 @@ class FilterObject(object):
             if nfail < 1: return False
 
         calculateEventVariables(self.chain, self.new_chain, nL, is_reco_level=self.is_reco_level)
-        #self.chain.category = max(cat.CATEGORIES)
         return True
 
 

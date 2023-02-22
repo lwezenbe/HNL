@@ -22,7 +22,6 @@ def isValidRootFile(fname):
 def getObjFromFile(fname, hname):
     assert isValidRootFile(fname)
 
-    #print 'inside', fname, hname
     #if 'pnfs' in fname: fname = 'root://maite.iihe.ac.be/'+ fname         #faster for pnfs file
     try:
         f = ROOT.TFile.Open(fname)
@@ -41,9 +40,7 @@ def getObjFromFile(fname, hname):
 
 def getHistFromTree(tree, vname, hname, bins, condition, weight = 'weight'):
     ROOT.gROOT.SetBatch(True)
-    # print ROOT.gROOT.pwd()
 
-    print tree
     htmp = ROOT.TH1D(hname, hname, len(bins)-1, bins)
     if 'Weight' in vname: 
         tree.Draw(vname+">>"+hname, condition+'*lumiWeight')

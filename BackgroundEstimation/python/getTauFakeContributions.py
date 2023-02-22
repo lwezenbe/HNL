@@ -51,7 +51,6 @@ def determineWeights(eras, years, selections, regions, strategy):
                     for c in cat_dict[region]:
                         tt_tot = 0.
                         dy_tot = 0.
-                        print c
                         if isinstance(c, int):
                             condition = 'category=={0}'.format(c)
                         else:
@@ -59,7 +58,6 @@ def determineWeights(eras, years, selections, regions, strategy):
                         for tt_c in TT_contributions:
                             infile = TFile(in_file_path(era, year, selection, region, tt_c, strategy), 'read')
                             intree = infile.Get('events_nominal')
-                            print '('+condition+'&&!isprompt)'
                             tmp_tt_hist = getHistFromTree(intree, 'searchregion', tt_c, np.arange(0., 2., 1.), '('+condition+'&&!isprompt)')
                             tt_tot += tmp_tt_hist.GetSumOfWeights()
                             infile.Close()

@@ -451,10 +451,6 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
                 else:
                     pass
        
-            #########TEST########
-            #if args.category is not None and chain.category not in [19, 21, 22, 23, 24, 25, 26]: continue
-
- 
             #
             # Make the code blind in signal regions
             # If you ever remove these next lines, remove manually_blinded as well

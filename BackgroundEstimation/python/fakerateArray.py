@@ -69,8 +69,6 @@ class FakeRateCollection:
                 else:
                     man_var = None
                 
-                #print man_var 
-                #print i, self.chain.l_flavor[i], self.chain.l_pt[i], self.chain.l_eta[i], self.returnFakeFactor(l_index = i, manual_var_entry = man_var) 
                 ff = self.returnFakeFactor(l_index = i, manual_var_entry = man_var)
                 if ff == 'skip': continue
 

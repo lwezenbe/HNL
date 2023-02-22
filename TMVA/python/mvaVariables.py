@@ -34,10 +34,6 @@ def getAllRelevantNames(mass, flavor, region = None):
     from HNL.TMVA.mvaDefinitions import getMVAdict
     from HNL.Stat.datacardManager import getRegionFromMass
     region = getRegionFromMass(mass) if region is None else region
-    #out_hist = [getNameFromMass(mass)+fl for fl in relevant_flavors[flavor] if getNameFromMass(mass)+'-'+fl in getMVAdict(region)[region].keys()]
-    #if len(out_hist) == 0:
-    #    from HNL.Tools.outputTree import cleanName
-    #    out_hist = [cleanName(x) for x in getMVAdict(region)[region].keys() if '-'+fl in x]
     from HNL.Tools.outputTree import cleanName
     out_hist = [cleanName(x) for x in getMVAdict(region)[region].keys() if '-'+flavor in x]
     return out_hist

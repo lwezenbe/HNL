@@ -56,19 +56,12 @@ else:
 #
 # Throws exceptions if arguments do not add up
 #
-#if args.flavorToTest != ['tau']:
-#    if args.isCheck:
-#        raise RuntimeError("Nothing to check, you are using an imported fakerate")
-#
-#if args.flavorToTest == ['tau']:
-#    if args.region is None:
-#        raise RuntimeError("Region should be defined for tau fakes")
-#
-#if args.selection == 'AN2017014':
-#    raise RuntimeError("selection AN2017014 currently not supported")
-#
-#if args.inData and args.flavorToTest == 'ele' or args.flavorToTest == 'mu':
-#    raise RuntimeError("Closure test in data currently not supported for light leptons")
+if 'tau' in args.flavorToTest:
+    if args.region is None:
+        raise RuntimeError("Region should be defined for tau fakes")
+
+if args.selection == 'AN2017014':
+    raise RuntimeError("selection AN2017014 currently not supported")
 
 from HNL.Tools.logger import getLogger, closeLogger
 log = getLogger(args.logLevel)
@@ -104,10 +97,8 @@ for sample_name in sample_manager.sample_names:
     if args.sample and args.sample not in sample_name: continue
     if 'HNL' in sample_name: continue
     sample = sample_manager.getSample(sample_name)
-#    if not args.inData and args.application == 'TauFakesDY' and not 'DY' in sample.name: continue
     for njob in xrange(sample.returnSplitJobs()):
         jobs += [(sample.name, str(njob))]
-
 
 from HNL.BackgroundEstimation.fakerate import FakeRate
 from HNL.BackgroundEstimation.fakerateEmulator import FakeRateEmulator
