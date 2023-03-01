@@ -5,6 +5,14 @@ from HNL.EventSelection.eventSelector import EventSelector
 from HNL.EventSelection.eventCategorization import EventCategory
 from HNL.Weights.tauEnergyScale import TauEnergyScale
 
+def setSideband(chain):
+    if 0 in chain.need_sideband:
+        chain.obj_sel['ele_wp'] = 'FO'
+    if 1 in chain.need_sideband:
+        chain.obj_sel['mu_wp'] = 'FO'
+    if 2 in chain.need_sideband:
+        chain.obj_sel['tau_wp'] = 'FO'
+
 
 class Event(object):
 
@@ -24,7 +32,11 @@ class Event(object):
         self.chain.is_reco_level = is_reco_level
 
         self.chain.obj_sel = kwargs.get('obj_sel', getObjectSelection(self.chain.selection))
-
+        self.chain.need_sideband = kwargs.get('sideband', None)
+        self.chain.original_object_selection = {k:self.chain.obj_sel[k] for k in self.chain.obj_sel.keys()}
+        if self.chain.need_sideband is not None:
+            setSideband(self.chain)       
+ 
         self.event_category = EventCategory(self.chain, self.new_chain)
         self.chain.category = None
         self.chain.weight = None
@@ -33,7 +45,6 @@ class Event(object):
         self.tau_energy_scale = TauEnergyScale(self.chain.era, self.chain.year, self.chain.obj_sel['tau_algo'])
         self.tau_energy_scale_syst = 'nominal'
 
-        self.original_object_selection = {k:self.chain.obj_sel[k] for k in self.chain.obj_sel.keys()}
 
         from HNL.Weights.reweighter import Reweighter
         from HNL.Systematics.systematics import Systematics
@@ -44,13 +55,17 @@ class Event(object):
         self.systematics = Systematics(self.sample, self.reweighter)
 
     def initEvent(self, reset_obj_sel = False):
-        if reset_obj_sel: self.chain.obj_sel = {k:self.original_object_selection[k] for k in self.chain.obj_sel.keys()} #reset object selection
+        if reset_obj_sel: 
+            self.chain.obj_sel = {k:self.chain.original_object_selection[k] for k in self.chain.obj_sel.keys()} #reset object selection
+            if self.chain.need_sideband is not None:
+                setSideband(self.chain)       
         self.chain.category = None
         self.chain.weight = self.reweighter.getLumiWeight()
         self.chain.is_loose_lepton = [None]*self.chain._nL
         self.chain.is_FO_lepton = [None]*self.chain._nL
         self.chain.is_tight_lepton = [None]*self.chain._nL
         self.chain.conecorrection_applied = False
+        self.chain.is_sideband = False
         self.processLeptons(tau_energy_scale = self.tau_energy_scale_syst)
 
         from HNL.ObjectSelection.jetSelector import getMET

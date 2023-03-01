@@ -358,25 +358,25 @@ def add1Doverflow(hist):
     hist.Add(overflow)
     return hist
 
-def removeNegativeBins1D(hist):
+def removeNegativeBins1D(hist, error=0.):
     nbinsx = hist.GetNbinsX()
     for bx in xrange(1, nbinsx+1):
         if hist.GetBinContent(bx) <= 0.:
             hist.SetBinContent(bx, 0.)
-            hist.SetBinError(bx, 1.)
+            hist.SetBinError(bx, error)
     return hist
 
-def removeNegativeBins2D(hist):
+def removeNegativeBins2D(hist, error=0.):
     nbinsx = hist.GetNbinsX()
     nbinsy = hist.GetNbinsY()
     for bx in xrange(1, nbinsx+1):
         for by in xrange(1, nbinsy+1):
             if hist.GetBinContent(bx, by) <= 0.:
                 hist.SetBinContent(bx, by, 0.)
-                hist.SetBinError(bx, by, 0.)
+                hist.SetBinError(bx, by, error)
     return hist
 
-def removeNegativeBins3D(hist):
+def removeNegativeBins3D(hist, error=0.):
     nbinsx = hist.GetNbinsX()
     nbinsy = hist.GetNbinsY()
     nbinsz = hist.GetNbinsZ()
@@ -385,16 +385,16 @@ def removeNegativeBins3D(hist):
             for bz in xrange(1, nbinsz+1):
                 if hist.GetBinContent(bx, by, bz) <= 0.:
                     hist.SetBinContent(bx, by, bz, 0.)
-                    hist.SetBinError(bx, by, bz, 0.)
+                    hist.SetBinError(bx, by, bz, error)
     return hist
 
-def removeNegativeBins(hist):
+def removeNegativeBins(hist, error = 0.):
     if isinstance(hist, ROOT.TH1):
-        return removeNegativeBins1D(hist)
+        return removeNegativeBins1D(hist, error)
     elif isinstance(hist, ROOT.TH2):
-        return removeNegativeBins2D(hist)
+        return removeNegativeBins2D(hist, error)
     elif isinstance(hist, ROOT.TH3):
-        return removeNegativeBins3D(hist)
+        return removeNegativeBins3D(hist, error)
 
  
 def add2Doverflow(hist):
