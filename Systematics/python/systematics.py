@@ -193,11 +193,11 @@ class SystematicJSONreader:
 def prepareForRerunSyst(chain, event, systematic = 'nominal'):
     if not 'tauEnergyScale' in systematic:
         event.chain.obj_sel['systematic'] = systematic
-        event.original_object_selection['systematic'] = systematic
+        event.chain.original_object_selection['systematic'] = systematic
         event.tau_energy_scale_syst = 'nominal'
     else:
         event.chain.obj_sel['systematic'] = 'nominal'
-        event.original_object_selection['systematic'] = 'nominal'
+        event.chain.original_object_selection['systematic'] = 'nominal'
         event.tau_energy_scale_syst = systematic
     return event
 

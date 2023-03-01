@@ -326,11 +326,11 @@ def checkTauAlgorithm(chain, algo):
 def checkTauWP(chain, wp):
     if wp is None:
         try:
-            chain.obj_sel
+            obj_sel = chain.obj_sel
         except:
             #Initiate default object selection
-            chain.obj_sel = objectSelectionCollection()
-        return chain.obj_sel['tau_wp']
+            obj_sel = objectSelectionCollection()
+        return obj_sel['tau_wp']
     else:
         return wp
 
@@ -402,13 +402,6 @@ def getTauAlgoWP(chain, selection = None, general_wp = None):
     selection = checkTauAlgorithm(chain, selection)
 
     if selection == 'HNL':
-        if general_wp in ['loose', 'FO']:
-            return 'deeptauVSjets', ('vvvloose', 'loose', 'loose')
-        elif general_wp == 'tight':
-            return 'deeptauVSjets', ('medium', 'loose', 'loose')
-        else:
-            return None
-    elif selection == 'HNLtauTest':
         if general_wp in ['loose', 'FO']:
             return 'deeptauVSjets', ('vvvloose', 'tight', 'tight')
         elif general_wp == 'tight':

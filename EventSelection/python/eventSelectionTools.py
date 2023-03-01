@@ -57,23 +57,33 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
 
     for l in xrange(collection):
         if chain._lFlavor[l] == 0: 
-            workingpoint = chain.obj_sel['ele_wp']
             pt_to_use = getLeptonPt(chain, l)
         elif chain._lFlavor[l] == 1: 
-            workingpoint = chain.obj_sel['mu_wp']
             pt_to_use = getLeptonPt(chain, l)
         elif chain._lFlavor[l] == 2: 
-            workingpoint = chain.obj_sel['tau_wp']
             pt_to_use = chain._lPt[l]
         else: 
             raise RuntimeError('In selectLeptonsGeneral: flavor provided is neither an electron, muon or tau')
 
         if isGoodLepton(chain, l):
             chain.leptons.append((pt_to_use, l)) 
-   
-    if len(chain.leptons) != nL:  return False
+  
+    keep_sideband = chain.need_sideband
 
-
+    if keep_sideband is not None:
+        if not cutter.cut(len(chain.leptons) == nL, '3 FO leptons'): return False
+    else:
+        if not cutter.cut(len(chain.leptons) == nL, '3 tight leptons'): return False
+        
+    if keep_sideband is not None:
+        tight = 0
+        for (pt, l) in chain.leptons:
+            if isGoodLepton(chain, l, 'tight'): tight += 1
+        chain.is_sideband = tight != nL
+    else:
+        chain.is_sideband = False
+                
+ 
     if chain is new_chain:
         new_chain.l_pt = [0.0]*nL
         new_chain.l_eta = [0.0]*nL
@@ -122,7 +132,7 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
             new_chain.light_e[light_index] = getLeptonE(chain, ptAndIndex[i][1])
             new_chain.light_charge[light_index] = chain._lCharge[ptAndIndex[i][1]]
             light_index += 1
-    
+
     if not chain.is_data:
         prompt_list = [chain._lIsPrompt[l] for l in new_chain.l_indices]
         new_chain.is_prompt = all(prompt_list)
@@ -836,6 +846,12 @@ def calculateKinematicVariables(chain, new_chain, is_reco_level = True):
 
     return
 
+def isChargeFlip(chain, new_chain):
+    for i, original_i in enumerate(new_chain.l_indices):
+        if new_chain.l_flavor[i] == 2: continue
+        if chain._lMatchCharge[original_i] * new_chain.l_charge[i] == -1.: return True
+    return False
+
 def passesZcuts(chain, new_chain, same_flavor=False):
     for fl in [0, 1]:
         l1Vec = getFourVec(new_chain.l_pt[fl], new_chain.l_eta[fl], new_chain.l_phi[fl], new_chain.l_e[fl])
@@ -845,4 +861,22 @@ def passesZcuts(chain, new_chain, same_flavor=False):
             if same_flavor and new_chain.l_flavor[fl] != new_chain.l_flavor[sl]: continue 
             l2Vec = getFourVec(new_chain.l_pt[sl], new_chain.l_eta[sl], new_chain.l_phi[sl], new_chain.l_e[sl])
             if abs((l1Vec + l2Vec).M() - 90.) < 15: return False
+    return True
+
+def passesChargeConsistencyDiElectron(chain, new_chain):
+    electrons = []
+    for i, l in enumerate(new_chain.l_indices):
+        if new_chain.l_flavor[i] == 0:
+            electrons.append(i)
+
+    if len(electrons) != 2:
+        return True
+
+    if new_chain.l_charge[electrons[0]] != new_chain.l_charge[electrons[1]]:
+        return True
+
+    if not chain._lElectronChargeConst[new_chain.l_indices[electrons[0]]]:
+        return False
+    if not chain._lElectronChargeConst[new_chain.l_indices[electrons[1]]]:
+        return False
     return True

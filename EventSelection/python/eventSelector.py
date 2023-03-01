@@ -12,36 +12,21 @@ class FilterObject(object):
         self.ec = event_categorization
 
     def initEvent(self, nL, cutter, sort_leptons, kwargs={}):
-        self.sideband = kwargs.get('sideband', None) 
         offline_thresholds = kwargs.get('offline_thresholds', True)       
 
-        if self.sideband is not None:
-            self.chain.obj_sel['tau_wp'] = 'FO'
-            self.chain.obj_sel['ele_wp'] = 'FO'
-            self.chain.obj_sel['mu_wp'] = 'FO'
-
         if self.is_reco_level:
-            if not cutter.cut(selectLeptonsGeneral(self.chain, self.new_chain, nL, cutter=cutter, sort_leptons = sort_leptons), 'select leptons'): return False
+            if not selectLeptonsGeneral(self.chain, self.new_chain, nL, cutter=cutter, sort_leptons = sort_leptons): return False
         else:
-            if not cutter.cut(selectGenLeptonsGeneral(self.chain, self.new_chain, nL, cutter=cutter), 'select leptons'): return False
+            if not selectGenLeptonsGeneral(self.chain, self.new_chain, nL, cutter=cutter): return False
 
         self.chain.category = self.ec.returnCategory()
         reweighter = kwargs.get('reweighter')
         if kwargs.get('calculate_weights', False) and reweighter is not None:
-            self.chain.weight = reweighter.getTotalWeight(sideband = self.sideband, tau_fake_method = 'TauFakesDY' if self.region == 'ZZCR' else None)
+            self.chain.weight = reweighter.getTotalWeight(sideband = self.chain.need_sideband, tau_fake_method = 'TauFakesDY' if self.region == 'ZZCR' else None)
 
         from HNL.Triggers.triggerSelection import passOfflineThresholds
         if offline_thresholds and not cutter.cut(passOfflineThresholds(self.chain, self.new_chain, self.chain.analysis), "Pass offline thresholds"): 
             return False
-
-        #If sideband, only select events where not all 3 leptons are tight
-        if self.sideband is not None:
-            nfail = 0
-            for i, l in enumerate(self.chain.l_indices):
-                if isinstance(self.sideband, list) and self.chain.l_flavor[i] not in self.sideband: continue
-                if not isGoodLepton(self.chain, l, 'tight'):
-                    nfail += 1
-            if nfail < 1: return False
 
         calculateEventVariables(self.chain, self.new_chain, nL, is_reco_level=self.is_reco_level)
         return True

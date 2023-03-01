@@ -45,15 +45,16 @@ class Reweighter:
             # Tau SF
             #
             from HNL.Weights.tauSF import TauSF
-            tau_algo, tau_wp = getTauAlgoWP(self.sample.chain)
+            tau_algo, tau_wp = getTauAlgoWP(self.sample.chain, general_wp = self.sample.chain.original_object_selection['tau_wp'])
             self.tauSF = TauSF(sample.chain.era, sample.chain.year, tau_algo, tau_wp[0], tau_wp[1], tau_wp[2])
             
             from HNL.Weights.leptonSF import MuonIDSF
-            muon_wp = checkMuonWP(self.sample.chain, None)
+            #Needs to be original object selection or it will take SF according to sideband
+            muon_wp = checkMuonWP(self.sample.chain, self.sample.chain.original_object_selection['mu_wp'])
             self.muonSF = MuonIDSF(sample.chain.era, sample.chain.year, muon_wp)
             
             from HNL.Weights.leptonSF import ElectronIDSF
-            electron_wp = checkElectronWP(self.sample.chain, None)
+            electron_wp = checkElectronWP(self.sample.chain, self.sample.chain.original_object_selection['ele_wp'])
             self.electronIDSF = ElectronIDSF(sample.chain.era, sample.chain.year, electron_wp)
 
             from HNL.Weights.triggerSF import CombinedTriggerSF
