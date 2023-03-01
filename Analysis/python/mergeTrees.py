@@ -1,10 +1,3 @@
-charge_misid_dict = {
-    '2016pre' : 0.921,
-    '2016post' : 0.921,
-    '2017' : 1.46,
-    '2018' : 1.451 
-}
-
 def translateTree(input_path, output_path, sample_name, year, list_of_all_years, datadriven_processes = None, standard_weight = 'weight', ignore_reruns = False):
     #from HNL.Tools.helpers import isValidRootFile
     #if isValidRootFile(output_path): return
@@ -35,13 +28,9 @@ def translateTree(input_path, output_path, sample_name, year, list_of_all_years,
         all_branches.append('{0}DownRaw/F'.format(syst))     
     from HNL.Tools.makeBranches import makeBranches, createStruct, prepareBranches
 
-    #tmp
-    all_branches.append('chargeMisidWeight/F')
-
     all_branches = prepareBranches(all_branches)
     createStruct(all_branches)
     
- 
     new_branches = []
     for syst in remaining_syst:
         new_branches.append('{0}Up/F'.format(syst))     
@@ -49,18 +38,11 @@ def translateTree(input_path, output_path, sample_name, year, list_of_all_years,
         new_branches.append('{0}Down/F'.format(syst))     
         new_branches.append('{0}DownRaw/F'.format(syst))    
 
-    #tmp
-    new_branches.append('chargeMisidWeight/F')
- 
     new_vars = makeBranches(new_nominal, new_branches)
 
     for entry in xrange(old_nominal.GetEntries()):
-    #for entry in xrange(10):
         old_nominal.GetEntry(entry)
     
-        #tmp
-        new_vars.chargeMisidWeight = charge_misid_dict[year]
-
         for syst in remaining_syst:
             setattr(new_vars, '{0}Up'.format(syst), getattr(old_nominal, standard_weight))   
             setattr(new_vars, '{0}Down'.format(syst), getattr(old_nominal, standard_weight))   

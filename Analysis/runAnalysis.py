@@ -449,11 +449,6 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
             if args.region in signal_regions and chain.is_data and not is_sideband_event and args.blindStorage:
                 continue            
 
-            #Test with charge consistency cut
-            if args.tag == 'ChargeConstTest':
-                from HNL.EventSelection.eventSelectionTools import passesChargeConsistencyDiElectron
-                if not passesChargeConsistencyDiElectron(chain, chain): continue
-
             #
             # Determine if it is a prompt event
             # Depending on the previous step, the selection should be the tight or the FO (because of rerunning)
@@ -532,7 +527,6 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
  
             if systematic == 'nominal': event.systematics.storeAllSystematicsForShapes(output_tree, args.sample)
             output_tree.fill()
-            #print entry
  
         #
         # Save histograms
@@ -678,11 +672,9 @@ else:
                                 
                                 #charge
                                 if syst == 'nominal': 
-                                    tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+'-chargemisid'+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband, additional_weight='chargeMisidWeight')
-                                    #tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+'-chargemisid'+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
+                                    tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+'-chargemisid'+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
                                 else:
-                                    tmp_hist = {corr_syst : createSingleVariableDistributions(intree, v, 'tmp_'+b+'-chargemisid'+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband, additional_weight='chargeMisidWeight')['nominal']}
-                                    #tmp_hist = {corr_syst : createSingleVariableDistributions(intree, v, 'tmp_'+b+'-chargemisid'+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']}
+                                    tmp_hist = {corr_syst : createSingleVariableDistributions(intree, v, 'tmp_'+b+'-chargemisid'+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']}
                                     
                                 if corr_syst not in tmp_list_of_hist[c][v]['bkgr']['charge-misid'].keys():
                                     tmp_list_of_hist[c][v]['bkgr']['charge-misid'].update(tmp_hist)
@@ -1057,7 +1049,6 @@ else:
                 additional_condition = searchregion_condition
             else:
                 additional_condition += '&&('+searchregion_condition+')'
-        print additional_condition 
         print "Scouting binning"
  
 #    from HNL.Analysis.outputConversion import writeYieldTable 
