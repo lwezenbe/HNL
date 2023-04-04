@@ -225,7 +225,6 @@ print 'made graphs'
 graphs = makeGraphs(passed_masses, limits=limits)
 
 out_path_base = lambda era, sname, cname, tag : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.masstype+'-'+('prompt' if not args.displaced else 'displaced'), era, sname+'-'+args.flavor+'-'+asymptotic_str+'/'+cname+(('-'+tag) if tag is not None else ''))
-print out_path_base(args.era+year_to_read, args.strategy +'-'+ args.selection, card, args.tag)+"/limits.root" 
 saveGraphs(graphs, out_path_base(args.era+year_to_read, args.strategy +'-'+ args.selection, card, args.tag)+"/limits.root")
 
 print 'loading compare graphs'
