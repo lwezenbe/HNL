@@ -20,6 +20,7 @@ var_weights = {
         'triggerSFWeight':          (lambda c : c.triggerSFWeight,      np.arange(0.5, 1.5, .01),         ('trigger SF', 'Events')), 
         'electronScale':          (lambda c : c.electronScale,      np.arange(0.5, 1.5, .01),         ('electron scale weight', 'Events')), 
         'nonprompt':          (lambda c : c.nonprompt,      np.arange(0.5, 1.5, .01),         ('nonprompt weight', 'Events')), 
+        'chargeMisid':          (lambda c : c.chargeMisid,      np.arange(0.5, 1.5, .01),         ('nonprompt weight', 'Events')), 
 } 
 
 class Reweighter:
@@ -65,6 +66,9 @@ class Reweighter:
                 self.displacement_weighter = DisplacementReweighter(sample)
             else:
                 self.displacement_weighter = None
+
+            from HNL.Weights.chargeMisid import ChargeMisidWeight
+            self.chargeMisIdWeighter = ChargeMisidWeight(self.sample.chain)
 
         from HNL.Weights.fakeRateWeights import FakeRateWeighter
         tau_method = kwargs.get('tau_method', None)
@@ -141,7 +145,13 @@ class Reweighter:
             return self.triggerSF.getSF(self.sample.chain, syst)
         else:
             return 1.        
-        
+       
+    def getChargeMisidWeight(self, syst = 'nominal'):
+        if not self.sample.is_data and self.sample.chain.is_reco_level:
+            return self.chargeMisIdWeighter.getChargeMisidWeight(syst = syst)
+        else:
+            return 1.
+ 
         
     def returnWeight(self, weight_name, syst = 'nominal'):
         if weight_name == 'lumiWeight':
@@ -167,6 +177,8 @@ class Reweighter:
             return getElectronScaleMinimal(self.sample.chain, syst=syst)
         if weight_name == 'nonprompt':
             return self.getFakeRateWeight(syst=syst)
+        if weight_name == 'chargeMisid':
+            return self.getChargeMisidWeight(syst=syst)
 
     def getTotalWeight(self, sideband=False, tau_fake_method = None):
         tot_weight = 1.

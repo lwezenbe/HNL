@@ -880,3 +880,8 @@ def passesChargeConsistencyDiElectron(chain, new_chain):
     if not chain._lElectronChargeConst[new_chain.l_indices[electrons[1]]]:
         return False
     return True
+
+def removeOverlapDYandZG(is_prompt, sample_name):
+    if 'DY' in sample_name and is_prompt: return True
+    if sample_name == 'ZG' and not is_prompt: return True
+    return False

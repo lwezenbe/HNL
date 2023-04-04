@@ -65,7 +65,8 @@ class Event(object):
         self.chain.is_FO_lepton = [None]*self.chain._nL
         self.chain.is_tight_lepton = [None]*self.chain._nL
         self.chain.conecorrection_applied = False
-        self.chain.is_sideband = False
+        self.chain.is_sideband = None if self.chain.is_reco_level else False
+        self.chain.is_charge_flip_event = False
         self.processLeptons(tau_energy_scale = self.tau_energy_scale_syst)
 
         from HNL.ObjectSelection.jetSelector import getMET
@@ -107,6 +108,8 @@ class Event(object):
         passed =  self.event_selector.passedFilter(cutter, sample_name, kwargs)
         if passed:
             self.chain.category = self.event_category.returnCategory()
+            from HNL.EventSelection.eventSelectionTools import isChargeFlip
+            if not self.sample.is_data and self.chain.is_reco_level: self.chain.is_charge_flip_event = isChargeFlip(self.chain, self.chain)
             return True
         return False
 
