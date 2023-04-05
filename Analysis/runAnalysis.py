@@ -847,6 +847,9 @@ else:
                         del tot_hist
                     else:
                         binning[c][v] = np.arange(-1.0, 1.1, 0.1)
+                elif v == 'searchregion':
+                    print 'yas', c
+                    binning[c][v] = srm[args.region].getSearchRegionBinning(searchregion = searchregion, final_state = c)
                 else:
                     binning[c][v] = np.array([x for x in getBinning(v, args.region, in_var[v][1])])
         return binning
@@ -880,7 +883,7 @@ else:
     #Add entry for the search regions in the var dictionary
     from HNL.Weights.reweighter import var_weights
     var.update(var_weights)
-    var['searchregion'] = (lambda c : c.searchregion, np.arange(0.5, srm[args.region].getNumberOfSearchRegions()+1.5, 1.), ('Search Region', 'Events'))
+    var['searchregion'] = (lambda c : c.searchregion, 'placeholder', ('Search Region', 'Events'))
     #var = {
     #    'leadingFakeLeptonPt' : (lambda c : c.leadingFakeLeptonPt[0],       np.arange(0., 300., 15.),       ('p_{T} (leading fake lepton) [GeV]', 'Events')),
     #    'leadingFakeElectronPt' : (lambda c : c.leadingFakeElectronPt[0],       np.arange(0., 300., 15.),       ('p_{T} (leading fake electron) [GeV]', 'Events')),
@@ -989,7 +992,7 @@ else:
             for sr in srm[args.region].getListOfSearchRegionGroups():
                 print 'Making datacards for region', sr
                 var_for_datacard = {}
-                var_for_datacard['searchregion'] = (lambda c : c.searchregion, np.arange(srm[args.region].getGroupValues(sr)[0]-0.5, srm[args.region].getGroupValues(sr)[-1]+1.5, 1.), ('Search Region', 'Events'))
+                var_for_datacard['searchregion'] = (lambda c : c.searchregion, 'placeholder', ('Search Region', 'Events'))
                 if args.strategy == 'MVA':
                     set_of_mvas = set()
                     for sample_mass in args.masses:
@@ -1281,7 +1284,7 @@ else:
                                         out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), extra_text = [x for x in extra_text], year = year, era = args.era, observed_hist = observed_hist)
                                 if args.region == 'highMassSR':
                                     plotHighMassRegions(signal_hist, bkgr_hist, syst_hist, legend_names, 
-                                        out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), extra_text = [x for x in extra_text], year = year, era = args.era, observed_hist = observed_hist)
+                                        out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), extra_text = [x for x in extra_text], year = year, era = args.era, observed_hist = observed_hist, final_state = c)
         
                         else:
         

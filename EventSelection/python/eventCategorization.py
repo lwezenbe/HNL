@@ -219,6 +219,19 @@ def isLightLeptonFinalState(cat_key):
     else:
         return float(cat_key) > 18
 
+def isPartOfCategory(in_name, cat_key):
+    if in_name == cat_key: return True
+
+    if in_name in ANALYSIS_CATEGORIES.keys():
+        return cat_key in ANALYSIS_CATEGORIES[in_name] 
+    elif in_name in SUPER_CATEGORIES.keys():
+        return cat_key in SUPER_CATEGORIES[in_name]
+    elif in_name in CATEGORY_NAME.keys():
+        return cat_key == in_name
+    else:
+        raise RuntimeError('Unknown category grouping')
+        
+
 def translateCategories(in_cat):
     if in_cat in SUPER_CATEGORIES.keys():
         return in_cat

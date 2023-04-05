@@ -94,6 +94,8 @@ class EventSelector:
             self.selector = GeneralMCCTRegion(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
         elif self.name == 'HighMassWithB':
             self.selector = HighMassWithBJetfilter(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
+        elif self.name == 'HighMassWithInvertedPt':
+            self.selector = SignalRegionSelector('highMassSRInvertedPt', chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
         elif self.name == 'NoSelection':
             #if chain.is_data and not ('sideband' in additional_options or 'for_skim' in additional_options):
             #    raise RuntimeError("Running this would mean unblinding. Dont do this.")
