@@ -10,20 +10,21 @@ out_file_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'W
 import json
 
 cat_dict = {
-    'highMassSR' : ['TauEE', 'TauMuMu', 'TauEMu', 33],
-    'HighMassWithB' : ['TauEE', 'TauMuMu', 'TauEMu', 33],
-    'lowMassSR' : ['TauEE', 'TauMuMu', 'TauEMu', 33],
-    'lowMassSRloose' : ['TauEE', 'TauMuMu', 'TauEMu', 33],
-    'WZCR' : ['TauEE', 'TauMuMu', 'TauEMu', 33],
-    'ConversionCR' : ['TauEE', 'TauMuMu', 'TauEMu', 33],
-    'ZZCR' : [33],
-    'MCCT' : [33],
-    'DataCT' : [33],
-    'TauMixCT' : [33],
-    'TauMixCTM3lcutInverted' : [33],
-    'TauFakesTT' : [33],
-    'TauFakesDYCT' : [33],
-    'TauFakesDY' : [33]
+    'highMassSR' : ['TauEE', 'TauMuMu', 'TauEMu', 39],
+    'HighMassWithB' : ['TauEE', 'TauMuMu', 'TauEMu', 39],
+    'HighMassWithInvertedPt' : ['TauEE', 'TauMuMu', 'TauEMu', 39],
+    'lowMassSR' : ['TauEE', 'TauMuMu', 'TauEMu', 39],
+    'lowMassSRloose' : ['TauEE', 'TauMuMu', 'TauEMu', 39],
+    'WZCR' : ['TauEE', 'TauMuMu', 'TauEMu', 39],
+    'ConversionCR' : ['TauEE', 'TauMuMu', 'TauEMu', 39],
+    'ZZCR' : [39],
+    'MCCT' : [39],
+    'DataCT' : [39],
+    'TauMixCT' : [39],
+    'TauMixCTM3lcutInverted' : [39],
+    'TauFakesTT' : [39],
+    'TauFakesDYCT' : [39],
+    'TauFakesDY' : [39]
 }
 
 TT_contributions = ['TT-T+X']

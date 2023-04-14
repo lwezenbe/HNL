@@ -22,14 +22,19 @@ from HNL.Tools.helpers import isList, makeList
 
 import HNL.Tools.histogram
 from  HNL.Tools.histogram import returnSqrt
-def getHistList(item):
+def getHistList(item, equalize_bins = False):
     to_return = None
     if item is None or item == [] or (isList(item) and not isinstance(item[0], HNL.Tools.histogram.Histogram)) or (not isList(item) and not isinstance(item, HNL.Tools.histogram.Histogram)):
         to_return = item
     else:
         try:
+            if equalize_bins:
+                for h in item:
+                    h.equalizeBins()
             to_return = [h.getHist() for h in item]
         except:
+            if equalize_bins:
+                item.equalizeBins()
             to_return = item.getHist()
 
     if isList(to_return):
@@ -48,9 +53,9 @@ from HNL.Plotting.style import setDefault, setDefault2D
 class Plot(object):
     
     def __init__(self, signal_hist = None, tex_names = None, name = None, x_name = None, y_name = None, bkgr_hist = None, observed_hist = None, syst_hist = None, extra_text = None, 
-        x_log = None, y_log = None, draw_ratio = None, draw_significance = None, color_palette = 'HNLfromTau', color_palette_bkgr = 'HNLfromTau', year = '2016', era = 'prelegacy'):
+        x_log = None, y_log = None, draw_ratio = None, draw_significance = None, color_palette = 'HNLfromTau', color_palette_bkgr = 'HNLfromTau', year = '2016', era = 'prelegacy', equalize_bins = False):
 
-        self.s = makeList(getHistList(signal_hist)) if signal_hist is not None else []
+        self.s = makeList(getHistList(signal_hist, equalize_bins)) if signal_hist is not None else []
         try:
             self.total_s = self.s[0].Clone('total_sig')
             for i, h in enumerate(self.s):
@@ -62,7 +67,7 @@ class Plot(object):
         self.era = era
         self.year = year
 
-        self.b = makeList(getHistList(bkgr_hist)) if bkgr_hist is not None else []
+        self.b = makeList(getHistList(bkgr_hist, equalize_bins)) if bkgr_hist is not None else []
         self.total_b = None
         if len(self.b) > 0:
             try:
@@ -76,9 +81,9 @@ class Plot(object):
         self.s_tex_names = self.tex_names[:len(self.s)] 
         self.b_tex_names = self.tex_names[len(self.s):] 
 
-        self.observed = getHistList(observed_hist)
+        self.observed = getHistList(observed_hist, equalize_bins)
 
-        self.syst_hist = getHistList(syst_hist)
+        self.syst_hist = getHistList(syst_hist, equalize_bins)
 
         self.hs = None  #hist stack
 
@@ -410,6 +415,7 @@ class Plot(object):
         self.tot_err.GetYaxis().SetLabelSize(.18)
         self.tot_err.GetYaxis().SetTitleOffset(.3)
         self.tot_err.GetYaxis().SetNdivisions(505)
+        #self.tot_err.GetXaxis().ChangeLabel(1, -1, -1, -1, -1, -1, "oei")
         if self.draw_significance:
             self.tot_err.GetXaxis().SetLabelOffset(999999)
         else:
@@ -424,6 +430,7 @@ class Plot(object):
 
         self.tot_err.Draw("E2")
         self.stat_err.Draw("E2Same")
+        self.b[0].GetXaxis().DrawClone()
 
 
         #Draw a guide for the eye

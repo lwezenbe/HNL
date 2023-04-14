@@ -49,64 +49,67 @@ from HNL.Analysis.analysisTypes import signal_couplingsquared
 from HNL.Stat.datacardManager import getOutDataCardName
 from numpy import sqrt
 
-def runAsymptoticLimit(card_manager, signal_name, cardname):
-    datacard = card_manager.getDatacardPath(signal_name, cardname)
+def runAsymptoticLimit(datacard, cardname):
+#    datacard = card_manager.getDatacardPath(signal_name, cardname)
 
     output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname
     if args.tag is not None: output_folder += '-'+args.tag
     makeDirIfNeeded(output_folder+'/x')
-    print 'Running Combine for {0}'.format(signal_name)
 
     if args.blind:
         runCombineCommand('combine -M AsymptoticLimits '+datacard+ ' --run blind', output_folder)
     else:
         runCombineCommand('combine -M AsymptoticLimits '+datacard, output_folder)
     
-    print 'Finished running asymptotic limits for {0}'.format(signal_name)
     return
 
-def runHybridNew(card_manager, signal_name, cardname):
-    datacard = card_manager.getDatacardPath(signal_name, cardname)
+def runHybridNew(datacard, cardname):
+#    datacard = card_manager.getDatacardPath(signal_name, cardname)
 
     output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/hybridNew/'+cardname
     if args.tag is not None: output_folder += '-'+args.tag
     makeDirIfNeeded(output_folder+'/x')
-    print 'Running Combine for {0}'.format(signal_name)
 
     if args.blind:
         runCombineCommand('combine -M HybridNew -t 50 -d'+datacard+ ' --run blind', output_folder)
     else:
         runCombineCommand('combine -M HybridNew -t 50 -d'+datacard, output_folder)
     
-    print 'Finished running toy limits for {0}'.format(signal_name)
     return
 
-def runSignificance(card_manager, signal_name, cardname):
-    datacard = card_manager.getDatacardPath(signal_name, cardname)
+def runSignificance(datacard, cardname):
+#    datacard = card_manager.getDatacardPath(signal_name, cardname)
 
     output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/Significance/'+cardname
     if args.tag is not None: output_folder += '-'+args.tag
     makeDirIfNeeded(output_folder+'/x')
-    print 'Running Combine for {0}'.format(signal_name)
 
     if args.blind:
         runCombineCommand('combine -M Significance -t 50 -d'+datacard+ ' --run blind', output_folder)
     else:
-        runCombineCommand('combine -M Significance -t 50 -d'+datacard, output_folder)
+        #runCombineCommand('combine -M Significance -t 100 -d'+datacard, output_folder)
+        runCombineCommand('combine -M Significance -d'+datacard, output_folder)
     
-    print 'Finished running toy limits for {0}'.format(signal_name)
     return
 
 
 def runLimit(card_manager, signal_name, cardnames):
-    datacard_manager.prepareAllCards(signal_name, cardnames, args.strategy)
+    if len(cardnames) == 1 and '/' in cardnames[0]:
+        datacard = cardnames[0]
+        cardname = datacard.rsplit('/', 1)[1].split('.')[0] 
+    else:
+        datacard_manager.prepareAllCards(signal_name, cardnames, args.strategy)
+        cardname = getOutDataCardName(cardnames)
+        datacard = datacard_manager.getDatacardPath(signal_name, cardname)
     
+    print 'Running Combine for {0}'.format(signal_name)
     if args.method == 'asymptotic':
-        runAsymptoticLimit(datacard_manager, signal_name, getOutDataCardName(cardnames))
+        runAsymptoticLimit(datacard, getOutDataCardName(cardnames))
     elif args.method == 'hybrid':
-        runHybridNew(datacard_manager, signal_name, getOutDataCardName(cardnames))
+        runHybridNew(datacard, getOutDataCardName(cardnames))
     elif args.method == 'significance':
-        runSignificance(datacard_manager, signal_name, getOutDataCardName(cardnames))
+        runSignificance(datacard, getOutDataCardName(cardnames))
+    print 'Finished running toy limits for {0}'.format(signal_name)
 
 # Create datacard manager
 from HNL.Stat.datacardManager import DatacardManager

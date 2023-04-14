@@ -89,6 +89,8 @@ def runCombineCommand(command, output = None):
     os.system('rm ' + combine_release +'/src/*root &> /dev/null') 
     os.chdir(combine_release+'/src')
     output_folder = output if output is not None else currentDir
+    from HNL.Tools.helpers import makeDirIfNeeded
+    makeDirIfNeeded(output_folder+'/x')
     os.system('eval `scramv1 runtime -sh`; cd {0}; {1}'.format(output_folder, command))
     os.chdir(currentDir)
 

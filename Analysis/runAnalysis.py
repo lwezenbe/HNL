@@ -45,7 +45,7 @@ argParser.add_argument('--cutFlowOnly',   action='store_true',   default=False, 
 argParser.add_argument('--signalOnly',   action='store_true',   default=False,  help='Run or plot a only the signal')
 argParser.add_argument('--plotBkgrOnly',   action='store_true',     default=False,  help='Plot only the background')
 argParser.add_argument('--plotSingleBin',   action='store_true',     default=False,  help='Run or plot a only the background')
-argParser.add_argument('--categoriesToPlot',   action='store',     default='super',  help='What categories to use', choices=['original', 'analysis', 'super', 'splitanalysis', 'leadingflavor', 'trigger'])
+argParser.add_argument('--categoriesToPlot',   action='store',     default='super',  help='What categories to use', choices=['original', 'analysis', 'super', 'splitanalysis', 'leadingflavor', 'trigger', 'sign'])
 argParser.add_argument('--category',   action='store',     default=None,  help='What specific category to use')
 argParser.add_argument('--searchregion',   action='store',  nargs='*',   default=None,  help='Is there a specific search region to probe?')
 argParser.add_argument('--additionalCondition',   action='store',     default=None,  help='Additional condition for selection')
@@ -82,9 +82,6 @@ if args.genLevel and args.selection == 'AN2017014':
 
 if args.genLevel and args.tag == 'TauFakes':
     raise RuntimeError('gen level can not be used for estimating TauFake fractions')
-
-if args.includeData == 'signalregion' and args.region in ['baseline', 'lowMassSRloose', 'highMassSR']:
-    raise RuntimeError('Running data in signal region without looking at the sideband. Either run in sideband or do not attempt this before approval')
 
 if args.combineYears:
     print '\033[93m Warning: Make sure you did a "mergeYears" first\033[0m'
@@ -181,6 +178,7 @@ if args.makePlots or args.makeDataCards:
     sorted_analysis_categories = cat.ANALYSIS_CATEGORIES.keys() if args.category is None else [args.category]
     sorted_splitanalysis_categories = cat.ANALYSIS_SPLITOSSF_CATEGORIES.keys() if args.category is None else [args.category]
     sorted_leadingflavor_categories = cat.LEADING_FLAVOR_CATEGORIES.keys() if args.category is None else [args.category]
+    sorted_sign_categories = cat.SIGN_CATEGORIES.keys() if args.category is None else [args.category]
     sorted_trigger_categories = cat.TRIGGER_CATEGORIES.keys() if args.category is None else [args.category]
     from HNL.Analysis.analysisTypes import getRelevantSuperCategories
     sorted_super_categories = getRelevantSuperCategories(cat.SUPER_CATEGORIES.keys(), args.region) if args.category is None else [args.category]
@@ -193,6 +191,8 @@ if args.makePlots or args.makeDataCards:
         category_dict['splitanalysis'] = (sorted_splitanalysis_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.ANALYSIS_SPLITOSSF_CATEGORIES[y]])+')' for y in sorted_splitanalysis_categories], {y :[str(x) for x in cat.ANALYSIS_SPLITOSSF_CATEGORIES[y]] for y in sorted_splitanalysis_categories})
     if args.categoriesToPlot == 'leadingflavor':
         category_dict['leadingflavor'] = (sorted_leadingflavor_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.LEADING_FLAVOR_CATEGORIES[y]])+')' for y in sorted_leadingflavor_categories], {y :[str(x) for x in cat.LEADING_FLAVOR_CATEGORIES[y]] for y in sorted_leadingflavor_categories})
+    if args.categoriesToPlot == 'sign':
+        category_dict['sign'] = (sorted_sign_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.SIGN_CATEGORIES[y]])+')' for y in sorted_sign_categories], {y :[str(x) for x in cat.SIGN_CATEGORIES[y]] for y in sorted_sign_categories})
     if args.categoriesToPlot == 'super':
         category_dict['super'] = (sorted_super_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.SUPER_CATEGORIES[y]])+')' for y in sorted_super_categories], {y:[str(x) for x in cat.SUPER_CATEGORIES[y]] for y in sorted_super_categories})
     if args.categoriesToPlot == 'trigger':
@@ -568,7 +568,6 @@ else:
     def createSingleVariableDistributions(tree, vname, hname, bins, condition, proc, year, include_systematics = 'nominal', split_corr = False, additional_weight = None, ignore_sideband = False):
         out_dict = {}
 
-
         weight = 'weight'
         if additional_weight is not None:
             weight += '*'+additional_weight
@@ -593,8 +592,8 @@ else:
             tmp_searchregion = srm[args.region].getGroupValues('F')
             searchregion_condition = '&&'.join(['searchregion != {0}'.format(x) for x in tmp_searchregion])
             inv_searchregion_condition = '||'.join(['searchregion == {0}'.format(x) for x in tmp_searchregion])
-            category_condition = 'category!=21&&category!=22&&category!=23'
-            inv_category_condition = 'category==21||category==22||category==23'
+            category_condition = 'category!=27&&category!=28&&category!=29'
+            inv_category_condition = 'category==27||category==28||category==29'
             final_condition = '((('+searchregion_condition+')||('+category_condition+'))||(('+inv_category_condition+')&&('+inv_category_condition+')&&(passedChargeConsistency&&abs(minMsssf-91)>15)))'
             additional_condition += '&&'+final_condition
   
@@ -749,9 +748,10 @@ else:
     def getMergedYears(signal_list, bkgr_list, data_list):
         # Translate tree if years need to be combined
         year_to_plot = '-'.join(sorted(args.year))
-        signal_list[year_to_plot] = []
-        bkgr_list[year_to_plot] = []
-        data_list[year_to_plot] = []
+        if not (args.mergeYears and args.submitPlotting):
+            signal_list[year_to_plot] = []
+            bkgr_list[year_to_plot] = []
+            data_list[year_to_plot] = []
    
  
         #Translate the input lists
@@ -773,39 +773,42 @@ else:
                 else:
                     input_lists['data'][data.split('/')[-1]][y] = data
 
-#        if args.mergeYears: 
-#            from HNL.Analysis.mergeTrees import translateTree
-#            print 'Start translation'
-#            for year in args.year:
-#                print '\t', year
-#                for sob in ['signal', 'bkgr', 'data']:
-#                    print '\t\t', sob 
-#                    for sample_name in input_lists[sob]:
-#                        print '\t\t\t', sample_name
-#                        if len(input_lists[sob][sample_name].keys()) != len(args.year):
-#                            continue
-#                        else:
-##                            translateTree(input_lists[sob][sample_name][year]+'/variables.root', input_lists[sob][sample_name][year]+'/tmp_translation/variables.root', sample_name, year, args.year, datadriven_processes = ['non-prompt'] if args.includeData == 'includeSideband' else None, ignore_reruns = args.systematics == 'nominal')
-#                            translateTree(input_lists[sob][sample_name][year]+'/variables.root', input_lists[sob][sample_name][year]+'/tmp_translation/variables.root', sample_name, year, ['2016post', '2016pre', '2017', '2018'], datadriven_processes = ['non-prompt'] if args.includeData == 'includeSideband' else None, ignore_reruns = args.systematics == 'nominal')
+        if args.mergeYears and args.submitPlotting: 
+            from HNL.Analysis.mergeTrees import translateTree
+            print 'Start translation'
+            for year in args.year:
+                print '\t', year
+                for sob in ['signal', 'bkgr', 'data']:
+                    print '\t\t', sob 
+                    for sample_name in input_lists[sob]:
+                        print '\t\t\t', sample_name
+                        if len(input_lists[sob][sample_name].keys()) != len(args.year):
+                            continue
+                        else:
+#                            translateTree(input_lists[sob][sample_name][year]+'/variables.root', input_lists[sob][sample_name][year]+'/tmp_translation/variables.root', sample_name, year, args.year, datadriven_processes = ['non-prompt'] if args.includeData == 'includeSideband' else None, ignore_reruns = args.systematics == 'nominal')
+                            translateTree(input_lists[sob][sample_name][year]+'/variables.root', input_lists[sob][sample_name][year]+'/tmp_translation/variables.root', sample_name, year, ['2016post', '2016pre', '2017', '2018'], datadriven_processes = ['non-prompt'] if args.includeData == 'includeSideband' else None, ignore_reruns = args.systematics == 'nominal')
     
         #Hadd everything we need to
+        if args.mergeYears and not args.submitPlotting:
+            shall_we_merge = raw_input('Would you like to merge existing files? (y/n)\n')
         for sob in ['signal', 'bkgr', 'data']:
             for sample_name in input_lists[sob]:
                 if len(input_lists[sob][sample_name].keys()) != len(args.year):
                     continue
                 else:
                     output_name = input_lists[sob][sample_name][args.year[0]].replace(args.era+'-'+args.year[0], args.era+'-'+year_to_plot)
-                    if args.mergeYears:
+                    if args.mergeYears and shall_we_merge == 'y':
                         makeDirIfNeeded(output_name+'/variables.root')
-                        print 'hadd -f '+output_name + '/variables.root ' + ' '.join([input_lists[sob][sample_name][y]+'/tmp_translation/variables.root' for y in args.year])
-#                        os.system('hadd -f '+output_name + '/variables.root ' + ' '.join([input_lists[sob][sample_name][y]+'/tmp_translation/variables.root' for y in args.year]))
-                        #if args.systematics != 'nominal':
-                        #    os.system('hadd -f '+output_name + '/variables.root ' + ' '.join([input_lists[sob][sample_name][y]+'/tmp_translation/variables.root' for y in args.year]))
+                        #os.system('hadd -f '+output_name + '/variables.root ' + ' '.join([input_lists[sob][sample_name][y]+'/tmp_translation/variables.root' for y in args.year]))
+                        from HNL.Tools.mergeFiles import haddHNL
 
-                        #    for to_delete in [input_lists[sob][sample_name][x] for x in input_lists[sob][sample_name].keys()]:
-                        #        os.system('rm -r '+to_delete+'/tmp_translation')
-                        #else:
-                        #    os.system('hadd -f '+output_name + '/variables.root ' + ' '.join([input_lists[sob][sample_name][y]+'/variables.root' for y in args.year]))
+                        if args.systematics != 'nominal':
+                            haddHNL(output_name + '/variables.root', ' '.join([input_lists[sob][sample_name][y]+'/tmp_translation/variables.root' for y in args.year]))
+
+                            for to_delete in [input_lists[sob][sample_name][x] for x in input_lists[sob][sample_name].keys()]:
+                                os.system('rm -r '+to_delete+'/tmp_translation')
+                        else:
+                            haddHNL(output_name + '/variables.root', ' '.join([input_lists[sob][sample_name][y]+'/variables.root' for y in args.year]))
     
 
                     if sob == 'signal':
@@ -838,17 +841,16 @@ else:
             binning[c] = {}
             for v in in_var.keys():
                 if v in var_to_rebin.keys():
-                    if not args.signalOnly and (searchregion == ['F'] or searchregion == 'F' or (c == 'EEE-Mu' and 'massmu' in v)):
+                    #if not args.signalOnly and (searchregion == ['F'] or searchregion == 'F' or (c == 'EEE-Mu' and 'massmu' in v)):
                         bkgrs = list_of_probe_hist[c][v]['bkgr'].keys()
                         tot_hist = list_of_probe_hist[c][v]['bkgr'][bkgrs[0]]['nominal'].clone('tot')
                         for b in bkgrs[1:]:
                             tot_hist.add(list_of_probe_hist[c][v]['bkgr'][b]['nominal'])
                         binning[c][v] = np.array(getEwkinoBinning(tot_hist, 2))
                         del tot_hist
-                    else:
-                        binning[c][v] = np.arange(-1.0, 1.1, 0.1)
+                    #else:
+                    #    binning[c][v] = np.arange(-1.0, 1.1, 0.1)
                 elif v == 'searchregion':
-                    print 'yas', c
                     binning[c][v] = srm[args.region].getSearchRegionBinning(searchregion = searchregion, final_state = c)
                 else:
                     binning[c][v] = np.array([x for x in getBinning(v, args.region, in_var[v][1])])
@@ -1065,6 +1067,7 @@ else:
         additional_condition = args.additionalCondition
         if args.searchregion is not None:
             searchregion_condition = '||'.join(['searchregion == {0}'.format(x) for x in translateSearchRegions()])
+            print searchregion_condition
             if additional_condition is None:
                 additional_condition = searchregion_condition
             else:
@@ -1148,6 +1151,9 @@ else:
                     elif args.categoriesToPlot == 'leadingflavor':
                         from HNL.EventSelection.eventCategorization import LEADING_FLAVOR_CATEGORIES_TEX
                         c_name = LEADING_FLAVOR_CATEGORIES_TEX[c] 
+                    elif args.categoriesToPlot == 'sign':
+                        from HNL.EventSelection.eventCategorization import SIGN_CATEGORIES_TEX
+                        c_name = SIGN_CATEGORIES_TEX[c] 
                     elif args.categoriesToPlot == 'trigger':
                         from HNL.EventSelection.eventCategorization import TRIGGER_CATEGORIES_TEX
                         c_name = TRIGGER_CATEGORIES_TEX[c] 
@@ -1293,8 +1299,9 @@ else:
                             if args.includeData is not None: draw_ratio = True
                             if not args.individualSamples:
                                 #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
-                                #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = True, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
-                                p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = False, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
+                                p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = True, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
+                                #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = True, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era, equalize_bins=True,
+                                #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = False, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
                                         color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau' if not args.analysis == 'tZq' else 'tZq', x_name = var[v][2][0], y_name = var[v][2][1])
                             else:
                                 p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,

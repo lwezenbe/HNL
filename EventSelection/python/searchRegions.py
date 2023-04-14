@@ -8,6 +8,9 @@ class SearchRegionManager:
 
     def __init__(self, name = None):
         self.name = name
+        #Exception
+        if self.name == 'HighMassWithInvertedPt':
+            self.name = 'highMassSR'
         if self.name is not None and self.name not in LIST_OF_SR_NAMES:
             print 'You specified a SR name but it does not correspond to any I know. Will continue with a single search region.'
 
