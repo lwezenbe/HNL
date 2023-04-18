@@ -25,8 +25,12 @@ class Sample(object):
         self.chain              = None
         self.output             = output
         self.mass               = self.getSignalMass(self.name)
-        self.is_signal          = 'HNL' in name
+        self.is_signal          = self.isSignal(self.name)
         self.list_of_files      = self.getListOfFiles()
+
+    @staticmethod
+    def isSignal(name):
+        return 'HNL' in name
 
     def getListOfFiles(self, sub_path = None):
         if sub_path is None:

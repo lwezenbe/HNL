@@ -69,7 +69,7 @@ class SearchRegionManager:
                 total = np.append(total, self.getSearchRegionBinning(x, final_state = final_state))
             return total
 
-        if final_state is not None:
+        if final_state is not None and self.name in bins_to_merge.keys():
             from HNL.EventSelection.eventCategorization import isLightLeptonFinalState
             #Check if there are bins to be merged
             for final_state_to_merge in bins_to_merge[self.name].keys():
