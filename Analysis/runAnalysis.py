@@ -53,6 +53,7 @@ argParser.add_argument('--variables', nargs='*',  help='list of variables to pro
 argParser.add_argument('--ignoreSystematics',   action='store_true',     default=False,  help='ignore systematics in plots')
 argParser.add_argument('--mergeYears',   action='store_true',     default=False,  help='combine all years specified in year arg in preparation for plots')
 argParser.add_argument('--combineYears',   action='store_true',     default=False,  help='combine all years specified in year arg in plots')
+argParser.add_argument('--backupPath',   action='store',     default=None,  help='Path to get your stuff from if the original path does not contain the sample')
 argParser.add_argument('--submitPlotting',   action='store_true',     default=False,  help='Send the plotting code to HTCondor')
 argParser.add_argument('--unblind',   action='store_true',     default=False,  help='Also plot the observed data in signal region')
 argParser.add_argument('--plotDirac',   action='store_true',     default=False,  help='plot dirac type HNL')
@@ -387,8 +388,9 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
         branches.extend(['weight/F', 'isprompt/O', 'category/I', 'searchregion/I', 'issideband/O'])
         branches.extend(['isPreHEMrun/O','objectInHEM/O'])
         if args.tag == 'TauFakePurity': branches.extend(['istight/O'])
-        branches.extend(event.reweighter.returnBranches())
-        if systematic == 'nominal': branches.extend(event.systematics.returnBranches(args.sample))
+        if not args.genLevel: 
+            branches.extend(event.reweighter.returnBranches())
+            if systematic == 'nominal': branches.extend(event.systematics.returnBranches(args.sample))
         if not sample.is_data and not args.genLevel:
             branches.extend(['isChargeFlipEvent/O'])
         if sample.is_signal:
@@ -503,7 +505,7 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
             #
             if Sample.getSignalDisplacedString(sample.name):
                 output_tree.setTreeVariable('ctauHN', chain._ctauHN)
-            event.reweighter.fillTreeWithWeights(output_tree)
+            if not args.genLevel: event.reweighter.fillTreeWithWeights(output_tree)
             for v in var.keys():
                 output_tree.setTreeVariable(v, var[v][0](chain))
        
@@ -511,7 +513,7 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
                 from HNL.EventSelection.eventSelectionTools import isChargeFlip
                 output_tree.setTreeVariable('isChargeFlipEvent', chain.is_charge_flip_event)
                
-            output_tree.setTreeVariable('weight', event.reweighter.getTotalWeight())
+            output_tree.setTreeVariable('weight', event.reweighter.getTotalWeight() if not args.genLevel else event.reweighter.getLumiWeight())
             output_tree.setTreeVariable('isprompt', chain.is_prompt)
             output_tree.setTreeVariable('category', chain.category)
             output_tree.setTreeVariable('searchregion', srm[args.region].getSearchRegion(chain))
@@ -535,7 +537,7 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
                 output_tree.setTreeVariable('passedChargeConsistency', passesChargeConsistencyDiElectron(chain, chain))
                                                   
  
-            if systematic == 'nominal': event.systematics.storeAllSystematicsForShapes(output_tree, args.sample)
+            if systematic == 'nominal' and not args.genLevel: event.systematics.storeAllSystematicsForShapes(output_tree, args.sample)
             output_tree.fill()
  
         #
@@ -884,7 +886,7 @@ else:
     
     #Add entry for the search regions in the var dictionary
     from HNL.Weights.reweighter import var_weights
-    var.update(var_weights)
+    if not args.genLevel:    var.update(var_weights)
     var['searchregion'] = (lambda c : c.searchregion, 'placeholder', ('Search Region', 'Events'))
     #var = {
     #    'leadingFakeLeptonPt' : (lambda c : c.leadingFakeLeptonPt[0],       np.arange(0., 300., 15.),       ('p_{T} (leading fake lepton) [GeV]', 'Events')),
@@ -1295,7 +1297,8 @@ else:
                         else:
         
                             # Create plot object (if signal and background are displayed, also show the ratio)
-                            draw_ratio = 'errorsOnly' if args.signalOnly or args.plotBkgrOnly else True
+                            #draw_ratio = 'errorsOnly' if args.signalOnly or args.plotBkgrOnly else True
+                            draw_ratio = None if args.signalOnly or args.plotBkgrOnly else True
                             if args.includeData is not None: draw_ratio = True
                             if not args.individualSamples:
                                 #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
