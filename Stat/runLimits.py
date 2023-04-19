@@ -52,15 +52,17 @@ from numpy import sqrt
 def runAsymptoticLimit(datacard, cardname):
 #    datacard = card_manager.getDatacardPath(signal_name, cardname)
 
-    output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname
-    if args.tag is not None: output_folder += '-'+args.tag
-    makeDirIfNeeded(output_folder+'/x')
-
-    if args.blind:
-        runCombineCommand('combine -M AsymptoticLimits '+datacard+ ' --run blind', output_folder)
-    else:
-        runCombineCommand('combine -M AsymptoticLimits '+datacard, output_folder)
-    
+#    output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname
+#    if args.tag is not None: output_folder += '-'+args.tag
+#    makeDirIfNeeded(output_folder+'/x')
+#
+#    runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root', output_folder)
+#    if args.blind:
+#        runCombineCommand('combine ws.root -M AsymptoticLimits --run blind', output_folder)
+#    else:
+#        runCombineCommand('combine ws.root -M AsymptoticLimits', output_folder)
+#
+    producePostFit(datacard, cardname)
     return
 
 def runHybridNew(datacard, cardname):
@@ -88,10 +90,21 @@ def runSignificance(datacard, cardname):
         runCombineCommand('combine -M Significance -t 50 -d'+datacard+ ' --run blind', output_folder)
     else:
         #runCombineCommand('combine -M Significance -t 100 -d'+datacard, output_folder)
-        runCombineCommand('combine -M Significance -d'+datacard, output_folder)
+        #runCombineCommand('combine -M Significance -d'+datacard, output_folder)
+        runCombineCommand('combine -M HybridNew -d '+datacard+ ' --LHCmode LHC-significance  --saveToys --fullBToys --saveHybridResult -T 100 -i 5', output_folder)
     
     return
 
+def producePostFit(datacard, cardname):
+    output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname
+    if args.tag is not None: output_folder += '-'+args.tag
+    runCombineCommand('combine ws.root -M FitDiagnostics', output_folder)    
+    print 'a'
+    print 'scp -f '+datacard+' '+output_folder+'/datacard.txt'
+    os.system('scp '+datacard+' '+output_folder+'/datacard.txt')
+    print 'b'
+    runCombineCommand('PostFitShapesFromWorkspace -d datacard.txt -w ws.root -o postfitshapes.root -f fitDiagnostics.root:fit_s --postfit', output_folder)    
+    
 
 def runLimit(card_manager, signal_name, cardnames):
     if len(cardnames) == 1 and '/' in cardnames[0]:

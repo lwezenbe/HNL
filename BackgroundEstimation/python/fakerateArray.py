@@ -53,13 +53,16 @@ class FakeRateCollection:
         self.chain = chain
         self.fakerates = fakerates_flavordict
 
+        from HNL.Tools.helpers import getObjFromFile
+        self.scale_factor_hist = getObjFromFile('/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/BackgroundEstimation/data/ScaleFactors/ptTrailing.root', 'ptTrailing-TT')
+
     def returnFakeFactor(self, l_index, manual_var_entry = None):
         if self.fakerates[self.chain.l_flavor[l_index]] is not None:
             return self.fakerates[self.chain.l_flavor[l_index]].returnFakeFactor(self.chain, l_index = l_index, manual_var_entry =  manual_var_entry)
         else:
             return 'skip'
 
-    def getFakeWeight(self):
+    def getFakeWeight(self, scale_factors = False):
         weight = -1.
         nleptons = 0
         for i in xrange(len(self.chain.l_indices)):
@@ -74,6 +77,9 @@ class FakeRateCollection:
 
                 weight *= -1*ff
                 nleptons += 1
+
+                if scale_factors and self.chain.l_flavor[i] == 0:
+                    weight *= self.scale_factor_hist.GetBinContent(self.scale_factor_hist.FindBin(self.chain.l_pt[2]))
 
         if nleptons == 0:
             return 1.

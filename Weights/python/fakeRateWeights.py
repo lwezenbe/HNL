@@ -46,10 +46,11 @@ TAU_METHOD = 'WeightedMix'
 
 class FakeRateWeighter:
     
-    def __init__(self, chain, region, tau_method = None, in_data = None, custom_fake_rates = None):
+    def __init__(self, chain, region, tau_method = None, in_data = None, custom_fake_rates = None, nonprompt_scalefactors = False):
         self.tau_method = tau_method if tau_method is not None else TAU_METHOD
         self.region = region
         self.fake_collection = self.returnFakeRateCollection(chain, in_data, custom_fake_rates)
+        self.nonprompt_scalefactors = nonprompt_scalefactors
 
     def returnFakeRateCollection(self, chain, in_data = None, custom_fake_rates = None):
         if in_data is None:
@@ -59,7 +60,6 @@ class FakeRateWeighter:
         if custom_fake_rates is not None and ele in custom_fake_rates.keys():
             fakerates[ele] = custom_fake_rates[ele]
         else:
-            print in_data
             fakerates[ele] = FakeRateEmulator('fakeRate_electron_'+luka_year_dict[str(chain.year)], lambda c, i: [c.l_pt[i], c.l_eta[i]], ('pt', 'eta'), default_ele_path(chain.era, str(chain.year), data_dict[(in_data, 'light')]))
         if custom_fake_rates is not None and mu in custom_fake_rates.keys():
             fakerates[mu] = custom_fake_rates[mu]
@@ -91,7 +91,7 @@ class FakeRateWeighter:
             raise RuntimeError('Unknown method "{}"in fakeRateWeights.py'.format(tau_method))
 
     def returnFakeRateWeight(self, chain, syst = 'nominal'):
-        return self.fake_collection.getFakeWeight() * self.returnNonpromptSyst(chain, syst)
+        return self.fake_collection.getFakeWeight(self.nonprompt_scalefactors) * self.returnNonpromptSyst(chain, syst)
 
     def returnNonpromptSyst(self, chain, syst_name = 'nominal'):
         if syst_name == 'nominal':

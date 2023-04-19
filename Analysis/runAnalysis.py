@@ -376,7 +376,7 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
         #
         # Load in sample and chain
         #
-        event = Event(sample, chain, sample_manager, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = year, era = args.era, ignore_fakerates = args.tag != 'sidebandInMC' and args.includeData != 'includeSideband', fakerate_from_data = args.includeData == 'includeSideband', sideband=need_sideband)
+        event = Event(sample, chain, sample_manager, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = year, era = args.era, ignore_fakerates = args.tag != 'sidebandInMC' and args.includeData != 'includeSideband', fakerate_from_data = args.includeData == 'includeSideband', sideband=need_sideband, nonprompt_scalefactors = args.tag == 'nonpromptSFtest')
 
         #
         # Prepare output tree
@@ -431,6 +431,7 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
         for entry in event_range:
             chain.GetEntry(entry)
             progress(entry - event_range[0], len(event_range), print_every = None if args.isTest else 10000)
+            #progress(entry - event_range[0], len(event_range), print_every = None)
 
             #
             # Event selection
@@ -634,7 +635,7 @@ else:
                             if not for_datacards or Sample.getSignalDisplacedString(sample_name) == 'prompt':
                                 coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
                                 additional_weight = str(coupling_squared/Sample.getSignalCouplingSquared(sample_name))
-                                if args.plotDirac: additional_weight *= 'diracSF'
+                                if args.plotDirac: additional_weight += '*diracSF'
                                 if corr_syst == 'nominal':
                                     tmp_list_of_hist[c][v]['signal'][cleaned_sample_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, include_systematics, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband)
                                 else:
@@ -653,7 +654,8 @@ else:
     
             print '\n'
     
-        if args.includeData is not None and not args.signalOnly:
+        #if args.includeData is not None and not args.signalOnly:
+        if args.includeData is not None:
             print "Loading data"
             split_syst_to_run = getSystToRun(year, 'non-prompt', split_corr=True) if not ignore_sideband and include_systematics in ['full'] else ['nominal']           
             for isyst, corr_syst in enumerate(split_syst_to_run):
@@ -833,7 +835,7 @@ else:
                 var_to_rebin[v] = [x for x in in_var[v]]
                 var_to_rebin[v][1] = np.arange(-1.0, 1.001, 0.001)
 
-        if len(var_to_rebin.keys()) > 0:
+        if len(var_to_rebin.keys()) > 0 and not args.signalOnly:
             list_of_probe_hist = createVariableDistributions(category_dict[args.categoriesToPlot], var_to_rebin, signal_list[year], background_collection[year], data_list[year], sample_manager, year, additional_condition = additional_condition, include_systematics = 'nominal', ignore_sideband = ignore_sideband)
 
         #actual rebinning
@@ -843,15 +845,15 @@ else:
             binning[c] = {}
             for v in in_var.keys():
                 if v in var_to_rebin.keys():
-                    #if not args.signalOnly and (searchregion == ['F'] or searchregion == 'F' or (c == 'EEE-Mu' and 'massmu' in v)):
+                    if not args.signalOnly and (searchregion == ['F'] or searchregion == 'F' or (c == 'EEE-Mu' and 'massmu' in v)):
                         bkgrs = list_of_probe_hist[c][v]['bkgr'].keys()
                         tot_hist = list_of_probe_hist[c][v]['bkgr'][bkgrs[0]]['nominal'].clone('tot')
                         for b in bkgrs[1:]:
                             tot_hist.add(list_of_probe_hist[c][v]['bkgr'][b]['nominal'])
                         binning[c][v] = np.array(getEwkinoBinning(tot_hist, 2))
                         del tot_hist
-                    #else:
-                    #    binning[c][v] = np.arange(-1.0, 1.1, 0.1)
+                    else:
+                        binning[c][v] = np.arange(-1.0, 1.1, 0.1)
                 elif v == 'searchregion':
                     binning[c][v] = srm[args.region].getSearchRegionBinning(searchregion = searchregion, final_state = c)
                 else:
@@ -922,7 +924,8 @@ else:
             bkgr_list[year] = []
 
         # data
-        if args.includeData is not None and not args.signalOnly:
+        #if args.includeData is not None and not args.signalOnly:
+        if args.includeData is not None:
             data_list[year] = glob.glob(getOutputName('data', year, args.tag)+'/Data')
         else:
             data_list[year] = []

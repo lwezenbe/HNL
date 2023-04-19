@@ -123,10 +123,13 @@ else:
     ntot = 0
     for mass in args.massRange:
         for i in range(1, args.ntoys+1):
-            ntot += 1.
-            test_value = extractSignificance(out_folder+'/'+str(mass)+'/higgsCombinetoy_{0}.Significance.mH{1}.root'.format(i, int(mass)))
-            if test_value >= local_value:
-                nmore += 1.
+            try:
+                test_value = extractSignificance(out_folder+'/'+str(mass)+'/higgsCombinetoy_{0}.Significance.mH{1}.root'.format(i, int(mass)))
+                ntot += 1.
+                if test_value >= local_value:
+                    nmore += 1.
+            except:
+                continue
 
     print 'Local significance: \t', local_value
     print 'Global pvalue: \t\t', nmore/ntot, '\t\t ({0} out of {1})'.format(nmore, ntot) 

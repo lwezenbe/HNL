@@ -34,6 +34,7 @@ submission_parser.add_argument('--selection',   action='store', default='default
 submission_parser.add_argument('--logLevel',  action='store', default='INFO', help='Log level for logging', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE'])
 
 argParser.add_argument('--makePlots', action='store_true', default=False,  help='make plots')
+argParser.add_argument('--makeScaleFactors', action='store_true', default=False,  help='produce the ratio of data to sideband as root file to be used as scale factor as function of variable specified here')
 
 args = argParser.parse_args()
 
@@ -437,4 +438,12 @@ else:
                     draw_ratio = True, year = args.year, era = args.era, x_name = var[v][2][0], y_name = var[v][2][1], syst_hist = 0.3)
         p.setLegend(x1 = 0.5, ncolumns = 2)
         p.drawHist(output_dir = output_dir+'/Stacked/total', observed_name = 'Observed')
+
+
+        if args.makeScaleFactors:
+            ratio = observed_h.Clone()
+            ratio.Divide(backgrounds[0])
+            from HNL.Tools.histogram import Histogram
+            ratio = Histogram(ratio)
+            ratio.write(base_path_split[0] +'/data/ScaleFactors/'+v+'.root')
 

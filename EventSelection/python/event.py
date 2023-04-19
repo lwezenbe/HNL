@@ -51,7 +51,8 @@ class Event(object):
         tau_method = kwargs.get('tau_method', 'TauFakesDY' if self.chain.region == 'ZZCR' else None)
         ignore_fakerates = kwargs.get('ignore_fakerates', False)
         fakerate_from_data = kwargs.get('fakerate_from_data', None)
-        self.reweighter = Reweighter(self.sample, self.sample_manager, tau_method = tau_method, ignore_fakerates = ignore_fakerates)
+        nonprompt_scalefactors = kwargs.get('nonprompt_scalefactors', False)
+        self.reweighter = Reweighter(self.sample, self.sample_manager, tau_method = tau_method, ignore_fakerates = ignore_fakerates, nonprompt_scalefactors = nonprompt_scalefactors)
         self.systematics = Systematics(self.sample, self.reweighter)
 
     def initEvent(self, reset_obj_sel = False):
