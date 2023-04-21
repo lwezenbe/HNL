@@ -110,7 +110,7 @@ class Event(object):
         if passed:
             self.chain.category = self.event_category.returnCategory()
             from HNL.EventSelection.eventSelectionTools import isChargeFlip
-            if not self.sample.is_data and self.chain.is_reco_level: self.chain.is_charge_flip_event = isChargeFlip(self.chain, self.chain)
+            if not self.sample.is_data and self.chain.is_reco_level: self.chain.is_charge_flip_event = isChargeFlip(self.chain, self.new_chain)
             return True
         return False
 

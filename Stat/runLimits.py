@@ -52,17 +52,16 @@ from numpy import sqrt
 def runAsymptoticLimit(datacard, cardname):
 #    datacard = card_manager.getDatacardPath(signal_name, cardname)
 
-#    output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname
-#    if args.tag is not None: output_folder += '-'+args.tag
-#    makeDirIfNeeded(output_folder+'/x')
-#
-#    runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root', output_folder)
-#    if args.blind:
-#        runCombineCommand('combine ws.root -M AsymptoticLimits --run blind', output_folder)
-#    else:
-#        runCombineCommand('combine ws.root -M AsymptoticLimits', output_folder)
-#
-    producePostFit(datacard, cardname)
+    output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname
+    if args.tag is not None: output_folder += '-'+args.tag
+    makeDirIfNeeded(output_folder+'/x')
+
+    runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root', output_folder)
+    if args.blind:
+        runCombineCommand('combine ws.root -M AsymptoticLimits --run blind', output_folder)
+    else:
+        runCombineCommand('combine ws.root -M AsymptoticLimits', output_folder)
+
     return
 
 def runHybridNew(datacard, cardname):
@@ -175,6 +174,7 @@ if not args.useExistingLimits:
         for coupling in couplings:
             mass_str = str(mass) if not mass.is_integer() else str(int(mass))
             signal_name = 'HNL-'+args.flavor+'-m'+mass_str+'-Vsq'+('{:.1e}'.format(coupling).replace('-', 'm'))+'-'+ ('prompt' if not args.displaced else 'displaced')
+            print signal_name, datacard_manager.checkMassAvailability(signal_name)
             if not datacard_manager.checkMassAvailability(signal_name): continue
             print '\x1b[6;30;42m', 'Processing mN =', str(mass), 'GeV with V2 = ', str(coupling), '\x1b[0m'
             runLimit(datacard_manager, signal_name, args.datacards)

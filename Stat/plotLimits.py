@@ -30,6 +30,7 @@ from HNL.Tools.helpers import getObjFromFile
 main_graphs = []
 for dc in args.datacards:
     tmp_list = []
+    print os.path.join(in_base_folder, dc, 'limits.root')
     tmp_list.append(getObjFromFile(os.path.join(in_base_folder, dc, 'limits.root'), 'expected_central'))
     tmp_list.append(getObjFromFile(os.path.join(in_base_folder, dc, 'limits.root'), 'expected_1sigma'))
     tmp_list.append(getObjFromFile(os.path.join(in_base_folder, dc, 'limits.root'), 'expected_2sigma'))

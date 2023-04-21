@@ -138,8 +138,7 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         new_chain.is_prompt = all(prompt_list)
     else:
         new_chain.is_prompt = True
-       
- 
+      
     return True
 
 def select3Leptons(chain, new_chain, cutter = None):

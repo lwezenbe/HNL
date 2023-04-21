@@ -53,7 +53,6 @@ argParser.add_argument('--variables', nargs='*',  help='list of variables to pro
 argParser.add_argument('--ignoreSystematics',   action='store_true',     default=False,  help='ignore systematics in plots')
 argParser.add_argument('--mergeYears',   action='store_true',     default=False,  help='combine all years specified in year arg in preparation for plots')
 argParser.add_argument('--combineYears',   action='store_true',     default=False,  help='combine all years specified in year arg in plots')
-argParser.add_argument('--backupPath',   action='store',     default=None,  help='Path to get your stuff from if the original path does not contain the sample')
 argParser.add_argument('--submitPlotting',   action='store_true',     default=False,  help='Send the plotting code to HTCondor')
 argParser.add_argument('--unblind',   action='store_true',     default=False,  help='Also plot the observed data in signal region')
 argParser.add_argument('--plotDirac',   action='store_true',     default=False,  help='plot dirac type HNL')
@@ -431,7 +430,6 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
         for entry in event_range:
             chain.GetEntry(entry)
             progress(entry - event_range[0], len(event_range), print_every = None if args.isTest else 10000)
-            #progress(entry - event_range[0], len(event_range), print_every = None)
 
             #
             # Event selection
@@ -626,6 +624,7 @@ else:
                 split_syst_to_run = getSystToRun(year, sample_name, split_corr=True) if include_systematics in ['full'] else ['nominal']           
  
                 additional_condition_to_use = additional_condition if not args.plotDirac else additional_condition+'&&isDiracType'
+                print s+'/variables.root'
                 for corr_syst in split_syst_to_run:
                     intree = OutputTree('events_{0}'.format(corr_syst), s+'/variables.root')
                     for c, cc in zip(categories_to_use, category_conditions): 
@@ -826,7 +825,7 @@ else:
         return signal_list, bkgr_list, data_list
         
 
-    def insertRebin(in_var, year, signal_list, bkgr_list, data_list, additional_condition, ignore_sideband, searchregion = None):
+    def insertRebin(in_var, year, signal_list, bkgr_list, data_list, additional_condition, ignore_sideband, searchregion = None, for_datacards = False):
         from HNL.Analysis.analysisTypes import getBinning
         var_to_rebin = {}
 
@@ -836,7 +835,7 @@ else:
                 var_to_rebin[v][1] = np.arange(-1.0, 1.001, 0.001)
 
         if len(var_to_rebin.keys()) > 0 and not args.signalOnly:
-            list_of_probe_hist = createVariableDistributions(category_dict[args.categoriesToPlot], var_to_rebin, signal_list[year], background_collection[year], data_list[year], sample_manager, year, additional_condition = additional_condition, include_systematics = 'nominal', ignore_sideband = ignore_sideband)
+            list_of_probe_hist = createVariableDistributions(category_dict[args.categoriesToPlot], var_to_rebin, signal_list[year], background_collection[year], data_list[year], sample_manager, year, additional_condition = additional_condition, include_systematics = 'nominal', ignore_sideband = ignore_sideband, for_datacards = for_datacards)
 
         #actual rebinning
         binning = {}
@@ -935,7 +934,7 @@ else:
         mixed_list = signal_list[year] + bkgr_list[year] + data_list[year]
         custom_list_to_use = customizeListToUse(year)
         full_path = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Analysis'))
-        merge(mixed_list, __file__, jobs[year], ('sample', 'subJob'), argParser, istest=args.isTest, additionalArgs= [('year', year)], man_changed_args = {'customList':custom_list_to_use}, full_path = full_path)
+        #merge(mixed_list, __file__, jobs[year], ('sample', 'subJob'), argParser, istest=args.isTest, additionalArgs= [('year', year)], man_changed_args = {'customList':custom_list_to_use}, full_path = full_path)
 
         if not args.individualSamples:
             background_collection[year] = []
@@ -961,6 +960,7 @@ else:
             if args.masses is not None and sample_mass not in args.masses:  continue 
             if args.flavor != '' and '-'+args.flavor not in sample_name:  continue 
             if not args.plotDisplaced and Sample.getSignalDisplacedString(sample_name) == 'displaced': continue
+            if args.plotDisplaced and Sample.getSignalDisplacedString(sample_name) != 'displaced': continue
             tmp_signal_list.append(s)
 
         signal_list[year] = [x for x in tmp_signal_list]
@@ -1014,7 +1014,7 @@ else:
                 sr_condition = '||'.join(['searchregion=={0}'.format(x) for x in srm[args.region].getGroupValues(sr)]) if sr != 'Combined' else None
                 #Scout the binning
 
-                binning = insertRebin(var_for_datacard, year, signal_list, background_collection, data_list, additional_condition = sr_condition, ignore_sideband = ignore_sideband, searchregion = sr) 
+                binning = insertRebin(var_for_datacard, year, signal_list, background_collection, data_list, additional_condition = sr_condition, ignore_sideband = ignore_sideband, searchregion = sr, for_datacards = True) 
                 
                 hist_for_datacard = createVariableDistributions(category_dict[args.categoriesToPlot], var_for_datacard, signal_list[year], background_collection[year], data_list[year], sample_manager, year, sr_condition, include_systematics = args.systematics, sr=sr, split_corr=True, for_datacards=True, ignore_sideband = ignore_sideband, custom_bins = binning)
                    
@@ -1072,7 +1072,6 @@ else:
         additional_condition = args.additionalCondition
         if args.searchregion is not None:
             searchregion_condition = '||'.join(['searchregion == {0}'.format(x) for x in translateSearchRegions()])
-            print searchregion_condition
             if additional_condition is None:
                 additional_condition = searchregion_condition
             else:
