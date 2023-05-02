@@ -61,8 +61,11 @@ def passLowMassSelection(chain, new_chain, cutter, loose_selection = False):
     return True 
 
 #High mass selection
-def passHighMassSelection(chain, new_chain, cutter, ossf = None):
-    if not cutter.cut(new_chain.l_pt[l1] > 55, 'l1pt>55'):        return False
+def passHighMassSelection(chain, new_chain, cutter, ossf = None, invert_pt = False):
+    if not invert_pt:
+        if not cutter.cut(new_chain.l_pt[l1] > 55, 'l1pt>55'):        return False
+    else:
+        if not cutter.cut(new_chain.l_pt[l1] < 55, 'l1pt<55'):        return False
     if not cutter.cut(new_chain.l_pt[l2] > 15, 'l2pt>15'):        return False
     if not cutter.cut(new_chain.l_pt[l3] > 10, 'l3pt>10'):        return False
     if containsOSSF(new_chain):

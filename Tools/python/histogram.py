@@ -229,7 +229,25 @@ class Histogram:
             for by in xrange(1, nbinsy+1):
                 for bz in xrange(1, nbinsz+1):
                     if self.hist.GetBinContent(bx, by, bz) <= 0.0: self.hist.SetBinContent(bx, by, bz, 1e-7)
+       
+    def equalizeBins(self):
+        if self.isTH2 or self.isTH3: return
+
+        nbins = self.hist.GetNbinsX()
+        new_hist = ROOT.TH1D('equal_binning', 'equal_binning', nbins, 0, nbins)
         
+        for b in range(1, nbins+1):
+            new_hist.SetBinContent(b, self.hist.GetBinContent(b))
+            new_hist.SetBinError(b, self.hist.GetBinError(b))
+
+            new_hist.GetXaxis().ChangeLabel(b-1, self.hist.GetXaxis().GetBinLowEdge(b))
+            #new_hist.GetXaxis().ChangeLabel(b-1, -1, -1, -1, -1, -1, "aowi")
+            #new_hist.GetXaxis().SetBinLabel(b, str(self.hist.GetXaxis().GetBinLowEdge(b)))
+            #print new_hist.GetXaxis().GetNlabels()
+
+        self.hist = new_hist.Clone()
+        
+ 
 
 def returnSqrt(th1):
     sqrt = th1.Clone('sqrt')

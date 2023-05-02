@@ -25,6 +25,16 @@ def checkForMerge(paths):
         return None
 
 
+def haddHNL(out_name, in_files):
+    from HNL.Tools.helpers import makeDirIfNeeded
+    hadd_name = '/scratch/lwezenbe/'+out_name.split('HNL/', 1)[1]
+    makeDirIfNeeded(hadd_name)
+    makeDirIfNeeded(out_name)
+    os.system('hadd  -f '+ hadd_name + ' ' +in_files)
+    os.system('mv ' +hadd_name + ' ' +out_name)
+    os.system('rm -r ' + hadd_name.rsplit('/', 1)[0])
+    
+
 #
 #   Function to do the actual merging
 #   Input path = path up to but not including the tmp folders
@@ -41,9 +51,11 @@ def mergeSinglePath(path, groups_to_merge=None):
         for group_id in getListOfGroupID(p):
             gname, gid = group_id
             if groups_to_merge is not None and group_id not in groups_to_merge: continue
-            os.system('hadd  -f '+ p.rsplit('/', 1)[0]+ '/'+gid+'-'+gname+'.root '+p+'/'+gname+'_'+gid+'_*root')
+            #os.system('hadd  -f '+ p.rsplit('/', 1)[0]+ '/'+gid+'-'+gname+'.root '+p+'/'+gname+'_'+gid+'_*root')
+            haddHNL(p.rsplit('/', 1)[0]+ '/'+gid+'-'+gname+'.root', p+'/'+gname+'_'+gid+'_*root')
         for x in {t[1] for t in getListOfGroupID(p)}:
-            os.system('hadd  -f '+ p.rsplit('/', 1)[0]+ '/'+x+'.root '+p.rsplit('/', 1)[0]+'/'+x+'-*root')
+            #os.system('hadd  -f '+ p.rsplit('/', 1)[0]+ '/'+x+'.root '+p.rsplit('/', 1)[0]+'/'+x+'-*root')
+            haddHNL(p.rsplit('/', 1)[0]+ '/'+x+'.root', p.rsplit('/', 1)[0]+'/'+x+'-*root')
             os.system('rm -r '+p+'/*_'+gid+'_*root')
         if len(os.listdir(p)) == 0:
             os.system('rm -r '+p)

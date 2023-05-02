@@ -138,8 +138,7 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         new_chain.is_prompt = all(prompt_list)
     else:
         new_chain.is_prompt = True
-       
- 
+      
     return True
 
 def select3Leptons(chain, new_chain, cutter = None):
@@ -880,3 +879,8 @@ def passesChargeConsistencyDiElectron(chain, new_chain):
     if not chain._lElectronChargeConst[new_chain.l_indices[electrons[1]]]:
         return False
     return True
+
+def removeOverlapDYandZG(is_prompt, sample_name):
+    if 'DY' in sample_name and is_prompt: return True
+    if sample_name == 'ZG' and not is_prompt: return True
+    return False

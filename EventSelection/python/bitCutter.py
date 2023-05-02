@@ -117,19 +117,24 @@ class Cutter():
 
 class CutterCollection():
     
-    def __init__(self, names, chain = None, categories = None):
+    def __init__(self, names, chain = None, categories = None, function = None):
         self.names = names
         self.chain = chain
+        self.function = function
         self.cutters = {}
         for name in self.names:
             self.cutters[name] = Cutter(name, chain, categories)
 
     def cut(self, passed, cut_name, cutter_name = None):
+        if cutter_name is None and self.function is not None:
+            cutter_name = self.getCutterName()
+       
         if cutter_name is not None:
             self.cutters[cutter_name].cut(passed, cut_name)
         else:
             for name in self.names:
                 self.cutters[name].cut(passed, cut_name)
+        return passed
 
     def saveCutFlow(self, out_file, arg_string = None):
         for name in self.names:
@@ -137,6 +142,18 @@ class CutterCollection():
 
     def getCutter(self, name):
         return self.cutters[name]
+
+    def getCutterName(self):
+        if self.function is None:
+            return None
+        elif self.function == 'sideband':
+            if self.chain.is_sideband is None:
+                return None
+            elif self.chain.is_sideband:
+                return 'sideband'
+            else:
+                return 'nominal'
+        return None 
 
 from HNL.Plotting.plot import makeList
 def printCutFlow(in_file_paths, out_file_path, subdir = None, ignore_weights = False, categories = ['all'], group_backgrounds = True):

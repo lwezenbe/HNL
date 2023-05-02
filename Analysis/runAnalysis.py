@@ -45,7 +45,7 @@ argParser.add_argument('--cutFlowOnly',   action='store_true',   default=False, 
 argParser.add_argument('--signalOnly',   action='store_true',   default=False,  help='Run or plot a only the signal')
 argParser.add_argument('--plotBkgrOnly',   action='store_true',     default=False,  help='Plot only the background')
 argParser.add_argument('--plotSingleBin',   action='store_true',     default=False,  help='Run or plot a only the background')
-argParser.add_argument('--categoriesToPlot',   action='store',     default='super',  help='What categories to use', choices=['original', 'analysis', 'super', 'splitanalysis', 'leadingflavor', 'trigger'])
+argParser.add_argument('--categoriesToPlot',   action='store',     default='super',  help='What categories to use', choices=['original', 'analysis', 'super', 'splitanalysis', 'leadingflavor', 'trigger', 'sign'])
 argParser.add_argument('--category',   action='store',     default=None,  help='What specific category to use')
 argParser.add_argument('--searchregion',   action='store',  nargs='*',   default=None,  help='Is there a specific search region to probe?')
 argParser.add_argument('--additionalCondition',   action='store',     default=None,  help='Additional condition for selection')
@@ -82,9 +82,6 @@ if args.genLevel and args.selection == 'AN2017014':
 
 if args.genLevel and args.tag == 'TauFakes':
     raise RuntimeError('gen level can not be used for estimating TauFake fractions')
-
-if args.includeData == 'signalregion' and args.region in ['baseline', 'lowMassSRloose', 'highMassSR']:
-    raise RuntimeError('Running data in signal region without looking at the sideband. Either run in sideband or do not attempt this before approval')
 
 if args.combineYears:
     print '\033[93m Warning: Make sure you did a "mergeYears" first\033[0m'
@@ -181,6 +178,7 @@ if args.makePlots or args.makeDataCards:
     sorted_analysis_categories = cat.ANALYSIS_CATEGORIES.keys() if args.category is None else [args.category]
     sorted_splitanalysis_categories = cat.ANALYSIS_SPLITOSSF_CATEGORIES.keys() if args.category is None else [args.category]
     sorted_leadingflavor_categories = cat.LEADING_FLAVOR_CATEGORIES.keys() if args.category is None else [args.category]
+    sorted_sign_categories = cat.SIGN_CATEGORIES.keys() if args.category is None else [args.category]
     sorted_trigger_categories = cat.TRIGGER_CATEGORIES.keys() if args.category is None else [args.category]
     from HNL.Analysis.analysisTypes import getRelevantSuperCategories
     sorted_super_categories = getRelevantSuperCategories(cat.SUPER_CATEGORIES.keys(), args.region) if args.category is None else [args.category]
@@ -193,6 +191,8 @@ if args.makePlots or args.makeDataCards:
         category_dict['splitanalysis'] = (sorted_splitanalysis_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.ANALYSIS_SPLITOSSF_CATEGORIES[y]])+')' for y in sorted_splitanalysis_categories], {y :[str(x) for x in cat.ANALYSIS_SPLITOSSF_CATEGORIES[y]] for y in sorted_splitanalysis_categories})
     if args.categoriesToPlot == 'leadingflavor':
         category_dict['leadingflavor'] = (sorted_leadingflavor_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.LEADING_FLAVOR_CATEGORIES[y]])+')' for y in sorted_leadingflavor_categories], {y :[str(x) for x in cat.LEADING_FLAVOR_CATEGORIES[y]] for y in sorted_leadingflavor_categories})
+    if args.categoriesToPlot == 'sign':
+        category_dict['sign'] = (sorted_sign_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.SIGN_CATEGORIES[y]])+')' for y in sorted_sign_categories], {y :[str(x) for x in cat.SIGN_CATEGORIES[y]] for y in sorted_sign_categories})
     if args.categoriesToPlot == 'super':
         category_dict['super'] = (sorted_super_categories, ['('+'||'.join(['category=={0}'.format(x) for x in cat.SUPER_CATEGORIES[y]])+')' for y in sorted_super_categories], {y:[str(x) for x in cat.SUPER_CATEGORIES[y]] for y in sorted_super_categories})
     if args.categoriesToPlot == 'trigger':
@@ -375,7 +375,7 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
         #
         # Load in sample and chain
         #
-        event = Event(sample, chain, sample_manager, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = year, era = args.era, ignore_fakerates = args.tag != 'sidebandInMC' and args.includeData != 'includeSideband', fakerate_from_data = args.includeData == 'includeSideband', sideband=need_sideband)
+        event = Event(sample, chain, sample_manager, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = year, era = args.era, ignore_fakerates = args.tag != 'sidebandInMC' and args.includeData != 'includeSideband', fakerate_from_data = args.includeData == 'includeSideband', sideband=need_sideband, nonprompt_scalefactors = args.tag == 'nonpromptSFtest')
 
         #
         # Prepare output tree
@@ -387,14 +387,20 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
         branches.extend(['weight/F', 'isprompt/O', 'category/I', 'searchregion/I', 'issideband/O'])
         branches.extend(['isPreHEMrun/O','objectInHEM/O'])
         if args.tag == 'TauFakePurity': branches.extend(['istight/O'])
-        branches.extend(event.reweighter.returnBranches())
-        if systematic == 'nominal': branches.extend(event.systematics.returnBranches(args.sample))
+        if not args.genLevel: 
+            branches.extend(event.reweighter.returnBranches())
+            if systematic == 'nominal': branches.extend(event.systematics.returnBranches(args.sample))
         if not sample.is_data and not args.genLevel:
             branches.extend(['isChargeFlipEvent/O'])
         if sample.is_signal:
             branches.extend(['isDiracType/O', 'diracSF/F'])
         if args.tag == 'fakePtTest':
             branches.extend(['leadingFakeLeptonPt/F', 'leadingFakeMuonPt/F', 'leadingFakeElectronPt/F'])
+
+        #tmp  
+        if not args.genLevel: 
+            branches.extend(['passedChargeConsistency/F'])        
+
         if systematic != 'nominal':
             from HNL.Systematics.systematics import SystematicJSONreader
             sjr = SystematicJSONreader(datadriven_processes = ['non-prompt'] if args.includeData == 'includeSideband' else None)
@@ -435,7 +441,7 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
             if args.tag == 'TauFakePurity':
                 chain.obj_sel['tau_wp'] = 'FO'            
        
-            if not event.passedFilter(cutter.cutters[systematic+'sideband'], sample.name, for_training = 'ForTraining' in args.region, calculate_weights = False): continue
+            if not event.passedFilter(cutter, sample.name, for_training = 'ForTraining' in args.region, calculate_weights = False): continue
             is_sideband_event = chain.is_sideband
       
             if args.tag == 'TauFakes':
@@ -498,15 +504,15 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
             #
             if Sample.getSignalDisplacedString(sample.name):
                 output_tree.setTreeVariable('ctauHN', chain._ctauHN)
-            event.reweighter.fillTreeWithWeights(output_tree)
+            if not args.genLevel: event.reweighter.fillTreeWithWeights(output_tree)
             for v in var.keys():
                 output_tree.setTreeVariable(v, var[v][0](chain))
        
             if not sample.is_data and not args.genLevel:
                 from HNL.EventSelection.eventSelectionTools import isChargeFlip
-                output_tree.setTreeVariable('isChargeFlipEvent', isChargeFlip(chain, chain))
+                output_tree.setTreeVariable('isChargeFlipEvent', chain.is_charge_flip_event)
                
-            output_tree.setTreeVariable('weight', event.reweighter.getTotalWeight())
+            output_tree.setTreeVariable('weight', event.reweighter.getTotalWeight() if not args.genLevel else event.reweighter.getLumiWeight())
             output_tree.setTreeVariable('isprompt', chain.is_prompt)
             output_tree.setTreeVariable('category', chain.category)
             output_tree.setTreeVariable('searchregion', srm[args.region].getSearchRegion(chain))
@@ -523,9 +529,14 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
                 output_tree.setTreeVariable('leadingFakeLeptonPt', chain.leadingFakeLeptonPt)
                 output_tree.setTreeVariable('leadingFakeElectronPt', chain.leadingFakeElectronPt)
                 output_tree.setTreeVariable('leadingFakeMuonPt', chain.leadingFakeMuonPt)
+            
+            #tmp
+            if not args.genLevel:
+                from HNL.EventSelection.eventSelectionTools import passesChargeConsistencyDiElectron
+                output_tree.setTreeVariable('passedChargeConsistency', passesChargeConsistencyDiElectron(chain, chain))
                                                   
  
-            if systematic == 'nominal': event.systematics.storeAllSystematicsForShapes(output_tree, args.sample)
+            if systematic == 'nominal' and not args.genLevel: event.systematics.storeAllSystematicsForShapes(output_tree, args.sample)
             output_tree.fill()
  
         #
@@ -557,6 +568,7 @@ else:
     
     def createSingleVariableDistributions(tree, vname, hname, bins, condition, proc, year, include_systematics = 'nominal', split_corr = False, additional_weight = None, ignore_sideband = False):
         out_dict = {}
+
         weight = 'weight'
         if additional_weight is not None:
             weight += '*'+additional_weight
@@ -575,7 +587,17 @@ else:
             additional_condition = ''
         else:
             additional_condition = '&&({0})'.format(additional_condition)
-    
+        
+        #Add additional cuts
+        if args.region == 'highMassSR':
+            tmp_searchregion = srm[args.region].getGroupValues('F')
+            searchregion_condition = '&&'.join(['searchregion != {0}'.format(x) for x in tmp_searchregion])
+            inv_searchregion_condition = '||'.join(['searchregion == {0}'.format(x) for x in tmp_searchregion])
+            category_condition = 'category!=27&&category!=28&&category!=29'
+            inv_category_condition = 'category==27||category==28||category==29'
+            final_condition = '((('+searchregion_condition+')||('+category_condition+'))||(('+inv_category_condition+')&&('+inv_category_condition+')&&(passedChargeConsistency&&abs(minMsssf-91)>15)))'
+            additional_condition += '&&'+final_condition
+  
         from HNL.Tools.outputTree import OutputTree
         from HNL.EventSelection.eventCategorization import isLightLeptonFinalState
         categories_to_use = categories_dict[0]
@@ -599,11 +621,10 @@ else:
                 if '-tau' in sample_name: 
                     cleaned_sample_name = sample_name.split('-', 1)[0] + '-tau-'+sample_name.split('-', 2)[-1]
     
-                syst_to_run = getSystToRun(year, sample_name) if include_systematics in ['full'] else ['nominal']
                 split_syst_to_run = getSystToRun(year, sample_name, split_corr=True) if include_systematics in ['full'] else ['nominal']           
  
                 additional_condition_to_use = additional_condition if not args.plotDirac else additional_condition+'&&isDiracType'
-                for syst, corr_syst in zip(syst_to_run, split_syst_to_run):
+                for corr_syst in split_syst_to_run:
                     intree = OutputTree('events_{0}'.format(corr_syst), s+'/variables.root')
                     for c, cc in zip(categories_to_use, category_conditions): 
                         if 'taulep' in sample_name and not isLightLeptonFinalState(c): continue
@@ -612,11 +633,11 @@ else:
                             if not for_datacards or Sample.getSignalDisplacedString(sample_name) == 'prompt':
                                 coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
                                 additional_weight = str(coupling_squared/Sample.getSignalCouplingSquared(sample_name))
-                                if args.plotDirac: additional_weight *= 'diracSF'
-                                if syst == 'nominal':
-                                    tmp_list_of_hist[c][v]['signal'][cleaned_sample_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, include_systematics, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband)
+                                if args.plotDirac: additional_weight += '*diracSF'
+                                if corr_syst == 'nominal':
+                                    tmp_list_of_hist[c][v]['signal'][cleaned_sample_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, include_systematics, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband)
                                 else:
-                                    tmp_list_of_hist[c][v]['signal'][cleaned_sample_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband)['nominal'] 
+                                    tmp_list_of_hist[c][v]['signal'][cleaned_sample_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband)['nominal'] 
                             else:
                                 additional_weight = 'diracSF' if args.plotDirac else None
                                 for iv, vsquared in enumerate(np.ndarray(intree.getTreeVariable('displacement_ncouplings', 0), 'f', intree.getTreeVariable('displacement_vsquared', 0))):
@@ -624,28 +645,28 @@ else:
                                     vsquared_translated = vsquared_translated.replace('e-', 'em')
                                     new_name = cleaned_sample_name.split('-Vsq')[0]+'-Vsq'+vsquared_translated + '-' + Sample.getSignalDisplacedString(cleaned_sample_name)
                                     additional_weight_corrected = '(displacement_lumiweight[{0}]/lumiWeight)'.format(iv) if additional_weight is None else additional_weight+'*(displacement_lumiweight[{0}]/lumiWeight)'.format(iv)
-                                    if syst == 'nominal':
-                                        tmp_list_of_hist[c][v]['signal'][new_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year)+'-'+vsquared_translated, bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, include_systematics, split_corr = split_corr, additional_weight = additional_weight_corrected, ignore_sideband=ignore_sideband)
+                                    if corr_syst == 'nominal':
+                                        tmp_list_of_hist[c][v]['signal'][new_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year)+'-'+vsquared_translated, bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, include_systematics, split_corr = split_corr, additional_weight = additional_weight_corrected, ignore_sideband=ignore_sideband)
                                     else:
-                                        tmp_list_of_hist[c][v]['signal'][new_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-'+sample_name+'-'+str(sr)+'-'+str(year)+'-'+vsquared_translated, bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, split_corr = split_corr, additional_weight = additional_weight_corrected, ignore_sideband=ignore_sideband)['nominal'] 
+                                        tmp_list_of_hist[c][v]['signal'][new_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year)+'-'+vsquared_translated, bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, split_corr = split_corr, additional_weight = additional_weight_corrected, ignore_sideband=ignore_sideband)['nominal'] 
     
             print '\n'
     
-        if args.includeData is not None and not args.signalOnly:
+        #if args.includeData is not None and not args.signalOnly:
+        if args.includeData is not None:
             print "Loading data"
-            syst_to_run = getSystToRun(year, 'non-prompt') if not ignore_sideband and include_systematics in ['full'] else ['nominal']    
             split_syst_to_run = getSystToRun(year, 'non-prompt', split_corr=True) if not ignore_sideband and include_systematics in ['full'] else ['nominal']           
-            for isyst, (syst, corr_syst) in enumerate(zip(syst_to_run, split_syst_to_run)):
-                progress(isyst, len(syst_to_run))
+            for isyst, corr_syst in enumerate(split_syst_to_run):
+                progress(isyst, len(split_syst_to_run))
                 intree = OutputTree('events_{0}'.format(corr_syst), data[0]+'/variables.root')
                 for ic, (c, cc) in enumerate(zip(categories_to_use, category_conditions)):
                     for v in var_dict:
                         proc_to_use = 'non-prompt' if not ignore_sideband else 'Data'
-                        if syst == 'nominal':
-                            tmp_list_of_hist[c][v]['data']['sideband'] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&issideband)'+additional_condition, proc_to_use, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
+                        if corr_syst == 'nominal':
+                            tmp_list_of_hist[c][v]['data']['sideband'] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&issideband)'+additional_condition, proc_to_use, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
                             tmp_list_of_hist[c][v]['data']['signalregion'] = {'nominal' : Histogram(intree.getHistFromTree(v, str(c)+'-'+v+'-'+'-nominal-Data-signalregion'+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition))}
                         else:
-                            tmp_list_of_hist[c][v]['data']['sideband'][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&issideband)'+additional_condition, proc_to_use, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']
+                            tmp_list_of_hist[c][v]['data']['sideband'][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&issideband)'+additional_condition, proc_to_use, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']
     
         if not args.signalOnly:
             print "Loading background histograms"
@@ -659,22 +680,21 @@ else:
 
                 if not args.individualSamples:
                     if b in ['non-prompt', 'charge-misid']: continue
-                    syst_to_run = getSystToRun(year, b) if include_systematics in ['full'] else ['nominal']    
-                    split_syst_to_run = getSystToRun(year, b, split_corr=True) if include_systematics in ['full'] else ['nominal']            
-                    for syst, corr_syst in zip(syst_to_run, split_syst_to_run):
+                    split_syst_to_run = getSystToRun(year, b, split_corr=True) if include_systematics in ['full'] else ['nominal']       
+                    for corr_syst in split_syst_to_run:
                         intree = OutputTree('events_{0}'.format(corr_syst), getOutputName('bkgr', year, args.tag)+'/'+b+'/variables.root')                 
                         for c, cc in zip(categories_to_use, category_conditions):
                             for iv, v in enumerate(var_dict.keys()): 
-                                if syst == 'nominal': 
-                                    tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
+                                if corr_syst == 'nominal': 
+                                    tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
                                 else:
-                                    tmp_list_of_hist[c][v]['bkgr'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']
+                                    tmp_list_of_hist[c][v]['bkgr'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']
                                 
                                 #charge
-                                if syst == 'nominal': 
-                                    tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+'-chargemisid'+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
+                                if corr_syst == 'nominal': 
+                                    tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+'-chargemisid'+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
                                 else:
-                                    tmp_hist = {corr_syst : createSingleVariableDistributions(intree, v, 'tmp_'+b+'-chargemisid'+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']}
+                                    tmp_hist = {corr_syst : createSingleVariableDistributions(intree, v, 'tmp_'+b+'-chargemisid'+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']}
                                     
                                 if corr_syst not in tmp_list_of_hist[c][v]['bkgr']['charge-misid'].keys():
                                     tmp_list_of_hist[c][v]['bkgr']['charge-misid'].update(tmp_hist)
@@ -684,10 +704,10 @@ else:
                                 del(tmp_hist)
                                 
                                 if ignore_sideband:
-                                    if syst == 'nominal': 
-                                        tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np'+syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isprompt&&!issideband)'+additional_condition, 'non-prompt', year, include_systematics, ignore_sideband=ignore_sideband)
+                                    if corr_syst == 'nominal': 
+                                        tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isprompt&&!issideband)'+additional_condition, 'non-prompt', year, include_systematics, ignore_sideband=ignore_sideband)
                                     else:
-                                        tmp_hist = {corr_syst : createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np'+syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isprompt&&!issideband)'+additional_condition, b, year, ignore_sideband=ignore_sideband)['nominal']}
+                                        tmp_hist = {corr_syst : createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isprompt&&!issideband)'+additional_condition, b, year, ignore_sideband=ignore_sideband)['nominal']}
            
                                     if corr_syst not in tmp_list_of_hist[c][v]['bkgr']['non-prompt'].keys():
                                         tmp_list_of_hist[c][v]['bkgr']['non-prompt'].update(tmp_hist)
@@ -697,22 +717,21 @@ else:
                                     del(tmp_hist)
                                 else:
                                     #Load in the prompt sideband so we can remove it from our datadriven estimation
-                                    if syst == 'nominal': 
-                                        tmp_list_of_hist[c][v]['data'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year)+'-sideband', bins(c, v), '('+cc+'&&isprompt&&issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
+                                    if corr_syst == 'nominal': 
+                                        tmp_list_of_hist[c][v]['data'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year)+'-sideband', bins(c, v), '('+cc+'&&isprompt&&issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
                                     else:
-                                        tmp_list_of_hist[c][v]['data'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+syst+'-'+str(sr)+'-'+str(year)+'-sideband', bins(c, v), '('+cc+'&&isprompt&&issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']
+                                        tmp_list_of_hist[c][v]['data'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year)+'-sideband', bins(c, v), '('+cc+'&&isprompt&&issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']
                             
                 else:
-                    syst_to_run = getSystToRun(year, b) if include_systematics in ['full'] else ['nominal'] 
                     split_syst_to_run = getSystToRun(year, sample_name, split_corr=True) if include_systematics in ['full'] else ['nominal']
-                    for syst, corr_syst in zip(syst_to_run, split_syst_to_run):
+                    for corr_syst in split_syst_to_run:
                         intree = OutputTree('events_{0}'.format(corr_syst), getOutputName('bkgr', year, args.tag)+'/'+sample_manager.output_dict[b]+'/variables-'+b+'.root')                       
                         for c, cc in zip(categories_to_use, category_conditions):
                             for iv, v in enumerate(var_dict.keys()):
-                                if syst == 'nominal': 
-                                    tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'t'+syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
+                                if corr_syst == 'nominal': 
+                                    tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'t'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
                                 else:
-                                    tmp_list_of_hist[c][v]['bkgr'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'t'+syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']
+                                    tmp_list_of_hist[c][v]['bkgr'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'t'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']
     
             if not ignore_sideband:
                 for c, cc in zip(categories_to_use, category_conditions):
@@ -731,9 +750,10 @@ else:
     def getMergedYears(signal_list, bkgr_list, data_list):
         # Translate tree if years need to be combined
         year_to_plot = '-'.join(sorted(args.year))
-        signal_list[year_to_plot] = []
-        bkgr_list[year_to_plot] = []
-        data_list[year_to_plot] = []
+        if not (args.mergeYears and args.submitPlotting):
+            signal_list[year_to_plot] = []
+            bkgr_list[year_to_plot] = []
+            data_list[year_to_plot] = []
    
  
         #Translate the input lists
@@ -755,39 +775,42 @@ else:
                 else:
                     input_lists['data'][data.split('/')[-1]][y] = data
 
-#        if args.mergeYears: 
-#            from HNL.Analysis.mergeTrees import translateTree
-#            print 'Start translation'
-#            for year in args.year:
-#                print '\t', year
-#                for sob in ['signal', 'bkgr', 'data']:
-#                    print '\t\t', sob 
-#                    for sample_name in input_lists[sob]:
-#                        print '\t\t\t', sample_name
-#                        if len(input_lists[sob][sample_name].keys()) != len(args.year):
-#                            continue
-#                        else:
-##                            translateTree(input_lists[sob][sample_name][year]+'/variables.root', input_lists[sob][sample_name][year]+'/tmp_translation/variables.root', sample_name, year, args.year, datadriven_processes = ['non-prompt'] if args.includeData == 'includeSideband' else None, ignore_reruns = args.systematics == 'nominal')
-#                            translateTree(input_lists[sob][sample_name][year]+'/variables.root', input_lists[sob][sample_name][year]+'/tmp_translation/variables.root', sample_name, year, ['2016post', '2016pre', '2017', '2018'], datadriven_processes = ['non-prompt'] if args.includeData == 'includeSideband' else None, ignore_reruns = args.systematics == 'nominal')
+        if args.mergeYears and args.submitPlotting: 
+            from HNL.Analysis.mergeTrees import translateTree
+            print 'Start translation'
+            for year in args.year:
+                print '\t', year
+                for sob in ['signal', 'bkgr', 'data']:
+                    print '\t\t', sob 
+                    for sample_name in input_lists[sob]:
+                        print '\t\t\t', sample_name
+                        if len(input_lists[sob][sample_name].keys()) != len(args.year):
+                            continue
+                        else:
+#                            translateTree(input_lists[sob][sample_name][year]+'/variables.root', input_lists[sob][sample_name][year]+'/tmp_translation/variables.root', sample_name, year, args.year, datadriven_processes = ['non-prompt'] if args.includeData == 'includeSideband' else None, ignore_reruns = args.systematics == 'nominal')
+                            translateTree(input_lists[sob][sample_name][year]+'/variables.root', input_lists[sob][sample_name][year]+'/tmp_translation/variables.root', sample_name, year, ['2016post', '2016pre', '2017', '2018'], datadriven_processes = ['non-prompt'] if args.includeData == 'includeSideband' else None, ignore_reruns = args.systematics == 'nominal')
     
         #Hadd everything we need to
+        if args.mergeYears and not args.submitPlotting:
+            shall_we_merge = raw_input('Would you like to merge existing files? (y/n)\n')
         for sob in ['signal', 'bkgr', 'data']:
             for sample_name in input_lists[sob]:
                 if len(input_lists[sob][sample_name].keys()) != len(args.year):
                     continue
                 else:
                     output_name = input_lists[sob][sample_name][args.year[0]].replace(args.era+'-'+args.year[0], args.era+'-'+year_to_plot)
-                    if args.mergeYears:
+                    if args.mergeYears and shall_we_merge == 'y':
                         makeDirIfNeeded(output_name+'/variables.root')
-                        #print 'hadd -f '+output_name + '/variables.root ' + ' '.join([input_lists[sob][sample_name][y]+'/tmp_translation/variables.root' for y in args.year])
-                        os.system('hadd -f '+output_name + '/variables.root ' + ' '.join([input_lists[sob][sample_name][y]+'/tmp_translation/variables.root' for y in args.year]))
-                        #if args.systematics != 'nominal':
-                        #    os.system('hadd -f '+output_name + '/variables.root ' + ' '.join([input_lists[sob][sample_name][y]+'/tmp_translation/variables.root' for y in args.year]))
+                        #os.system('hadd -f '+output_name + '/variables.root ' + ' '.join([input_lists[sob][sample_name][y]+'/tmp_translation/variables.root' for y in args.year]))
+                        from HNL.Tools.mergeFiles import haddHNL
 
-                        #    for to_delete in [input_lists[sob][sample_name][x] for x in input_lists[sob][sample_name].keys()]:
-                        #        os.system('rm -r '+to_delete+'/tmp_translation')
-                        #else:
-                        #    os.system('hadd -f '+output_name + '/variables.root ' + ' '.join([input_lists[sob][sample_name][y]+'/variables.root' for y in args.year]))
+                        if args.systematics != 'nominal':
+                            haddHNL(output_name + '/variables.root', ' '.join([input_lists[sob][sample_name][y]+'/tmp_translation/variables.root' for y in args.year]))
+
+                            for to_delete in [input_lists[sob][sample_name][x] for x in input_lists[sob][sample_name].keys()]:
+                                os.system('rm -r '+to_delete+'/tmp_translation')
+                        else:
+                            haddHNL(output_name + '/variables.root', ' '.join([input_lists[sob][sample_name][y]+'/variables.root' for y in args.year]))
     
 
                     if sob == 'signal':
@@ -801,17 +824,17 @@ else:
         return signal_list, bkgr_list, data_list
         
 
-    def insertRebin(in_var, year, signal_list, bkgr_list, data_list, additional_condition, ignore_sideband):
+    def insertRebin(in_var, year, signal_list, bkgr_list, data_list, additional_condition, ignore_sideband, searchregion = None, for_datacards = False):
         from HNL.Analysis.analysisTypes import getBinning
         var_to_rebin = {}
-        
+
         for v in in_var:
             if isinstance(in_var[v][1], str) and 'rebin' in in_var[v][1]:
                 var_to_rebin[v] = [x for x in in_var[v]]
                 var_to_rebin[v][1] = np.arange(-1.0, 1.001, 0.001)
 
-        if len(var_to_rebin.keys()) > 0:
-            list_of_probe_hist = createVariableDistributions(category_dict[args.categoriesToPlot], var_to_rebin, signal_list[year], background_collection[year], data_list[year], sample_manager, year, additional_condition = additional_condition, include_systematics = 'nominal', ignore_sideband = ignore_sideband)
+        if len(var_to_rebin.keys()) > 0 and not args.signalOnly:
+            list_of_probe_hist = createVariableDistributions(category_dict[args.categoriesToPlot], var_to_rebin, signal_list[year], background_collection[year], data_list[year], sample_manager, year, additional_condition = additional_condition, include_systematics = 'nominal', ignore_sideband = ignore_sideband, for_datacards = for_datacards)
 
         #actual rebinning
         binning = {}
@@ -820,7 +843,7 @@ else:
             binning[c] = {}
             for v in in_var.keys():
                 if v in var_to_rebin.keys():
-                    if not args.signalOnly:
+                    if not args.signalOnly and (searchregion == ['F'] or searchregion == 'F' or (c == 'EEE-Mu' and 'massmu' in v)):
                         bkgrs = list_of_probe_hist[c][v]['bkgr'].keys()
                         tot_hist = list_of_probe_hist[c][v]['bkgr'][bkgrs[0]]['nominal'].clone('tot')
                         for b in bkgrs[1:]:
@@ -829,8 +852,11 @@ else:
                         del tot_hist
                     else:
                         binning[c][v] = np.arange(-1.0, 1.1, 0.1)
+                elif v == 'searchregion':
+                    binning[c][v] = srm[args.region].getSearchRegionBinning(searchregion = searchregion, final_state = c)
                 else:
                     binning[c][v] = np.array([x for x in getBinning(v, args.region, in_var[v][1])])
+        #del list_of_probe_hist
         return binning
 
     def translateSearchRegions():
@@ -861,8 +887,8 @@ else:
     
     #Add entry for the search regions in the var dictionary
     from HNL.Weights.reweighter import var_weights
-    var.update(var_weights)
-    var['searchregion'] = (lambda c : c.searchregion, np.arange(0.5, srm[args.region].getNumberOfSearchRegions()+1.5, 1.), ('Search Region', 'Events'))
+    if not args.genLevel:    var.update(var_weights)
+    var['searchregion'] = (lambda c : c.searchregion, 'placeholder', ('Search Region', 'Events'))
     #var = {
     #    'leadingFakeLeptonPt' : (lambda c : c.leadingFakeLeptonPt[0],       np.arange(0., 300., 15.),       ('p_{T} (leading fake lepton) [GeV]', 'Events')),
     #    'leadingFakeElectronPt' : (lambda c : c.leadingFakeElectronPt[0],       np.arange(0., 300., 15.),       ('p_{T} (leading fake electron) [GeV]', 'Events')),
@@ -897,7 +923,8 @@ else:
             bkgr_list[year] = []
 
         # data
-        if args.includeData is not None and not args.signalOnly:
+        #if args.includeData is not None and not args.signalOnly:
+        if args.includeData is not None:
             data_list[year] = glob.glob(getOutputName('data', year, args.tag)+'/Data')
         else:
             data_list[year] = []
@@ -933,6 +960,7 @@ else:
             if args.masses is not None and sample_mass not in args.masses:  continue 
             if args.flavor != '' and '-'+args.flavor not in sample_name:  continue 
             if not args.plotDisplaced and Sample.getSignalDisplacedString(sample_name) == 'displaced': continue
+            if args.plotDisplaced and Sample.getSignalDisplacedString(sample_name) != 'displaced': continue
             tmp_signal_list.append(s)
 
         signal_list[year] = [x for x in tmp_signal_list]
@@ -969,9 +997,10 @@ else:
             # If we want to use shapes, first make shape histograms, then make datacards
             #
             for sr in srm[args.region].getListOfSearchRegionGroups():
+                if args.searchregion is not None and sr not in args.searchregion: continue
                 print 'Making datacards for region', sr
                 var_for_datacard = {}
-                var_for_datacard['searchregion'] = (lambda c : c.searchregion, np.arange(srm[args.region].getGroupValues(sr)[0]-0.5, srm[args.region].getGroupValues(sr)[-1]+1.5, 1.), ('Search Region', 'Events'))
+                var_for_datacard['searchregion'] = (lambda c : c.searchregion, 'placeholder', ('Search Region', 'Events'))
                 if args.strategy == 'MVA':
                     set_of_mvas = set()
                     for sample_mass in args.masses:
@@ -986,7 +1015,7 @@ else:
                 sr_condition = '||'.join(['searchregion=={0}'.format(x) for x in srm[args.region].getGroupValues(sr)]) if sr != 'Combined' else None
                 #Scout the binning
 
-                binning = insertRebin(var_for_datacard, year, signal_list, background_collection, data_list, additional_condition = sr_condition, ignore_sideband = ignore_sideband) 
+                binning = insertRebin(var_for_datacard, year, signal_list, background_collection, data_list, additional_condition = sr_condition, ignore_sideband = ignore_sideband, searchregion = sr, for_datacards = True) 
                 
                 hist_for_datacard = createVariableDistributions(category_dict[args.categoriesToPlot], var_for_datacard, signal_list[year], background_collection[year], data_list[year], sample_manager, year, sr_condition, include_systematics = args.systematics, sr=sr, split_corr=True, for_datacards=True, ignore_sideband = ignore_sideband, custom_bins = binning)
                    
@@ -1013,16 +1042,15 @@ else:
                                 hist_for_datacard[ac][v]['signal'][sample_name][syst].replaceZeroBins()
                                 hist_for_datacard[ac][v]['signal'][sample_name][syst].write(out_path, write_name=new_signal_name, subdirs = [bin_name.rsplit('-', 1)[0]+syst], append=True)
                             bkgr_names = []
-                            for ib, b in enumerate(hist_for_datacard[ac][v]['bkgr'][year].keys()):
-                                bkgr_name = b.split('/')[-1]
-                                if hist_for_datacard[ac][v]['bkgr'][bkgr_name]['nominal'].hist.GetSumOfWeights() > 0:
-                                    hist_for_datacard[ac][v]['bkgr'][bkgr_name]['nominal'].replaceZeroBins()
-                                    hist_for_datacard[ac][v]['bkgr'][bkgr_name]['nominal'].write(out_path, write_name=bkgr_name, subdirs = [bin_name.rsplit('-', 1)[0]], append=True)
-                                    for syst in hist_for_datacard[ac][v]['bkgr'][bkgr_name].keys():
+                            for ib, b in enumerate(hist_for_datacard[ac][v]['bkgr'].keys()):
+                                if hist_for_datacard[ac][v]['bkgr'][b]['nominal'].hist.GetSumOfWeights() > 0:
+                                    hist_for_datacard[ac][v]['bkgr'][b]['nominal'].replaceZeroBins()
+                                    hist_for_datacard[ac][v]['bkgr'][b]['nominal'].write(out_path, write_name=b, subdirs = [bin_name.rsplit('-', 1)[0]], append=True)
+                                    for syst in hist_for_datacard[ac][v]['bkgr'][b].keys():
                                         if syst == 'nominal': continue
-                                        hist_for_datacard[ac][v]['bkgr'][bkgr_name][syst].replaceZeroBins()
-                                        hist_for_datacard[ac][v]['bkgr'][bkgr_name][syst].write(out_path, write_name=bkgr_name, subdirs = [bin_name.rsplit('-', 1)[0]+syst], append=True)
-                                    bkgr_names.append(bkgr_name)
+                                        hist_for_datacard[ac][v]['bkgr'][b][syst].replaceZeroBins()
+                                        hist_for_datacard[ac][v]['bkgr'][b][syst].write(out_path, write_name=b, subdirs = [bin_name.rsplit('-', 1)[0]+syst], append=True)
+                                    bkgr_names.append(b)
                             
                             data_hist_tmp = hist_for_datacard[ac][v]['data']['signalregion']['nominal'].clone('Ditau')
                             data_hist_tmp.replaceZeroBins()
@@ -1055,7 +1083,7 @@ else:
 #    writeYieldTable(list_of_hist, 'Other', 'searchregion', os.path.join(os.getcwd(), 'data', 'testArea' if args.isTest else '', 'Results', 'runAnalysis', args.analysis+'-'+args.tag if args.tag is not None else args.analysis, '-'.join([args.strategy, args.selection, args.region, cleanName(args.additionalCondition) if args.additionalCondition is not None else ''])), split_bkgr = True)
 
         for year in years_to_plot:
-            binning = insertRebin(var_to_use, year, signal_list, background_collection, data_list, additional_condition = additional_condition, ignore_sideband = ignore_sideband)
+            binning = insertRebin(var_to_use, year, signal_list, background_collection, data_list, additional_condition = additional_condition, ignore_sideband = ignore_sideband, searchregion = args.searchregion)
             print "Creating list of histograms"
             list_of_hist[year] = createVariableDistributions(category_dict[args.categoriesToPlot], var_to_use, signal_list[year], background_collection[year], data_list[year], sample_manager, year, additional_condition = additional_condition, include_systematics = args.systematics if not args.ignoreSystematics else 'nominal', ignore_sideband = ignore_sideband, custom_bins = binning)
     
@@ -1128,6 +1156,9 @@ else:
                     elif args.categoriesToPlot == 'leadingflavor':
                         from HNL.EventSelection.eventCategorization import LEADING_FLAVOR_CATEGORIES_TEX
                         c_name = LEADING_FLAVOR_CATEGORIES_TEX[c] 
+                    elif args.categoriesToPlot == 'sign':
+                        from HNL.EventSelection.eventCategorization import SIGN_CATEGORIES_TEX
+                        c_name = SIGN_CATEGORIES_TEX[c] 
                     elif args.categoriesToPlot == 'trigger':
                         from HNL.EventSelection.eventCategorization import TRIGGER_CATEGORIES_TEX
                         c_name = TRIGGER_CATEGORIES_TEX[c] 
@@ -1264,16 +1295,18 @@ else:
                                         out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), extra_text = [x for x in extra_text], year = year, era = args.era, observed_hist = observed_hist)
                                 if args.region == 'highMassSR':
                                     plotHighMassRegions(signal_hist, bkgr_hist, syst_hist, legend_names, 
-                                        out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), extra_text = [x for x in extra_text], year = year, era = args.era, observed_hist = observed_hist)
+                                        out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), extra_text = [x for x in extra_text], year = year, era = args.era, observed_hist = observed_hist, final_state = c)
         
                         else:
         
                             # Create plot object (if signal and background are displayed, also show the ratio)
-                            draw_ratio = 'errorsOnly' if args.signalOnly or args.plotBkgrOnly else True
+                            #draw_ratio = 'errorsOnly' if args.signalOnly or args.plotBkgrOnly else True
+                            draw_ratio = None if args.signalOnly or args.plotBkgrOnly else True
                             if args.includeData is not None: draw_ratio = True
                             if not args.individualSamples:
                                 #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
                                 p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = True, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
+                                #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = True, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era, equalize_bins=True,
                                 #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = False, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
                                         color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau' if not args.analysis == 'tZq' else 'tZq', x_name = var[v][2][0], y_name = var[v][2][1])
                             else:

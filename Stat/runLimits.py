@@ -9,12 +9,13 @@ submission_parser.add_argument('--era',     action='store',       default='UL', 
 submission_parser.add_argument('--masses', type=float, nargs='*',  help='Only run or plot signal samples with mass given in this list')
 submission_parser.add_argument('--couplings', nargs='*', type=float,  help='Only run or plot signal samples with coupling squared given in this list')
 submission_parser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
-submission_parser.add_argument('--method',   action='store', default='',  help='What method should we use?', choices = ['asymptotic', 'hybrid', 'significance'])
+submission_parser.add_argument('--method',   action='store', default='',  help='What method should we use?', choices = ['asymptotic', 'hybrid', 'significance', 'covariance'])
 submission_parser.add_argument('--blind',   action='store_true', default=False,  help='activate --blind option of combine')
 submission_parser.add_argument('--useExistingLimits',   action='store_true', default=False,  help='Dont run combine, just plot')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background. Traditionally a choice between "custom", "cutbased" and "MVA". If custom or MVA you can add a "-$mvaname" to force it to use a specific mva')
 submission_parser.add_argument('--datacards', nargs = '*', default=None, type=str,  help='What final state datacards should be used?')
+submission_parser.add_argument('--outputfolder', default=None, type=str,  help='Define a custom outputfolder')
 
 submission_parser.add_argument('--compareToExternal',   type=str, nargs='*',  help='Compare to a specific experiment')
 submission_parser.add_argument('--compareToCards',   type=str, nargs='*',  help='Compare to a specific card if it exists. If you want different selection use "selection/card" otherwise just "card"')
@@ -49,64 +50,93 @@ from HNL.Analysis.analysisTypes import signal_couplingsquared
 from HNL.Stat.datacardManager import getOutDataCardName
 from numpy import sqrt
 
-def runAsymptoticLimit(card_manager, signal_name, cardname):
-    datacard = card_manager.getDatacardPath(signal_name, cardname)
-
-    output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname
-    if args.tag is not None: output_folder += '-'+args.tag
-    makeDirIfNeeded(output_folder+'/x')
-    print 'Running Combine for {0}'.format(signal_name)
-
-    if args.blind:
-        runCombineCommand('combine -M AsymptoticLimits '+datacard+ ' --run blind', output_folder)
+def getOutputFolder(base_folder):
+    if args.outputfolder is None:
+        output_folder = base_folder
+        if args.tag is not None: output_folder += '-'+args.tag
     else:
-        runCombineCommand('combine -M AsymptoticLimits '+datacard, output_folder)
-    
-    print 'Finished running asymptotic limits for {0}'.format(signal_name)
+        output_folder = '/storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/'+args.outputfolder
+    return output_folder
+
+def runAsymptoticLimit(datacard, cardname):
+#    datacard = card_manager.getDatacardPath(signal_name, cardname)
+
+    output_folder = getOutputFolder(datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname)
+    makeDirIfNeeded(output_folder+'/x')
+
+    runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root', output_folder)
+    if args.blind:
+        runCombineCommand('combine ws.root -M AsymptoticLimits --run blind', output_folder)
+    else:
+        runCombineCommand('combine ws.root -M AsymptoticLimits', output_folder)
+
     return
 
-def runHybridNew(card_manager, signal_name, cardname):
-    datacard = card_manager.getDatacardPath(signal_name, cardname)
+def runHybridNew(datacard, cardname):
+#    datacard = card_manager.getDatacardPath(signal_name, cardname)
 
-    output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/hybridNew/'+cardname
-    if args.tag is not None: output_folder += '-'+args.tag
+    output_folder = getOutputFolder(datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/hybridNew/'+cardname)
     makeDirIfNeeded(output_folder+'/x')
-    print 'Running Combine for {0}'.format(signal_name)
 
     if args.blind:
         runCombineCommand('combine -M HybridNew -t 50 -d'+datacard+ ' --run blind', output_folder)
     else:
         runCombineCommand('combine -M HybridNew -t 50 -d'+datacard, output_folder)
     
-    print 'Finished running toy limits for {0}'.format(signal_name)
     return
 
-def runSignificance(card_manager, signal_name, cardname):
-    datacard = card_manager.getDatacardPath(signal_name, cardname)
+def runSignificance(datacard, cardname):
+#    datacard = card_manager.getDatacardPath(signal_name, cardname)
 
-    output_folder = datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/Significance/'+cardname
-    if args.tag is not None: output_folder += '-'+args.tag
+    output_folder = getOutputFolder(datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/Significance/'+cardname)
     makeDirIfNeeded(output_folder+'/x')
-    print 'Running Combine for {0}'.format(signal_name)
 
     if args.blind:
         runCombineCommand('combine -M Significance -t 50 -d'+datacard+ ' --run blind', output_folder)
     else:
-        runCombineCommand('combine -M Significance -t 50 -d'+datacard, output_folder)
+        #runCombineCommand('combine -M Significance -t 100 -d'+datacard, output_folder)
+        #runCombineCommand('combine -M Significance -d'+datacard, output_folder)
+        runCombineCommand('combine -M HybridNew -d '+datacard+ ' --LHCmode LHC-significance  --saveToys --fullBToys --saveHybridResult -T 100 -i 5', output_folder)
     
-    print 'Finished running toy limits for {0}'.format(signal_name)
     return
 
+def producePostFit(datacard, cardname):
+    output_folder = getOutputFolder(datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname)
+    runCombineCommand('combine ws.root -M FitDiagnostics', output_folder)    
+    os.system('scp '+datacard+' '+output_folder+'/datacard.txt')
+    runCombineCommand('PostFitShapesFromWorkspace -d datacard.txt -w ws.root -o postfitshapes.root -f fitDiagnostics.root:fit_s --postfit', output_folder)    
+
+def getCovarianceMatrix(datacard, cardname):
+    output_folder = getOutputFolder(datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/covariance/'+cardname)
+    runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root --X-allow-no-signal --X-allow-no-background', output_folder)
+    runCombineCommand('combine -M FitDiagnostics --saveShapes --saveWithUnc --numToysForShape 10 --saveOverall --preFitValue 0 ws.root', output_folder)
+    from HNL.Tools.helpers import getPublicHTMLfolder, makeDirIfNeeded
+    public_html = getPublicHTMLfolder(output_folder)
+    makeDirIfNeeded(public_html+'/x')
+    os.system('scp '+output_folder+'/fitDiagnostics.root '+public_html+'/fitDiagnostics.root')
+    print 'stored in', output_folder
+    return
+    
 
 def runLimit(card_manager, signal_name, cardnames):
-    datacard_manager.prepareAllCards(signal_name, cardnames, args.strategy)
-    
+    if len(cardnames) == 1 and '/' in cardnames[0]:
+        datacard = cardnames[0]
+        cardname = datacard.rsplit('/', 1)[1].split('.')[0] 
+    else:
+        datacard_manager.prepareAllCards(signal_name, cardnames, args.strategy)
+        cardname = getOutDataCardName(cardnames)
+        datacard = datacard_manager.getDatacardPath(signal_name, cardname)
+   
+    print 'Running Combine for {0}'.format(signal_name)
     if args.method == 'asymptotic':
-        runAsymptoticLimit(datacard_manager, signal_name, getOutDataCardName(cardnames))
+        runAsymptoticLimit(datacard, getOutDataCardName(cardnames))
     elif args.method == 'hybrid':
-        runHybridNew(datacard_manager, signal_name, getOutDataCardName(cardnames))
+        runHybridNew(datacard, getOutDataCardName(cardnames))
     elif args.method == 'significance':
-        runSignificance(datacard_manager, signal_name, getOutDataCardName(cardnames))
+        runSignificance(datacard, getOutDataCardName(cardnames))
+    elif args.method == 'covariance':
+        getCovarianceMatrix(datacard, getOutDataCardName(cardnames))
+    print 'Finished running toy limits for {0}'.format(signal_name)
 
 # Create datacard manager
 from HNL.Stat.datacardManager import DatacardManager
@@ -166,7 +196,7 @@ if not args.useExistingLimits:
     closeLogger(log)
 
 
-if args.submitPlotting or args.isChild:
+if args.submitPlotting or args.isChild or args.method == 'covariance':
     exit(0)    
 
 compare_dict = {
@@ -210,8 +240,8 @@ for mass in args.masses:
 
     if args.displaced and mass <= displaced_mass_threshold:
         tmp_limit = extractScaledLimitsDisplacedHNL(input_folders, couplings, blind=args.blind)
-        #from HNL.Stat.combineTools import drawSignalStrengthPerCouplingDisplaced
-        #drawSignalStrengthPerCouplingDisplaced(input_folders, couplings, destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
+        from HNL.Stat.combineTools import drawSignalStrengthPerCouplingDisplaced
+        drawSignalStrengthPerCouplingDisplaced(input_folders, couplings, destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
     else:
         tmp_limit = extractScaledLimitsPromptHNL(input_folders[0], couplings[0])
         #from HNL.Stat.combineTools import drawSignalStrengthPerCouplingPrompt
@@ -220,12 +250,14 @@ for mass in args.masses:
     if tmp_limit is not None and len(tmp_limit) > 4: 
         passed_masses.append(mass)
         limits[mass] = tmp_limit
-        
+
+
 print 'made graphs'
 graphs = makeGraphs(passed_masses, limits=limits)
 
 out_path_base = lambda era, sname, cname, tag : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.masstype+'-'+('prompt' if not args.displaced else 'displaced'), era, sname+'-'+args.flavor+'-'+asymptotic_str+'/'+cname+(('-'+tag) if tag is not None else ''))
-saveGraphs(graphs, out_path_base(args.era+year_to_read, args.strategy +'-'+ args.selection, card, args.tag)+"/limits.root")
+out_path = args.outputfolder if args.outputfolder is not None else out_path_base(args.era+year_to_read, args.strategy +'-'+ args.selection, card, args.tag)+"/limits.root"
+saveGraphs(graphs, out_path)
 
 print 'loading compare graphs'
 #Load in other graph objects to compare

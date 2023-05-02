@@ -485,3 +485,19 @@ def contractAllBins(hist):
     out_hist.SetBinError(1, tot_err)
     return out_hist
 
+def getPublicHTMLfolder(input_folder):
+    destination_components = input_folder.split('/')
+    cleaned_components = [x for x in destination_components if not isTimeStampFormat(x)]
+    try:
+        index_for_php = cleaned_components.index('src')
+    except:
+        index_for_php = None
+
+    if index_for_php:
+        php_destination = '/user/lwezenbe/public_html/'
+        php_destination += '/'.join([comp for comp in cleaned_components[index_for_php+1:] if (comp != 'data' and comp != 'Results')])
+        makeDirIfNeeded(php_destination)
+    else:
+        raise RuntimeError('WOOOOOOOOO')    
+
+    return php_destination

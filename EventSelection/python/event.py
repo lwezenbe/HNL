@@ -51,7 +51,8 @@ class Event(object):
         tau_method = kwargs.get('tau_method', 'TauFakesDY' if self.chain.region == 'ZZCR' else None)
         ignore_fakerates = kwargs.get('ignore_fakerates', False)
         fakerate_from_data = kwargs.get('fakerate_from_data', None)
-        self.reweighter = Reweighter(self.sample, self.sample_manager, tau_method = tau_method, ignore_fakerates = ignore_fakerates)
+        nonprompt_scalefactors = kwargs.get('nonprompt_scalefactors', False)
+        self.reweighter = Reweighter(self.sample, self.sample_manager, tau_method = tau_method, ignore_fakerates = ignore_fakerates, nonprompt_scalefactors = nonprompt_scalefactors)
         self.systematics = Systematics(self.sample, self.reweighter)
 
     def initEvent(self, reset_obj_sel = False):
@@ -65,7 +66,8 @@ class Event(object):
         self.chain.is_FO_lepton = [None]*self.chain._nL
         self.chain.is_tight_lepton = [None]*self.chain._nL
         self.chain.conecorrection_applied = False
-        self.chain.is_sideband = False
+        self.chain.is_sideband = None if self.chain.is_reco_level else False
+        self.chain.is_charge_flip_event = False
         self.processLeptons(tau_energy_scale = self.tau_energy_scale_syst)
 
         from HNL.ObjectSelection.jetSelector import getMET
@@ -107,6 +109,8 @@ class Event(object):
         passed =  self.event_selector.passedFilter(cutter, sample_name, kwargs)
         if passed:
             self.chain.category = self.event_category.returnCategory()
+            from HNL.EventSelection.eventSelectionTools import isChargeFlip
+            if not self.sample.is_data and self.chain.is_reco_level: self.chain.is_charge_flip_event = isChargeFlip(self.chain, self.new_chain)
             return True
         return False
 

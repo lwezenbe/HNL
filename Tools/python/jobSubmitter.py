@@ -137,7 +137,10 @@ def getArgsStr(arg_list, to_ignore):
         if str(arg) in to_ignore:
             continue
         elif isinstance(arg_list[arg], list):
-            args_str += '_' + str(arg) + '-' + '-'.join([str(x).replace('/', '-') for x in sorted(arg_list[arg])])
+            if len(arg_list[arg]) > 3:
+                args_str += '_' + str(arg) + '-' + str(min(arg_list[arg]))+'to'+ str(max(arg_list[arg]))
+            else:
+                args_str += '_' + str(arg) + '-' + '-'.join([str(x).replace('/', '-') for x in sorted(arg_list[arg])])
         else:
             args_str += '_' + str(arg) + '-' + str(arg_list[arg]).replace('/', '-')
     args_str = "".join(i for i in args_str if i not in " &\/:*?<>|")
@@ -268,7 +271,7 @@ def checkCompletedJobs(script, subJobList, argparser, subLog = None, additionalA
 def checkShouldMerge(script, argparser, subLog = None, additionalArgs=None, man_changed_args = None, full_path = None):
     args = argparser.parse_args()
     submitArgs   = getSubmitArgs(argparser, args, additionalArgs=additionalArgs, man_changed_args = man_changed_args)
-    arg_string = getArgsStr(submitArgs, to_ignore=['isChild', 'subJob'])
+    arg_string = getArgsStr(submitArgs, to_ignore=['isChild', 'subJob', 'dryRun'])
 
     if full_path is None:
         path_to_check = os.path.join('log', 'Merge', os.path.basename(script).split('.')[0]+(('-'+subLog) if subLog else ''), arg_string, 'shouldMerge.txt')
@@ -292,6 +295,26 @@ def disableShouldMerge(script, argparser, subLog = None, additionalArgs=None):
     path_to_check = os.path.join('log', 'Merge', os.path.basename(script).split('.')[0]+(('-'+subLog) if subLog else ''), arg_string, 'shouldMerge.txt')
     with open(path_to_check, 'w') as filetowrite:
         filetowrite.write('False')
+
+def checkAndResubmit(script, subjob_list, subjobargs, argparser, sub_log = None, additional_args = None, man_changed_args = None, full_path = None):
+    if not checkShouldMerge(script, argparser, sub_log, additional_args, man_changed_args, full_path):
+        return True
+    else:
+        if argparser is None:
+            pass
+        else:
+            failed_jobs = checkCompletedJobs(script, subjob_list, argparser, additionalArgs=additional_args)
+            if failed_jobs is not None and len(failed_jobs) != 0:   
+                should_resubmit = raw_input("Would you like to resubmit the failed jobs? (y/n) \n")
+                if should_resubmit == 'y' or should_resubmit == 'Y':
+                    print 'resubmitting:'
+                    submitJobs(script, subjobargs, failed_jobs, argparser, resubmission=True, jobLabel = "-".join([script.split('.')[0], 'resubmission']), man_changed_args = man_changed_args)
+                    return False
+                else:
+                    pass    
+                if should_resubmit != 'skip': return True
+    return True
+
 
 if __name__ == '__main__':
     launchOnCondor('a', 'b', 'c', 0)

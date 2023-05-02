@@ -89,6 +89,8 @@ def runCombineCommand(command, output = None):
     os.system('rm ' + combine_release +'/src/*root &> /dev/null') 
     os.chdir(combine_release+'/src')
     output_folder = output if output is not None else currentDir
+    from HNL.Tools.helpers import makeDirIfNeeded
+    makeDirIfNeeded(output_folder+'/x')
     os.system('eval `scramv1 runtime -sh`; cd {0}; {1}'.format(output_folder, command))
     os.chdir(currentDir)
 
@@ -146,7 +148,7 @@ def extrapolateExclusionLimit(limits, quantile):
     last_val = None
     for ix, x in enumerate(x_values):
         new_val = limits[x][quantile]
-        if last_val is None:    
+        if last_val is None:
             last_val = new_val
         elif x != x_values[-1]:
             if last_val < 1. and new_val > 1.:
@@ -167,7 +169,7 @@ def extrapolateExclusionLimit(limits, quantile):
         return None
 
     x1 = limit_candidates[0]
-    x2 = x_values[limit_candidates.index(x1)+1]
+    x2 = x_values[x_values.index(x1)+1]
     y1 = limits[x1][quantile]
     y2 = limits[x2][quantile]
     return linearExtrapolationX(x1, x2, y1, y2) 

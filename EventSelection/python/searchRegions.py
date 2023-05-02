@@ -8,6 +8,9 @@ class SearchRegionManager:
 
     def __init__(self, name = None):
         self.name = name
+        #Exception
+        if self.name == 'HighMassWithInvertedPt':
+            self.name = 'highMassSR'
         if self.name is not None and self.name not in LIST_OF_SR_NAMES:
             print 'You specified a SR name but it does not correspond to any I know. Will continue with a single search region.'
 
@@ -56,12 +59,42 @@ class SearchRegionManager:
         else:
             return 1
 
+
+    def getSearchRegionBinning(self, searchregion = None, final_state = None):
+        import numpy as np
+ 
+        if searchregion is not None and isinstance(searchregion, list):
+            total = self.getSearchRegionBinning(searchregion[0], final_state = final_state)
+            for x in searchregion[1:]:
+                total = np.append(total, self.getSearchRegionBinning(x, final_state = final_state))
+            return total
+
+        if final_state is not None and self.name in bins_to_merge.keys():
+            from HNL.EventSelection.eventCategorization import isLightLeptonFinalState
+            #Check if there are bins to be merged
+            for final_state_to_merge in bins_to_merge[self.name].keys():
+                from HNL.EventSelection.eventCategorization import isPartOfCategory
+                if not isPartOfCategory(final_state_to_merge, final_state): continue
+                #First check if a specific search region is defined
+                if searchregion is not None and all([x in self.getGroupValues(searchregion) for x in bins_to_merge[self.name][final_state_to_merge]]):
+                    return np.array([x-0.5 for x in self.getGroupValues(searchregion) if x not in bins_to_merge[self.name][final_state_to_merge][1:]]+[self.getGroupValues(searchregion)[-1]+0.5])
+                #Else adapt full range if none specified
+                elif searchregion is None:
+                    return self.getSearchRegionBinning(searchregion = self.getListOfSearchRegionGroups(), final_state = final_state)
+                     
+        if searchregion is not None:
+            return np.arange(self.getGroupValues(searchregion)[0]-0.5, self.getGroupValues(searchregion)[-1]+1.5, 1.)
+        else:
+            return np.arange(0.5, self.getNumberOfSearchRegions()+1.5, 1.)
+
+
 #
 # constants and functions
 #
 
 LIST_OF_SR_NAMES = ['lowMassSR', 'lowMassSRloose', 'highMassSR']
 region_groups = {} 
+bins_to_merge = {}
 
 #
 # Dictionary for translating to tex
@@ -84,6 +117,7 @@ region_groups['lowMassSRloose'] = {
     'C' : [9, 10, 11, 12],
     'D' : [13, 14, 15, 16]
 }
+bins_to_merge['lowMassSRloose'] = {}
 def getLowMassLooseRegion(chain):
     if not chain.hasOSSF:
         if chain.l_pt[0] < 30:
@@ -152,6 +186,11 @@ region_groups['highMassSR'] = {
     'E' : range(1, 17),
     'F' : range(17, 26)
 }
+bins_to_merge['highMassSR'] = {
+    'TauEE' : [2, 3],
+    'TauMuMu' : [2, 3] 
+}
+
 def getHighMassRegion(chain):
     if chain.hasOSSF:
         if chain.M3l < 100:
@@ -226,7 +265,9 @@ from HNL.Plotting.plottingTools import extraTextFormat, drawLineFormat
 #
 # plotGeneralGroups is a function that just makes bare plots without lines or extra text, it is meant to be used with tables when you're in a hurry
 #
-def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hist = None):
+
+
+def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hist = None, category = None):
     grouped_signal_hist = {}
     grouped_bkgr_hist = {}
     grouped_observed_hist = {}
@@ -234,12 +275,15 @@ def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hi
 
     import HNL.Tools.histogram
     for group in region_groups[region_name].keys():
+        srm = SearchRegionManager(region_name)
+        bins = srm.getSearchRegionBinning(group, category)        
+
         grouped_signal_hist[group] = [] 
         grouped_bkgr_hist[group] = []
         if signal_hist is not None:
             for ish, sh in enumerate(signal_hist):
-                grouped_signal_hist[group].append(ROOT.TH1D('tmp_signal_'+str(ish)+'_'+group, 'tmp_signal', len(region_groups[region_name][group]), 0.5, len(region_groups[region_name][group])+0.5))
-                for ib, b in enumerate(region_groups[region_name][group]):
+                grouped_signal_hist[group].append(ROOT.TH1D('tmp_signal_'+str(ish)+'_'+group, 'tmp_signal', len(bins)-1, bins))
+                for ib, b in enumerate([x-1+region_groups[region_name][group][0] for x in range(1, len(bins))]):
                     if isinstance(sh, HNL.Tools.histogram.Histogram):
                         grouped_signal_hist[group][ish].SetBinContent(ib+1, sh.getHist().GetBinContent(b))
                         grouped_signal_hist[group][ish].SetBinError(ib+1, sh.getHist().GetBinError(b))
@@ -249,8 +293,9 @@ def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hi
         
         if bkgr_hist is not None:
             for ish, sh in enumerate(bkgr_hist):
-                grouped_bkgr_hist[group].append(ROOT.TH1D('tmp_bkgr_'+str(ish)+'_'+group, 'tmp_bkgr', len(region_groups[region_name][group]), 0.5, len(region_groups[region_name][group])+0.5))
-                for ib, b in enumerate(region_groups[region_name][group]):
+                grouped_bkgr_hist[group].append(ROOT.TH1D('tmp_bkgr_'+str(ish)+'_'+group, 'tmp_bkgr', len(bins)-1, bins))
+                #for ib, b in enumerate(region_groups[region_name][group]):
+                for ib, b in enumerate([x-1+region_groups[region_name][group][0] for x in range(1, len(bins))]):
                     if isinstance(sh, HNL.Tools.histogram.Histogram):
                         grouped_bkgr_hist[group][ish].SetBinContent(ib+1, sh.getHist().GetBinContent(b))
                         grouped_bkgr_hist[group][ish].SetBinError(ib+1, sh.getHist().GetBinError(b))
@@ -259,8 +304,9 @@ def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hi
                         grouped_bkgr_hist[group][ish].SetBinError(ib+1, sh.GetBinError(b))                        
         
         if observed_hist is not None and grouped_observed_hist is not None:
-            grouped_observed_hist[group] = ROOT.TH1D('tmp_observed_'+group, 'tmp_observed', len(region_groups[region_name][group]), 0.5, len(region_groups[region_name][group])+0.5)
-            for ib, b in enumerate(region_groups[region_name][group]):
+            grouped_observed_hist[group] = ROOT.TH1D('tmp_observed_'+group, 'tmp_observed', len(bins)-1, bins)
+            #for ib, b in enumerate(region_groups[region_name][group]):
+            for ib, b in enumerate([x-1+region_groups[region_name][group][0] for x in range(1, len(bins))]):
                 if isinstance(sh, HNL.Tools.histogram.Histogram):
                     grouped_observed_hist[group].SetBinContent(ib+1, observed_hist.getHist().GetBinContent(b))
                     grouped_observed_hist[group].SetBinError(ib+1, observed_hist.getHist().GetBinError(b))
@@ -273,8 +319,9 @@ def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hi
         if syst_hist is not None and grouped_syst_hist is not None:
             grouped_syst_hist[group] = []
             for ish, sh in enumerate(syst_hist):
-                grouped_syst_hist[group].append(ROOT.TH1D('tmp_syst_'+str(ish)+'_'+group, 'tmp_syst', len(region_groups[region_name][group]), 0.5, len(region_groups[region_name][group])+0.5))
-                for ib, b in enumerate(region_groups[region_name][group]):
+                grouped_syst_hist[group].append(ROOT.TH1D('tmp_syst_'+str(ish)+'_'+group, 'tmp_syst', len(bins)-1, bins))
+                #for ib, b in enumerate(region_groups[region_name][group]):
+                for ib, b in enumerate([x-1+region_groups[region_name][group][0] for x in range(1, len(bins))]):
                     if isinstance(sh, HNL.Tools.histogram.Histogram):
                         grouped_syst_hist[group][ish].SetBinContent(ib+1, sh.getHist().GetBinContent(b))
                         grouped_syst_hist[group][ish].SetBinError(ib+1, sh.getHist().GetBinError(b))
@@ -288,7 +335,12 @@ def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hi
 
 def plotGeneralGroups(group_signal_hist, group_bkgr_hist, group_syst_hist, tex_names, out_path, region_name, year, era, extra_text = None, observed_hist = None):
     for group in region_groups[region_name].keys():
-        draw_ratio = 'errorsOnly' if len(group_signal_hist[group]) > 0 and len(group_bkgr_hist[group]) > 0 else None
+        if observed_hist is not None:
+            draw_ratio = True
+        elif len(group_signal_hist[group]) > 0 and len(group_bkgr_hist[group]) > 0:
+            draw_ratio = 'errorsOnly'
+        else:
+            draw_ratio = None
         if observed_hist is not None: draw_ratio = True
         tmp_signal = [x for x in group_signal_hist[group]]
         tmp_bkgr = [x for x in group_bkgr_hist[group]]
@@ -397,11 +449,11 @@ def plotLowMassRegions(signal_hist, bkgr_hist, syst_hist, tex_names, out_path, y
     p.drawHist(output_dir = out_path, draw_lines = line_collection, min_cutoff = 0.1, custom_labels = custom_labels, normalize_signal = 'med')
     #p.drawHist(output_dir = out_path, draw_lines = line_collection, min_cutoff = 0.1, custom_labels = custom_labels, normalize_signal = 'bkgr')
 
-def plotHighMassRegions(signal_hist, bkgr_hist, syst_hist, tex_names, out_path, year, era, extra_text = None, observed_hist = None):
+def plotHighMassRegions(signal_hist, bkgr_hist, syst_hist, tex_names, out_path, year, era, extra_text = None, observed_hist = None, final_state = None):
 
     #Plot per grouping
 
-    grouped_signal_hist, grouped_bkgr_hist, grouped_syst_hist, grouped_observed_hist = collectGroupHist(signal_hist, bkgr_hist, syst_hist, 'highMassSR', observed_hist = observed_hist)
+    grouped_signal_hist, grouped_bkgr_hist, grouped_syst_hist, grouped_observed_hist = collectGroupHist(signal_hist, bkgr_hist, syst_hist, 'highMassSR', observed_hist = observed_hist, category = final_state)
     plotGeneralGroups(grouped_signal_hist, grouped_bkgr_hist, grouped_syst_hist, tex_names, out_path, 'highMassSR', year, era, extra_text = extra_text, observed_hist = grouped_observed_hist)
     
 #    draw_ratio = 'errorsOnly' if signal_hist is not None and bkgr_hist is not None else None
@@ -415,7 +467,12 @@ def plotLowMassRegionsLoose(signal_hist, bkgr_hist, syst_hist, tex_names, out_pa
     grouped_signal_hist, grouped_bkgr_hist, grouped_syst_hist, grouped_observed_hist = collectGroupHist(signal_hist, bkgr_hist, syst_hist, 'lowMassSRloose', observed_hist = observed_hist)
     #plotGeneralGroups(grouped_signal_hist, grouped_bkgr_hist, tex_names, out_path, 'lowMassSRloose', extra_text = extra_text)
     
-    draw_ratio = 'errorsOnly' if signal_hist is not None and bkgr_hist is not None else None
+    if observed_hist is not None:
+        draw_ratio = True
+    elif len(group_signal_hist[group]) > 0 and len(group_bkgr_hist[group]) > 0:
+        draw_ratio = 'errorsOnly'
+    else:
+        draw_ratio = None
     p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = grouped_syst_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text,
             color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau', draw_ratio = draw_ratio, year = year, era = era)
     p.drawHist(output_dir = out_path, min_cutoff = 1., normalize_signal = 'med')

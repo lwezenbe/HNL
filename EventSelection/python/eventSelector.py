@@ -1,6 +1,6 @@
 #Combine signalRegionSelector and controlRegionSelector here
 import HNL.EventSelection.eventCategorization as cat
-from HNL.EventSelection.eventSelectionTools import selectLeptonsGeneral, selectGenLeptonsGeneral, calculateEventVariables
+from HNL.EventSelection.eventSelectionTools import selectLeptonsGeneral, selectGenLeptonsGeneral, calculateEventVariables, removeOverlapDYandZG
 from HNL.ObjectSelection.leptonSelector import isGoodLepton
 class FilterObject(object):
 
@@ -18,6 +18,9 @@ class FilterObject(object):
             if not selectLeptonsGeneral(self.chain, self.new_chain, nL, cutter=cutter, sort_leptons = sort_leptons): return False
         else:
             if not selectGenLeptonsGeneral(self.chain, self.new_chain, nL, cutter=cutter): return False
+
+        if 'ZG' in kwargs['sample_name'] or 'DY' in kwargs['sample_name']:
+            if not cutter.cut(not removeOverlapDYandZG(self.new_chain.is_prompt, kwargs['sample_name']), 'Clean Nonprompt ZG'): return False
 
         self.chain.category = self.ec.returnCategory()
         reweighter = kwargs.get('reweighter')
@@ -91,6 +94,8 @@ class EventSelector:
             self.selector = GeneralMCCTRegion(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
         elif self.name == 'HighMassWithB':
             self.selector = HighMassWithBJetfilter(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
+        elif self.name == 'HighMassWithInvertedPt':
+            self.selector = SignalRegionSelector('highMassSRInvertedPt', chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
         elif self.name == 'NoSelection':
             #if chain.is_data and not ('sideband' in additional_options or 'for_skim' in additional_options):
             #    raise RuntimeError("Running this would mean unblinding. Dont do this.")
@@ -112,16 +117,6 @@ class EventSelector:
             return True
         return False
 
-#    def removeOverlapDYandZG(self, sample_name, cutter):
-#        if 'DY' in sample_name and self.leptonFromMEExternalConversion(): return True
-#        if sample_name == 'ZG' and not self.leptonFromMEExternalConversion(): return True
-#        return False
-
-    def removeOverlapDYandZG(self, is_prompt, sample_name, cutter):
-        if 'DY' in sample_name and is_prompt: return True
-        if sample_name == 'ZG' and not is_prompt: return True
-        return False
-
     def passedFilter(self, cutter, sample_name, kwargs={}):
         if not cutter.cut(self.chain._passMETFilters, 'metfilters'): return False
 
@@ -131,9 +126,15 @@ class EventSelector:
         if not ignore_triggers and not cutter.cut(passTriggers(self.chain, analysis=self.chain.analysis), 'pass_triggers'): return False 
 
         if self.name != 'NoSelection':
+            kwargs['sample_name'] = sample_name
             passed = self.selector.passedFilter(cutter, kwargs)
             if not passed: return False
-            if not cutter.cut(not self.removeOverlapDYandZG(self.new_chain.is_prompt, sample_name, cutter), 'Clean Nonprompt ZG'): return False
             return True
         else:
+            if 'ZG' in sample_name or 'DY' in sample_name:
+                if not cutter.cut(not removeOverlapDYandZG(self.new_chain.is_prompt, sample_name), 'Clean Nonprompt ZG'): return False
             return True
+
+
+
+

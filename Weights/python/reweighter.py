@@ -20,6 +20,7 @@ var_weights = {
         'triggerSFWeight':          (lambda c : c.triggerSFWeight,      np.arange(0.5, 1.5, .01),         ('trigger SF', 'Events')), 
         'electronScale':          (lambda c : c.electronScale,      np.arange(0.5, 1.5, .01),         ('electron scale weight', 'Events')), 
         'nonprompt':          (lambda c : c.nonprompt,      np.arange(0.5, 1.5, .01),         ('nonprompt weight', 'Events')), 
+        'chargeMisid':          (lambda c : c.chargeMisid,      np.arange(0.5, 1.5, .01),         ('nonprompt weight', 'Events')), 
 } 
 
 class Reweighter:
@@ -66,12 +67,16 @@ class Reweighter:
             else:
                 self.displacement_weighter = None
 
+            from HNL.Weights.chargeMisid import ChargeMisidWeight
+            self.chargeMisIdWeighter = ChargeMisidWeight(self.sample.chain)
+
         from HNL.Weights.fakeRateWeights import FakeRateWeighter
         tau_method = kwargs.get('tau_method', None)
         self.ignore_fakerates = kwargs.get('ignore_fakerates', False)
         fakerate_from_data = kwargs.get('fakerate_from_data', None)
+        nonprompt_scalefactors = kwargs.get('nonprompt_scalefactors', False)
         if not self.ignore_fakerates:
-            self.fakerateweighter = FakeRateWeighter(sample.chain, self.sample.chain.region, tau_method, fakerate_from_data)
+            self.fakerateweighter = FakeRateWeighter(sample.chain, self.sample.chain.region, tau_method, fakerate_from_data, nonprompt_scalefactors = nonprompt_scalefactors)
 
     def returnBranches(self):
         branches = ['{0}/F'.format(weight) for weight in self.WEIGHTS_TO_USE]
@@ -100,7 +105,7 @@ class Reweighter:
         else:
             return 1.
 
-    def getFakeRateWeight(self, syst = 'nominal'):
+    def getFakeRateWeight(self, syst = 'nominal', scale_factors = False):
         if not self.ignore_fakerates:
             return self.fakerateweighter.returnFakeRateWeight(self.sample.chain, syst)
         else:
@@ -141,7 +146,13 @@ class Reweighter:
             return self.triggerSF.getSF(self.sample.chain, syst)
         else:
             return 1.        
-        
+       
+    def getChargeMisidWeight(self, syst = 'nominal'):
+        if not self.sample.is_data and self.sample.chain.is_reco_level:
+            return self.chargeMisIdWeighter.getChargeMisidWeight(syst = syst)
+        else:
+            return 1.
+ 
         
     def returnWeight(self, weight_name, syst = 'nominal'):
         if weight_name == 'lumiWeight':
@@ -167,6 +178,8 @@ class Reweighter:
             return getElectronScaleMinimal(self.sample.chain, syst=syst)
         if weight_name == 'nonprompt':
             return self.getFakeRateWeight(syst=syst)
+        if weight_name == 'chargeMisid':
+            return self.getChargeMisidWeight(syst=syst)
 
     def getTotalWeight(self, sideband=False, tau_fake_method = None):
         tot_weight = 1.

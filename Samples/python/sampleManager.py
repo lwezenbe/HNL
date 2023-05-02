@@ -149,6 +149,9 @@ class SampleManager:
             else: output_set.add(info[2])
         return output_set
 
+    def isSignalFromOutput(self, output):
+        return Sample.isSignal(output)       
+
     def getOutputDict(self):
         sample_infos = [line.split('%')[0].strip() for line in open(self.path)]                     # Strip % comments and \n charachters
         sample_infos = [line.split() for line in sample_infos if line]
