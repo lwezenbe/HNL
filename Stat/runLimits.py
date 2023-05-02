@@ -108,8 +108,6 @@ def producePostFit(datacard, cardname):
 
 def getCovarianceMatrix(datacard, cardname):
     output_folder = getOutputFolder(datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/covariance/'+cardname)
-    print 'OUTPUT', output_folder
-    print 'DATACARD', datacard
     runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root --X-allow-no-signal --X-allow-no-background', output_folder)
     runCombineCommand('combine -M FitDiagnostics --saveShapes --saveWithUnc --numToysForShape 10 --saveOverall --preFitValue 0 ws.root', output_folder)
     from HNL.Tools.helpers import getPublicHTMLfolder, makeDirIfNeeded
@@ -129,8 +127,6 @@ def runLimit(card_manager, signal_name, cardnames):
         cardname = getOutDataCardName(cardnames)
         datacard = datacard_manager.getDatacardPath(signal_name, cardname)
    
-    print datacard
- 
     print 'Running Combine for {0}'.format(signal_name)
     if args.method == 'asymptotic':
         runAsymptoticLimit(datacard, getOutDataCardName(cardnames))
@@ -256,15 +252,11 @@ for mass in args.masses:
         limits[mass] = tmp_limit
 
 
-for m in args.masses:
-    print m, limits[m][-1.0]
-        
 print 'made graphs'
 graphs = makeGraphs(passed_masses, limits=limits)
 
 out_path_base = lambda era, sname, cname, tag : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.masstype+'-'+('prompt' if not args.displaced else 'displaced'), era, sname+'-'+args.flavor+'-'+asymptotic_str+'/'+cname+(('-'+tag) if tag is not None else ''))
 out_path = args.outputfolder if args.outputfolder is not None else out_path_base(args.era+year_to_read, args.strategy +'-'+ args.selection, card, args.tag)+"/limits.root"
-print out_path
 saveGraphs(graphs, out_path)
 
 print 'loading compare graphs'

@@ -186,7 +186,6 @@ def extractScaledLimitsDisplacedHNL(input_file_paths, couplings, blind=False):
     out_limits[0.975] = extrapolateExclusionLimit(limits, 0.975)
     if not blind: 
         out_limits[-1.] = extrapolateExclusionLimit(limits, -1.)
-    print out_limits
 
     return out_limits    
 
