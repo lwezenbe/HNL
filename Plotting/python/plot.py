@@ -1190,7 +1190,7 @@ class Plot(object):
     # or a list of length 4 also containing the observed
     # If you want to add observed and expected from prevous analysis to compare to, add those to background
     #
-    def drawBrazilian(self, output_dir, ignore_bands = False, multiple_signals = False):
+    def drawBrazilian(self, output_dir, ignore_bands = False, multiple_signals = False, single_background = None):
         setDefault()
         
         #Create Canvas
@@ -1267,7 +1267,7 @@ class Plot(object):
 
         if len(self.b) > 0:
             for i_bkgr, bkgr in enumerate(self.b):
-                bkgr.SetLineColor(ps.getColor('Limit', i_bkgr))
+                bkgr.SetLineColor(ps.getColor('Limit', i_bkgr if single_background is None else 1))
                 bkgr.SetLineWidth(3)
                 bkgr.SetMarkerStyle(1)
                 bkgr.Draw('Lsame')
@@ -1299,12 +1299,18 @@ class Plot(object):
         if observed is not None and observed != []:
             legend.AddEntry(observed[0], "Observed",'L')
         if self.tex_names is not None and len(self.b) > 0:
-            for l, b in zip(self.tex_names, self.b):
-                legend.AddEntry(b, l)
+            if single_background is None:
+                for l, b in zip(self.tex_names, self.b):
+                    legend.AddEntry(b, l)
+            else:
+                legend.AddEntry(self.b[0], single_background)
         legend.SetFillStyle(0)
         legend.SetBorderSize(0)
         legend.Draw()
        
+        #Write extra text
+        if self.extra_text is not None:
+            self.drawExtraText()
  
         ROOT.gPad.Update() 
         self.canvas.Update()

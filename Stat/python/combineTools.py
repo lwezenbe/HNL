@@ -148,7 +148,7 @@ def extrapolateExclusionLimit(limits, quantile):
     last_val = None
     for ix, x in enumerate(x_values):
         new_val = limits[x][quantile]
-        if last_val is None:    
+        if last_val is None:
             last_val = new_val
         elif x != x_values[-1]:
             if last_val < 1. and new_val > 1.:
@@ -169,7 +169,7 @@ def extrapolateExclusionLimit(limits, quantile):
         return None
 
     x1 = limit_candidates[0]
-    x2 = x_values[limit_candidates.index(x1)+1]
+    x2 = x_values[x_values.index(x1)+1]
     y1 = limits[x1][quantile]
     y2 = limits[x2][quantile]
     return linearExtrapolationX(x1, x2, y1, y2) 
@@ -186,6 +186,7 @@ def extractScaledLimitsDisplacedHNL(input_file_paths, couplings, blind=False):
     out_limits[0.975] = extrapolateExclusionLimit(limits, 0.975)
     if not blind: 
         out_limits[-1.] = extrapolateExclusionLimit(limits, -1.)
+    print out_limits
 
     return out_limits    
 

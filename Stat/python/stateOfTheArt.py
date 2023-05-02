@@ -17,7 +17,9 @@ legend_names = {
     'expected_17012_prompt' : 'expected (EXO-17-012)',
     'observed_17012_prompt' : 'EXO-17-012 (prompt)',
     'observed_17012_displaced' : 'EXO-17-012',
-    'delphi_prompt' : 'DELPHI'
+    'delphi_prompt' : 'DELPHI',
+    'exo-21-003-obs' : 'arXiv:2206.08956',
+    'exo-21-003-exp' : 'arXiv:2206.08956 (expected)'
 }
 def makeGraphList(flavor, in_names, masses):
     graph_list = []

@@ -73,7 +73,7 @@ class OutputTree(object):
             vname = ":".join(reversed(vname.split('-')))
             dim = len(vname.split(':'))
 
-        hname = ''.join([x for x in hname if x not in ['(', ')']])
+        hname = ''.join([x for x in hname if x not in ['(', ')', '/']])
 
         import ROOT
         ROOT.gROOT.SetBatch(True)

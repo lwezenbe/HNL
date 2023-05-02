@@ -335,7 +335,12 @@ def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hi
 
 def plotGeneralGroups(group_signal_hist, group_bkgr_hist, group_syst_hist, tex_names, out_path, region_name, year, era, extra_text = None, observed_hist = None):
     for group in region_groups[region_name].keys():
-        draw_ratio = 'errorsOnly' if len(group_signal_hist[group]) > 0 and len(group_bkgr_hist[group]) > 0 else None
+        if observed_hist is not None:
+            draw_ratio = True
+        elif len(group_signal_hist[group]) > 0 and len(group_bkgr_hist[group]) > 0:
+            draw_ratio = 'errorsOnly'
+        else:
+            draw_ratio = None
         if observed_hist is not None: draw_ratio = True
         tmp_signal = [x for x in group_signal_hist[group]]
         tmp_bkgr = [x for x in group_bkgr_hist[group]]
@@ -462,7 +467,12 @@ def plotLowMassRegionsLoose(signal_hist, bkgr_hist, syst_hist, tex_names, out_pa
     grouped_signal_hist, grouped_bkgr_hist, grouped_syst_hist, grouped_observed_hist = collectGroupHist(signal_hist, bkgr_hist, syst_hist, 'lowMassSRloose', observed_hist = observed_hist)
     #plotGeneralGroups(grouped_signal_hist, grouped_bkgr_hist, tex_names, out_path, 'lowMassSRloose', extra_text = extra_text)
     
-    draw_ratio = 'errorsOnly' if signal_hist is not None and bkgr_hist is not None else None
+    if observed_hist is not None:
+        draw_ratio = True
+    elif len(group_signal_hist[group]) > 0 and len(group_bkgr_hist[group]) > 0:
+        draw_ratio = 'errorsOnly'
+    else:
+        draw_ratio = None
     p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = grouped_syst_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text,
             color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau', draw_ratio = draw_ratio, year = year, era = era)
     p.drawHist(output_dir = out_path, min_cutoff = 1., normalize_signal = 'med')

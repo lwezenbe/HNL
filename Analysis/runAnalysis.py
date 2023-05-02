@@ -624,7 +624,6 @@ else:
                 split_syst_to_run = getSystToRun(year, sample_name, split_corr=True) if include_systematics in ['full'] else ['nominal']           
  
                 additional_condition_to_use = additional_condition if not args.plotDirac else additional_condition+'&&isDiracType'
-                print s+'/variables.root'
                 for corr_syst in split_syst_to_run:
                     intree = OutputTree('events_{0}'.format(corr_syst), s+'/variables.root')
                     for c, cc in zip(categories_to_use, category_conditions): 
@@ -857,6 +856,7 @@ else:
                     binning[c][v] = srm[args.region].getSearchRegionBinning(searchregion = searchregion, final_state = c)
                 else:
                     binning[c][v] = np.array([x for x in getBinning(v, args.region, in_var[v][1])])
+        #del list_of_probe_hist
         return binning
 
     def translateSearchRegions():
@@ -934,7 +934,7 @@ else:
         mixed_list = signal_list[year] + bkgr_list[year] + data_list[year]
         custom_list_to_use = customizeListToUse(year)
         full_path = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Analysis'))
-        #merge(mixed_list, __file__, jobs[year], ('sample', 'subJob'), argParser, istest=args.isTest, additionalArgs= [('year', year)], man_changed_args = {'customList':custom_list_to_use}, full_path = full_path)
+        merge(mixed_list, __file__, jobs[year], ('sample', 'subJob'), argParser, istest=args.isTest, additionalArgs= [('year', year)], man_changed_args = {'customList':custom_list_to_use}, full_path = full_path)
 
         if not args.individualSamples:
             background_collection[year] = []
@@ -997,6 +997,7 @@ else:
             # If we want to use shapes, first make shape histograms, then make datacards
             #
             for sr in srm[args.region].getListOfSearchRegionGroups():
+                if args.searchregion is not None and sr not in args.searchregion: continue
                 print 'Making datacards for region', sr
                 var_for_datacard = {}
                 var_for_datacard['searchregion'] = (lambda c : c.searchregion, 'placeholder', ('Search Region', 'Events'))
