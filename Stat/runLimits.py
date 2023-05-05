@@ -44,7 +44,7 @@ if args.displaced and not args.useExistingLimits and args.couplings is None:
     raise RuntimeError("Please specify couplings for the displaced samples")
 
 import glob
-from HNL.Stat.combineTools import runCombineCommand, extractScaledLimitsPromptHNL, extractScaledLimitsDisplacedHNL, makeGraphs, saveGraphs, displaced_mass_threshold
+from HNL.Stat.combineTools import runCombineCommand, extractScaledLimitsPromptHNL, extractScaledLimitsDisplacedHNL, makeGraphs, saveGraphs, displaced_mass_threshold, saveTextFiles, saveJsonFile
 from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped, getObjFromFile
 from HNL.Analysis.analysisTypes import signal_couplingsquared
 from HNL.Stat.datacardManager import getOutDataCardName
@@ -251,13 +251,14 @@ for mass in args.masses:
         passed_masses.append(mass)
         limits[mass] = tmp_limit
 
-
+print limits
 print 'made graphs'
 graphs = makeGraphs(passed_masses, limits=limits)
 
 out_path_base = lambda era, sname, cname, tag : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.masstype+'-'+('prompt' if not args.displaced else 'displaced'), era, sname+'-'+args.flavor+'-'+asymptotic_str+'/'+cname+(('-'+tag) if tag is not None else ''))
 out_path = args.outputfolder if args.outputfolder is not None else out_path_base(args.era+year_to_read, args.strategy +'-'+ args.selection, card, args.tag)+"/limits.root"
 saveGraphs(graphs, out_path)
+saveJsonFile(limits, args.outputfolder if args.outputfolder is not None else out_path_base(args.era+year_to_read, args.strategy +'-'+ args.selection, card, args.tag))
 
 print 'loading compare graphs'
 #Load in other graph objects to compare
