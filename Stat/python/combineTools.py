@@ -231,6 +231,46 @@ def saveGraphs(graphs, outpath):
         pass
     out_file.Close()
 
+def saveTextFiles(limits, out_path, blind = False):
+    makeDirIfNeeded(out_path+'/x')
+    
+    #Make output files
+    out_file_exp = open(out_path+'/exp.txt', 'w')
+    out_file_1su = open(out_path+'/1su.txt', 'w')
+    out_file_1sd = open(out_path+'/1sd.txt', 'w')
+    out_file_2su = open(out_path+'/2su.txt', 'w')
+    out_file_2sd = open(out_path+'/2sd.txt', 'w')
+    if not blind:
+        out_file_obs = open(out_path+'/obs.txt', 'w')
+
+    #Write
+    for m in sorted(limits):
+        out_file_exp.write('{0} \t {1} \n'.format(m, limits[m][0.5]))
+        out_file_1su.write('{0} \t {1} \n'.format(m, limits[m][0.84]))
+        out_file_2su.write('{0} \t {1} \n'.format(m, limits[m][0.975]))
+        out_file_1sd.write('{0} \t {1} \n'.format(m, limits[m][0.16]))
+        out_file_2sd.write('{0} \t {1} \n'.format(m, limits[m][0.025]))
+        if not blind:
+            out_file_obs.write('{0} \t {1} \n'.format(m, limits[m][-1.]))
+
+
+    #Close
+    out_file_exp.close()
+    out_file_1su.close()
+    out_file_1sd.close()
+    out_file_2su.close()
+    out_file_2sd.close()
+    if not blind:
+        out_file_obs.close()
+    
+           
+def saveJsonFile(limits, out_path, blind = False):
+    makeDirIfNeeded(out_path+'/x')
+    
+    import json
+    with open(out_path+'/limits.json', 'w') as outfile:
+        json.dump(limits, outfile) 
+
 #Functions purely to draw signal strength for a specific mass as function of coupling, not for final exclusion limit plots
 def drawSignalStrengthPerCouplingDisplaced(input_file_paths, couplings, out_path, out_name, year, flavor, blind=False):
     limits = extractRawLimitsRange(input_file_paths, couplings, blind=blind)
