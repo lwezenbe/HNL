@@ -89,6 +89,8 @@ pnfs_backup_base = os.path.join('/pnfs/iihe/cms/store/user', os.path.expandvars(
 #Merges subfiles if needed
 sample_name = '*' if args.sample is None else args.sample
 merge_files = glob.glob(pnfs_base+'/tmp_'+sample_name+'*')
+print pnfs_base+'/tmp_'+sample_name+'*'
+print merge_files
 merge_files = sorted(merge_files)
 
 makeDirIfNeeded(pnfs_base+'/x')
@@ -97,12 +99,12 @@ makeDirIfNeeded(pnfs_backup_base+'/x')
 for mf in merge_files:
     path, name = mf.rsplit('/', 1)
     new_name = name.split('_', 1)[1]+'.root'
-    if not args.isTest and args.backupName != 'nobackup':
-        if isValidRootFile(pnfs_base+'/'+new_name):
-            continue
-            if isValidRootFile(pnfs_backup_base+'/'+new_name):
-                os.system('rm -f '+ pnfs_backup_base+'/'+new_name)
-            os.system('scp '+pnfs_base+'/'+new_name + ' '+ pnfs_backup_base+'/'+new_name)
+#    if not args.isTest and args.backupName != 'nobackup':
+#        if isValidRootFile(pnfs_base+'/'+new_name):
+#            continue
+#            if isValidRootFile(pnfs_backup_base+'/'+new_name):
+#                os.system('rm -f '+ pnfs_backup_base+'/'+new_name)
+#            os.system('scp '+pnfs_base+'/'+new_name + ' '+ pnfs_backup_base+'/'+new_name)
    
     sub_files = glob.glob(mf+'/*')
     tot_size = 0

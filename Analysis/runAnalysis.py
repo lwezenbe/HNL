@@ -1333,6 +1333,9 @@ else:
                                 p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), normalize_signal = normalize_signal, draw_option='EHist', min_cutoff = 1)
                             # p.drawHist(output_dir = os.path.join(output_dir, c), normalize_signal = False, draw_option='EHist', min_cutoff = 1)
         
+                        #Prepare yields for hepdata
+                        
+
 
         signal_names = [s.split('/')[-1] for s in signal_list[args.year[0]]]
 #        #
