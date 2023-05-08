@@ -510,6 +510,26 @@ def plotLowMassRegionsLoose(signal_hist, bkgr_hist, syst_hist, tex_names, out_pa
     p.drawHist(output_dir = out_path, draw_lines = line_collection, min_cutoff = 0.1, custom_labels = custom_labels)
                    
 
+#def getHEPjson(signal_hist, bkgr_hist, syst_hist, tex_names, out_path, year, era, region, observed_hist = None, combine_bkgr = True):
+#    import numpy as np
+#    if combine_bkgr:
+#        tmp_bkgr = []
+#        tmp_syst = []
+#        for i, (b,s) in enumerate(zip(bkgr_hist, syst_hist)):
+#            if i == 0:
+#                tmp_bkgr.append(b.clone())
+#                tmp_syst.append(s.clone())
+#            else:
+#                tmp_bkgr[0].add(b)
+#                for syst_bin in xrange(0, tmp_syst[0].getHist().GetNbinsX()+1):
+#                    tmp_syst[0].getHist().SetBinError(syst_bin, np.sqrt(tmp_syst[0].getHist().GetBinError(b)** 2 + s.getHist()GetBinError(b) ** 2))
+#
+#    if region == 'highMassSR':
+        
+            
+        
+
+
  
 class RegionCollection:
 

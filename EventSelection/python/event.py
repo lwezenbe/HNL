@@ -52,8 +52,13 @@ class Event(object):
         ignore_fakerates = kwargs.get('ignore_fakerates', False)
         fakerate_from_data = kwargs.get('fakerate_from_data', None)
         nonprompt_scalefactors = kwargs.get('nonprompt_scalefactors', False)
-        self.reweighter = Reweighter(self.sample, self.sample_manager, tau_method = tau_method, ignore_fakerates = ignore_fakerates, nonprompt_scalefactors = nonprompt_scalefactors)
-        self.systematics = Systematics(self.sample, self.reweighter)
+        ignore_weights = kwargs.get('ignore_weights', False)
+        if not ignore_weights:
+            self.reweighter = Reweighter(self.sample, self.sample_manager, tau_method = tau_method, ignore_fakerates = ignore_fakerates, nonprompt_scalefactors = nonprompt_scalefactors)
+            self.systematics = Systematics(self.sample, self.reweighter)
+        else:
+            self.reweighter = None
+            self.systematics = None
 
     def initEvent(self, reset_obj_sel = False):
         if reset_obj_sel: 
@@ -61,7 +66,7 @@ class Event(object):
             if self.chain.need_sideband is not None:
                 setSideband(self.chain)       
         self.chain.category = None
-        self.chain.weight = self.reweighter.getLumiWeight()
+        if self.chain.weight is not None: self.chain.weight = self.reweighter.getLumiWeight()
         self.chain.is_loose_lepton = [None]*self.chain._nL
         self.chain.is_FO_lepton = [None]*self.chain._nL
         self.chain.is_tight_lepton = [None]*self.chain._nL
