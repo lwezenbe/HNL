@@ -793,6 +793,9 @@ else:
         #Hadd everything we need to
         if args.mergeYears and not args.submitPlotting:
             shall_we_merge = raw_input('Would you like to merge existing files? (y/n)\n')
+        elif args.mergeYears and args.submitPlotting:
+            shall_we_merge = 'n'
+
         for sob in ['signal', 'bkgr', 'data']:
             for sample_name in input_lists[sob]:
                 if len(input_lists[sob][sample_name].keys()) != len(args.year):
@@ -923,8 +926,8 @@ else:
             bkgr_list[year] = []
 
         # data
-        #if args.includeData is not None and not args.signalOnly:
-        if args.includeData is not None:
+        if args.includeData is not None and not args.signalOnly:
+        #if args.includeData is not None:
             data_list[year] = glob.glob(getOutputName('data', year, args.tag)+'/Data')
         else:
             data_list[year] = []
