@@ -1,0 +1,266 @@
+dependent_variables:
+- header:
+    name: Observed
+  qualifiers:
+  - name: Limits
+    value: Exclusion limit on $|V_{Ne}|^2$
+  values:
+  - value: 2.4862e-05
+  - value: 1.6721e-05
+  - value: 9.3373e-06
+  - value: 3.7931e-06
+  - value: 7.2637e-06
+  - value: 4.0504e-06
+  - value: 4.284e-06
+  - value: 4.939e-06
+  - value: 7.7928e-06
+  - value: 1.4539e-05
+  - value: 0.00032665
+  - value: 0.001255
+  - value: 0.00093117
+  - value: 0.0024087
+  - value: 0.0025633
+  - value: 0.003036
+  - value: 0.0047815
+  - value: 0.0092043
+  - value: 0.017826
+  - value: 0.025908
+  - value: 0.037053
+  - value: 0.039538
+  - value: 0.053199
+  - value: 0.049252
+  - value: 0.062489
+  - value: 0.085992
+  - value: 0.13112
+  - value: 0.19412
+  - value: 0.2767
+  - value: 0.39025
+  - value: 0.73403
+  - value: 2.1067
+- header:
+    name: Expected
+  qualifiers:
+  - name: Limits
+    value: Exclusion limit on $|V_{Ne}|^2$
+  values:
+  - value: 2.3921e-05
+  - value: 1.4061e-05
+  - value: 8.7615e-06
+  - value: 3.5156e-06
+  - value: 5.6312e-06
+  - value: 4.4844e-06
+  - value: 6.4922e-06
+  - value: 6.0469e-06
+  - value: 1.0781e-05
+  - value: 2.0938e-05
+  - value: 0.00050977
+  - value: 0.0019297
+  - value: 0.0015469
+  - value: 0.0028828
+  - value: 0.0037969
+  - value: 0.0033516
+  - value: 0.0055469
+  - value: 0.01082
+  - value: 0.0081641
+  - value: 0.010898
+  - value: 0.015273
+  - value: 0.026562
+  - value: 0.021875
+  - value: 0.034473
+  - value: 0.044727
+  - value: 0.063281
+  - value: 0.097656
+  - value: 0.14648
+  - value: 0.21016
+  - value: 0.29883
+  - value: 0.56055
+  - value: 1.6094
+- header:
+    name: 68% exp. lower
+  qualifiers:
+  - name: Limits
+    value: Exclusion limit on $|V_{Ne}|^2$
+  values:
+  - value: 2.1749e-05
+  - value: 9.6382e-06
+  - value: 6.9657e-06
+  - value: 2.417e-06
+  - value: 4.4242e-06
+  - value: 3.1049e-06
+  - value: 4.4951e-06
+  - value: 4.1984e-06
+  - value: 7.4499e-06
+  - value: 1.4588e-05
+  - value: 0.00035544
+  - value: 0.0013502
+  - value: 0.0010861
+  - value: 0.002021
+  - value: 0.0026893
+  - value: 0.0023287
+  - value: 0.0038832
+  - value: 0.0075389
+  - value: 0.0056327
+  - value: 0.0074927
+  - value: 0.010463
+  - value: 0.018456
+  - value: 0.014986
+  - value: 0.023868
+  - value: 0.030859
+  - value: 0.043506
+  - value: 0.066516
+  - value: 0.099412
+  - value: 0.14262
+  - value: 0.20206
+  - value: 0.37903
+  - value: 1.0842
+- header:
+    name: 68% exp. higher
+  qualifiers:
+  - name: Limits
+    value: Exclusion limit on $|V_{Ne}|^2$
+  values:
+  - value: 2.979e-05
+  - value: 1.9329e-05
+  - value: 1.0398e-05
+  - value: 5.2393e-06
+  - value: 8.3986e-06
+  - value: 6.5757e-06
+  - value: 9.5458e-06
+  - value: 8.8669e-06
+  - value: 1.5809e-05
+  - value: 3.0535e-05
+  - value: 0.00074344
+  - value: 0.0027835
+  - value: 0.002219
+  - value: 0.0041583
+  - value: 0.0054163
+  - value: 0.0048879
+  - value: 0.0080895
+  - value: 0.01578
+  - value: 0.012069
+  - value: 0.016242
+  - value: 0.022762
+  - value: 0.038739
+  - value: 0.0326
+  - value: 0.05055
+  - value: 0.06612
+  - value: 0.094307
+  - value: 0.14631
+  - value: 0.22064
+  - value: 0.31822
+  - value: 0.45249
+  - value: 0.85101
+  - value: 2.4562
+- header:
+    name: 95% exp. lower
+  qualifiers:
+  - name: Limits
+    value: Exclusion limit on $|V_{Ne}|^2$
+  values:
+  - value: 1.9121e-05
+  - value: 8.6843e-06
+  - value: 4.9687e-06
+  - value: 1.7578e-06
+  - value: 3.6029e-06
+  - value: 2.2772e-06
+  - value: 3.2968e-06
+  - value: 3.0707e-06
+  - value: 5.517e-06
+  - value: 1.0714e-05
+  - value: 0.00026285
+  - value: 0.0010025
+  - value: 0.00080969
+  - value: 0.0014865
+  - value: 0.0020023
+  - value: 0.0017151
+  - value: 0.0028168
+  - value: 0.005537
+  - value: 0.0041139
+  - value: 0.0054492
+  - value: 0.0075771
+  - value: 0.013593
+  - value: 0.010852
+  - value: 0.017506
+  - value: 0.022538
+  - value: 0.031641
+  - value: 0.048447
+  - value: 0.072098
+  - value: 0.10344
+  - value: 0.14591
+  - value: 0.2737
+  - value: 0.77954
+- header:
+    name: 95% exp. higher
+  qualifiers:
+  - name: Limits
+    value: Exclusion limit on $|V_{Ne}|^2$
+  values:
+  - value: 3.9772e-05
+  - value: 2.2561e-05
+  - value: 1.6869e-05
+  - value: 7.5177e-06
+  - value: 1.0685e-05
+  - value: 9.3062e-06
+  - value: 1.3608e-05
+  - value: 1.2549e-05
+  - value: 2.2307e-05
+  - value: 4.283e-05
+  - value: 0.0010491
+  - value: 0.0038799
+  - value: 0.0030828
+  - value: 0.0058323
+  - value: 0.0074514
+  - value: 0.0068975
+  - value: 0.011415
+  - value: 0.022268
+  - value: 0.017202
+  - value: 0.023173
+  - value: 0.03266
+  - value: 0.054666
+  - value: 0.046644
+  - value: 0.071539
+  - value: 0.094239
+  - value: 0.1357
+  - value: 0.21281
+  - value: 0.32162
+  - value: 0.46485
+  - value: 0.66277
+  - value: 1.2544
+  - value: 3.6465
+independent_variables:
+- header:
+    name: HNL mass
+    units: GeV
+  values:
+  - value: 10.0
+  - value: 12.5
+  - value: 15.0
+  - value: 20.0
+  - value: 20.0
+  - value: 30.0
+  - value: 40.0
+  - value: 40.0
+  - value: 50.0
+  - value: 60.0
+  - value: 75.0
+  - value: 85.0
+  - value: 100.0
+  - value: 125.0
+  - value: 125.0
+  - value: 150.0
+  - value: 200.0
+  - value: 250.0
+  - value: 250.0
+  - value: 300.0
+  - value: 350.0
+  - value: 400.0
+  - value: 400.0
+  - value: 450.0
+  - value: 500.0
+  - value: 600.0
+  - value: 700.0
+  - value: 800.0
+  - value: 900.0
+  - value: 1000.0
+  - value: 1200.0
+  - value: 1500.0

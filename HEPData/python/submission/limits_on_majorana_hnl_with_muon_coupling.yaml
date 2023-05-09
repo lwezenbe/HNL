@@ -1,0 +1,266 @@
+dependent_variables:
+- header:
+    name: Observed
+  qualifiers:
+  - name: Limits
+    value: Exclusion limit on $|V_{N\mu}|^2$
+  values:
+  - value: 2.0072e-05
+  - value: 8.9953e-06
+  - value: 6.1156e-06
+  - value: 2.0347e-06
+  - value: 4.1606e-06
+  - value: 2.532e-06
+  - value: 2.6502e-06
+  - value: 2.7116e-06
+  - value: 3.4184e-06
+  - value: 6.1475e-06
+  - value: 0.00019645
+  - value: 0.0014623
+  - value: 0.0011337
+  - value: 0.0024296
+  - value: 0.0033934
+  - value: 0.0029551
+  - value: 0.004631
+  - value: 0.0068667
+  - value: 0.0098503
+  - value: 0.014195
+  - value: 0.020837
+  - value: 0.029388
+  - value: 0.030408
+  - value: 0.037304
+  - value: 0.046478
+  - value: 0.059024
+  - value: 0.084022
+  - value: 0.11866
+  - value: 0.16566
+  - value: 0.25585
+  - value: 0.4144
+  - value: 0.91188
+- header:
+    name: Expected
+  qualifiers:
+  - name: Limits
+    value: Exclusion limit on $|V_{N\mu}|^2$
+  values:
+  - value: 1.9732e-05
+  - value: 8.7803e-06
+  - value: 5.4742e-06
+  - value: 1.8828e-06
+  - value: 3.8725e-06
+  - value: 2.3906e-06
+  - value: 2.7188e-06
+  - value: 2.7656e-06
+  - value: 3.0938e-06
+  - value: 5.4844e-06
+  - value: 0.00019453
+  - value: 0.00093789
+  - value: 0.00092813
+  - value: 0.0020859
+  - value: 0.0027109
+  - value: 0.0025469
+  - value: 0.0040469
+  - value: 0.0050938
+  - value: 0.0061523
+  - value: 0.0083125
+  - value: 0.012031
+  - value: 0.018203
+  - value: 0.017422
+  - value: 0.024141
+  - value: 0.031992
+  - value: 0.045156
+  - value: 0.070273
+  - value: 0.10469
+  - value: 0.15273
+  - value: 0.24453
+  - value: 0.4082
+  - value: 0.93359
+- header:
+    name: 68% exp. lower
+  qualifiers:
+  - name: Limits
+    value: Exclusion limit on $|V_{N\mu}|^2$
+  values:
+  - value: 1.5414e-05
+  - value: 7.1836e-06
+  - value: 4.6085e-06
+  - value: 1.3082e-06
+  - value: 2.6477e-06
+  - value: 1.6611e-06
+  - value: 1.8758e-06
+  - value: 1.9014e-06
+  - value: 2.127e-06
+  - value: 3.7626e-06
+  - value: 0.00013517
+  - value: 0.00064251
+  - value: 0.00065066
+  - value: 0.0014802
+  - value: 0.0019366
+  - value: 0.0018054
+  - value: 0.0028487
+  - value: 0.003571
+  - value: 0.0042448
+  - value: 0.0057148
+  - value: 0.0082421
+  - value: 0.012648
+  - value: 0.011935
+  - value: 0.016715
+  - value: 0.022073
+  - value: 0.031045
+  - value: 0.048038
+  - value: 0.071564
+  - value: 0.10463
+  - value: 0.16656
+  - value: 0.27703
+  - value: 0.63729
+- header:
+    name: 68% exp. higher
+  qualifiers:
+  - name: Limits
+    value: Exclusion limit on $|V_{N\mu}|^2$
+  values:
+  - value: 2.3051e-05
+  - value: 1.0228e-05
+  - value: 7.9883e-06
+  - value: 2.7759e-06
+  - value: 4.7697e-06
+  - value: 3.5055e-06
+  - value: 4.0192e-06
+  - value: 4.1216e-06
+  - value: 4.5982e-06
+  - value: 8.1296e-06
+  - value: 0.00028448
+  - value: 0.001394
+  - value: 0.0013388
+  - value: 0.0029756
+  - value: 0.0038456
+  - value: 0.0036331
+  - value: 0.0058535
+  - value: 0.0073881
+  - value: 0.0090461
+  - value: 0.012322
+  - value: 0.017882
+  - value: 0.026765
+  - value: 0.025964
+  - value: 0.035591
+  - value: 0.047167
+  - value: 0.066936
+  - value: 0.10473
+  - value: 0.15685
+  - value: 0.22884
+  - value: 0.36832
+  - value: 0.61485
+  - value: 1.4211
+- header:
+    name: 95% exp. lower
+  qualifiers:
+  - name: Limits
+    value: Exclusion limit on $|V_{N\mu}|^2$
+  values:
+  - value: 1.1004e-05
+  - value: 5.5109e-06
+  - value: 4.1089e-06
+  - value: 9.6347e-07
+  - value: 2.3581e-06
+  - value: 1.2233e-06
+  - value: 1.37e-06
+  - value: 1.3828e-06
+  - value: 1.5469e-06
+  - value: 2.7636e-06
+  - value: 9.9545e-05
+  - value: 0.00046528
+  - value: 0.00047856
+  - value: 0.0010919
+  - value: 0.0014402
+  - value: 0.001353
+  - value: 0.0020551
+  - value: 0.0026265
+  - value: 0.0031002
+  - value: 0.0041563
+  - value: 0.0059686
+  - value: 0.0093149
+  - value: 0.0086429
+  - value: 0.012259
+  - value: 0.016121
+  - value: 0.022578
+  - value: 0.035137
+  - value: 0.052344
+  - value: 0.075771
+  - value: 0.12131
+  - value: 0.20091
+  - value: 0.4595
+- header:
+    name: 95% exp. higher
+  qualifiers:
+  - name: Limits
+    value: Exclusion limit on $|V_{N\mu}|^2$
+  values:
+  - value: 2.5042e-05
+  - value: 1.7137e-05
+  - value: 9.5402e-06
+  - value: 4.0778e-06
+  - value: 6.9771e-06
+  - value: 4.9906e-06
+  - value: 5.7616e-06
+  - value: 5.9474e-06
+  - value: 6.646e-06
+  - value: 1.1702e-05
+  - value: 0.00040323
+  - value: 0.001992
+  - value: 0.0018661
+  - value: 0.0040805
+  - value: 0.0052199
+  - value: 0.0050625
+  - value: 0.008248
+  - value: 0.010331
+  - value: 0.012783
+  - value: 0.017534
+  - value: 0.025553
+  - value: 0.037821
+  - value: 0.037043
+  - value: 0.050511
+  - value: 0.067331
+  - value: 0.096351
+  - value: 0.15155
+  - value: 0.22813
+  - value: 0.33283
+  - value: 0.53836
+  - value: 0.90115
+  - value: 2.0968
+independent_variables:
+- header:
+    name: HNL mass
+    units: GeV
+  values:
+  - value: 10.0
+  - value: 12.5
+  - value: 15.0
+  - value: 20.0
+  - value: 20.0
+  - value: 30.0
+  - value: 40.0
+  - value: 40.0
+  - value: 50.0
+  - value: 60.0
+  - value: 75.0
+  - value: 85.0
+  - value: 100.0
+  - value: 125.0
+  - value: 125.0
+  - value: 150.0
+  - value: 200.0
+  - value: 200.0
+  - value: 250.0
+  - value: 300.0
+  - value: 350.0
+  - value: 400.0
+  - value: 400.0
+  - value: 450.0
+  - value: 500.0
+  - value: 600.0
+  - value: 700.0
+  - value: 800.0
+  - value: 900.0
+  - value: 1000.0
+  - value: 1200.0
+  - value: 1500.0
