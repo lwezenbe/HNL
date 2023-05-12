@@ -267,13 +267,13 @@ from HNL.Plotting.plottingTools import extraTextFormat, drawLineFormat
 #
 
 
-def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hist = None, category = None):
+def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hist = None, category = None, hist_output = False):
     grouped_signal_hist = {}
     grouped_bkgr_hist = {}
     grouped_observed_hist = {}
     grouped_syst_hist = {}
 
-    import HNL.Tools.histogram
+    import HNL.Tools.histogram 
     for group in region_groups[region_name].keys():
         srm = SearchRegionManager(region_name)
         bins = srm.getSearchRegionBinning(group, category)        
@@ -290,6 +290,7 @@ def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hi
                     else:
                         grouped_signal_hist[group][ish].SetBinContent(ib+1, sh.GetBinContent(b))
                         grouped_signal_hist[group][ish].SetBinError(ib+1, sh.GetBinError(b))                        
+                if hist_output: grouped_signal_hist[group][ish] = HNL.Tools.histogram.Histogram(grouped_signal_hist[group][ish])
         
         if bkgr_hist is not None:
             for ish, sh in enumerate(bkgr_hist):
@@ -302,6 +303,7 @@ def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hi
                     else:
                         grouped_bkgr_hist[group][ish].SetBinContent(ib+1, sh.GetBinContent(b))
                         grouped_bkgr_hist[group][ish].SetBinError(ib+1, sh.GetBinError(b))                        
+                if hist_output: grouped_bkgr_hist[group][ish] = HNL.Tools.histogram.Histogram(grouped_bkgr_hist[group][ish])
         
         if observed_hist is not None and grouped_observed_hist is not None:
             grouped_observed_hist[group] = ROOT.TH1D('tmp_observed_'+group, 'tmp_observed', len(bins)-1, bins)
@@ -313,6 +315,7 @@ def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hi
                 else:
                     grouped_observed_hist[group].SetBinContent(ib+1, observed_hist.GetBinContent(b))
                     grouped_observed_hist[group].SetBinError(ib+1, observed_hist.GetBinError(b))                        
+            if hist_output: grouped_observed_hist[group] = HNL.Tools.histogram.Histogram(grouped_observed_hist[group])
         else:
             grouped_observed_hist = None
 
@@ -328,6 +331,7 @@ def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hi
                     else:
                         grouped_syst_hist[group][ish].SetBinContent(ib+1, sh.GetBinContent(b))
                         grouped_syst_hist[group][ish].SetBinError(ib+1, sh.GetBinError(b))    
+                if hist_output: grouped_syst_hist[group][ish] = HNL.Tools.histogram.Histogram(grouped_syst_hist[group][ish])
         else:
             grouped_syst_hist = None 
                     
@@ -354,7 +358,8 @@ tdrStyle_Left_Margin = 0.16
 tdrStyle_Right_Margin = 0.02
 plotsize = 1-tdrStyle_Left_Margin-tdrStyle_Right_Margin
 
-def combineGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, groups, observed_hist = None):
+def combineGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, groups, observed_hist = None, hist_output = False):
+    from HNL.Tools.histogram import Histogram
     tot_n_bins = 0
     for group in groups:
         tot_n_bins += len(region_groups[region_name][group])
@@ -379,6 +384,7 @@ def combineGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, groups, obs
                     else:
                         grouped_signal_hist[ish].SetBinContent(getBinsNb(igroup, ib), sh.GetBinContent(ib+1))
                         grouped_signal_hist[ish].SetBinError(getBinsNb(igroup, ib), sh.GetBinError(ib+1))
+                if hist_output: grouped_signal[ish] = Histogram(grouped_signal[ish])
 
     if bkgr_hist is not None:
         grouped_bkgr_hist = []
@@ -392,6 +398,7 @@ def combineGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, groups, obs
                     else:
                         grouped_bkgr_hist[ish].SetBinContent(getBinsNb(igroup, ib), sh.GetBinContent(ib+1))
                         grouped_bkgr_hist[ish].SetBinError(getBinsNb(igroup, ib), sh.GetBinError(ib+1))
+                if hist_output: grouped_bkgr_hist[ish] = Histogram(grouped_bkgr_hist[ish])
 
     if syst_hist is not None:
         grouped_syst_hist = []
@@ -405,6 +412,7 @@ def combineGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, groups, obs
                     else:
                         grouped_syst_hist[ish].SetBinContent(getBinsNb(igroup, ib), sh.GetBinContent(ib+1))
                         grouped_syst_hist[ish].SetBinError(getBinsNb(igroup, ib), sh.GetBinError(ib+1))
+                if hist_output: grouped_syst_hist[ish] = Histogram(grouped_syst_hist[ish])
     else:
         grouped_syst_hist = None
 
@@ -418,6 +426,7 @@ def combineGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, groups, obs
                 else:
                     grouped_observed_hist.SetBinContent(getBinsNb(igroup, ib), observed_hist[group].GetBinContent(ib+1))
                     grouped_observed_hist.SetBinError(getBinsNb(igroup, ib), observed_hist[group].GetBinError(ib+1))
+            if hist_output: grouped_observed_hist = Histogram(grouped_observed_hist)
     else:
         grouped_observed_hist = None
     
@@ -510,25 +519,46 @@ def plotLowMassRegionsLoose(signal_hist, bkgr_hist, syst_hist, tex_names, out_pa
     p.drawHist(output_dir = out_path, draw_lines = line_collection, min_cutoff = 0.1, custom_labels = custom_labels)
                    
 
-#def getHEPjson(signal_hist, bkgr_hist, syst_hist, tex_names, out_path, year, era, region, observed_hist = None, combine_bkgr = True):
-#    import numpy as np
-#    if combine_bkgr:
-#        tmp_bkgr = []
-#        tmp_syst = []
-#        for i, (b,s) in enumerate(zip(bkgr_hist, syst_hist)):
-#            if i == 0:
-#                tmp_bkgr.append(b.clone())
-#                tmp_syst.append(s.clone())
-#            else:
-#                tmp_bkgr[0].add(b)
-#                for syst_bin in xrange(0, tmp_syst[0].getHist().GetNbinsX()+1):
-#                    tmp_syst[0].getHist().SetBinError(syst_bin, np.sqrt(tmp_syst[0].getHist().GetBinError(b)** 2 + s.getHist()GetBinError(b) ** 2))
-#
-#    if region == 'highMassSR':
-        
-            
-        
+def writeHEPjson(signal_hist, bkgr_hist, signal_syst, bkgr_syst, out_path, region, signal_names, bkgr_names, observed_hist = None, combine_bkgr = True, signal_coupling = None, signal_mass = None):
+    from HNL.HEPData.createYields import createYieldJson
+    from HNL.Tools.helpers import makeDirIfNeeded
+    makeDirIfNeeded(out_path+'/x')
 
+    import json
+    if region == 'highMassSR':
+        tmp_group_hist = collectGroupHist(signal_hist, None, signal_syst[0], 'highMassSR', observed_hist = None, hist_output=True)
+        grouped_signal_hist = tmp_group_hist[0]
+        tmp_grouped_signal_syst = [tmp_group_hist[2], collectGroupHist(None, None, signal_syst[1], 'highMassSR', observed_hist = None, hist_output=True)[2]]
+        tmp_group_hist = collectGroupHist(None, bkgr_hist, bkgr_syst[0], 'highMassSR', observed_hist = observed_hist, hist_output=True)
+        grouped_bkgr_hist = tmp_group_hist[1]
+        tmp_grouped_bkgr_syst = [tmp_group_hist[2], collectGroupHist(None, None, bkgr_syst[1], 'highMassSR', observed_hist = None, hist_output=True)[2]]
+        grouped_observed_hist = tmp_group_hist[3]
+
+        #Reorganize the syst hist
+        grouped_signal_syst = {}
+        grouped_bkgr_syst = {}
+        for rg in region_groups[region].keys():
+            try:
+                grouped_signal_syst[rg] = [tmp_grouped_signal_syst[0][rg], tmp_grouped_signal_syst[1][rg]] 
+            except:
+                grouped_signal_syst[rg] = [[None]*len(signal_hist)]*2
+            try:
+                grouped_bkgr_syst[rg] = [tmp_grouped_bkgr_syst[0][rg], tmp_grouped_bkgr_syst[1][rg]] 
+            except:
+                grouped_bkgr_syst[rg] = [[None]*len(bkgr_hist)]*2
+
+        for rg in region_groups[region].keys():
+            sr_json = createYieldJson(grouped_signal_hist[rg], grouped_bkgr_hist[rg], grouped_observed_hist[rg], grouped_signal_syst[rg], grouped_bkgr_syst[rg], signal_names, bkgr_names, combine_bkgr=combine_bkgr, binned=False, signal_coupling = signal_coupling, signal_mass = signal_mass)
+            print out_path+'/searchregion-{0}.json'.format(rg)
+            with open(out_path+'/searchregion-{0}.json'.format(rg), 'w') as outfile:
+                json.dump(sr_json, outfile)
+
+    if region == 'lowMassSRloose':
+        sr_json = createYieldJson(signal_hist, bkgr_hist, observed_hist, signal_syst, bkgr_syst, signal_names, bkgr_names, combine_bkgr=combine_bkgr, binned=False)
+        with open(out_path+'/searchregion.json', 'w') as outfile:
+            json.dump(sr_json, outfile, indent=2)
+        
+    return 
 
  
 class RegionCollection:
