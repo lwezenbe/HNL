@@ -1,5 +1,6 @@
 import hepdata_lib
 from hepdata_lib import Table, Uncertainty, Variable
+from HNL.HEPData.hepdataTools import addCommonQualifiersTo, addCommonKeywordsTo
 
 #Qualifiers
 COUPLINGE = [["Limits", "Primary exclusion limit on $|V_{Ne}|^2$"], ["Limits", "Secondary exclusion limit on $|V_{Ne}|^2$"], ["Limits", "Tertiary exclusion limit on $|V_{Ne}|^2$"]]
@@ -93,27 +94,31 @@ def gatherLimits(in_files, flavor):
                             units = "") 
     observed_var.add_qualifier(*COUPLING[flavor])
     observed_var.values = [x for x in observed]
-    
+    addCommonQualifiersTo(observed_var)
+
     expected_var = Variable('Expected',
                             is_independent=False,
                             is_binned=False,
                             units = "")
     expected_var.add_qualifier(*COUPLING[flavor])
     expected_var.values = [x for x in expected]
-    
+    addCommonQualifiersTo(expected_var)   
+ 
     onesup_var = Variable('68% exp. higher',
                             is_independent=False,
                             is_binned=False,
                             units = "")
     onesup_var.add_qualifier(*COUPLING[flavor])
     onesup_var.values = [x for x in onesup]
-    
+    addCommonQualifiersTo(onesup_var)   
+ 
     onesdown_var = Variable('68% exp. lower',
                             is_independent=False,
                             is_binned=False,
                             units = "")
     onesdown_var.add_qualifier(*COUPLING[flavor])
     onesdown_var.values = [x for x in onesdown]
+    addCommonQualifiersTo(onesdown_var)
 
     twosup_var = Variable('95% exp. higher',
                             is_independent=False,
@@ -121,13 +126,15 @@ def gatherLimits(in_files, flavor):
                             units = "") 
     twosup_var.add_qualifier(*COUPLING[flavor])
     twosup_var.values = [x for x in twosup]
-    
+    addCommonQualifiersTo(twosup_var)   
+ 
     twosdown_var = Variable('95% exp. lower',
                             is_independent=False,
                             is_binned=False,
                             units = "")
     twosdown_var.add_qualifier(*COUPLING[flavor])
     twosdown_var.values = [x for x in twosdown]
+    addCommonQualifiersTo(twosdown_var)
 
     return [
         mass_points,
@@ -269,6 +276,7 @@ def addFiguresTo(submission):
     ]
     for variable in gatherLimits(in_files, 'e'):
         figure_maj_e.add_variable(variable)
+    addCommonKeywordsTo(figure_maj_e)
     submission.add_table(figure_maj_e)
     
     #Majorana muon limits
@@ -287,8 +295,9 @@ def addFiguresTo(submission):
     for variable in gatherLimits(in_files, 'mu'):
         figure_maj_mu.add_variable(variable)
     submission.add_table(figure_maj_mu)
+    addCommonKeywordsTo(figure_maj_mu)
 
-    #Majorana muon limits
+    #Majorana tau limits
     figure_maj_tau = Table("Limits on Majorana HNL with tau coupling")
     figure_maj_tau.description =     "The 95% CL limits on $|V_{N\tau}|^2$ as a function of the HNL mass for a Majorana HNL."
     figure_maj_tau.add_image('/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Majorana-prompt/UL2016post-2016pre-2017-2018/MaxOneTau-tau/limits.png')
@@ -299,6 +308,7 @@ def addFiguresTo(submission):
     ]
     for variable in gatherLimits(in_files, 'tau'):
         figure_maj_tau.add_variable(variable)
+    addCommonKeywordsTo(figure_maj_tau)
     submission.add_table(figure_maj_tau)
 
 

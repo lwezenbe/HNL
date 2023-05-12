@@ -257,7 +257,7 @@ def checkSyst(chain, syst = None):
         return syst
 
 #in_hist is supposed to be a dictionary of hist, one nominal value the rest the up and down variations for weights and reruns
-def makeSystErrorHist(in_hist, process_name, final_state, year, datadriven_processes = None):
+def makeSystErrorHist(in_hist, process_name, final_state, year, datadriven_processes = None, split_output = False):
     reader = SystematicJSONreader(datadriven_processes)
 
     def sqrErr(a, b):
@@ -265,27 +265,51 @@ def makeSystErrorHist(in_hist, process_name, final_state, year, datadriven_proce
         return np.sqrt(a**2+b**2)
 
     nominal_hist = in_hist['nominal']
-    syst_error_hist = nominal_hist.clone('syst_error')
+
+    if not split_output:
+        syst_error_hist = nominal_hist.clone('syst_error')
+    else:
+        up = 0
+        down = 1
+        syst_error_hist = [nominal_hist.clone('syst_error_up'), nominal_hist.clone('syst_error_down')]
+
+
     for b in xrange(1, nominal_hist.getHist().GetNbinsX() + 1):
-        syst_error_hist.getHist().SetBinError(b, 0.)
+        if not split_output:
+            syst_error_hist.getHist().SetBinError(b, 0.)
+        else:
+            for i in range(2):
+                syst_error_hist[i].getHist().SetBinError(b, 0.)
         for flat_unc in reader.getFlats(year, process_name, final_state):
            # if reader.systIsCorrelated(flat_unc): continue
             percentage = abs(1.-reader.getValue(flat_unc, year, process=process_name))
-            syst_error_hist.getHist().SetBinError(b, sqrErr(syst_error_hist.getHist().GetBinError(b), nominal_hist.getHist().GetBinContent(b)*percentage)), '('+ str(nominal_hist.getHist().GetBinContent(b)/nominal_hist.getHist().GetBinContent(b)*percentage) if nominal_hist.getHist().GetBinContent(b)*percentage != 0 else '0'+')'
+            if not split_output:
+                syst_error_hist.getHist().SetBinError(b, sqrErr(syst_error_hist.getHist().GetBinError(b), nominal_hist.getHist().GetBinContent(b)*percentage)), '('+ str(nominal_hist.getHist().GetBinContent(b)/nominal_hist.getHist().GetBinContent(b)*percentage) if nominal_hist.getHist().GetBinContent(b)*percentage != 0 else '0'+')'
+            else:
+                for i in range(2):
+                    syst_error_hist[i].getHist().SetBinError(b, sqrErr(syst_error_hist[i].getHist().GetBinError(b), nominal_hist.getHist().GetBinContent(b)*percentage)), '('+ str(nominal_hist.getHist().GetBinContent(b)/nominal_hist.getHist().GetBinContent(b)*percentage) if nominal_hist.getHist().GetBinContent(b)*percentage != 0 else '0'+')'
 
         for weight in reader.getWeights(year, process_name, final_state, split_syst = False, split_correlations=True):
             #if reader.systIsCorrelated(weight): continue
             err_up = abs(in_hist[weight+'Up'].getHist().GetBinContent(b) - in_hist['nominal'].getHist().GetBinContent(b))
             err_down = abs(in_hist[weight+'Down'].getHist().GetBinContent(b) - in_hist['nominal'].getHist().GetBinContent(b))
-            bin_error = max(err_up, err_down)
-            syst_error_hist.getHist().SetBinError(b, sqrErr(syst_error_hist.getHist().GetBinError(b), bin_error))
+            if not split_output:
+                bin_error = max(err_up, err_down)
+                syst_error_hist.getHist().SetBinError(b, sqrErr(syst_error_hist.getHist().GetBinError(b), bin_error))
+            else:
+                syst_error_hist[up].getHist().SetBinError(b, sqrErr(syst_error_hist[up].getHist().GetBinError(b), err_up))
+                syst_error_hist[down].getHist().SetBinError(b, sqrErr(syst_error_hist[down].getHist().GetBinError(b), err_down))
 
         for rerun in reader.getReruns(year, process_name, final_state, split_syst = False, split_correlations=True):
             #if reader.systIsCorrelated(rerun): continue
             err_up = abs(in_hist[rerun+'Up'].getHist().GetBinContent(b) - in_hist['nominal'].getHist().GetBinContent(b))
             err_down = abs(in_hist[rerun+'Down'].getHist().GetBinContent(b) - in_hist['nominal'].getHist().GetBinContent(b))
-            bin_error = max(err_up, err_down)
-            syst_error_hist.getHist().SetBinError(b, sqrErr(syst_error_hist.getHist().GetBinError(b), bin_error))
+            if not split_output:
+                bin_error = max(err_up, err_down)
+                syst_error_hist.getHist().SetBinError(b, sqrErr(syst_error_hist.getHist().GetBinError(b), bin_error))
+            else:
+                syst_error_hist[up].getHist().SetBinError(b, sqrErr(syst_error_hist[up].getHist().GetBinError(b), err_up))
+                syst_error_hist[down].getHist().SetBinError(b, sqrErr(syst_error_hist[down].getHist().GetBinError(b), err_down))
             
     return syst_error_hist
 

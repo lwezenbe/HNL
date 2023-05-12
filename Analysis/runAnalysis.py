@@ -632,12 +632,15 @@ else:
                         for v in var_dict.keys():
                             if not for_datacards or Sample.getSignalDisplacedString(sample_name) == 'prompt':
                                 coupling_squared = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][sample_mass]
+                                vsquared_translated = str(coupling_squared)
+                                vsquared_translated = vsquared_translated.replace('e-', 'em')
+                                new_name = cleaned_sample_name.split('-Vsq')[0]+'-Vsq'+vsquared_translated + '-' + Sample.getSignalDisplacedString(cleaned_sample_name)
                                 additional_weight = str(coupling_squared/Sample.getSignalCouplingSquared(sample_name))
                                 if args.plotDirac: additional_weight += '*diracSF'
                                 if corr_syst == 'nominal':
-                                    tmp_list_of_hist[c][v]['signal'][cleaned_sample_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, include_systematics, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband)
+                                    tmp_list_of_hist[c][v]['signal'][new_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, include_systematics, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband)
                                 else:
-                                    tmp_list_of_hist[c][v]['signal'][cleaned_sample_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband)['nominal'] 
+                                    tmp_list_of_hist[c][v]['signal'][new_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband)['nominal'] 
                             else:
                                 additional_weight = 'diracSF' if args.plotDirac else None
                                 for iv, vsquared in enumerate(np.ndarray(intree.getTreeVariable('displacement_ncouplings', 0), 'f', intree.getTreeVariable('displacement_vsquared', 0))):
@@ -945,6 +948,7 @@ else:
                 if 'HNL' in x: continue
                 if 'Data' in x: continue
                 if not os.path.isdir(getOutputName('bkgr', year, args.tag)+'/'+x): continue
+                if not 'WZ' in x and not 'XG' in x: continue
                 background_collection[year].append(x)
             
             background_collection[year] += ['non-prompt', 'charge-misid']
@@ -1137,6 +1141,7 @@ else:
             if args.masses is not None:         output_dir = os.path.join(output_dir, 'customMasses', '-'.join([str(m) for m  in args.masses]))
             else:         output_dir = os.path.join(output_dir, 'allMasses')
 
+            output_dir_unstamped = output_dir
             output_dir = makePathTimeStamped(output_dir)
 
             #
@@ -1190,6 +1195,8 @@ else:
                         else:
                             bkgr_hist = []
                             syst_hist = []
+                            syst_hist_up = []
+                            syst_hist_down = []
                             if args.individualSamples:
                                 bkgr_hist, bkgr_legendnames = selectNMostContributingHist(list_of_hist[year][c][v]['bkgr'], 7)
                             else:
@@ -1200,10 +1207,15 @@ else:
                                         if 'total_syst' not in list_of_hist[year][c][v]['bkgr'][bk].keys():
                                             from HNL.Systematics.systematics import makeSystErrorHist
                                             list_of_hist[year][c][v]['bkgr'][bk]['total_syst'] = makeSystErrorHist(list_of_hist[year][c][v]['bkgr'][bk], bk, c, year, 'non-prompt' if args.includeData == 'includeSideband' else None)
+                                        tmp_hist_up, tmp_hist_down = makeSystErrorHist(list_of_hist[year][c][v]['bkgr'][bk], bk, c, year, 'non-prompt' if args.includeData == 'includeSideband' else None, split_output=True)
                                         syst_hist.append(list_of_hist[year][c][v]['bkgr'][bk]['total_syst'])
+                                        syst_hist_up.append(tmp_hist_up.clone('up'))
+                                        syst_hist_down.append(tmp_hist_down.clone('down'))
 
                         if args.systematics != 'full' or args.ignoreSystematics:
                             syst_hist = None
+                            syst_hist_up = None
+                            syst_hist_down = None
         
                         # Make list of signal histograms for the plot object
                         signal_legendnames = []
@@ -1211,6 +1223,8 @@ else:
                             signal_hist = None
                         else:
                             signal_hist = []
+                            signal_coupling = []
+                            signal_masses = []
                             for sk in sorted(list_of_hist[year][c][v]['signal'].keys()):
                                 signal_hist.append(list_of_hist[year][c][v]['signal'][sk]['nominal'])
                                 # if 'filtered' in sk:
@@ -1221,6 +1235,8 @@ else:
                                     signal_legendnames.append('HNL m_{N}='+str(Sample.getSignalMass(sk))+ 'GeV')
                                 else:
                                     signal_legendnames.append('displaced HNL m_{N}='+str(Sample.getSignalMass(sk))+ 'GeV')
+                                signal_coupling.append(Sample.getSignalCouplingSquared(sk))
+                                signal_masses.append(Sample.getSignalMass(sk))
                                     
         
                         if args.includeData is not None and not 'Weight' in v:
@@ -1245,7 +1261,12 @@ else:
                 
                         #Create specialized signal region plots if this is the correct variable
                         if v == 'searchregion':
-                            #First yield file
+
+                            #First Hepdata json
+                            from HNL.EventSelection.searchRegions import writeHEPjson
+                            writeHEPjson(signal_hist, bkgr_hist, [None, None], [syst_hist_up, syst_hist_down], os.path.join(output_dir_unstamped, 'Yields/SearchRegions', c), args.region, sorted(list_of_hist[year][c][v]['signal'].keys()), bkgr_legendnames, observed_hist = observed_hist, combine_bkgr=True, signal_mass = signal_masses)
+
+                            #then yield file
                             from HNL.Tools.helpers import makeDirIfNeeded
                             makeDirIfNeeded(os.path.join(output_dir, 'Yields/SearchRegions', c, 'yields.txt'))
                             out_file = open(os.path.join(output_dir, 'Yields/SearchRegions', c, 'yields.txt'), 'w')
@@ -1337,6 +1358,7 @@ else:
                             # p.drawHist(output_dir = os.path.join(output_dir, c), normalize_signal = False, draw_option='EHist', min_cutoff = 1)
         
                         #Prepare yields for hepdata
+
                         
 
 

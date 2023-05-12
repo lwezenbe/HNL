@@ -12,8 +12,8 @@ class MCVariation(object):
     def returnBranches(self):
         return ['{0}[{1}]/F'.format(self.var_name, len(self.indices))]
 
-    def getRelevantCount(counter_name, sample_name)
-        counter = open(base_path_counters(era, year), counter_name+'.json')),)
+    def getRelevantCount(counter_name, sample_name):
+        counter = open(os.path.join(base_path_counters(era, year), counter_name+'.json'), 'r')
         counter_weights = json.load(counter)
         total_count = counter_weights[sample_name]
         counter.close()
