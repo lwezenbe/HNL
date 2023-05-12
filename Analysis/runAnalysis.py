@@ -948,7 +948,6 @@ else:
                 if 'HNL' in x: continue
                 if 'Data' in x: continue
                 if not os.path.isdir(getOutputName('bkgr', year, args.tag)+'/'+x): continue
-                if not 'WZ' in x and not 'XG' in x: continue
                 background_collection[year].append(x)
             
             background_collection[year] += ['non-prompt', 'charge-misid']
