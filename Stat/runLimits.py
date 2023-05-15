@@ -241,7 +241,7 @@ for mass in args.masses:
     if args.displaced and mass <= displaced_mass_threshold:
         tmp_limit = extractScaledLimitsDisplacedHNL(input_folders, couplings, blind=args.blind)
         from HNL.Stat.combineTools import drawSignalStrengthPerCouplingDisplaced
-        drawSignalStrengthPerCouplingDisplaced(input_folders, couplings, destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
+    #    drawSignalStrengthPerCouplingDisplaced(input_folders, couplings, destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
     else:
         tmp_limit = extractScaledLimitsPromptHNL(input_folders[0], couplings[0])
         #from HNL.Stat.combineTools import drawSignalStrengthPerCouplingPrompt
@@ -251,7 +251,6 @@ for mass in args.masses:
         passed_masses.append(mass)
         limits[mass] = tmp_limit
 
-print limits
 print 'made graphs'
 graphs = makeGraphs(passed_masses, limits=limits)
 
