@@ -43,7 +43,14 @@ class Event(object):
         self.chain.lumiweight = None
 
         from HNL.EventSelection.searchRegions import SearchRegionManager
-        self.srm = SearchRegionManager(self.chain.region)
+        print kwargs
+        print kwargs.get('ignore_searchregions', False)
+        ignore_sr = kwargs.get('ignore_searchregions', False)
+        if not ignore_sr:
+            self.srm = SearchRegionManager(self.chain.region)
+        else:
+            self.srm = None
+        print ignore_sr, self.srm
         self.chain.searchregion = None
 
         self.event_selector = EventSelector(self.chain.region, self.chain, self.new_chain, is_reco_level=is_reco_level, event_categorization=self.event_category, search_region_manager = self.srm, additional_options=self.additional_options)
