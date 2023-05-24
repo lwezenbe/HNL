@@ -944,7 +944,7 @@ else:
         mixed_list = signal_list[year] + bkgr_list[year] + data_list[year]
         custom_list_to_use = customizeListToUse(year)
         full_path = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Analysis'))
-        #merge(mixed_list, __file__, jobs[year], ('sample', 'subJob'), argParser, istest=args.isTest, additionalArgs= [('year', year)], man_changed_args = {'customList':custom_list_to_use}, full_path = full_path)
+        merge(mixed_list, __file__, jobs[year], ('sample', 'subJob'), argParser, istest=args.isTest, additionalArgs= [('year', year)], man_changed_args = {'customList':custom_list_to_use}, full_path = full_path)
 
         if not args.individualSamples:
             background_collection[year] = []

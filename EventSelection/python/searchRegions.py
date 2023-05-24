@@ -157,7 +157,6 @@ def getLowMassLooseRegion(chain):
                 return 15
             else:
                 return 16
-    print 'reached end'
 
 region_groups['lowMassSR'] = {
     'A' : [1, 2, 3, 4],
