@@ -20,7 +20,7 @@ version        = 'v8.0.1'
 #
 # Information about displacement samples
 #
-displaced_mass_threshold = 20
+displaced_mass_threshold = 30
 
 coupling_dict = {'tau':'#tau', 'mu':'#mu', 'e':'e', '2l':'l'}
 

@@ -1,38 +1,48 @@
 from HNL.Tools.helpers import isValidRootFile, rootFileContent, getObjFromFile, makeDirIfNeeded
-from ROOT import TFile, TH1F
+from ROOT import TFile, TH2D
+import numpy as np
+from HNL.EventSelection.eventCategorization import CATEGORIES
+from HNL.Samples.sample import Sample
 
 class Cutter():
 
-    def __init__(self, name = None, chain = None):
+    def __init__(self, name = None, chain = None, categories = None, searchregions = None):
         self.name = name
         self.chain = chain
+        self.categories = categories if categories != 'auto' else [c for c in CATEGORIES]
+        self.searchregions = searchregions
         self.list_of_cuts = {}
         self.order_of_cuts = []
 
-    def cut(self, passed, cut_name):
-
+    def addCut(self, cut_name):
         if cut_name not in self.list_of_cuts.keys():
-            self.list_of_cuts[cut_name] = TH1F(cut_name, cut_name, 1, 0, 1)
+            self.list_of_cuts[cut_name] = TH2D(cut_name, cut_name, len(self.categories), 0.5, len(self.categories)+0.5, len(self.searchregions), 0.5, len(self.searchregions)+0.5)
             self.list_of_cuts[cut_name].SetDirectory(0)
             self.order_of_cuts.append(cut_name)
 
+    def cut(self, passed, cut_name, weight = None):
+        if weight is None:
+            weight = self.chain.lumiweight if self.chain.lumiweight is not None else 1.
+   
+        self.addCut(cut_name)
         if passed:
-            if self.chain is not None:
-                try:
-                    weight = self.chain.weight if self.chain.weight is not None else 1.
-                except:
-                    weight = 1.
+            if self.chain.category is None:
+                range_of_cat = [c for c in self.categories]
             else:
-                weight = 1.
-            self.list_of_cuts[cut_name].Fill(.5, weight)
-            return True
-        return False
-    
-    def printAllCuts(self):
-        return self.order_of_cuts
+                range_of_cat = [self.chain.category]
 
-    def printAllEvents(self):
-        return [(cut, self.list_of_cuts[cut]) for cut in self.order_of_cuts]
+            if self.chain.searchregion is None:
+                range_of_sr = [s for s in self.searchregions]
+            else:
+                range_of_sr = [self.chain.searchregion]
+
+            for c in range_of_cat:
+                for s in range_of_sr:
+                    self.list_of_cuts[cut_name].Fill(c, s, weight)
+
+            return True
+    
+        return False
 
     def saveCutFlow(self, out_file, arg_string = None):
 
@@ -72,21 +82,27 @@ class Cutter():
         if arg_string is not None:
             self.saveCutFlow(original_path, None)
 
+       
 class CutterCollection():
-    
-    def __init__(self, names, chain = None):
+
+    def __init__(self, names, chain = None, categories = None, searchregions = None, function = None):
         self.names = names
         self.chain = chain
+        self.function = function
         self.cutters = {}
         for name in self.names:
-            self.cutters[name] = Cutter(name, chain)
+            self.cutters[name] = Cutter(name, chain, categories, searchregions)
 
     def cut(self, passed, cut_name, cutter_name = None):
+        if cutter_name is None and self.function is not None:
+            cutter_name = self.getCutterName()
+
         if cutter_name is not None:
             self.cutters[cutter_name].cut(passed, cut_name)
         else:
             for name in self.names:
                 self.cutters[name].cut(passed, cut_name)
+        return passed
 
     def saveCutFlow(self, out_file, arg_string = None):
         for name in self.names:
@@ -95,87 +111,103 @@ class CutterCollection():
     def getCutter(self, name):
         return self.cutters[name]
 
-from HNL.Plotting.plot import makeList
-def printCutFlow(in_file_paths, out_file_path, in_file_path_names, subdir = None):
-    subdir = 'cutflow' if subdir is None else 'cutflow/'+subdir
-    in_file_paths = makeList(in_file_paths)
-    in_file_path_names = makeList(in_file_path_names)
-    if len(in_file_paths) != len(in_file_path_names):
-        print 'inconsistent file paths and names'
-        exit(0)
-
-    list_of_cut_values = {}
-    for ifp, ifpn in zip(in_file_paths, in_file_path_names):
-        in_file = TFile(ifp)
-        key_names = [k[0] for k in rootFileContent(in_file, '/', starting_dir = subdir)]
-        in_file.Close()
-        list_of_cut_values[ifpn] = {}
-        for k in key_names:
-            list_of_cut_values[ifpn][k] = getObjFromFile(ifp, 'cutflow/'+k).GetSumOfWeights()
-
-    from HNL.Tools.helpers import makeDirIfNeeded
-    makeDirIfNeeded(out_file_path+'/cutflowtable.txt')
-    out_file = open(out_file_path+'/cutflowtable.txt', 'w')
-    out_file.write(' \t \t ' + '\t'.join(in_file_path_names) + '\n')
-    for k in key_names:
-        out_file.write(k.split('/')[-1] +'\t \t ' + '\t'.join([str(list_of_cut_values[n][k]) for n in in_file_path_names]) + '\n')
-    # out_file.write('NAME \t \t \t ' + '\t'.join([k.split('/')[-1] for k in key_names]) + '\n')
-    # for n in in_file_path_names:
-    #     out_file.write(n +'\t \t \t ' + '\t'.join([str(list_of_cut_values[n][k]) for k in key_names]) + '\n')
-    out_file.close()
-
-def printSelections(in_file_path, out_file_path):
-    in_file = TFile(in_file_path)
-    key_names = [k[0] for k in rootFileContent(in_file, '/', starting_dir = 'cutflow')]
-    makeDirIfNeeded(out_file_path)
-    out_file = open(out_file_path, 'w')
-    for k in key_names:
-        if 'Total' in k: continue
-        out_file.write(k.split('/')[-1] + '\n')
-    return
-
-from HNL.Plotting.plot import Plot
-import ROOT
-def plotCutFlow(in_file_paths, out_file_path, in_file_path_names, ignore_weights=False, output_name = None, subdir = None):
-    in_file_paths = makeList(in_file_paths)
-    in_file_path_names = makeList(in_file_path_names)
-    if len(in_file_paths) != len(in_file_path_names):
-        print 'inconsistent file paths and names'
-        exit(0)
-
-    list_of_cut_hist = []
-    tex_names = []
-    x_name = []
-    subdir = 'cutflow' if subdir is None else 'cutflow/'+subdir
-    #If one input file, plot keys on x
-    if len(in_file_paths) == 1:
-        in_file = TFile(in_file_paths[0], 'read')
-        key_names = [k[0] for k in rootFileContent(in_file, starting_dir = subdir)]
-        in_file.Close()
-        list_of_cut_hist.append(ROOT.TH1D('cutflow', 'cutflow', len(key_names), 0, len(key_names)))
-        for i, k in enumerate(key_names):
-            if ignore_weights:
-                list_of_cut_hist[0].SetBinContent(i+1, getObjFromFile(in_file_paths[0], k).GetEntries())
+    def getCutterName(self):
+        if self.function is None:
+            return None
+        elif self.function == 'sideband':
+            if self.chain.is_sideband is None:
+                return None
+            elif self.chain.is_sideband:
+                return 'sideband'
             else:
-                list_of_cut_hist[0].SetBinContent(i+1, getObjFromFile(in_file_paths[0], k).GetSumOfWeights())
-        tex_names = in_file_path_names
-        x_name = [k.split('/')[-1] for k in key_names]
-    #Plot samples on x
-    else:
-        in_file = TFile(in_file_paths[0])
-        key_names = [k[0] for k in rootFileContent(in_file, starting_dir = subdir)]
-        in_file.Close()
-        for j, k in enumerate(key_names):
-            list_of_cut_hist.append(ROOT.TH1D('cutflow_'+k, 'cutflow_'+k, len(in_file_paths), 0, len(in_file_paths)))
-            for i, ifp in enumerate(in_file_paths):
-                if ignore_weights:
-                    list_of_cut_hist[j].SetBinContent(i+1, getObjFromFile(ifp, k).GetEntries())
-                else:
-                    list_of_cut_hist[j].SetBinContent(i+1, getObjFromFile(ifp, k).GetSumOfWeights())
-        tex_names = [k.split('/')[-1] for k in key_names]
-        x_name = in_file_path_names
+                return 'nominal'
+        return None
 
-    p = Plot(list_of_cut_hist, tex_names, name = 'cutflow' if output_name is None else output_name, x_name = x_name, y_log = True)
-    p.drawBarChart(out_file_path, index_colors=True, parallel_bins=True)
+
+class CutflowReader:
+    
+    def __init__(self, name, in_path, subdir = None):
+        self.name = name
+
+        self.list_of_cut_hist = {}
+        self.cut_names = []
+
+        in_file = TFile(in_path, 'read')
+        subdir = 'cutflow' if subdir is None else 'cutflow/'+subdir
+        key_names = [k[0] for k in rootFileContent(in_file, starting_dir = subdir)]
+        in_file.Close() 
+
+        for k in key_names:
+            cut_name = k.split('/')[-1]
+            self.list_of_cut_hist[cut_name] = getObjFromFile(in_path, k)
+            self.cut_names.append(cut_name)
+
+    @staticmethod
+    def shouldMergeSingleList(lst):
+        if len(lst) < 0:
+            res = True
+        res = all([ele == lst[0] for ele in lst])
+        return not res
+
+    @staticmethod
+    def shouldMergeMatrix(matrix, axis):
+        full_list = []
+        if axis == 0:
+            for i in xrange(len(matrix)):
+                full_list.append(CutflowReader.shouldMergeSingleList(matrix[i]))
+        else:
+            for i in xrange(len(matrix[0])):
+                full_list.append(CutflowReader.shouldMergeSingleList([x[i] for x in matrix]))
+
+        return any(full_list)
+            
         
 
+    @staticmethod
+    def mergeMatrix(matrix):
+        merge_x = CutflowReader.shouldMergeMatrix(matrix, 0)
+        merge_y = CutflowReader.shouldMergeMatrix(matrix, 1)
+   
+        if merge_x:
+            if merge_y:
+                return sum([sum(x) for x in matrix])
+            else:
+                return sum(matrix[0])
+
+        else:
+            if merge_y:
+                return sum([x[0] for x in matrix])
+            else:
+                return matrix[0][0]
+ 
+    def getYield(self, cut_name, categories = None, searchregions = None):
+        if categories is None:
+            categories = range(1, self.list_of_cut_hist[cut_name].GetNbinsX()+1)
+        if searchregions is None:
+            searchregions = range(1, self.list_of_cut_hist[cut_name].GetNbinsY()+1)
+
+        from HNL.Plotting.plot import makeList
+        categories = makeList(categories)
+        searchregions = makeList(searchregions)
+
+        list_of_yields = []
+        for icat, cat in enumerate(categories):
+            list_of_yields.append([])
+            for sr in searchregions:
+                list_of_yields[icat].append(self.list_of_cut_hist[cut_name].GetBinContent(self.list_of_cut_hist[cut_name].GetXaxis().FindBin(cat), self.list_of_cut_hist[cut_name].GetYaxis().FindBin(sr)))
+
+        return self.mergeMatrix(list_of_yields)        
+
+    def returnCutFlow(self, categories = None, searchregions = None):
+        out_lists = {'cuts' : [], 'values' : []}
+        for cut_name in self.cut_names:
+            out_lists['cuts'].append(cut_name)
+            out_lists['values'].append(self.getYield(cut_name, categories, searchregions))
+        return out_lists
+    
+if __name__ == '__main__':
+    in_path = '../../Analysis/data/testArea/runAnalysis/HNL/MVA-default-lowMassSRloose-reco/UL-2016pre/signal/HNL-e-m40-Vsq1em4-prompt/tmp_HNL-e-m40-Vsq1em4-prompt/HNL-e-m40-Vsq1em4-prompt_variables_subJob0.root'
+    cfr = CutflowReader('HNL-e-m40-Vsq1em4-prompt', in_path, 'nominalnominal')
+    print cfr.returnCutFlow()
+#    for i in range(1, 17):
+#        print cfr.returnCutFlow(searchregions = i)
