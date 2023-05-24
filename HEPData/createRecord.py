@@ -17,5 +17,8 @@ addFiguresTo(submission)
 from HNL.HEPData.createYields import addAllYieldTables
 addAllYieldTables(submission)
 
+from HNL.HEPData.createCutFlows import addCutflowTo
+addCutflowTo(submission)
+
 submission.create_files(out_path+'/submission')
 os.system('mv submission.tar.gz {0}/.'.format(out_path))

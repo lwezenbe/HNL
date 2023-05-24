@@ -40,8 +40,14 @@ class Event(object):
         self.event_category = EventCategory(self.chain, self.new_chain)
         self.chain.category = None
         self.chain.weight = None
-        self.event_selector = EventSelector(self.chain.region, self.chain, self.new_chain, is_reco_level=is_reco_level, event_categorization=self.event_category, additional_options=self.additional_options)
+        self.chain.lumiweight = None
 
+        from HNL.EventSelection.searchRegions import SearchRegionManager
+        self.srm = SearchRegionManager(self.chain.region)
+        self.chain.searchregion = None
+
+        self.event_selector = EventSelector(self.chain.region, self.chain, self.new_chain, is_reco_level=is_reco_level, event_categorization=self.event_category, search_region_manager = self.srm, additional_options=self.additional_options)
+        
         self.tau_energy_scale = TauEnergyScale(self.chain.era, self.chain.year, self.chain.obj_sel['tau_algo'])
         self.tau_energy_scale_syst = 'nominal'
 
@@ -66,7 +72,9 @@ class Event(object):
             if self.chain.need_sideband is not None:
                 setSideband(self.chain)       
         self.chain.category = None
+        self.chain.searchregion = None
         if self.chain.weight is not None: self.chain.weight = self.reweighter.getLumiWeight()
+        if self.reweighter is not None: self.chain.lumiweight = self.reweighter.getLumiWeight()
         self.chain.is_loose_lepton = [None]*self.chain._nL
         self.chain.is_FO_lepton = [None]*self.chain._nL
         self.chain.is_tight_lepton = [None]*self.chain._nL
@@ -113,6 +121,11 @@ class Event(object):
         if kwargs.get('calculate_weights', False): kwargs['reweighter'] = self.reweighter
         passed =  self.event_selector.passedFilter(cutter, sample_name, kwargs)
         if passed:
+            if self.srm is not None:
+                self.chain.searchregion = self.srm.getSearchRegion(self.chain)
+            else:
+                self.chain.searchregion = 1
+
             self.chain.category = self.event_category.returnCategory()
             from HNL.EventSelection.eventSelectionTools import isChargeFlip
             if not self.sample.is_data and self.chain.is_reco_level: self.chain.is_charge_flip_event = isChargeFlip(self.chain, self.new_chain)

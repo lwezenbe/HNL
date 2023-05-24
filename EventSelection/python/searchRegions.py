@@ -157,6 +157,7 @@ def getLowMassLooseRegion(chain):
                 return 15
             else:
                 return 16
+    print 'reached end'
 
 region_groups['lowMassSR'] = {
     'A' : [1, 2, 3, 4],
@@ -304,8 +305,8 @@ def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hi
                         grouped_bkgr_hist[group][ish].SetBinContent(ib+1, sh.GetBinContent(b))
                         grouped_bkgr_hist[group][ish].SetBinError(ib+1, sh.GetBinError(b))                        
                 if hist_output: grouped_bkgr_hist[group][ish] = HNL.Tools.histogram.Histogram(grouped_bkgr_hist[group][ish])
-        
-        if observed_hist is not None and grouped_observed_hist is not None:
+    
+        if observed_hist is not None:
             grouped_observed_hist[group] = ROOT.TH1D('tmp_observed_'+group, 'tmp_observed', len(bins)-1, bins)
             #for ib, b in enumerate(region_groups[region_name][group]):
             for ib, b in enumerate([x-1+region_groups[region_name][group][0] for x in range(1, len(bins))]):
@@ -317,9 +318,9 @@ def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hi
                     grouped_observed_hist[group].SetBinError(ib+1, observed_hist.GetBinError(b))                        
             if hist_output: grouped_observed_hist[group] = HNL.Tools.histogram.Histogram(grouped_observed_hist[group])
         else:
-            grouped_observed_hist = None
+            grouped_observed_hist[group] = None
 
-        if syst_hist is not None and grouped_syst_hist is not None:
+        if syst_hist is not None:
             grouped_syst_hist[group] = []
             for ish, sh in enumerate(syst_hist):
                 grouped_syst_hist[group].append(ROOT.TH1D('tmp_syst_'+str(ish)+'_'+group, 'tmp_syst', len(bins)-1, bins))
@@ -333,7 +334,7 @@ def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hi
                         grouped_syst_hist[group][ish].SetBinError(ib+1, sh.GetBinError(b))    
                 if hist_output: grouped_syst_hist[group][ish] = HNL.Tools.histogram.Histogram(grouped_syst_hist[group][ish])
         else:
-            grouped_syst_hist = None 
+            grouped_syst_hist[group] = None 
                     
     return grouped_signal_hist, grouped_bkgr_hist, grouped_syst_hist, grouped_observed_hist
 
@@ -478,8 +479,8 @@ def plotLowMassRegionsLoose(signal_hist, bkgr_hist, syst_hist, tex_names, out_pa
     
     if observed_hist is not None:
         draw_ratio = True
-    elif len(group_signal_hist[group]) > 0 and len(group_bkgr_hist[group]) > 0:
-        draw_ratio = 'errorsOnly'
+    #elif len(grouped_signal_hist[group]) > 0 and len(grouped_bkgr_hist[group]) > 0:
+    #    draw_ratio = 'errorsOnly'
     else:
         draw_ratio = None
     p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = grouped_syst_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text,
@@ -524,6 +525,11 @@ def writeHEPjson(signal_hist, bkgr_hist, signal_syst, bkgr_syst, out_path, regio
     from HNL.Tools.helpers import makeDirIfNeeded
     makeDirIfNeeded(out_path+'/x')
 
+    if signal_hist is None:
+        signal_hist = []
+    if bkgr_hist is None:
+        bkgr_hist = []
+
     import json
     if region == 'highMassSR':
         tmp_group_hist = collectGroupHist(signal_hist, None, signal_syst[0], 'highMassSR', observed_hist = None, hist_output=True)
@@ -531,8 +537,10 @@ def writeHEPjson(signal_hist, bkgr_hist, signal_syst, bkgr_syst, out_path, regio
         tmp_grouped_signal_syst = [tmp_group_hist[2], collectGroupHist(None, None, signal_syst[1], 'highMassSR', observed_hist = None, hist_output=True)[2]]
         tmp_group_hist = collectGroupHist(None, bkgr_hist, bkgr_syst[0], 'highMassSR', observed_hist = observed_hist, hist_output=True)
         grouped_bkgr_hist = tmp_group_hist[1]
+        print grouped_bkgr_hist
         tmp_grouped_bkgr_syst = [tmp_group_hist[2], collectGroupHist(None, None, bkgr_syst[1], 'highMassSR', observed_hist = None, hist_output=True)[2]]
         grouped_observed_hist = tmp_group_hist[3]
+        print grouped_observed_hist
 
         #Reorganize the syst hist
         grouped_signal_syst = {}
@@ -542,10 +550,12 @@ def writeHEPjson(signal_hist, bkgr_hist, signal_syst, bkgr_syst, out_path, regio
                 grouped_signal_syst[rg] = [tmp_grouped_signal_syst[0][rg], tmp_grouped_signal_syst[1][rg]] 
             except:
                 grouped_signal_syst[rg] = [[None]*len(signal_hist)]*2
+
             try:
                 grouped_bkgr_syst[rg] = [tmp_grouped_bkgr_syst[0][rg], tmp_grouped_bkgr_syst[1][rg]] 
             except:
                 grouped_bkgr_syst[rg] = [[None]*len(bkgr_hist)]*2
+                print rg, grouped_bkgr_syst[rg]
 
         for rg in region_groups[region].keys():
             sr_json = createYieldJson(grouped_signal_hist[rg], grouped_bkgr_hist[rg], grouped_observed_hist[rg], grouped_signal_syst[rg], grouped_bkgr_syst[rg], signal_names, bkgr_names, combine_bkgr=combine_bkgr, binned=False, signal_coupling = signal_coupling, signal_mass = signal_mass)

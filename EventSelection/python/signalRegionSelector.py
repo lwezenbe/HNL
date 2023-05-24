@@ -7,8 +7,8 @@ from HNL.EventSelection.eventFilters import passBaseCuts, passLowMassSelection, 
 
 class SignalRegionSelector(FilterObject):
 
-    def __init__(self, region, chain, new_chain, is_reco_level = True, event_categorization = None):
-        super(SignalRegionSelector, self).__init__(region, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization)
+    def __init__(self, region, chain, new_chain, is_reco_level = True, event_categorization = None, search_region_manager = None):
+        super(SignalRegionSelector, self).__init__(region, chain, new_chain, is_reco_level=is_reco_level, event_categorization = event_categorization, search_region_manager = search_region_manager)
 
 
     def initEvent(self, cutter, kwargs={}):

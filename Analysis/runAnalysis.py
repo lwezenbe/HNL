@@ -96,7 +96,7 @@ import os
 from HNL.Tools.histogram import Histogram
 from HNL.Tools.mergeFiles import merge
 from HNL.Tools.helpers import getObjFromFile, progress, makeDirIfNeeded
-from HNL.EventSelection.bitCutter import CutterCollection
+from HNL.EventSelection.cutter import CutterCollection
 from HNL.Weights.reweighter import Reweighter
 from HNL.TMVA.reader import ReaderArray
 from HNL.Samples.sampleManager import SampleManager
@@ -202,8 +202,8 @@ if args.makePlots or args.makeDataCards:
 #
 # Prepare jobs
 #
+jobs = {}
 if not args.isTest:
-    jobs = {}
     if (args.makeDataCards or args.makePlots) and args.submitPlotting and not args.isChild:
 
         if args.variables is None:
@@ -243,6 +243,10 @@ if not args.isTest:
         #        if args.masses is not None and sample.is_signal and sample.mass not in args.masses: continue
                 for njob in xrange(sample.returnSplitJobs()): 
                     jobs[year] += [(sample.name, str(njob), None)]
+else:
+    for year in args.year:
+        jobs[year] = []
+
 #
 # Submit subjobs
 #
@@ -267,13 +271,6 @@ if not args.isChild and not args.makePlots and not args.makeDataCards:
     exit(0)
 
 from HNL.EventSelection.eventSelector import signal_regions
-
-#
-# Extra imports for dividing by region
-#
-from HNL.EventSelection.searchRegions import SearchRegionManager
-srm = {}
-srm[args.region] = SearchRegionManager(args.region)
 
 def getOutputName(st, y, tag=None):
     translated_tag = '' if tag is None else '-'+tag
@@ -413,7 +410,7 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
         #
         # Create cutter to provide cut flow
         #
-        cutter = CutterCollection(names = [systematic+'nominal', systematic+'sideband'], chain = chain, categories = listOfCategories(args.region))
+        cutter = CutterCollection(names = [systematic+'nominal', systematic+'sideband'], chain = chain, categories = listOfCategories(args.region), searchregions = range(1, event.srm.getNumberOfSearchRegions()+1))
 
         #
         # Load in MVA reader if needed
@@ -511,11 +508,11 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
             if not sample.is_data and not args.genLevel:
                 from HNL.EventSelection.eventSelectionTools import isChargeFlip
                 output_tree.setTreeVariable('isChargeFlipEvent', chain.is_charge_flip_event)
-               
+    
             output_tree.setTreeVariable('weight', event.reweighter.getTotalWeight() if not args.genLevel else event.reweighter.getLumiWeight())
             output_tree.setTreeVariable('isprompt', chain.is_prompt)
             output_tree.setTreeVariable('category', chain.category)
-            output_tree.setTreeVariable('searchregion', srm[args.region].getSearchRegion(chain))
+            output_tree.setTreeVariable('searchregion', chain.searchregion)
             output_tree.setTreeVariable('issideband', is_sideband_event)
             from HNL.EventSelection.eventSelectionTools import objectInHEMregion
             output_tree.setTreeVariable('objectInHEM', objectInHEMregion(chain, chain))
@@ -554,6 +551,13 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
 
 #If the option to not run over the events again is made, load in the already created histograms here
 else:
+
+    #
+    # Extra imports for dividing by region
+    #
+    from HNL.EventSelection.searchRegions import SearchRegionManager
+    srm = {}
+    srm[args.region] = SearchRegionManager(args.region)
 
 
     ################################
@@ -655,8 +659,8 @@ else:
     
             print '\n'
     
-        #if args.includeData is not None and not args.signalOnly:
-        if args.includeData is not None:
+        if args.includeData is not None and not args.signalOnly:
+        #if args.includeData is not None:
             print "Loading data"
             split_syst_to_run = getSystToRun(year, 'non-prompt', split_corr=True) if not ignore_sideband and include_systematics in ['full'] else ['nominal']           
             for isyst, corr_syst in enumerate(split_syst_to_run):
@@ -940,7 +944,7 @@ else:
         mixed_list = signal_list[year] + bkgr_list[year] + data_list[year]
         custom_list_to_use = customizeListToUse(year)
         full_path = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Analysis'))
-        merge(mixed_list, __file__, jobs[year], ('sample', 'subJob'), argParser, istest=args.isTest, additionalArgs= [('year', year)], man_changed_args = {'customList':custom_list_to_use}, full_path = full_path)
+        #merge(mixed_list, __file__, jobs[year], ('sample', 'subJob'), argParser, istest=args.isTest, additionalArgs= [('year', year)], man_changed_args = {'customList':custom_list_to_use}, full_path = full_path)
 
         if not args.individualSamples:
             background_collection[year] = []
@@ -1091,7 +1095,8 @@ else:
         for year in years_to_plot:
             binning = insertRebin(var_to_use, year, signal_list, background_collection, data_list, additional_condition = additional_condition, ignore_sideband = ignore_sideband, searchregion = args.searchregion)
             print "Creating list of histograms"
-            list_of_hist[year] = createVariableDistributions(category_dict[args.categoriesToPlot], var_to_use, signal_list[year], background_collection[year], data_list[year], sample_manager, year, additional_condition = additional_condition, include_systematics = args.systematics if not args.ignoreSystematics else 'nominal', ignore_sideband = ignore_sideband, custom_bins = binning)
+            if not args.cutFlowOnly:
+                list_of_hist[year] = createVariableDistributions(category_dict[args.categoriesToPlot], var_to_use, signal_list[year], background_collection[year], data_list[year], sample_manager, year, additional_condition = additional_condition, include_systematics = args.systematics if not args.ignoreSystematics else 'nominal', ignore_sideband = ignore_sideband, custom_bins = binning)
     
             def selectNMostContributingHist(hist_dict, n, syst = 'nominal'):
                 yield_dict = {x : hist_dict[x][syst].getHist().GetSumOfWeights() for x in hist_dict.keys()}
@@ -1137,7 +1142,11 @@ else:
             if args.flavor:         output_dir = os.path.join(output_dir, args.flavor+'_coupling')
             else:                   output_dir = os.path.join(output_dir, 'all_coupling')
 
-            if args.masses is not None:         output_dir = os.path.join(output_dir, 'customMasses', '-'.join([str(m) for m  in args.masses]))
+            if args.masses is not None:         
+                if len(args.masses) <= 3:
+                    output_dir = os.path.join(output_dir, 'customMasses', '-'.join([str(m) for m  in args.masses]))
+                else:
+                    output_dir = os.path.join(output_dir, 'customMasses', str(min(args.masses))+'to'+ str(max(args.masses)))
             else:         output_dir = os.path.join(output_dir, 'allMasses')
 
             output_dir_unstamped = output_dir
@@ -1191,6 +1200,9 @@ else:
                         # Make list of background histograms for the plot object (or None if no background)
                         if args.signalOnly or not list_of_hist[year][c][v]['bkgr'].values(): 
                             bkgr_hist = None
+                            syst_hist = None
+                            syst_hist_up = None
+                            syst_hist_down = None
                         else:
                             bkgr_hist = []
                             syst_hist = []
@@ -1238,7 +1250,7 @@ else:
                                 signal_masses.append(Sample.getSignalMass(sk))
                                     
         
-                        if args.includeData is not None and not 'Weight' in v:
+                        if args.includeData is not None and not args.signalOnly and not 'Weight' in v:
                             observed_hist = list_of_hist[year][c][v]['data']['signalregion']['nominal']
                             #tmp blinding
                             if not args.unblind and args.region in signal_regions: observed_hist = None
@@ -1443,51 +1455,29 @@ else:
         #    p = Plot(hist_to_plot_pie, sample_names, name = 'Events_'+str(c), x_name = CATEGORY_TEX_NAMES, y_name = 'Events', extra_text = extra_text)
         #    p.drawPieChart(output_dir = os.path.join(output_dir, 'Yields', 'PieCharts'), draw_percent=True)
 
-        
-        exit(0)
-
         print "plotting cutflow"
-        in_files = {}
-        #for sample_name in background_collection[year]+signal_names[year]: 
-        for sample_name in signal_names: 
-            if not args.individualSamples:
-                if args.flavor != 'tau' or not 'HNL' in sample_name:
-                    in_path = lambda y : getOutputName('signal' if 'HNL' in sample_name else 'bkgr', y, args.tag)+'/'+sample_name+'/variables.root'
+        for year in years_to_plot:
+
+            in_files = {}
+            #for sample_name in background_collection[year]+signal_names[year]: 
+            for sample_name in signal_names: 
+                if not args.individualSamples:
+                    if args.flavor != 'tau' or not 'HNL' in sample_name:
+                        in_path = lambda y : getOutputName('signal' if 'HNL' in sample_name else 'bkgr', y, args.tag)+'/'+sample_name+'/variables.root'
+                    else:
+                        extra_name = sample_name.replace('tau', 'tauhad')
+                        in_path = lambda y : getOutputName('signal' if 'HNL' in sample_name else 'bkgr', y, args.tag)+'/'+sample_name+'/variables-{0}.root'.format(extra_name)
                 else:
-                    extra_name = sample_name.replace('tau', 'tauhad')
-                    in_path = lambda y : getOutputName('signal' if 'HNL' in sample_name else 'bkgr', y, args.tag)+'/'+sample_name+'/variables-{0}.root'.format(extra_name)
-            else:
-                in_path = lambda y : getOutputName('bkgr', y, args.tag)+'/'+sample_manager.output_dict[sample_name]+'/variables-'+sample_name+'.root'
+                    in_path = lambda y : getOutputName('bkgr', y, args.tag)+'/'+sample_manager.output_dict[sample_name]+'/variables-'+sample_name+'.root'
     
-            from HNL.Tools.helpers import isValidRootFile
-            #print in_path(year), isValidRootFile(in_path(year))
-            if not '-' in year:
+                from HNL.Tools.helpers import isValidRootFile
                 if not isValidRootFile(in_path(year)): continue
-                in_files[sample_name] = [in_path(year)]
-            else:
-                valid_for_all_years = True
-                for y in args.year:
-                    if not isValidRootFile(in_path(y)): 
-                        valid_for_all_years = False
-                        print 'not valid for', sample_name, 'in', y
-                        break
-                if valid_for_all_years:
-                    in_files[sample_name] = [in_path(y) for y in args.year]
+                in_files[sample_name] = in_path(year)
     
-            from HNL.EventSelection.bitCutter import plotCutFlow
-        #    plotCutFlow([in_path], os.path.join(output_dir, 'Yields', 'CutFlow'), [sample_name], ignore_weights=True, output_name = sample_name, subdir = 'nominal')
-        for c in category_dict[args.categoriesToPlot][0]:
-            #plotCutFlow(in_files, os.path.join(output_dir, 'Yields', 'CutFlow', c), ignore_weights=True, output_name = 'all', subdir = 'nominal', categories = category_dict[args.categoriesToPlot][2][c])
-            from HNL.EventSelection.bitCutter import printCutFlow
-            split_output_dir = output_dir.split('/src/')[1]
-            public_output_dir = '/user/lwezenbe/public_html/'+split_output_dir.split('/data/Results/')[0]+'/'+split_output_dir.split('/data/Results/')[1]
-            #printCutFlow(in_files, os.path.join(public_output_dir.rsplit('/', 1)[0], 'Yields', 'CutFlow', c), subdir = 'nominal', categories = category_dict[args.categoriesToPlot][2][c], group_backgrounds=False)
-            #printCutFlow(in_files, os.path.join(public_output_dir.rsplit('/', 1)[0], 'Yields', 'CutFlow', c), subdir = 'nominal', group_backgrounds = False)
-            printCutFlow(in_files, os.path.join(public_output_dir.rsplit('/', 1)[0], 'Yields', 'CutFlow', c), subdir = 'nominalnominal', categories = category_dict[args.categoriesToPlot][2][c])
-
-
-
-
-
-
-
+            from HNL.HEPData.createCutFlows import createCutFlowJSONs
+            out_cat = {}
+            for c in category_dict[args.categoriesToPlot][0]:
+                out_cat[c] = [int(x) for x in category_dict[args.categoriesToPlot][2][c]]
+            #Write cutflow to json
+            out_json_cutflow = createCutFlowJSONs(in_files, None, None, os.path.join(output_dir_unstamped, 'CutFlows'), out_cat, None, starting_dir='nominalnominal')
+            

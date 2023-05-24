@@ -4,12 +4,13 @@ from HNL.EventSelection.eventSelectionTools import selectLeptonsGeneral, selectG
 from HNL.ObjectSelection.leptonSelector import isGoodLepton
 class FilterObject(object):
 
-    def __init__(self, region, chain, new_chain, is_reco_level=True, event_categorization = None):
+    def __init__(self, region, chain, new_chain, is_reco_level=True, event_categorization = None, search_region_manager = None):
         self.region = region
         self.chain = chain
         self.new_chain = new_chain
         self.is_reco_level = is_reco_level
         self.ec = event_categorization
+        self.srm = search_region_manager
 
     def initEvent(self, nL, cutter, sort_leptons, kwargs={}):
         offline_thresholds = kwargs.get('offline_thresholds', True)       
@@ -23,6 +24,7 @@ class FilterObject(object):
             if not cutter.cut(not removeOverlapDYandZG(self.new_chain.is_prompt, kwargs['sample_name']), 'Clean Nonprompt ZG'): return False
 
         self.chain.category = self.ec.returnCategory()
+        cutter.cut(True, 'passed category')
         reweighter = kwargs.get('reweighter')
         if kwargs.get('calculate_weights', False) and reweighter is not None:
             self.chain.weight = reweighter.getTotalWeight(sideband = self.chain.need_sideband, tau_fake_method = 'TauFakesDY' if self.region == 'ZZCR' else None)
@@ -43,13 +45,13 @@ signal_regions = ['baseline', 'lowMassSR', 'highMassSR', 'lowMassSRloose', 'high
 
 class EventSelector:
 
-    def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization=None, additional_options=None):
+    def __init__(self, name, chain, new_chain, is_reco_level=True, event_categorization=None, search_region_manager = None, additional_options=None):
         self.name = name
         self.chain = chain
         self.new_chain = new_chain
         self.is_reco_level = is_reco_level
         if self.name in signal_regions:
-            self.selector = SignalRegionSelector(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
+            self.selector = SignalRegionSelector(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization, search_region_manager = search_region_manager)
         elif self.name == 'trilepton':
             self.selector = GeneralTrileptonFilter(name, chain, new_chain, is_reco_level = is_reco_level, event_categorization = event_categorization)
         elif self.name == 'ZZCR':
