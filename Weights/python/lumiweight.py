@@ -39,6 +39,7 @@ class LumiWeight:
                 f.close()
             else:
                 self.total_hcount = self.sample.getHist('hCounter').GetSumOfWeights()
+                print self.total_hcount
     
         if self.sample.is_signal:
             self.total_hcount_dirac = self.sample.getHist('hCounterDirac').GetSumOfWeights()

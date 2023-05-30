@@ -77,6 +77,7 @@ def determineWeights(eras, years, selections, regions, strategy):
     out_file.close() 
 
 def getWeights(era, year, selection, region):
+    if selection == 'corrMet': selection = 'default'
     f = open(out_file_path,)
     weights = json.load(f)
     f.close()

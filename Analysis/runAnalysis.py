@@ -21,7 +21,7 @@ submission_parser.add_argument('--isTest',   action='store_true',       default=
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 submission_parser.add_argument('--dryRun',   action='store_true',       default=False,  help='do not launch subjobs, only show them')
 submission_parser.add_argument('--genLevel',   action='store_true',     default=False,  help='Use gen level variables')
-submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'tZq', 'TTT', 'HNLtauTest'])
+submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'tZq', 'TTT', 'HNLtauTest', 'corrMet'])
 submission_parser.add_argument('--strategy',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
 submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino', 'tZq'])
 submission_parser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?')
@@ -63,6 +63,12 @@ args = argParser.parse_args()
 
 print '\033[93m Warning: dr_closestJet contained a bug where it was always 0. In order to be consistent with the MVA training, it is now still manually set to 0 at all times. Please change this in the eventSelectionTools when retraining has occured.\033[0m'
 
+USE_CORRECTED_MET = False
+if args.selection == 'corrMet':
+    args.selection = 'default'
+    USE_CORRECTED_MET = True
+    
+
 from HNL.Tools.logger import getLogger, closeLogger
 log = getLogger(args.logLevel)
 
@@ -70,7 +76,7 @@ if args.includeData is not None and args.region == 'NoSelection':
     raise RuntimeError('inData does not work with this selection region')
 
 if args.strategy == 'MVA':
-    if args.selection != 'default':
+    if args.selection not in ['default', 'corrMet']:
         raise RuntimeError("No MVA available for this selection")
     if args.genLevel:
         raise RuntimeError("No MVA available for at genLevel")
@@ -372,7 +378,7 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
         #
         # Load in sample and chain
         #
-        event = Event(sample, chain, sample_manager, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = year, era = args.era, ignore_fakerates = args.tag != 'sidebandInMC' and args.includeData != 'includeSideband', fakerate_from_data = args.includeData == 'includeSideband', sideband=need_sideband, nonprompt_scalefactors = args.tag == 'nonpromptSFtest')
+        event = Event(sample, chain, sample_manager, is_reco_level=not args.genLevel, selection=args.selection, strategy=args.strategy, region=args.region, analysis=args.analysis, year = year, era = args.era, ignore_fakerates = args.tag != 'sidebandInMC' and args.includeData != 'includeSideband', fakerate_from_data = args.includeData == 'includeSideband', sideband=need_sideband, nonprompt_scalefactors = args.tag == 'nonpromptSFtest', use_corrected_met = USE_CORRECTED_MET)
 
         #
         # Prepare output tree
@@ -508,7 +514,7 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
             if not sample.is_data and not args.genLevel:
                 from HNL.EventSelection.eventSelectionTools import isChargeFlip
                 output_tree.setTreeVariable('isChargeFlipEvent', chain.is_charge_flip_event)
-    
+   
             output_tree.setTreeVariable('weight', event.reweighter.getTotalWeight() if not args.genLevel else event.reweighter.getLumiWeight())
             output_tree.setTreeVariable('isprompt', chain.is_prompt)
             output_tree.setTreeVariable('category', chain.category)
@@ -642,12 +648,16 @@ else:
                                 additional_weight = str(coupling_squared/Sample.getSignalCouplingSquared(sample_name))
                                 if args.plotDirac: additional_weight += '*diracSF'
                                 if corr_syst == 'nominal':
+                                    print c
+                                    print 'add_weight', additional_weight
                                     tmp_list_of_hist[c][v]['signal'][new_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, include_systematics, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband)
+                                    print '('+cc+'&&!issideband)'+additional_condition_to_use
                                 else:
                                     tmp_list_of_hist[c][v]['signal'][new_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband)['nominal'] 
                             else:
                                 additional_weight = 'diracSF' if args.plotDirac else None
                                 for iv, vsquared in enumerate(np.ndarray(intree.getTreeVariable('displacement_ncouplings', 0), 'f', intree.getTreeVariable('displacement_vsquared', 0))):
+                                    print iv, vsquared
                                     vsquared_translated = str(vsquared)
                                     vsquared_translated = vsquared_translated.replace('e-', 'em')
                                     new_name = cleaned_sample_name.split('-Vsq')[0]+'-Vsq'+vsquared_translated + '-' + Sample.getSignalDisplacedString(cleaned_sample_name)
@@ -1479,5 +1489,5 @@ else:
             for c in category_dict[args.categoriesToPlot][0]:
                 out_cat[c] = [int(x) for x in category_dict[args.categoriesToPlot][2][c]]
             #Write cutflow to json
-            out_json_cutflow = createCutFlowJSONs(in_files, None, None, os.path.join(output_dir_unstamped, 'CutFlows'), out_cat, None, starting_dir='nominalnominal')
+            out_json_cutflow = createCutFlowJSONs(in_files, None, None, os.path.join(output_dir_unstamped, 'CutFlows'), out_cat, range(1,5), starting_dir='nominalnominal')
             

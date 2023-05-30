@@ -24,6 +24,7 @@ class Cutter():
         if weight is None:
             weight = self.chain.lumiweight if self.chain.lumiweight is not None else 1.
    
+        weight = 1.0
         self.addCut(cut_name)
         if passed:
             if self.chain.category is None:

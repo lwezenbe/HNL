@@ -189,6 +189,7 @@ if not args.useExistingLimits:
         for coupling in couplings:
             mass_str = str(mass) if not mass.is_integer() else str(int(mass))
             signal_name = 'HNL-'+args.flavor+'-m'+mass_str+'-Vsq'+('{:.1e}'.format(coupling).replace('-', 'm'))+'-'+ ('prompt' if not args.displaced else 'displaced')
+            print datacard_manager.checkMassAvailability(signal_name)
             if not (len(args.datacards) == 1 and '/' in args.datacards[0]) and not datacard_manager.checkMassAvailability(signal_name): continue
             print '\x1b[6;30;42m', 'Processing mN =', str(mass), 'GeV with V2 = ', str(coupling), '\x1b[0m'
             runLimit(datacard_manager, signal_name, args.datacards)
@@ -241,11 +242,11 @@ for mass in args.masses:
     if args.displaced and mass <= displaced_mass_threshold:
         tmp_limit = extractScaledLimitsDisplacedHNL(input_folders, couplings, blind=args.blind)
         from HNL.Stat.combineTools import drawSignalStrengthPerCouplingDisplaced
-    #    drawSignalStrengthPerCouplingDisplaced(input_folders, couplings, destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
+        drawSignalStrengthPerCouplingDisplaced(input_folders, couplings, destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
     else:
         tmp_limit = extractScaledLimitsPromptHNL(input_folders[0], couplings[0])
-        #from HNL.Stat.combineTools import drawSignalStrengthPerCouplingPrompt
-        #drawSignalStrengthPerCouplingPrompt(input_folders[0], couplings[0], destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
+        from HNL.Stat.combineTools import drawSignalStrengthPerCouplingPrompt
+        drawSignalStrengthPerCouplingPrompt(input_folders[0], couplings[0], destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
 
     if tmp_limit is not None and len(tmp_limit) > 4: 
         passed_masses.append(mass)

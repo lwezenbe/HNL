@@ -97,4 +97,3 @@ from HNL.Stat.combineTools import coupling_dict
 year = args.datacards[0].split('UL')[1].split('/')[0]
 p = Plot(main_graphs, tex_names, 'limits', extra_text = extra_text, bkgr_hist = bkgr_hist, y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = '|V_{'+coupling_dict[args.flavor]+' N}|^{2}', era = 'UL', year = year)
 p.drawBrazilian(output_dir = os.path.join(in_base_folder, args.output), multiple_signals = True, single_background = args.plotSingleBackground)
-                                                                           

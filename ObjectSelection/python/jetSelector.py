@@ -248,19 +248,44 @@ def isGoodBJet(chain, index, wp, selection = None):
     else:
         raise RuntimeError("Unknown working point for jets")
 
-def getMET(chain):
+def checkMetAlgo(chain, algo):
+    if algo is None:
+        try:
+            chain.obj_sel
+        except:
+            #Initiate default object selection
+            chain.obj_sel = objectSelectionCollection()
+        return chain.obj_sel['met']
+    else:
+        return algo
+
+
+def getMET(chain, apply_corrections = False):
     syst = chain.obj_sel['systematic']
+#    algo = checkMetAlgo(chain, None)
+#    apply_corrections = algo == 'corrected'
+
     if chain.is_reco_level:
         if syst == 'JECUp':
-            return chain._met_JECUp, chain._metPhi_JECUp
+            out_met = chain._met_JECUp
+            out_metphi = chain._metPhi_JECUp
         elif syst == 'JECDown':
-            return chain._met_JECDown, chain._metPhi_JECDown
+            out_met = chain._met_JECDown 
+            out_metphi = chain._metPhi_JECDown
         elif syst == 'UnclMETUp':
-            return chain._met_UnclUp, chain._metPhi_UnclUp
+            out_met = chain._met_UnclUp
+            out_metphi = chain._metPhi_UnclUp
         elif syst == 'UnclMETDown':
-            return chain._met_UnclDown, chain._metPhi_UnclDown
+            out_met = chain._met_UnclDown
+            out_metphi = chain._metPhi_UnclDown
         else:
-            return chain._met, chain._metPhi
+            out_met = chain._met
+            out_metphi = chain._metPhi
+        if apply_corrections:
+            from HNL.Weights.metCorrection import ULMETXYCorrection
+            out_met, out_metphi = ULMETXYCorrection(out_met, out_metphi, chain._nVertex, chain._runNb, chain.year, chain.era, not chain.is_data)
+        return out_met, out_metphi
+    
     else:
         return chain._gen_met, chain._gen_metPhi
     

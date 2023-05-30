@@ -81,8 +81,8 @@ sample_manager = SampleManager(args.era, args.year, 'noskim', 'ObjectSelection/c
 jobs = []
 for sample_name in sample_manager.sample_names:
     sample = sample_manager.getSample(sample_name)
-    #for njob in xrange(sample.returnSplitJobs()):
-    for njob in xrange(300):
+    for njob in xrange(sample.returnSplitJobs()):
+    #for njob in xrange(300):
         jobs += [(sample.name, str(njob))]
 
 if not args.isChild and not args.makePlots:
