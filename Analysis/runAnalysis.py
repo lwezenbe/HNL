@@ -648,16 +648,12 @@ else:
                                 additional_weight = str(coupling_squared/Sample.getSignalCouplingSquared(sample_name))
                                 if args.plotDirac: additional_weight += '*diracSF'
                                 if corr_syst == 'nominal':
-                                    print c
-                                    print 'add_weight', additional_weight
                                     tmp_list_of_hist[c][v]['signal'][new_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, include_systematics, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband)
-                                    print '('+cc+'&&!issideband)'+additional_condition_to_use
                                 else:
                                     tmp_list_of_hist[c][v]['signal'][new_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband)['nominal'] 
                             else:
                                 additional_weight = 'diracSF' if args.plotDirac else None
                                 for iv, vsquared in enumerate(np.ndarray(intree.getTreeVariable('displacement_ncouplings', 0), 'f', intree.getTreeVariable('displacement_vsquared', 0))):
-                                    print iv, vsquared
                                     vsquared_translated = str(vsquared)
                                     vsquared_translated = vsquared_translated.replace('e-', 'em')
                                     new_name = cleaned_sample_name.split('-Vsq')[0]+'-Vsq'+vsquared_translated + '-' + Sample.getSignalDisplacedString(cleaned_sample_name)
@@ -1489,5 +1485,5 @@ else:
             for c in category_dict[args.categoriesToPlot][0]:
                 out_cat[c] = [int(x) for x in category_dict[args.categoriesToPlot][2][c]]
             #Write cutflow to json
-            out_json_cutflow = createCutFlowJSONs(in_files, None, None, os.path.join(output_dir_unstamped, 'CutFlows'), out_cat, range(1,5), starting_dir='nominalnominal')
+            out_json_cutflow = createCutFlowJSONs(in_files, None, None, os.path.join(output_dir_unstamped, 'CutFlows'), out_cat, None, starting_dir='nominalnominal')
             
