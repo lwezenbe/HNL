@@ -56,8 +56,11 @@ class Efficiency(object):
         num = self.efficiency_num.getHist().Clone()
         return num
 
-    def getDenominator(self):
-        return self.efficiency_denom.getHist().Clone()
+    def getDenominator(self, normalized = False):
+        out_hist = self.efficiency_denom.getHist().Clone()
+        if normalized and out_hist.GetSumOfWeights() > 0:
+            out_hist.Scale(1./out_hist.GetSumOfWeights())
+        return out_hist
 
     def getTEfficiency(self):
         from ROOT import TEfficiency

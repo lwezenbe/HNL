@@ -13,9 +13,12 @@ import ROOT
 #
 # Information about Combine release
 #
-release        = 'CMSSW_10_2_13'
+#release        = 'CMSSW_10_2_13'
+#arch           = 'slc7_amd64_gcc700'
+#version        = 'v8.0.1'
+release        = 'CMSSW_11_3_4'
 arch           = 'slc7_amd64_gcc700'
-version        = 'v8.0.1'
+version        = 'v9.1.0'
 
 #
 # Information about displacement samples

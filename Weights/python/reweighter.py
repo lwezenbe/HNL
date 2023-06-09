@@ -181,14 +181,16 @@ class Reweighter:
         if weight_name == 'chargeMisid':
             return self.getChargeMisidWeight(syst=syst)
 
-    def getTotalWeight(self, sideband=False, tau_fake_method = None):
+    def getTotalWeight(self, sideband=False, tau_fake_method = None, exclude_weights = []):
         tot_weight = 1.
         for weight in self.WEIGHTS_TO_USE:
+            if weight in exclude_weights: continue
             tot_weight *= self.returnWeight(weight)
         return tot_weight
 
-    def fillTreeWithWeights(self, chain):
+    def fillTreeWithWeights(self, chain, exclude_weights = []):
         for weight in self.WEIGHTS_TO_USE:
+            if weight in exclude_weights: continue
             chain.setTreeVariable(weight, self.returnWeight(weight))
         if not self.sample.is_data and self.displacement_weighter is not None:
             couplings, weights = self.displacement_weighter.getRangeOfNewLumiWeights(chain.tree.ctauHN, self.lumiweighter.getLumi())

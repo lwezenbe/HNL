@@ -354,13 +354,19 @@ class Plot(object):
 
         return        
 
-    def calculateRatio(self):
+    def calculateRatio(self, signal_only = False):
         ratios = []
-        if self.observed is None:
+        if signal_only:
+            for i, s in enumerate(self.s):
+                if i < len(self.s) - 1:
+                    ratios.append(s.Clone('ratio'))
+                    ratios[i].Divide(self.s[-1])
+    
+        elif self.observed is None:
             for i, s in enumerate(self.s):
                 ratios.append(s.Clone('ratio'))
                 ratios[i].Divide(self.total_b)
-        if self.observed is not None:
+        else:
             ratios.append(self.observed.Clone('ratio'))
             ratios[-1].Divide(self.total_b)
 
@@ -778,6 +784,8 @@ class Plot(object):
                 if self.draw_ratio is not None or self.draw_significance: 
                     self.hs.GetHistogram().GetXaxis().SetLabelOffset(9999999)
             else:
+                if bkgr_draw_option == 'Filled':
+                    bkgr_draw_option = 'Hist'
                 for i, b in enumerate(self.b):
                     if i == 0:
                         b.Draw(bkgr_draw_option)
@@ -937,7 +945,7 @@ class Plot(object):
         if self.draw_ratio is not None:
             just_errors = self.draw_ratio == 'errorsOnly'
             if self.b is None:                 raise RuntimeError("Cannot ask ratio or significance if no background is given")
-            ratios = self.calculateRatio()
+            ratios = self.calculateRatio(signal_only = self.draw_ratio == 'from_signal')
             self.drawRatio(ratios, custom_labels, just_errors, ref_line = ref_line)
             self.ratio_pad.Update()
         if self.draw_significance is not None:

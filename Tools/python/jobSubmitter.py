@@ -124,7 +124,7 @@ def getSubmitArgs(argparser, args, dropArgs=None, additionalArgs = None, man_cha
         for mca in man_changed_args.keys():
             setattr(arg_to_use, mca, man_changed_args[mca])
 
-    changedArgs  = [arg for arg in vars(arg_to_use) if getattr(arg_to_use, arg) and argparser.get_default(arg) != getattr(arg_to_use, arg)]
+    changedArgs  = [arg for arg in vars(arg_to_use) if getattr(arg_to_use, arg) is not None and argparser.get_default(arg) != getattr(arg_to_use, arg)]
     submitArgs   = {arg: getattr(arg_to_use, arg) for arg in changedArgs if (not dropArgs or arg not in dropArgs)}
     if additionalArgs is not None:
         for additional_arg in additionalArgs:
@@ -199,7 +199,7 @@ def submitJobs(script, subjob_args, subjob_list, argparser, **kwargs):
 
     for i, subJob in enumerate(subjob_list):
         for arg, value in zip(subjob_args, subJob):
-            if value: 
+            if value is not None: 
                 if not isinstance(value, list):
                     submit_args[arg] = str(value)
                 else:
@@ -210,7 +210,7 @@ def submitJobs(script, subjob_args, subjob_list, argparser, **kwargs):
         
         args_str_for_command = ' '
         for arg, value in submit_args.iteritems():
-            if value == False:
+            if not isinstance(value, float) and value == False:
                 continue
             elif isinstance(value, list):
                 args_str_for_command += ' ' + '--' + arg + ' ' + ' '.join([str(x) for x in sorted(value)])

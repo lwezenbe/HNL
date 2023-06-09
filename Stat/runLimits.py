@@ -9,7 +9,7 @@ submission_parser.add_argument('--era',     action='store',       default='UL', 
 submission_parser.add_argument('--masses', type=float, nargs='*',  help='Only run or plot signal samples with mass given in this list')
 submission_parser.add_argument('--couplings', nargs='*', type=float,  help='Only run or plot signal samples with coupling squared given in this list')
 submission_parser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
-submission_parser.add_argument('--method',   action='store', default='',  help='What method should we use?', choices = ['asymptotic', 'hybrid', 'significance', 'covariance'])
+submission_parser.add_argument('--method',   action='store', default='',  help='What method should we use?', choices = ['asymptotic', 'hybrid', 'significance', 'covariance', 'impact'])
 submission_parser.add_argument('--blind',   action='store_true', default=False,  help='activate --blind option of combine')
 submission_parser.add_argument('--useExistingLimits',   action='store_true', default=False,  help='Dont run combine, just plot')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
@@ -100,6 +100,26 @@ def runSignificance(datacard, cardname):
     
     return
 
+def runImpacts(datacard, cardname):
+    output_folder = getOutputFolder(datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/Impacts/'+cardname)
+    #extra_conditions = '--rMin 0 --rMax 5'
+    #extra_conditions = '--rMin 0 --rMax 5 --robustFit=1'
+    #extra_conditions = '--rMin -10 '
+    extra_conditions = '--rMin -10  --robustFit=1 '
+    runCombineCommand(  'text2workspace.py '+datacard+ ' -o ws.root ; '
+                        + 'combineTool.py -M Impacts -d ws.root -m 100 {0} --doInitialFit ; '.format(extra_conditions)
+                        + 'combineTool.py -M Impacts -d ws.root -m 100 {0} --doFits --parallel 10 ; '.format(extra_conditions)
+                        + 'combineTool.py -M Impacts -d ws.root -m 100 {0} -o impacts.json ; '.format(extra_conditions)
+                        + 'plotImpacts.py -i  impacts.json -o  impacts', 
+                    output_folder)
+    
+    from HNL.Tools.helpers import getPublicHTMLfolder, makeDirIfNeeded
+    public_html = getPublicHTMLfolder(output_folder)
+    makeDirIfNeeded(public_html+'/x')
+    os.system('scp '+output_folder+'/impacts.pdf '+public_html+'/impacts.pdf')
+    return
+    
+
 def producePostFit(datacard, cardname):
     output_folder = getOutputFolder(datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname)
     runCombineCommand('combine ws.root -M FitDiagnostics', output_folder)    
@@ -136,7 +156,10 @@ def runLimit(card_manager, signal_name, cardnames):
         runSignificance(datacard, getOutDataCardName(cardnames))
     elif args.method == 'covariance':
         getCovarianceMatrix(datacard, getOutDataCardName(cardnames))
+    elif args.method == 'impact':
+        runImpacts(datacard, getOutDataCardName(cardnames))
     print 'Finished running toy limits for {0}'.format(signal_name)
+
 
 # Create datacard manager
 from HNL.Stat.datacardManager import DatacardManager
@@ -197,7 +220,7 @@ if not args.useExistingLimits:
     closeLogger(log)
 
 
-if args.submitPlotting or args.isChild or args.method == 'covariance':
+if args.submitPlotting or args.isChild or args.method in ['covariance', 'impact']:
     exit(0)    
 
 compare_dict = {

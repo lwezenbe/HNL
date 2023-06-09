@@ -71,7 +71,7 @@ def passHighMassSelection(chain, new_chain, cutter, ossf = None, invert_pt = Fal
     if containsOSSF(new_chain):
         if not cutter.cut(abs(new_chain.MZossf-MZ) > 15, 'M2l_OSSF_Z_veto'):        return False
         if not cutter.cut(abs(new_chain.M3l-MZ) > 15, 'M3l_Z_veto'):        return False 
-        if not cutter.cut(new_chain.minMossf > 5, 'minMossf'): return False
+        if not cutter.cut(new_chain.minMossf > 10, 'minMossf'): return False
     
     if ossf is not None:
         if ossf == False and not cutter.cut(not containsOSSF(chain), 'no OSSF'):      return False
