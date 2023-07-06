@@ -319,7 +319,6 @@ def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hi
         else:
             grouped_observed_hist[group] = None
 
-        print syst_hist
         if syst_hist is not None:
             grouped_syst_hist[group] = []
             for ish, sh in enumerate(syst_hist):

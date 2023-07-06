@@ -156,7 +156,6 @@ class CutflowReader:
         for k in key_names:
             cut_name = k.split('/')[-1]
             self.list_of_cut_hist[cut_name] = getObjFromFile(in_path, k)
-            print in_path, k+'_raw'
             self.list_of_entry_hist[cut_name] = getObjFromFile(in_path, k.replace('cutflow', 'cutflow_raw')+'_raw')
             self.cut_names.append(cut_name)
 

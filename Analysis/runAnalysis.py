@@ -217,7 +217,7 @@ if not args.isTest:
         else:
             subjob_var = args.variables
         subjob_var.append('searchregion')
-        n_var = 1
+        n_var = 8
         subjob_var = [subjob_var[i:i+n_var] for i in range(0, len(subjob_var), n_var)]
         
         if args.category is None:
@@ -577,7 +577,6 @@ else:
     
     def createSingleVariableDistributions(tree, vname, hname, bins, condition, proc, year, include_systematics = 'nominal', split_corr = False, additional_weight = None, ignore_sideband = False):
         out_dict = {}
-        print condition
 
         weight = 'weight'
         if additional_weight is not None:
@@ -711,17 +710,17 @@ else:
                                     tmp_list_of_hist[c][v]['bkgr'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']
                                 
                                 #charge
-                                #if corr_syst == 'nominal': 
-                                #    tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+'-chargemisid'+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
-                                #else:
-                                #    tmp_hist = {corr_syst : createSingleVariableDistributions(intree, v, 'tmp_'+b+'-chargemisid'+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']}
-                                #    
-                                #if corr_syst not in tmp_list_of_hist[c][v]['bkgr']['charge-misid'].keys():
-                                #    tmp_list_of_hist[c][v]['bkgr']['charge-misid'].update(tmp_hist)
-                                #else:
-                                #    for sk in tmp_hist.keys():
-                                #        tmp_list_of_hist[c][v]['bkgr']['charge-misid'][sk].add(tmp_hist[sk])
-                                #del(tmp_hist)
+                                if corr_syst == 'nominal': 
+                                    tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+'-chargemisid'+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
+                                else:
+                                    tmp_hist = {corr_syst : createSingleVariableDistributions(intree, v, 'tmp_'+b+'-chargemisid'+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']}
+                                    
+                                if corr_syst not in tmp_list_of_hist[c][v]['bkgr']['charge-misid'].keys():
+                                    tmp_list_of_hist[c][v]['bkgr']['charge-misid'].update(tmp_hist)
+                                else:
+                                    for sk in tmp_hist.keys():
+                                        tmp_list_of_hist[c][v]['bkgr']['charge-misid'][sk].add(tmp_hist[sk])
+                                del(tmp_hist)
                                 
                                 if ignore_sideband:
                                     if corr_syst == 'nominal': 
@@ -759,10 +758,10 @@ else:
                         tmp_list_of_hist[c][v]['bkgr']['non-prompt'] = tmp_list_of_hist[c][v]['data']['sideband']
                         
                         #Remove prompt contribution
-                        #for b in background:  
-                        #    if b in ['charge-misid', 'non-prompt']: continue
-                        #    for k in tmp_list_of_hist[c][v]['bkgr']['non-prompt'].keys():
-                        #        tmp_list_of_hist[c][v]['bkgr']['non-prompt'][k].getHist().Add(tmp_list_of_hist[c][v]['data'][b]['nominal'].getHist(), -1.) 
+                        for b in background:  
+                            if b in ['charge-misid', 'non-prompt']: continue
+                            for k in tmp_list_of_hist[c][v]['bkgr']['non-prompt'].keys():
+                                tmp_list_of_hist[c][v]['bkgr']['non-prompt'][k].getHist().Add(tmp_list_of_hist[c][v]['data'][b]['nominal'].getHist(), -1.) 
                         
                         for k in tmp_list_of_hist[c][v]['bkgr']['non-prompt'].keys():
                             tmp_list_of_hist[c][v]['bkgr']['non-prompt'][k].removeNegativeBins(error=1.0)
@@ -971,8 +970,7 @@ else:
                 if not os.path.isdir(getOutputName('bkgr', year, args.tag)+'/'+x): continue
                 background_collection[year].append(x)
             
-            #background_collection[year] += ['non-prompt', 'charge-misid']
-            background_collection[year] += ['non-prompt']
+            background_collection[year] += ['non-prompt', 'charge-misid']
         else:
             background_collection[year] = [x for x in sample_manager.sample_names if not 'HNL' in x and not 'Data' in x]
 
@@ -1044,7 +1042,6 @@ else:
                 sr_condition = '||'.join(['searchregion=={0}'.format(x) for x in srm[args.region].getGroupValues(sr)]) if sr != 'Combined' else None
                 #Scout the binning
 
-                print var_for_datacard 
                 binning = insertRebin(var_for_datacard, year, signal_list, background_collection, data_list, additional_condition = sr_condition, ignore_sideband = ignore_sideband, searchregion = sr, for_datacards = True) 
                 
                 hist_for_datacard = createVariableDistributions(category_dict[args.categoriesToPlot], var_for_datacard, signal_list[year], background_collection[year], data_list[year], sample_manager, year, sr_condition, include_systematics = args.systematics, sr=sr, split_corr=True, for_datacards=True, ignore_sideband = ignore_sideband, custom_bins = binning)
