@@ -17,6 +17,9 @@ class SignalLeptonMatcher:
         self.m = chain.HNLmass
         self.used_lheparticles = []
 
+    def initEvent(self):
+        self.used_lheparticles = []
+
     def lheParticleHistory(self, index):
         history = [abs(self.c._lhePdgId[index])]
         while self.c._lheMother1[index] != -1:
@@ -58,7 +61,7 @@ class SignalLeptonMatcher:
                 self.l1 = l
             else:
                 l2l3.append([l, match_dict[l]])
-   
+  
         #At this point, there are slight problems to match l2 and l3, if the W, Z or H from HNL decay is off-shell, it is not stored as lhe particle
         #However, I noticed that the indices of the lhe particles are ordered in a way that l2 is stored before l3
         #TODO: Check if this is correct. Update: Checked, not true in all cases, this needs to be changed
@@ -111,7 +114,9 @@ class SignalLeptonMatcher:
 
         ##TODO: implement checks for when on-shell W,Z and H
         #print  (self.c.l1, self.c.l2, self.c.l3), (self.l1, self.l2, self.l3)
-        
+       
+
+ 
     def saveNewOrder(self):
         self.matchSelectedLeptons()
         if self.l1 is None: return False
@@ -128,3 +133,14 @@ class SignalLeptonMatcher:
             self.c.l_flavor[i] = self.c._gen_lFlavor[l]
         
         return True
+
+
+    def isZevent(self):
+        self.matchSelectedLeptons()
+        self.initEvent()
+        if self.l2 is None or self.l3 is None: return
+        print self.l2, self.l3
+        print self.c._gen_lMomPdg[self.l2], self.c._gen_lMomPdg[self.l3]
+        print self.lheParticleHistory(self.matchLheParticle(self.l1))
+        print self.lheParticleHistory(self.matchLheParticle(self.l2))
+        print self.lheParticleHistory(self.matchLheParticle(self.l3))

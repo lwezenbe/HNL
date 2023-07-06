@@ -15,7 +15,7 @@ LAMBDA_PATH_TEST = lambda era, year, skim : os.path.join(BASE_PATH, '_'.join(['s
 
 ERA_DICT = {
     'prelegacy': ['2016', '2017', '2018'],
-    'UL': ['2016pre', '2016post', '2017', '2018']
+    'UL': ['2016pre', '2016post', '2017', '2018', '2016post-2016pre-2017-2018']
 }
 
 allowed_reco_general_skimselections = ['default', 'AN2017014']
@@ -39,6 +39,8 @@ class SampleManager:
         self.region = region
         self.era = era
         self.year = year
+        if '-' in self.year:
+            self.year = self.year.rsplit('-', 1)[-1]
 
         if skim is None:
             self.skim = 'noskim'

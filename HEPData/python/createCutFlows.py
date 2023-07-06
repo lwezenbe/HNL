@@ -11,15 +11,15 @@ def createCutFlowJSONs(signal, bkgr, observed, output_dir, categories = None, se
         for c in categories:
             cfr = CutflowReader(s+'-'+str(c), signal[s], subdir=starting_dir)
             out_dict['signal'][s][c] = cfr.returnCutFlow(categories[c], searchregions)
-        
-#    out_dict['bkgr'] = {}
-#    from HNL.EventSelection.cutter import CutFlowReader
-#    for s, sn in zip(bkgr, bkgr_names):
-#        out_dict['bkgr'][sn] = {}
-#        for c in categories:
-#            cfr = CutFlowReader(sn+'-'+str(c), s)
-#            out_dict['bkgr'][sn][c] = cfr.returnCutFlow(categories[c], searchregions)
-#
+    
+    if bkgr is not None:    
+        out_dict['bkgr'] = {}
+        for b in bkgr:
+            out_dict['bkgr'][b] = {}
+            for c in categories:
+                cfr = CutflowReader(b+'-'+str(c), bkgr[b], subdir=starting_dir)
+                out_dict['bkgr'][b][c] = cfr.returnCutFlow(categories[c], searchregions)
+
 #    out_dict['observed']
 #    for c in categories:
 #        cfr = CutFlowReader('observed-'+str(c), observed)
@@ -45,6 +45,7 @@ cut_dict = {
     "b-veto"                            : 'b-veto',
     "l1pt<55"                           : '$p_T(\\textrm{leading lepton}) < 55$GeV',
     "m3l<80"                            : '$m(3l) < 80$ GeV',
+    "m3l>80"                            : '$m(3l) > 80$ GeV',
     "MET < 75"                          : '$p_T^{\\textrm{miss}} < 75$GeV',
     "M2l_OSSF_Z_veto"                   : '$|m(2l|\\textrm{OSSF}) - m_Z| > 15$GeV',
     "minMossf"                          : 'min $m(2l|\\textrm{OSSF}) > 5$GeV',
@@ -52,7 +53,6 @@ cut_dict = {
     "l2pt>15"                           : '$p_T(\\textrm{subleading lepton}) > 15$GeV',
     "l3pt>10"                           : '$p_T(\\textrm{trailing lepton}) > 10$GeV',
     "M3l_Z_veto"                        : '$|m(3l) - m_Z| > 15$GeV',
-
 }
 
 #category_dict = {
@@ -82,8 +82,10 @@ def translateCut(cut_name, category):
     if cut_name == 'passed category':
         #return category_dict[category]
         return "pass final state selection"
-    else:
+    elif cut_name in cut_dict.keys():
         return cut_dict[cut_name]
+    else:
+        return str(cut_name)
 
 def createCutFlowVariable(cutflow):
     from hepdata_lib import Variable
@@ -140,6 +142,54 @@ def createCutFlowTable(in_path, categories, name):
 
     return table
 
+def createCutFlowTableTest(in_path, categories, name):
+    from hepdata_lib import Variable, Table
+    import json
+    with open(in_path, 'r') as infile:
+        in_json = json.load(infile)
+
+    from HNL.Samples.sample import Sample
+    signals = in_json['signal'].keys()
+    backgrounds = in_json['bkgr'].keys()
+
+    #Create Table
+    table = Table(name)
+
+    for i_sig, sig in enumerate(signals + backgrounds):
+        sig_string = 'signal' if sig in signals else 'bkgr'
+        for ic, category in enumerate(categories):
+            if i_sig == 0 and ic == 0:
+                cut_names = [translateCut(cut, category) for cut in in_json[sig_string][sig][category]['cuts']]
+
+                #Create the variable
+                cut_name_var = Variable("Requirement",
+                                        is_independent = True,
+                                        is_binned = False,
+                                        units = ""
+                                        )
+                cut_name_var.values = cut_names
+                table.add_variable(cut_name_var)
+
+            else:
+                #Cross check the cut names
+                tmp_check = [translateCut(cut, category) for cut in in_json[sig_string][sig][category]['cuts'] if translateCut(cut, category) != 'Clean Nonprompt ZG']
+                print 'New'
+                print cut_names
+                print tmp_check
+                if tmp_check != cut_names:
+                    raise RuntimeError("Trying to add different cutflows in single table")
+
+            ignore_index = in_json[sig_string][sig][category]['cuts'].index('Clean Nonprompt ZG') if 'Clean Nonprompt ZG' in in_json[sig_string][sig][category]['cuts'] else None
+            cutflow_values = in_json[sig_string][sig][category]['values']
+            if ignore_index is not None: cutflow_values.pop(ignore_index)
+            tmp_var = createCutFlowVariable(cutflow_values)
+            tmp_var.add_qualifier('Final State', str(getTranslatedCat(category)))
+            tmp_var.add_qualifier('Sample', str(sig))
+            table.add_variable(tmp_var)
+
+    return table
+
+
 def addCutflowTo(submission):
     #
     #Low mass
@@ -174,6 +224,10 @@ def addCutflowTo(submission):
 if __name__ == '__main__':
     from hepdata_lib import Submission
     submission = Submission()
-    addCutflowTo(submission)
+    #addCutflowTo(submission)
+    
+    table = createCutFlowTableTest('/storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Analysis/data/Results/runAnalysis/HNL-CutFlowMC/MVA-default-highMassSR-/UL2018/signalAndBackground-Majorana/e_coupling/customMasses/200.0/CutFlows/cutflow.json', ['NoTau'], 'cutflow: high mass region')
+    submission.add_table(table) 
+
     submission.create_files('./submission')
 

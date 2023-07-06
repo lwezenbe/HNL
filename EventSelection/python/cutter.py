@@ -12,12 +12,15 @@ class Cutter():
         self.categories = categories if categories != 'auto' else [c for c in CATEGORIES]
         self.searchregions = searchregions
         self.list_of_cuts = {}
+        self.list_of_entries = {}
         self.order_of_cuts = []
 
     def addCut(self, cut_name):
         if cut_name not in self.list_of_cuts.keys():
             self.list_of_cuts[cut_name] = TH2D(cut_name, cut_name, len(self.categories), 0.5, len(self.categories)+0.5, len(self.searchregions), 0.5, len(self.searchregions)+0.5)
+            self.list_of_entries[cut_name] = TH2D(cut_name+'_raw', cut_name+'_raw', len(self.categories), 0.5, len(self.categories)+0.5, len(self.searchregions), 0.5, len(self.searchregions)+0.5)
             self.list_of_cuts[cut_name].SetDirectory(0)
+            self.list_of_entries[cut_name].SetDirectory(0)
             self.order_of_cuts.append(cut_name)
 
     def cut(self, passed, cut_name, weight = None):
@@ -39,6 +42,7 @@ class Cutter():
             for c in range_of_cat:
                 for s in range_of_sr:
                     self.list_of_cuts[cut_name].Fill(c, s, weight)
+                    self.list_of_entries[cut_name].Fill(c, s, 1.)
 
             return True
     
@@ -72,6 +76,17 @@ class Cutter():
 
         for cut in self.order_of_cuts:
             self.list_of_cuts[cut].Write()
+        
+        f.cd()
+        f.mkdir('cutflow_raw')
+        f.cd('cutflow_raw')
+
+        if self.name:
+            f.mkdir('cutflow_raw/'+self.name)
+            f.cd('cutflow_raw/'+self.name)
+
+        for cut in self.order_of_cuts:
+            self.list_of_entries[cut].Write()
         
         f.Close()
         # t = TTree('cutflowtree', 'cutflowtree')
@@ -130,6 +145,7 @@ class CutflowReader:
         self.name = name
 
         self.list_of_cut_hist = {}
+        self.list_of_entry_hist = {}
         self.cut_names = []
 
         in_file = TFile(in_path, 'read')
@@ -140,6 +156,8 @@ class CutflowReader:
         for k in key_names:
             cut_name = k.split('/')[-1]
             self.list_of_cut_hist[cut_name] = getObjFromFile(in_path, k)
+            print in_path, k+'_raw'
+            self.list_of_entry_hist[cut_name] = getObjFromFile(in_path, k.replace('cutflow', 'cutflow_raw')+'_raw')
             self.cut_names.append(cut_name)
 
     @staticmethod
@@ -179,12 +197,12 @@ class CutflowReader:
                 return sum([x[0] for x in matrix])
             else:
                 return matrix[0][0]
- 
-    def getYield(self, cut_name, categories = None, searchregions = None):
+
+    def getNumber(self, hists, cut_name, categories = None, searchregions = None):
         if categories is None:
-            categories = range(1, self.list_of_cut_hist[cut_name].GetNbinsX()+1)
+            categories = range(1, hists[cut_name].GetNbinsX()+1)
         if searchregions is None:
-            searchregions = range(1, self.list_of_cut_hist[cut_name].GetNbinsY()+1)
+            searchregions = range(1, hists[cut_name].GetNbinsY()+1)
 
         from HNL.Plotting.plot import makeList
         categories = makeList(categories)
@@ -194,20 +212,50 @@ class CutflowReader:
         for icat, cat in enumerate(categories):
             list_of_yields.append([])
             for sr in searchregions:
-                list_of_yields[icat].append(self.list_of_cut_hist[cut_name].GetBinContent(self.list_of_cut_hist[cut_name].GetXaxis().FindBin(cat), self.list_of_cut_hist[cut_name].GetYaxis().FindBin(sr)))
+                list_of_yields[icat].append(hists[cut_name].GetBinContent(hists[cut_name].GetXaxis().FindBin(cat), hists[cut_name].GetYaxis().FindBin(sr)))
 
-        return self.mergeMatrix(list_of_yields)        
+        return self.mergeMatrix(list_of_yields)
 
+#    def getYield(self, cut_name, categories = None, searchregions = None):
+#        if categories is None:
+#            categories = range(1, self.list_of_cut_hist[cut_name].GetNbinsX()+1)
+#        if searchregions is None:
+#            searchregions = range(1, self.list_of_cut_hist[cut_name].GetNbinsY()+1)
+#
+#        from HNL.Plotting.plot import makeList
+#        categories = makeList(categories)
+#        searchregions = makeList(searchregions)
+#
+#        list_of_yields = []
+#        for icat, cat in enumerate(categories):
+#            list_of_yields.append([])
+#            for sr in searchregions:
+#                list_of_yields[icat].append(self.list_of_cut_hist[cut_name].GetBinContent(self.list_of_cut_hist[cut_name].GetXaxis().FindBin(cat), self.list_of_cut_hist[cut_name].GetYaxis().FindBin(sr)))
+#
+#        return self.mergeMatrix(list_of_yields)        
+
+    def getYield(self, cut_name, categories = None, searchregions = None):
+        return self.getNumber(self.list_of_cut_hist, cut_name, categories, searchregions)
+
+    def getEntries(self, cut_name, categories = None, searchregions = None):
+        return self.getNumber(self.list_of_entry_hist, cut_name, categories, searchregions)
+        
     def returnCutFlow(self, categories = None, searchregions = None):
-        out_lists = {'cuts' : [], 'values' : []}
+        out_lists = {'cuts' : [], 'values' : [], 'entries' : []}
         for cut_name in self.cut_names:
             out_lists['cuts'].append(cut_name)
             out_lists['values'].append(self.getYield(cut_name, categories, searchregions))
+            out_lists['entries'].append(self.getEntries(cut_name, categories, searchregions))
         return out_lists
     
 if __name__ == '__main__':
-    in_path = '../../Analysis/data/testArea/runAnalysis/HNL/MVA-default-lowMassSRloose-reco/UL-2016pre/signal/HNL-e-m40-Vsq1em4-prompt/tmp_HNL-e-m40-Vsq1em4-prompt/HNL-e-m40-Vsq1em4-prompt_variables_subJob0.root'
+    in_path = '../../Analysis/data/runAnalysis/HNL/MVA-default-lowMassSRloose-reco/UL-2018/signal/HNL-mu-m30-Vsq1em4-prompt/variables.root'
+    #in_path = '../../Analysis/data/runAnalysis/HNL/MVA-default-lowMassSRloose-reco/UL-2018/signal/HNL-mu-m30-Vsq2em6-displaced/variables.root'
+    #in_path = '../../Analysis/data/runAnalysis/HNL-CutFlow/MVA-default-lowMassSRloose-reco/UL-2018/signal/HNL-mu-m30-Vsq2em6-displaced/variables.root'
+    #in_path = '../../Analysis/data/runAnalysis/HNL-CutFlow/MVA-default-lowMassSRloose-reco/UL-2018/signal/HNL-mu-m30-Vsq1em4-prompt/variables.root'
+    #in_path = '../../Analysis/data/testArea/runAnalysis/HNL/MVA-default-lowMassSRloose-reco/UL-2018/signal/HNL-mu-m30-Vsq1em4-prompt/tmp_HNL-mu-m30-Vsq1em4-prompt/HNL-mu-m30-Vsq1em4-prompt_variables_subJob0.root'
+    #in_path = '../../Analysis/data/runAnalysis/HNL/MVA-default-lowMassSRlooseBeforeMZcut-reco/UL-2018/signal/HNL-mu-m30-Vsq1em4-prompt/variables.root'
     cfr = CutflowReader('HNL-e-m40-Vsq1em4-prompt', in_path, 'nominalnominal')
-    print cfr.returnCutFlow()
+    print cfr.returnCutFlow(categories = [26, 33, 34, 35, 36, 37, 38])
 #    for i in range(1, 17):
 #        print cfr.returnCutFlow(searchregions = i)

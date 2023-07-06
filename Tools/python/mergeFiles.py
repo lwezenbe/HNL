@@ -13,6 +13,7 @@ def getListOfGroupID(path):
     list_of_id = []
     for f in list_of_files:
         tmp_entry = f.rsplit('/')[-1].split('_')[:2]
+        print f, tmp_entry
         if tmp_entry not in list_of_id and f.rsplit('/')[-1].split('_')[2]:
             list_of_id.append([x for x in tmp_entry])
     return list_of_id

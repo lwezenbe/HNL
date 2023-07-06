@@ -9,13 +9,15 @@ submission_parser.add_argument('--era',     action='store',       default='UL', 
 submission_parser.add_argument('--masses', type=float, nargs='*',  help='Only run or plot signal samples with mass given in this list')
 submission_parser.add_argument('--couplings', nargs='*', type=float,  help='Only run or plot signal samples with coupling squared given in this list')
 submission_parser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
-submission_parser.add_argument('--method',   action='store', default='',  help='What method should we use?', choices = ['asymptotic', 'hybrid', 'significance', 'covariance', 'impact'])
+submission_parser.add_argument('--method',   action='store', default='',  help='What method should we use?', choices = ['asymptotic', 'hybrid', 'significance', 'covariance', 'impact', 'gof'])
 submission_parser.add_argument('--blind',   action='store_true', default=False,  help='activate --blind option of combine')
 submission_parser.add_argument('--useExistingLimits',   action='store_true', default=False,  help='Dont run combine, just plot')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
 submission_parser.add_argument('--strategy',   action='store', default='cutbased',  help='Select the strategy to use to separate signal from background. Traditionally a choice between "custom", "cutbased" and "MVA". If custom or MVA you can add a "-$mvaname" to force it to use a specific mva')
 submission_parser.add_argument('--datacards', nargs = '*', default=None, type=str,  help='What final state datacards should be used?')
 submission_parser.add_argument('--outputfolder', default=None, type=str,  help='Define a custom outputfolder')
+submission_parser.add_argument('--inputTag', type = str, default=None,  help='Add a tag to your input')
+submission_parser.add_argument('--regions', nargs = '*', default=None, type=str,  help='If you want a specific region, define here')
 
 submission_parser.add_argument('--compareToExternal',   type=str, nargs='*',  help='Compare to a specific experiment')
 submission_parser.add_argument('--compareToCards',   type=str, nargs='*',  help='Compare to a specific card if it exists. If you want different selection use "selection/card" otherwise just "card"')
@@ -32,6 +34,7 @@ submission_parser.add_argument('--isChild',  action='store_true',       default=
 argParser.add_argument('--checkLogs', action='store_true', default=False,  help='Add a file with a message in the plotting folder')
 argParser.add_argument('--dryplot', action='store_true', default=False,  help='Add a file with a message in the plotting folder')
 argParser.add_argument('--submitPlotting', action='store_true', default=False,  help='Submit the fits to condor')
+argParser.add_argument('--xseclimit', action='store_true', default=False,  help='save limits as function of xsec')
 args = argParser.parse_args()
 
 from HNL.Tools.logger import getLogger, closeLogger
@@ -105,7 +108,11 @@ def runImpacts(datacard, cardname):
     #extra_conditions = '--rMin 0 --rMax 5'
     #extra_conditions = '--rMin 0 --rMax 5 --robustFit=1'
     #extra_conditions = '--rMin -10 '
-    extra_conditions = '--rMin -10  --robustFit=1 '
+    #extra_conditions = '--rMin -10  --robustFit=1 '
+    #extra_conditions = '--rMin -1 --rMax 5 --cminDefaultMinimizerStrategy 0'
+    extra_conditions = '--rMin -10 --rMax 5 --cminDefaultMinimizerStrategy 0'
+    #extra_conditions = '--robustFit=1 '
+    #extra_conditions = '--robustFit=1 --stepSize=0.05 --setRobustFitAlgo migrad'
     runCombineCommand(  'text2workspace.py '+datacard+ ' -o ws.root ; '
                         + 'combineTool.py -M Impacts -d ws.root -m 100 {0} --doInitialFit ; '.format(extra_conditions)
                         + 'combineTool.py -M Impacts -d ws.root -m 100 {0} --doFits --parallel 10 ; '.format(extra_conditions)
@@ -118,8 +125,23 @@ def runImpacts(datacard, cardname):
     makeDirIfNeeded(public_html+'/x')
     os.system('scp '+output_folder+'/impacts.pdf '+public_html+'/impacts.pdf')
     return
-    
 
+def runGoodnessOfFit(datacard, cardname):    
+    output_folder = getOutputFolder(datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/GOF/'+cardname)
+    makeDirIfNeeded(output_folder+'/x')
+
+    runCombineCommand('combine -M GoodnessOfFit {0} --algo saturated ; '.format(datacard)
+                    + 'combine -M GoodnessOfFit {0} --algo saturated -t 500 ; '.format(datacard)
+                    + 'combineTool.py -M CollectGoodnessOfFit --input higgsCombineTest.GoodnessOfFit.mH120.root higgsCombineTest.GoodnessOfFit.mH120.123456.root -o gof.json ; '
+                    + 'plotGof.py gof.json --statistic saturated -o gof_plot --mass 120.0',
+                output_folder)
+    
+    from HNL.Tools.helpers import getPublicHTMLfolder
+    public_html = getPublicHTMLfolder(output_folder)
+    makeDirIfNeeded(public_html+'/x')
+    os.system('scp '+output_folder+'/gof_plot.png '+public_html+'/gof_plot.png')
+    os.system('scp '+output_folder+'/gof_plot.pdf '+public_html+'/gof_plot.pdf')
+    
 def producePostFit(datacard, cardname):
     output_folder = getOutputFolder(datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname)
     runCombineCommand('combine ws.root -M FitDiagnostics', output_folder)    
@@ -143,9 +165,9 @@ def runLimit(card_manager, signal_name, cardnames):
         datacard = cardnames[0]
         cardname = datacard.rsplit('/', 1)[1].split('.')[0] 
     else:
-        datacard_manager.prepareAllCards(signal_name, cardnames, args.strategy)
+        card_manager.prepareAllCards(signal_name, cardnames)
         cardname = getOutDataCardName(cardnames)
-        datacard = datacard_manager.getDatacardPath(signal_name, cardname)
+        datacard = card_manager.getDatacardPath(signal_name, cardname, card_manager.combineRegionNames(signal_name))
    
     print 'Running Combine for {0}'.format(signal_name)
     if args.method == 'asymptotic':
@@ -158,13 +180,15 @@ def runLimit(card_manager, signal_name, cardnames):
         getCovarianceMatrix(datacard, getOutDataCardName(cardnames))
     elif args.method == 'impact':
         runImpacts(datacard, getOutDataCardName(cardnames))
+    elif args.method == 'gof':
+        runGoodnessOfFit(datacard, getOutDataCardName(cardnames))
     print 'Finished running toy limits for {0}'.format(signal_name)
 
 
 # Create datacard manager
 from HNL.Stat.datacardManager import DatacardManager
 tag = 'displaced' if args.displaced else 'prompt'
-datacard_manager = DatacardManager(args.year, args.era, args.strategy, args.flavor, args.selection, args.masstype)
+datacard_manager = DatacardManager(args.year, args.era, args.strategy, args.flavor, args.selection, args.regions, args.masstype, args.inputTag)
 
 def returnCouplings(mass):
     if args.couplings is None or mass > displaced_mass_threshold:
@@ -212,7 +236,7 @@ if not args.useExistingLimits:
         for coupling in couplings:
             mass_str = str(mass) if not mass.is_integer() else str(int(mass))
             signal_name = 'HNL-'+args.flavor+'-m'+mass_str+'-Vsq'+('{:.1e}'.format(coupling).replace('-', 'm'))+'-'+ ('prompt' if not args.displaced else 'displaced')
-            print datacard_manager.checkMassAvailability(signal_name)
+            print "Mass of {0} available?".format(mass), datacard_manager.checkMassAvailability(signal_name)
             if not (len(args.datacards) == 1 and '/' in args.datacards[0]) and not datacard_manager.checkMassAvailability(signal_name): continue
             print '\x1b[6;30;42m', 'Processing mN =', str(mass), 'GeV with V2 = ', str(coupling), '\x1b[0m'
             runLimit(datacard_manager, signal_name, args.datacards)
@@ -220,7 +244,7 @@ if not args.useExistingLimits:
     closeLogger(log)
 
 
-if args.submitPlotting or args.isChild or args.method in ['covariance', 'impact']:
+if args.submitPlotting or args.isChild or args.method in ['covariance', 'impact', 'gof']:
     exit(0)    
 
 compare_dict = {
@@ -256,7 +280,8 @@ for mass in args.masses:
     couplings = returnCouplings(mass)
     input_folders = []
     for c in couplings:
-        tmp_folder = datacard_manager.getDatacardPath('HNL-'+args.flavor+'-m'+mass_str+'-Vsq'+('{:.1e}'.format(c).replace('-', 'm'))+'-'+('prompt' if not args.displaced else 'displaced'), card)
+        signal_name = 'HNL-'+args.flavor+'-m'+mass_str+'-Vsq'+('{:.1e}'.format(c).replace('-', 'm'))+'-'+('prompt' if not args.displaced else 'displaced')
+        tmp_folder = datacard_manager.getDatacardPath(signal_name, card, datacard_manager.combineRegionNames(signal_name))
         tmp_folder = tmp_folder.replace('dataCards', 'output').rsplit('/', 1)[0] +'/'+asymptotic_str+'/'+card
         if args.tag is not None: tmp_folder += '-'+args.tag
         tmp_folder += '/higgsCombineTest.AsymptoticLimits.mH120.root'
@@ -265,11 +290,15 @@ for mass in args.masses:
     if args.displaced and mass <= displaced_mass_threshold:
         tmp_limit = extractScaledLimitsDisplacedHNL(input_folders, couplings, blind=args.blind)
         from HNL.Stat.combineTools import drawSignalStrengthPerCouplingDisplaced
-        drawSignalStrengthPerCouplingDisplaced(input_folders, couplings, destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
+#        drawSignalStrengthPerCouplingDisplaced(input_folders, couplings, destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
     else:
-        tmp_limit = extractScaledLimitsPromptHNL(input_folders[0], couplings[0])
-        from HNL.Stat.combineTools import drawSignalStrengthPerCouplingPrompt
-        drawSignalStrengthPerCouplingPrompt(input_folders[0], couplings[0], destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
+        from HNL.Stat.combineTools import getCrossSection
+        if not args.xseclimit:
+            tmp_limit = extractScaledLimitsPromptHNL(input_folders[0], couplings[0])
+        else:
+            tmp_limit = extractScaledLimitsPromptHNL(input_folders[0], getCrossSection(args.flavor, mass, couplings[0]))
+#        from HNL.Stat.combineTools import drawSignalStrengthPerCouplingPrompt
+#        drawSignalStrengthPerCouplingPrompt(input_folders[0], couplings[0], destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
 
     if tmp_limit is not None and len(tmp_limit) > 4: 
         passed_masses.append(mass)
@@ -277,9 +306,17 @@ for mass in args.masses:
 
 print 'made graphs'
 graphs = makeGraphs(passed_masses, limits=limits)
-
-out_path_base = lambda era, sname, cname, tag : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.masstype+'-'+('prompt' if not args.displaced else 'displaced'), era, sname+'-'+args.flavor+'-'+asymptotic_str+'/'+cname+(('-'+tag) if tag is not None else ''))
-out_path = args.outputfolder if args.outputfolder is not None else out_path_base(args.era+year_to_read, args.strategy +'-'+ args.selection, card, args.tag)+"/limits.root"
+if args.xseclimit:
+    if args.tag is None:
+        args.tag = 'xsec'
+    else:
+        args.tag += '-xsec'
+        
+out_path_base = lambda era, sname, cname, tag : os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output', args.masstype+'-'+('prompt' if not args.displaced else 'displaced'), era, sname+'-'+args.flavor+'-'+asymptotic_str+'/'+cname+(('-'+args.inputTag) if args.inputTag is not None else '')+(('-'+tag) if tag is not None else ''))
+out_path = (args.outputfolder) if args.outputfolder is not None else out_path_base(args.era+year_to_read, args.strategy +'-'+ args.selection, card, args.tag)
+if args.regions is not None:
+    out_path += '/'+'-'.join(sorted(args.regions))
+out_path += "/limits.root"
 saveGraphs(graphs, out_path)
 saveJsonFile(limits, args.outputfolder if args.outputfolder is not None else out_path_base(args.era+year_to_read, args.strategy +'-'+ args.selection, card, args.tag))
 

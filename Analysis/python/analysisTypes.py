@@ -43,7 +43,10 @@ var_reco_3l = {
         'met':          (lambda c : c.met,     np.arange(0., 90., 15.),         ('p_{T}^{miss} [GeV]', 'Events')),
         'mtOther':      (lambda c : c.mtOther,  np.arange(0., 365., 15.),       ('m_{T} [GeV])', 'Events')),
         'mt3':   (lambda c : c.mt3,      np.arange(0., 415., 15.),         ('m_{T}(3l) [GeV]', 'Events')),
-        
+        'nele': (lambda c:c.n_ele,      np.arange(-0.5, 4.5, 1.),    ('N(e)', 'Events')),       
+        'nmu': (lambda c:c.n_mu,      np.arange(-0.5, 4.5, 1.),    ('N(#mu)', 'Events')),       
+        'ntau': (lambda c:c.n_tau,      np.arange(-0.5, 4.5, 1.),    ('N(#tau)', 'Events')),       
+ 
         # Full SR (mainly for BDT variables)
         'm3l':          (lambda c : c.M3l,      np.arange(0., 415., 15.),         ('m(3l) [GeV]', 'Events')),
         'j1pt':      (lambda c : c.j_pt[0],       np.arange(0., 160., 15.),       ('p_{T} (j1) [GeV]', 'Events')),
@@ -105,6 +108,9 @@ var_reco_4l = {
         'NbJet':      (lambda c : c.nbjets,       np.arange(0., 12., 1.),       ('#B Jets', 'Events')),
         'MllZ1':       (lambda c : c.Mll_Z1,      np.arange(70., 112., 2.),         ('m_{ll}(Z_{1}) [GeV]', 'Events')), 
         'MllZ2':       (lambda c : c.Mll_Z2,      np.arange(70., 112., 2.),         ('m_{ll}(Z_{2}) [GeV]', 'Events')),
+        'nele': (lambda c:c.n_ele,      np.arange(-0.5, 5.5, 1.),    ('N(e)', 'Events')),       
+        'nmu': (lambda c:c.n_mu,      np.arange(-0.5, 5.5, 1.),    ('N(#mu)', 'Events')),       
+        'ntau': (lambda c:c.n_tau,      np.arange(-0.5, 5.5, 1.),    ('N(#tau)', 'Events')),       
         # 'ptConeLeading':   (lambda c : c.pt_cone[0],      np.arange(0., 205., 5.),         ('P_{T}^{cone}(leading) [GeV]', 'Events'))
     }
 
@@ -213,11 +219,14 @@ binning = {
 #    'ml2l3'     : {'ConversionCR' : np.arange(0., 95., 5.), 'WZCR' : np.arange(0., 200., 15.), 'lowMassSRloose' : np.arange(0., 75., 5.), 'highMassSR' : np.arange(0., 250., 15.)},   
 #}
 
-def getBinning(v, region, original_bins):
-    if v not in binning.keys() or region not in binning[v].keys():
+def getBinning(v, region, original_bins, binning_dict = binning):
+    if region == 'lowMassSRlooseInvertedM3l':
+        region = 'lowMassSRloose'
+
+    if v not in binning_dict.keys() or region not in binning_dict[v].keys():
         return original_bins
     else:
-        return binning[v][region]
+        return binning_dict[v][region]
     
 def getRelevantSuperCategories(original_names, region):
     region_dict = {
@@ -267,7 +276,7 @@ signal_couplingsquared = {
 }
 
 
-final_signal_regions = ['lowMassSR', 'highMassSR']
+final_signal_regions = ['lowMassSRloose', 'highMassSR']
 
 if __name__ == '__main__':
         print returnVariables(3, True, True)['mva']

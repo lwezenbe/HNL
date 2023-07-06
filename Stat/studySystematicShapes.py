@@ -19,7 +19,7 @@ args = argParser.parse_args()
 # Load in sample list
 #
 from HNL.Samples.sampleManager import SampleManager
-sm = SampleManager(args.era, args.year, 'Reco', 'fulllist_{0}{1}'.format(args.era, args.year), skim_selection=args.selection, region=args.region)
+sm = SampleManager(args.era, args.year, 'Reco', 'fulllist_{0}{1}'.format(args.era, args.year if not '-' in args.year else args.year.rsplit('-', 1)[-1]), skim_selection=args.selection, region=args.region)
 
 #
 # Systematic bookkeeping
@@ -183,6 +183,7 @@ for cat in args.categories:
     
                 if not args.oneplot:
                     out_path = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Stat', 'data', 'Results', 'shapeStudy', args.selection+'-'+args.region, args.era+args.year, flavor, args.signal, syst))
+                    print out_path
                     plotSystematic(syst_shapes[syst], out_path, name_args=[sr, cat, m])
 
             if args.oneplot:

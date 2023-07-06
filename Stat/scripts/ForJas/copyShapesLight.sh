@@ -1,0 +1,13 @@
+mkdir -p /user/lwezenbe/public_html/HNL/Stat/output/ForJas/lowMass/$1/$2/shapes
+
+scp /storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/dataCards/Majorana/UL2016post-2016pre-2017-2018/default-lowMassSRloose/$1/$2/shapes/cutbased/NoTau.txt /user/lwezenbe/public_html/HNL/Stat/output/ForJas/lowMass/$1/$2/shapes/datacard.txt
+
+scp /storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/shapes/default-lowMassSRloose/UL2016post-2016pre-2017-2018/$1/$2/Majorana/A-EEE-Mu-searchregion.shapes.root /user/lwezenbe/public_html/HNL/Stat/output/ForJas/lowMass/$1/$2/shapes/ch1.root
+scp /storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/shapes/default-lowMassSRloose/UL2016post-2016pre-2017-2018/$1/$2/Majorana/C-EEE-Mu-searchregion.shapes.root /user/lwezenbe/public_html/HNL/Stat/output/ForJas/lowMass/$1/$2/shapes/ch2.root
+scp /storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/shapes/default-lowMassSRloose/UL2016post-2016pre-2017-2018/$1/$2/Majorana/B-EEE-Mu-searchregion.shapes.root /user/lwezenbe/public_html/HNL/Stat/output/ForJas/lowMass/$1/$2/shapes/ch3.root
+scp /storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/shapes/default-lowMassSRloose/UL2016post-2016pre-2017-2018/$1/$2/Majorana/D-EEE-Mu-searchregion.shapes.root /user/lwezenbe/public_html/HNL/Stat/output/ForJas/lowMass/$1/$2/shapes/ch4.root
+scp /storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/shapes/default-lowMassSRloose/UL2016post-2016pre-2017-2018/$1/$2/Majorana/A-MuMuMu-E-searchregion.shapes.root /user/lwezenbe/public_html/HNL/Stat/output/ForJas/lowMass/$1/$2/shapes/ch5.root
+scp /storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/shapes/default-lowMassSRloose/UL2016post-2016pre-2017-2018/$1/$2/Majorana/C-MuMuMu-E-searchregion.shapes.root /user/lwezenbe/public_html/HNL/Stat/output/ForJas/lowMass/$1/$2/shapes/ch6.root
+scp /storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/shapes/default-lowMassSRloose/UL2016post-2016pre-2017-2018/$1/$2/Majorana/B-MuMuMu-E-searchregion.shapes.root /user/lwezenbe/public_html/HNL/Stat/output/ForJas/lowMass/$1/$2/shapes/ch7.root
+scp /storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/shapes/default-lowMassSRloose/UL2016post-2016pre-2017-2018/$1/$2/Majorana/D-MuMuMu-E-searchregion.shapes.root /user/lwezenbe/public_html/HNL/Stat/output/ForJas/lowMass/$1/$2/shapes/ch8.root
+

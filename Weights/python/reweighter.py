@@ -181,7 +181,7 @@ class Reweighter:
         if weight_name == 'chargeMisid':
             return self.getChargeMisidWeight(syst=syst)
 
-    def getTotalWeight(self, sideband=False, tau_fake_method = None, exclude_weights = []):
+    def getTotalWeight(self, sideband = False, tau_fake_method = None, exclude_weights = []):
         tot_weight = 1.
         for weight in self.WEIGHTS_TO_USE:
             if weight in exclude_weights: continue

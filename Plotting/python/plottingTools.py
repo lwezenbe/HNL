@@ -61,6 +61,14 @@ def getYMin(graphs):
             ymin = TMath.MinElement(graph.GetN(), graph.GetY())
     return ymin
 
+def getXMinMultiGraph(graph):
+    min_el = 99999999.
+    list_of_graphs = graph.GetListOfGraphs()
+    for g in list_of_graphs:
+        if TMath.MinElement(g.GetN(), g.GetX()) < min_el:
+            min_el = TMath.MinElement(g.GetN(), g.GetX())
+    return min_el     
+
 def getYMax(graphs):
     ymax = -99999.
     for graph in graphs:

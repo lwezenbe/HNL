@@ -7,8 +7,6 @@ def getRegionFromMass(mass):
     else:
         return 'highMassSR'
 
-data_card_base = lambda era, year, selection, mass, flavor, dirac_str: os.path.join(os.path.expandvars('$CMSSW_BASE/src/HNL/Stat/data/dataCards'), dirac_str, era+year, selection+'-'+getRegionFromMass(mass), flavor)
-
 forbidden_combinations = {
     'TauEMu' : ['E', 'C', 'D'],
 #    'OneTau-OF' : ['E', 'C', 'D'],
@@ -30,21 +28,50 @@ def getOutDataCardName(datacards):
 
 class SingleYearDatacardManager:
     
-    def __init__(self, year, era, strategy, flavor, selection, masstype = 'Majorana'):
+    def __init__(self, year, era, strategy, flavor, selection, regions = None, masstype = 'Majorana', tag = None):
         self.year = year
         self.era = era
+        self.original_strategy = strategy
         self.strategy = strategy
+        if 'custom' in strategy or 'MVA' in strategy:
+            tmp_split = strategy.split('-')
+            if len(tmp_split) == 2:
+                self.strategy = tmp_split[0]
+                self.sub_strategy = tmp_split[1]
+            else:
+                self.sub_strategy = None
+        else:
+            self.sub_strategy = None
+
         self.flavor = flavor
         self.selection = selection
         self.masstype = masstype
+        self.tag = tag
 
-    def getDatacardPath(self, signal_name, card_name, define_strategy = True):
-        from HNL.Stat.combineTools import displaced_mass_threshold
-        return os.path.join(data_card_base(self.era, self.year, self.selection, self.getHNLmass(signal_name), self.flavor, self.masstype), signal_name, 'shapes', self.strategy if define_strategy else '', card_name+'.txt')
+        self.regions = regions
+
+    def getHNLregion(self, signal_name, region):
+        if 'HNL' in signal_name and region is None:
+            if self.sub_strategy is None:
+                mass_point = self.getHNLmass(signal_name)
+                return getRegionFromMass(mass_point)
+            else:
+                if 'low' in self.sub_strategy:
+                    return getRegionFromMass(20)
+                else:
+                    return getRegionFromMass(800)
+        else:
+            return region
+            
 
     def getHNLmass(self, signal_name):
         from HNL.Samples.sample import Sample
         return Sample.getSignalMass(signal_name)
+
+    def getDatacardPath(self, signal_name, card_name, region = None, define_strategy = True):
+        from HNL.Stat.combineTools import displaced_mass_threshold
+        from combineTools import returnDataCardPath
+        return returnDataCardPath(self.era, self.year, self.selection, region if region is not None else getRegionFromMass(self.getHNLmass(signal_name)), self.flavor, signal_name, card_name if not define_strategy else self.original_strategy+'/'+card_name, self.masstype, tag = self.tag)
 
     def getCutbasedName(self, sr, final_state):
         return sr+'-'+final_state+'-searchregion'
@@ -62,123 +89,131 @@ class SingleYearDatacardManager:
         else:
             return sr+'-'+final_state+'-'+mva_name+'tauhad'
         
-    def getStandardDatacardName(self, sr, final_state, signal_name, custom_strategy = None, sub_strategy = None):
-        if custom_strategy is None: custom_strategy = self.strategy
-        if custom_strategy == 'cutbased':
+    def getStandardDatacardName(self, sr, final_state, signal_name, strategy, sub_strategy = None):
+        if strategy == 'cutbased':
             return self.getCutbasedName(sr, final_state)
-        if custom_strategy == 'MVA':
+        if strategy == 'MVA':
             return self.getMVAName(sr, final_state, signal_name, sub_strategy)
         raise RuntimeError("No known strategy specified in datacardmanager")
 
-    def getStandardDatacardList(self, signal_name, final_state, custom_strategy = None, sub_strategy = None):
-        if custom_strategy is None: custom_strategy = self.strategy
+    def getStandardDatacardList(self, signal_name, final_state, region, strategy, sub_strategy = None):
         from HNL.EventSelection.searchRegions import SearchRegionManager
         if 'HNL' in signal_name:
-            if sub_strategy is None: 
-                mass_point = self.getHNLmass(signal_name)
-                region = getRegionFromMass(mass_point)
-            else:
-                if 'low' in sub_strategy:
-                    region = getRegionFromMass(20)
-                else:
-                    region = getRegionFromMass(800)
-                
             srm = SearchRegionManager(region)
 
         output_list = []
         for search_region in srm.getListOfSearchRegionGroups():
             if final_state in forbidden_combinations.keys() and search_region in forbidden_combinations[final_state]: continue
-            output_list.append(self.getStandardDatacardName(search_region, final_state, signal_name, custom_strategy, sub_strategy))  
+            output_list.append(self.getStandardDatacardName(search_region, final_state, signal_name, strategy, sub_strategy))  
         return output_list
 
     # Highly specified function to be used after all tests
-    def getCustomDatacardList(self, signal_name, final_state, strategy):
+    def getCustomDatacardList(self, signal_name, final_state, region):
         if 'HNL' in signal_name:
-            if 'custom' in strategy or 'MVA' in strategy:
-                tmp_split = strategy.split('-')
-                if len(tmp_split) == 2:
-                    strategy = tmp_split[0]
-                    sub_strategy = tmp_split[1]
-                else:
-                    sub_strategy = None
-            else:
-                sub_strategy = None
+            mass_point = self.getHNLmass(signal_name)
 
-            if strategy == 'custom':
-                mass_point = self.getHNLmass(signal_name)
+            #Cross usage
+            if (region == 'highMassSR' and mass_point <= 80) or (region == 'lowMassSRloose' and mass_point > 80):
+                strategy_to_use = 'cutbased'
+            else:
+                strategy_to_use = self.strategy
+
+            if strategy_to_use == 'custom':
                 if mass_point <= 80:
                     if final_state != 'TauEMu':
-                        return [self.getCutbasedName('A', final_state), self.getCutbasedName('B', final_state), self.getMVAName('C', final_state, signal_name, sub_strategy), self.getMVAName('D', final_state, signal_name, sub_strategy)]
+                        return [self.getCutbasedName('A', final_state), self.getCutbasedName('B', final_state), self.getMVAName('C', final_state, signal_name, self.sub_strategy), self.getMVAName('D', final_state, signal_name, self.sub_strategy)]
                     else:
                         return [self.getCutbasedName('A', final_state), self.getCutbasedName('B', final_state)]
                 elif mass_point <= 400 and not 'tau' in signal_name:
-                    return self.getStandardDatacardList(signal_name, final_state, 'MVA', sub_strategy)
+                    return self.getStandardDatacardList(signal_name, final_state, region, 'MVA', self.sub_strategy)
                 else:
-                    return self.getStandardDatacardList(signal_name, final_state, 'cutbased') 
-            elif strategy == 'cutbased':
-                return self.getStandardDatacardList(signal_name, final_state, 'cutbased')
-            elif strategy == 'MVA':
-                return self.getStandardDatacardList(signal_name, final_state, 'MVA', sub_strategy)
-            elif strategy == 'combinedSR':
-                mass_point = self.getHNLmass(signal_name)
+                    return self.getStandardDatacardList(signal_name, final_state, region, 'cutbased') 
+            elif strategy_to_use == 'cutbased':
+                return self.getStandardDatacardList(signal_name, final_state, region, 'cutbased')
+            elif strategy_to_use == 'MVA':
+                return self.getStandardDatacardList(signal_name, final_state, region, 'MVA', self.sub_strategy)
+            elif strategy_to_use == 'combinedSR':
                 if mass_point <= 80:
-                    return self.getCustomDatacardList(signal_name, final_state, 'custom')
+                    return self.getCustomDatacardList(signal_name, final_state, region, 'custom')
                 else:
                     return [self.getMVAName('Combined', final_state, signal_name)]
                 
 
-    def getSignalDatacardList(self, signal_name, final_states, strategy):
+    def getSignalDatacardList(self, signal_name, final_states, region):
         total_list = []
         for fs in final_states:
-            total_list.extend(self.getCustomDatacardList(signal_name, fs, strategy))
+            total_list.extend(self.getCustomDatacardList(signal_name, fs, region))
         return total_list
                  
 
-    def mergeDatacards(self, signal_name, in_card_names, out_card_name, initial_merge = False):
+    def mergeDatacards(self, signal_name, in_card_names, out_card_name):
         from HNL.Tools.helpers import makeDirIfNeeded
-        makeDirIfNeeded(self.getDatacardPath(signal_name, out_card_name))
+        makeDirIfNeeded(out_card_name)
         from HNL.Stat.combineTools import runCombineCommand
-        runCombineCommand('combineCards.py '+' '.join([self.getDatacardPath(signal_name, ic, define_strategy = not initial_merge) for ic in in_card_names])+' > '+self.getDatacardPath(signal_name, out_card_name))
+        runCombineCommand('combineCards.py '+' '.join(in_card_names)+' > '+out_card_name)
+
+    def combineRegionNames(self, signal_name):
+        if self.regions is None:
+            return self.getHNLregion(signal_name, None)
+        else:
+            return '-'.join(sorted(self.regions))
  
-    def initializeCards(self, signal_name, final_states, strategy = 'custom'):
-        cards_to_merge = self.getSignalDatacardList(signal_name, final_states, strategy)
-        self.mergeDatacards(signal_name, cards_to_merge, getOutDataCardName(final_states), initial_merge = True)
+    def initializeCards(self, signal_name, final_states):
+        in_card_names = []
+        if self.regions is None:
+            cards_to_merge = self.getSignalDatacardList(signal_name, final_states, self.getHNLregion(signal_name, None))
+            in_card_names = [self.getDatacardPath(signal_name, ic, define_strategy = False, region = self.getHNLregion(signal_name, None)) for ic in cards_to_merge]
+        else:
+            for region in self.regions:
+                cards_to_merge = self.getSignalDatacardList(signal_name, final_states, region)
+                in_card_names.extend([self.getDatacardPath(signal_name, ic, define_strategy = False, region = region) for ic in cards_to_merge])
+
+        out_card_name = self.getDatacardPath(signal_name, getOutDataCardName(final_states), region = self.combineRegionNames(signal_name))
+        print out_card_name
+        self.mergeDatacards(signal_name, in_card_names, out_card_name)
 
 class DatacardManager:
 
-    def __init__(self, years, era, strategy, flavor, selection, masstype = 'Majorana'):
+    def __init__(self, years, era, strategy, flavor, selection, regions = None, masstype = 'Majorana', tag = None):
         self.years = years
         self.era = era
         self.strategy = strategy
         self.flavor = flavor
         self.selection = selection
-        self.singleyear_managers = [SingleYearDatacardManager(y, era, strategy, flavor, selection, masstype) for y in years]
+        self.singleyear_managers = [SingleYearDatacardManager(y, era, strategy, flavor, selection, regions, masstype, tag) for y in years]
         self.masstype = masstype
+        self.tag = tag
+        self.regions = regions
 
-    def getDatacardPath(self, signal_name, card_name, define_strategy = True):
+    def getDatacardPath(self, signal_name, card_name, region = None, define_strategy = True):
         from HNL.Stat.combineTools import displaced_mass_threshold
-        return os.path.join(data_card_base(self.era, '-'.join(sorted(self.years)), self.selection, self.singleyear_managers[0].getHNLmass(signal_name), self.flavor, self.masstype), signal_name, 'shapes', self.strategy if define_strategy else '', card_name+'.txt')
+        from combineTools import returnDataCardPath
+        return returnDataCardPath(self.era, '-'.join(sorted(self.years)), self.selection, region if region is not None else getRegionFromMass(self.singleyear_managers[0].getHNLmass(signal_name)), self.flavor, signal_name, card_name if not define_strategy else self.singleyear_managers[0].original_strategy+'/'+card_name, self.masstype, tag = self.tag)
     
-    def mergeYears(self, signal_name, card_name):
+    def mergeYears(self, signal_name, card_name, region = None):
         if len(self.years) == 1:
             return
         else:
-            out_path = self.getDatacardPath(signal_name, card_name)
+            out_path = self.getDatacardPath(signal_name, card_name, region = region)
             from HNL.Tools.helpers import makeDirIfNeeded
             makeDirIfNeeded(out_path)
             from HNL.Stat.combineTools import runCombineCommand
-            runCombineCommand('combineCards.py '+' '.join([sm.getDatacardPath(signal_name, card_name) for sm in self.singleyear_managers])+' > '+out_path)
+            runCombineCommand('combineCards.py '+' '.join([sm.getDatacardPath(signal_name, card_name, region = region) for sm in self.singleyear_managers])+' > '+out_path)
 
-    def prepareAllCards(self, signal_name, final_states, strategy = 'cutbased'):
+    def prepareAllCards(self, signal_name, final_states):
         for iyear, year in enumerate(self.years):
-            self.singleyear_managers[iyear].initializeCards(signal_name, final_states, strategy)
+            self.singleyear_managers[iyear].initializeCards(signal_name, final_states)
 
-        self.mergeYears(signal_name, getOutDataCardName(final_states))
+        self.mergeYears(signal_name, getOutDataCardName(final_states), self.singleyear_managers[0].combineRegionNames(signal_name))
 
     def checkMassAvailability(self, signal_name):
         exists = True
+        regions = [self.singleyear_managers[0].getHNLregion(signal_name, None)] if self.regions is None else self.regions
         for iyear, year in enumerate(self.years):
-            print self.singleyear_managers[iyear].getDatacardPath(signal_name, 'x', define_strategy = False).rsplit('/', 1)[0]
-            if not os.path.exists(self.singleyear_managers[iyear].getDatacardPath(signal_name, 'x', define_strategy = False).rsplit('/', 1)[0]): exists = False
+            for region in regions:
+                if not os.path.exists(self.singleyear_managers[iyear].getDatacardPath(signal_name, 'x', region = region, define_strategy = False).rsplit('/', 1)[0]): exists = False
 
         return exists
+    
+    def combineRegionNames(self, signal_name):
+        return self.singleyear_managers[0].combineRegionNames(signal_name)

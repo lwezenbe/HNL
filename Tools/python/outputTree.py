@@ -12,11 +12,19 @@ class OutputTree(object):
 
         from ROOT import TTree, gDirectory
         if branches is None:
-            if not isValidRootFile(self.path):
-                raise RuntimeError("No valid root file at path: {0} \n Please specify branches to create a new tree".format(self.path))
-            
-            from HNL.Tools.helpers import getObjFromFile
-            self.tree = getObjFromFile(self.path, self.name)
+            if not isinstance(self.path, list):
+                if not isValidRootFile(self.path):
+                    raise RuntimeError("No valid root file at path: {0} \n Please specify branches to create a new tree".format(self.path))
+                
+                from HNL.Tools.helpers import getObjFromFile
+                self.tree = getObjFromFile(self.path, self.name)
+            else:
+                from ROOT import TChain
+                self.tree = TChain(self.name)
+                for p in self.path:
+                    if not isValidRootFile(p):
+                        raise RuntimeError("No valid root file at path: {0} \n Please specify branches to create a new tree".format(p))
+                    self.tree.Add(p)
                 
             if self.tree is None:
                 raise RuntimeError("No valid tree with name {0} in root file at {1}".format(self.name, self.path))         

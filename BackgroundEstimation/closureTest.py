@@ -8,6 +8,17 @@ import numpy as np
 from HNL.Tools.helpers import makeDirIfNeeded, makePathTimeStamped
 
 #
+# Updated legend names for background
+#
+bkgr_dict = {
+    'XG' : 'DY',
+    'TT-T+X' : 't#bar{t}',
+    'ZZ-H'   : 'ZZ-H',
+    'Other'  : 'W+jets'
+}
+
+
+#
 # Argument parser and logging
 #
 import os, argparse
@@ -26,7 +37,7 @@ submission_parser.add_argument('--noskim', action='store_true', default=False,  
 submission_parser.add_argument('--isCheck', action='store_true', default=False,  help='Check the setup by using the exact same region as the ttl measurement')
 submission_parser.add_argument('--splitInCategories', action='store_true', default=False,  help='Split into different categories')
 submission_parser.add_argument('--inData',   action='store_true', default=False,  help='Run in data')
-submission_parser.add_argument('--region', action='store', default=None, type=str,  help='What region was the tau fake closure test you want to use measured in?', choices=['TauFakesDYCT', 'TauFakesTT', 'MCCT', 'LightLepFakesDYCT', 'LightLepFakesTTCT', 'TauMixCT', 'TauFakesDYCTnomet', 'TauFakesTTCT', 'highMassSRnoOSSF', 'highMassSROSSF', 'HighMassWithB'])
+submission_parser.add_argument('--region', action='store', default=None, type=str,  help='What region was the tau fake closure test you want to use measured in?', choices=['TauFakesDYCT', 'TauFakesTT', 'MCCT', 'LightLepFakesDYCT', 'LightLepFakesTTCT', 'TauMixCT', 'TauFakesDYCTnomet', 'TauFakesTTCT', 'highMassSRnoOSSF', 'highMassSROSSF', 'HighMassWithB', 'highMassSR', 'lowMassSRloose'])
 submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino'])
 submission_parser.add_argument('--application', action='store', default=None, type=str,  help='What region was the tau fake rate you want to use applied for?', 
     choices=['TauFakesDY', 'TauFakesDYnomet', 'TauFakesTT', 'WeightedMix', 'OSSFsplitMix'])
@@ -81,7 +92,8 @@ else:
     skim_str = 'Reco'
 
 if not args.inData:
-    sublist = 'BackgroundEstimation/TauFakes-'+args.era+args.year
+    #sublist = 'BackgroundEstimation/TauFakes-'+args.era+args.year
+    sublist = 'allbkgr_'+args.era+args.year
 else:
     sublist = 'fulllist_'+args.era+args.year
 sample_manager = SampleManager(args.era, args.year, skim_str, sublist, skim_selection=args.selection)
@@ -154,6 +166,15 @@ if not args.inData:
     var['tauGenStatus'] = (lambda c, i : c._tauGenStatus[i],       np.arange(0.5, 7.5, 1.),       ('TauGenStatus', '#taus')) 
     var['provenance'] = (lambda c, i : c._lProvenance[i],       np.arange(0.5, 20.5, 1.),       ('Provenance', '#taus')) 
     var['provenanceCompressed'] = (lambda c, i : c._lProvenanceCompressed[i],       np.arange(0.5, 7.5, 1.),       ('Provenance', '#taus')) 
+
+binning_ct = {
+    'ptLeading'         : {'lowMassSRloose' : np.arange(10., 70., 10.), 'highMassSR' : np.arange(50., 315., 15.)},   
+    'ptSubleading'      : {'lowMassSRloose' : np.arange(10., 50., 5.), 'highMassSR' : np.arange(0., 210., 10.)},   
+    'ptTrailing'        : {'lowMassSRloose' : np.arange(10., 40., 5.), 'highMassSR' : np.arange(0., 155., 5.)},   
+    'ptFakes'           : {'lowMassSRloose' : np.arange(10., 70., 10.), 'highMassSR' : np.arange(0., 210., 10.)},   
+}
+from HNL.Analysis.analysisTypes import binning, getBinning
+binning.update(binning_ct)
 
 subjobAppendix = 'subJob' + args.subJob if args.subJob else ''
 data_str = 'DATA' if args.inData else 'MC'
@@ -392,47 +413,46 @@ else:
     if not args.inData:
         for sample_name in closure_trees.keys():
             for v in var:
-                p = Plot(name = v, observed_hist = closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1], condition=condition), bkgr_hist = closure_trees[sample_name].getSideband(v, v+'-'+sample_name, var[v][1], condition=condition), 
+                p = Plot(name = v, observed_hist = closure_trees[sample_name].getObserved(v, v+'-'+sample_name, getBinning(v, args.region, var[v][1], binning), condition=condition), bkgr_hist = closure_trees[sample_name].getSideband(v, v+'-'+sample_name, getBinning(v, args.region, var[v][1], binning), condition=condition), 
                             color_palette='Black', color_palette_bkgr='Stack', tex_names = ['Predicted'], draw_ratio = True, year = args.year, era = args.era,
-                            x_name = var[v][2][0], y_name = var[v][2][1])
+                            x_name = var[v][2][0], y_name = var[v][2][1], syst_hist = 0.3)
                 p.setLegend(x1 = 0.5, ncolumns = 1)
                 p.drawHist(output_dir = output_dir+'/'+sample_name+'/total', observed_name = 'Observed')
 
     for v in var:
         if args.inData:
-            observed_h = closure_trees['Data'].getObserved(v, v+'-'+sample_name, var[v][1], condition)
+            observed_h = closure_trees['Data'].getObserved(v, v+'-'+sample_name, getBinning(v, args.region, var[v][1], binning), condition)
             for isample, sample_name in enumerate(closure_trees.keys()):
                 if 'Data' in sample_name: continue
                 else:
-                    observed_h.Add(closure_trees[sample_name].getSideband(v, v+'-'+sample_name, var[v][1], condition), -1.)
+                    observed_h.Add(closure_trees[sample_name].getSideband(v, v+'-'+sample_name, getBinning(v, args.region, var[v][1], binning), condition), -1.)
         else:
             for isample, sample_name in enumerate(closure_trees.keys()):
                 if 'Data' in sample_name: continue
                 if isample == 0:
-                    observed_h = closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1], condition)
+                    observed_h = closure_trees[sample_name].getObserved(v, v+'-'+sample_name, getBinning(v, args.region, var[v][1], binning), condition)
                 else:
-                    observed_h.Add(closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1], condition))
-
+                    observed_h.Add(closure_trees[sample_name].getObserved(v, v+'-'+sample_name, getBinning(v, args.region, var[v][1], binning), condition))
             
         bkgr_collection = {}
         if args.inData:
-            backgrounds = [closure_trees["Data"].getSideband(v, v+'-'+sample_name, var[v][1], condition)]
+            backgrounds = [closure_trees["Data"].getSideband(v, v+'-'+sample_name, getBinning(v, args.region, var[v][1], binning), condition)]
             background_names = ['Predicted']
             for sample_name in closure_trees.keys():
                 if 'Data' in sample_name: continue
-                bkgr_collection[sample_name] = closure_trees[sample_name].getObserved(v, v+'-'+sample_name, var[v][1])
-                backgrounds[0].Add(closure_trees[sample_name].getSideband(v, v+'-'+sample_name, var[v][1], condition), -1.)
+                bkgr_collection[sample_name] = closure_trees[sample_name].getObserved(v, v+'-'+sample_name, getBinning(v, args.region, var[v][1], binning))
+                backgrounds[0].Add(closure_trees[sample_name].getSideband(v, v+'-'+sample_name, getBinning(v, args.region, var[v][1], binning), condition), -1.)
         else:
             backgrounds = []
             background_names = []
 
             for sample_name in closure_trees.keys():
                 if 'Data' in sample_name: continue
-                bkgr_collection[sample_name] = closure_trees[sample_name].getSideband(v, v+'-'+sample_name, var[v][1])
+                bkgr_collection[sample_name] = closure_trees[sample_name].getSideband(v, v+'-'+sample_name, getBinning(v, args.region, var[v][1], binning))
 
         for b in bkgr_collection:
             backgrounds.append(bkgr_collection[b])
-            background_names.append(b)
+            background_names.append(bkgr_dict[b])
 
         p = Plot(name = v, bkgr_hist = backgrounds, observed_hist = observed_h, color_palette='Black', tex_names = background_names, 
                     draw_ratio = True, year = args.year, era = args.era, x_name = var[v][2][0], y_name = var[v][2][1], syst_hist = 0.3)

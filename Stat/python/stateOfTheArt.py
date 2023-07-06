@@ -14,7 +14,7 @@ def makeGraph(flavor, in_name, masses):
     return out_graph
 
 legend_names = {
-    'expected_17012_prompt' : 'expected (EXO-17-012)',
+    'expected_17012_prompt' : '#splitline{EXO-17-012}{(Expected, Majorana)}',
     'observed_17012_prompt' : 'EXO-17-012 (prompt)',
     'observed_17012_displaced' : 'EXO-17-012',
     'delphi_prompt' : 'DELPHI',

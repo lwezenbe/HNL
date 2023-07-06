@@ -15,6 +15,7 @@ cat_dict = {
     'HighMassWithInvertedPt' : ['TauEE', 'TauMuMu', 'TauEMu', 39],
     'lowMassSR' : ['TauEE', 'TauMuMu', 'TauEMu', 39],
     'lowMassSRloose' : ['TauEE', 'TauMuMu', 'TauEMu', 39],
+    'lowMassSRlooseInvertedM3l' : ['TauEE', 'TauMuMu', 'TauEMu', 39],
     'WZCR' : ['TauEE', 'TauMuMu', 'TauEMu', 39],
     'ConversionCR' : ['TauEE', 'TauMuMu', 'TauEMu', 39],
     'ZZCR' : [39],
@@ -69,7 +70,10 @@ def determineWeights(eras, years, selections, regions, strategy):
                             tmp_dy_hist = getHistFromTree(intree, 'searchregion', dy_c, np.arange(0., 2., 1.), '('+condition+'&&!isprompt)')
                             dy_tot += tmp_dy_hist.GetSumOfWeights()
                             infile.Close()
-                        weights[era][year][selection][region][c] = {'DY' : dy_tot/(tt_tot+dy_tot), 'TT' : tt_tot/(tt_tot+dy_tot)}            
+                        if tt_tot+dy_tot > 0:
+                            weights[era][year][selection][region][c] = {'DY' : dy_tot/(tt_tot+dy_tot), 'TT' : tt_tot/(tt_tot+dy_tot)}            
+                        else:
+                            weights[era][year][selection][region][c] = {'DY' : 0., 'TT' : 0.}            
 
     json_f = json.dumps(weights)
     out_file = open(out_file_path, 'w')

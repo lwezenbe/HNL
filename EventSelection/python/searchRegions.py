@@ -319,6 +319,7 @@ def collectGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, observed_hi
         else:
             grouped_observed_hist[group] = None
 
+        print syst_hist
         if syst_hist is not None:
             grouped_syst_hist[group] = []
             for ish, sh in enumerate(syst_hist):
@@ -348,10 +349,11 @@ def plotGeneralGroups(group_signal_hist, group_bkgr_hist, group_syst_hist, tex_n
         if observed_hist is not None: draw_ratio = True
         tmp_signal = [x for x in group_signal_hist[group]]
         tmp_bkgr = [x for x in group_bkgr_hist[group]]
-        tmp_syst = [x for x in group_syst_hist[group]] if group_syst_hist is not None else None
+        tmp_syst = [x for x in group_syst_hist[group]] if group_syst_hist[group] is not None else None
         p = Plot(tmp_signal if len(tmp_signal) > 0 else None, tex_names, bkgr_hist = tmp_bkgr if len(tmp_bkgr) > 0 else None, observed_hist = observed_hist[group] if observed_hist is not None else None, syst_hist = tmp_syst, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, 
                 extra_text = extra_text, color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau', draw_ratio = draw_ratio, year = year, era = era)
-        p.drawHist(output_dir = out_path, min_cutoff = 1., normalize_signal = 'med')
+        custom_labels = [searchregion_tex[group] + str(i) for i in range(1,tmp_signal[0].GetNbinsX()+1)]
+        p.drawHist(output_dir = out_path, min_cutoff = 1., normalize_signal = 'med', custom_labels = custom_labels)
         #p.drawHist(output_dir = out_path, min_cutoff = 1.)
 
 tdrStyle_Left_Margin = 0.16
@@ -403,6 +405,10 @@ def combineGroupHist(signal_hist, bkgr_hist, syst_hist, region_name, groups, obs
     if syst_hist is not None:
         grouped_syst_hist = []
         for igroup, group in enumerate(groups):
+            if syst_hist[group] is None:
+                grouped_syst_hist = None
+                break
+                
             for ish, sh in enumerate(syst_hist[group]):
                 if igroup == 0: grouped_syst_hist.append(ROOT.TH1D('tmp_syst_'+str(ish), 'tmp_syst', tot_n_bins, 0.5, tot_n_bins+0.5))
                 for ib, b in enumerate(region_groups[region_name][group]):
@@ -482,9 +488,10 @@ def plotLowMassRegionsLoose(signal_hist, bkgr_hist, syst_hist, tex_names, out_pa
     #    draw_ratio = 'errorsOnly'
     else:
         draw_ratio = None
-    p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = grouped_syst_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text,
+    p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text,
             color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau', draw_ratio = draw_ratio, year = year, era = era)
-    p.drawHist(output_dir = out_path, min_cutoff = 1., normalize_signal = 'med')
+    custom_labels = ['L{0}'.format(i) for i in range(1, 17)]
+    p.drawHist(output_dir = out_path, min_cutoff = 1., normalize_signal = 'med', custom_labels = custom_labels)
     #p.drawHist(output_dir = out_path, min_cutoff = 1., normalize_signal = 'bkgr')
     
     #

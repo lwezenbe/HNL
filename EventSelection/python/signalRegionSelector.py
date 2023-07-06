@@ -31,6 +31,10 @@ class SignalRegionSelector(FilterObject):
             return passHighMassSelection(self.chain, self.new_chain, cutter)
         elif region == 'highMassSRInvertedPt':
             return passHighMassSelection(self.chain, self.new_chain, cutter, invert_pt = True)
+        elif region == 'lowMassSRlooseInvertedM3l':
+            return passLowMassSelection(self.chain, self.new_chain, cutter, loose_selection = True, inverted_m3l = True)
+        elif region == 'lowMassSRlooseBeforeMZcut':
+            return passLowMassSelection(self.chain, self.new_chain, cutter, loose_selection = True, early_stop = True)
         elif region == 'highMassSRnoOSSF':
             return passHighMassSelection(self.chain, self.new_chain, cutter, ossf = False)
         elif region == 'highMassSROSSF':

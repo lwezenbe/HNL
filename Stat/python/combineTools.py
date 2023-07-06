@@ -27,23 +27,27 @@ displaced_mass_threshold = 30
 
 coupling_dict = {'tau':'#tau', 'mu':'#mu', 'e':'e', '2l':'l'}
 
+def returnDataCardPath(era, year, selection, region, flavor, sig_name, bin_name, majorana_str, is_test=False, shapes=True, tag = None):
+    if not shapes:
+        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'testArea' if is_test else '', 'dataCards', majorana_str, era+str(year), '-'.join([selection, region] if tag is None else [selection, region, tag]), flavor, sig_name, 'cutAndCount',  bin_name+'.txt')
+    else:
+        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'testArea' if is_test else '', 'dataCards', majorana_str, era+str(year), '-'.join([selection, region] if tag is None else [selection, region, tag]), flavor, sig_name, 'shapes', bin_name+'.txt')
+    return out_name
 
 #
 # Function to write out a data card, these data cards all contain 1 bin to be clear, readable and flexible
 # and should be combined later on
 #
 from HNL.Samples.sample import Sample
-def makeDataCard(bin_name, flavor, era, year, obs_yield, sig_name, bkgr_names, selection, region, final_state, nonprompt_from_sideband = True, sig_yield=None, bkgr_yields= None, shapes=False, is_test=False, majorana_str = 'Majorana', shapes_path = None):
+def makeDataCard(bin_name, flavor, era, year, obs_yield, sig_name, bkgr_names, selection, region, final_state, nonprompt_from_sideband = True, sig_yield=None, bkgr_yields= None, shapes=False, is_test=False, majorana_str = 'Majorana', shapes_path = None, tag = None):
     if not shapes and len(bkgr_yields) != len(bkgr_names):
         raise RuntimeError("length of background yields and names is inconsistent")
 
     from HNL.Samples.sample import Sample
     coupling_sq = Sample.getSignalCouplingSquared(sig_name)
 
-    if not shapes:
-        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'testArea' if is_test else '', 'dataCards', majorana_str, era+str(year), '-'.join([selection, region]), flavor, sig_name, 'cutAndCount',  bin_name+'.txt')
-    else:
-        out_name = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'testArea' if is_test else '', 'dataCards', majorana_str, era+str(year), '-'.join([selection, region]), flavor, sig_name, 'shapes', bin_name+'.txt')
+    out_name = returnDataCardPath(era, year, selection, region, flavor, sig_name, bin_name, majorana_str, is_test, shapes)
+
     makeDirIfNeeded(out_name)
     out_file = open(out_name, 'w')
 
@@ -54,7 +58,7 @@ def makeDataCard(bin_name, flavor, era, year, obs_yield, sig_name, bkgr_names, s
     out_file.write('-'*400 + '\n')
     if shapes:
         if shapes_path is None:
-            shapes_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([selection, region]), era+str(year), flavor, sig_name, majorana_str, bin_name+'.shapes.root')
+            shapes_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([selection, region] if tag is None else [selection, region, tag]), era+str(year), flavor, sig_name, majorana_str, bin_name+'.shapes.root')
         out_file.write('shapes * * \t' +shapes_path + ' $CHANNEL/$PROCESS $CHANNEL$SYSTEMATIC/$PROCESS \n')
     out_file.write('-'*400 + '\n')
     out_file.write('bin             '+bin_name.rsplit('-', 1)[0]+ ' \n')
@@ -269,7 +273,7 @@ def saveTextFiles(limits, out_path, blind = False):
            
 def saveJsonFile(limits, out_path, blind = False):
     makeDirIfNeeded(out_path+'/x')
-    
+ 
     import json
     with open(out_path+'/limits.json', 'w') as outfile:
         json.dump(limits, outfile) 
@@ -302,6 +306,21 @@ def drawSignalStrengthPerCouplingPrompt(input_file_path, coupling, out_path, out
     p = Plot(graphs, name=out_name, y_log = True, x_log=True, x_name = '|V_{'+coupling_dict[flavor]+' N}|^{2}', y_name = 'Signal Strength', era = 'UL', year = year)
     p.drawBrazilian(output_dir = out_path)
  
+
+def getCrossSection(flavor, mass, coupling):     
+    file_list = 'allsignal_UL2018'
+    from HNL.Samples.sampleManager import SampleManager
+    sm = SampleManager('UL', '2018', 'Reco', file_list)
+    tot_cross = 0.
+    for sample in sm.sample_list:
+        if sample.mass != mass: continue
+        if sample.getSignalFlavor(sample.name) != flavor: continue
+        if sample.getSignalDisplacedString(sample.name) != 'prompt': continue
+        tot_cross += sample.xsec * (coupling/sample.getSignalCouplingSquared(sample.name))
+    return tot_cross 
+
+    
+    
 
 if __name__ == '__main__':
     makeDataCard('testbin', 'tau', 2016, 20, 6, [20, 23, 12, 1], ['DY', 'WJets', 'tt', 'WZ'])

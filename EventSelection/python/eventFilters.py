@@ -48,16 +48,26 @@ def passBaseCuts(chain, new_chain, cutter):
 
 
 #Low mass selection
-def passLowMassSelection(chain, new_chain, cutter, loose_selection = False):
+def passLowMassSelection(chain, new_chain, cutter, loose_selection = False, inverted_m3l = False, early_stop = False):
     if not cutter.cut(new_chain.l_pt[l1] < 55, 'l1pt<55'):      return False
-    if not cutter.cut(new_chain.M3l < 80, 'm3l<80'):            return False
+    if not inverted_m3l:
+        if not cutter.cut(new_chain.M3l < 80, 'm3l<80'):            return False
+    else:
+        if not cutter.cut(new_chain.M3l > 80, 'm3l>80'):            return False
+    
     if not cutter.cut(chain.met < 75, 'MET < 75'):             return False
+    if early_stop: return True
+
     if not loose_selection:
         if not cutter.cut(not containsOSSF(new_chain), 'no OSSF'):      return False
     else:
         if containsOSSF(new_chain):
             if not cutter.cut(abs(new_chain.MZossf-MZ) > 15, 'M2l_OSSF_Z_veto'):        return False
             if not cutter.cut(new_chain.minMossf > 5, 'minMossf'): return False
+        else:
+            #This is just to correctly fill the cutter
+            cutter.cut(True, 'M2l_OSSF_Z_veto')
+            cutter.cut(True, 'minMossf')
     return True 
 
 #High mass selection
@@ -72,6 +82,10 @@ def passHighMassSelection(chain, new_chain, cutter, ossf = None, invert_pt = Fal
         if not cutter.cut(abs(new_chain.MZossf-MZ) > 15, 'M2l_OSSF_Z_veto'):        return False
         if not cutter.cut(abs(new_chain.M3l-MZ) > 15, 'M3l_Z_veto'):        return False 
         if not cutter.cut(new_chain.minMossf > 5, 'minMossf'): return False
+    else:
+        cutter.cut(True, 'M2l_OSSF_Z_veto')
+        cutter.cut(True, 'M3l_Z_veto')
+        cutter.cut(True, 'minMossf')
     
     if ossf is not None:
         if ossf == False and not cutter.cut(not containsOSSF(chain), 'no OSSF'):      return False

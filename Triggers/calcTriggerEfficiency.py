@@ -197,7 +197,7 @@ if not args.makePlots:
 
     branches = []
     #for v in ['l1pt', 'l1eta', 'l2pt', 'l2eta', 'l3pt', 'l3eta', 'l1flavor', 'l2flavor', 'l3flavor', 'weight', 'category']:
-    for v in ['l1pt', 'l1eta', 'light1pt', 'light1eta', 'l2pt', 'l2eta', 'light2pt', 'light2eta', 'l3pt', 'l3eta', 'l1flavor', 'l2flavor', 'l3flavor', 'light1flavor', 'light2flavor', 'weight', 'category']:
+    for v in ['l1pt', 'l1eta', 'light1pt', 'light1eta', 'l2pt', 'l2eta', 'light2pt', 'light2eta', 'l3pt', 'l3eta', 'l1flavor', 'l2flavor', 'l3flavor', 'light1flavor', 'light2flavor', 'weight', 'category', 'l1taugenstat', 'l2taugenstat', 'l3taugenstat']:
         branches.extend(['{0}/F'.format(v)])
 
     if args.separateTriggers == 'single':
@@ -260,6 +260,14 @@ if not args.makePlots:
         efficiency.setTreeVariable('l2flavor', chain.l_flavor[1])
         efficiency.setTreeVariable('light2flavor', chain.light_flavor[1])
         efficiency.setTreeVariable('l3flavor', chain.l_flavor[2])
+        if not chain.is_data:
+            efficiency.setTreeVariable('l1taugenstat', chain._tauGenStatus[chain.l_indices[0]])
+            efficiency.setTreeVariable('l2taugenstat', chain._tauGenStatus[chain.l_indices[1]])
+            efficiency.setTreeVariable('l3taugenstat', chain._tauGenStatus[chain.l_indices[2]])
+        else:
+            efficiency.setTreeVariable('l1taugenstat', -1)
+            efficiency.setTreeVariable('l2taugenstat', -1)
+            efficiency.setTreeVariable('l3taugenstat', -1)
         efficiency.setTreeVariable('weight', event.reweighter.getTotalWeight())
         efficiency.setTreeVariable('category', chain.category)
         if args.separateTriggers == 'single':
@@ -336,6 +344,8 @@ else:
              
     #Here starts the actual plotting code
     efficiencies = {combined_years : {}}
+    triggers_to_run = ['total']
+    #triggers_to_run = []
     for year in args.year:
         base_path_in = getOutputBase(year, '*')
                        
@@ -348,8 +358,6 @@ else:
 
         efficiencies[year] = {}
         
-        triggers_to_run = ['total']
-        #triggers_to_run = []
         if args.separateTriggers == 'single':
             efficiency_tree = EfficiencyTree('trigger_efficiency', getOutputName(year, list(samples_to_plot)[0]).rsplit('/', 2)[0]+'/efficiency.root')
             triggers_to_run += [b.GetName() for b in efficiency_tree.tree.GetListOfBranches() if 'trigger' in b.GetName()]
@@ -422,7 +430,7 @@ else:
 #                                name_for_plot = "".join([x for x in v if x not in ['(', ')']])
 #                                p = Plot(efficiencies[year][trigger][sample_output][v][llc][tc].getEfficiency(), 'efficiency', trigger+'/'+tc+'/'+name_for_plot+'/'+llc, year = year, era = args.era, x_name = xvar, y_name = var[v][2][1], color_palette = 'Black')
 #                                p.drawHist(output_string, max_cutoff = 1.4)
-    
+#    
         print 'Making comparison plots for', year
         # Make comparative 1D plots with multiple processes in the plot
         if 'Data' in efficiencies[year]['total'].keys() and 'WZ' in efficiencies[year]['total'].keys():
@@ -453,13 +461,12 @@ else:
 #                        p.setLegend(x1=0.33, x2=0.96, y1=0.82, y2=.92, ncolumns=3)
 #                        p.drawHist(output_string, draw_option='EP', bkgr_draw_option='EP', max_cutoff=1.1)
         
-                #p = Plot([efficiencies[year]['WZ'][v]['Total'].getEfficiency(), efficiencies[year][signal_dict[tc]][v]['Total'].getEfficiency()], ['WZ (MC)', 'HNL(m_{N}=50 GeV)', 'MET (data)'], 
-                #p = Plot([efficiencies[year]['WZ'][v]['Total'].getEfficiency(), efficiencies[year]['HNL-e-m50'][v]['Total']].getEfficiency(), ['WZ (MC)', 'HNL(m_{N}=50 GeV)', 'MET (data)'], 
-                p = Plot([efficiencies[year]['total']['WZ'][v]['Total'].getEfficiency(), efficiencies[year]['total']['Data'][v]['Total'].getEfficiency()], ['WZ eff (MC)', 'JetMET eff (data)', 'p_{T} (WZ)', 'p_{T} (data)'], 
-                         'total/'+v, year = year, era = args.era, bkgr_hist = [efficiencies[year]['total']['WZ'][v]['Total'].getDenominator(normalized=True), efficiencies[year]['total']['Data'][v]['Total'].getDenominator(normalized=True)], draw_ratio = 'from_signal', color_palette='StackTauPOGbyName', color_palette_bkgr='Didar', x_name = var[v][2][0], y_name = var[v][2][1])
+                p = Plot([efficiencies[year]['total']['WZ'][v]['Total'].getEfficiency()], ['WZ eff (MC)', 'JetMET eff (data)'], 
+                         #'total/'+v, year = year, era = args.era, draw_ratio = 'from_signal', color_palette='StackTauPOGbyName', color_palette_bkgr='Didar', x_name = var[v][2][0], y_name = var[v][2][1])
+                         'total/'+v, bkgr_hist = efficiencies[year]['total']['Data'][v]['Total'].getEfficiency(), year = year, era = args.era, draw_ratio = True, color_palette='Large', color_palette_bkgr='Didar', x_name = var[v][2][0], y_name = var[v][2][1])
                 p.setLegend(x1=0.4, x2=0.96, y1=0.82, y2=.92, ncolumns=2)
                 #p.drawHist(output_string, draw_option='EP', max_cutoff=1.3)
-                p.drawHist(output_string, draw_option='EP', bkgr_draw_option='Filled', max_cutoff=1.3)
+                p.drawHist(output_string, draw_option='EP', bkgr_draw_option='EP', max_cutoff=1.3)
 #                for tc in TRIGGER_CATEGORIES:
 #                    if tc == 'Total': continue
 #                    for llc in leading_lep_cat:
@@ -468,3 +475,78 @@ else:
 #                                    'total/'+''.join([x for x in v if x not in ['(', ')']])+'/'+tc+'/'+llc, year = year, era = args.era, bkgr_hist = [efficiencies[year]['total']['WZ'][v][llc][tc].getDenominator(normalized=True), efficiencies[year]['total']['Data'][v][llc][tc].getDenominator(normalized=True)], draw_ratio = 'from_signal', color_palette='StackTauPOGbyName', color_palette_bkgr='Didar', x_name = var[v][2][0], y_name = var[v][2][1])
 #                        p.setLegend(x1=0.33, x2=0.96, y1=0.82, y2=.92, ncolumns=3)
 #                        p.drawHist(output_string, draw_option='EP', bkgr_draw_option='Filled', max_cutoff=1.3)
+
+
+    if args.ntaus == 1:
+        fake_conditions = {
+            'prompt' : '((l1flavor == 2 && l1taugenstat != 6) || (l2flavor == 2 && l2taugenstat != 6) || (l3flavor == 2 && l3taugenstat != 6))',
+            'nonprompt' : '((l1flavor == 2 && l1taugenstat == 6) || (l2flavor == 2 && l2taugenstat == 6) || (l3flavor == 2 && l3taugenstat == 6))'
+        }
+
+        #reset efficiencies
+        efficiencies = {combined_years : {}}
+        samples_to_plot = ['XG', 'WZ']
+        
+        for year in args.year:
+            efficiencies[year] = {}
+            for trigger in triggers_to_run:
+                print "Working on", trigger, 'for', year
+                passed_name = 'passed' if trigger == 'total' else trigger
+                efficiencies[year][trigger] = {}
+                if trigger not in efficiencies[combined_years].keys(): efficiencies[combined_years][trigger] = {}
+                for isample, sample_output in enumerate(samples_to_plot):
+                    if args.sample and sample_output != args.sample: continue
+                    progress(isample, len(samples_to_plot))
+
+                    efficiencies[year][trigger][sample_output] = {}
+                    if sample_output not in efficiencies[combined_years][trigger].keys(): efficiencies[combined_years][trigger][sample_output] = {}
+
+                    efficiency_tree = EfficiencyTree('trigger_efficiency', getOutputName(year, sample_output).rsplit('/', 2)[0]+'/efficiency.root')
+
+                    #Gather all the information
+                    # from HNL.EventSelection.eventCategorization import DETAILED_TRIGGER_CATEGORIES as TRIGGER_CATEGORIES
+                    from HNL.EventSelection.eventCategorization import TRIGGER_CATEGORIES
+                    for v in var:
+                        efficiency_tree.setBins(var[v][1])
+                        efficiencies[year][trigger][sample_output][v] = {}
+                        if v not in efficiencies[combined_years][trigger][sample_output].keys(): efficiencies[combined_years][trigger][sample_output][v] = {}
+                        for fc in fake_conditions:            
+                            efficiencies[year][trigger][sample_output][v][fc] = {}
+                            if fc not in efficiencies[combined_years][trigger][sample_output][v].keys(): efficiencies[combined_years][trigger][sample_output][v][fc] = {'Total' : None}
+                            for llc in leading_lep_cat:
+                                lowpt, highpt = llc.split('to')
+                                llc_condition = "l1pt>{0}".format(lowpt)
+                                if highpt != 'inf': llc_condition += "&&l1pt<{0}".format(highpt)
+                                efficiencies[year][trigger][sample_output][v][fc][llc] = {}
+                                if llc not in efficiencies[combined_years][trigger][sample_output][v][fc].keys(): efficiencies[combined_years][trigger][sample_output][v][fc][llc] = {'Total' : None}
+                                for tc in TRIGGER_CATEGORIES:
+                                    #if tc != 'TauEE' : continue
+                                    #tc_condition = "("+"||".join(['category=={0}'.format(cat) for cat in TRIGGER_CATEGORIES[tc]])+")&&l1flavor==2"
+                                    tc_condition = "("+"||".join(['category=={0}'.format(cat) for cat in TRIGGER_CATEGORIES[tc]])+")"
+                                    setHistogram(efficiencies[year][trigger][sample_output][v][fc][llc], tc, efficiency_tree.getEfficiency(v, v+'-'+str(tc)+'-'+llc, condition = llc_condition+'&&'+tc_condition+'&&'+fake_conditions[fc], passed_name = passed_name))
+                                    setHistogram(efficiencies[combined_years][trigger][sample_output][v][fc][llc], tc, efficiencies[year][trigger][sample_output][v][fc][llc][tc])
+                                setHistogram(efficiencies[year][trigger][sample_output][v][fc][llc], 'Total', efficiency_tree.getEfficiency(v, v+'-'+llc+'-total', condition = llc_condition+'&&'+fake_conditions[fc], passed_name = passed_name))
+                                setHistogram(efficiencies[combined_years][trigger][sample_output][v][fc][llc], 'Total', efficiencies[year][trigger][sample_output][v][fc][llc]['Total'])
+                            #Now also add to the total
+                            setHistogram(efficiencies[year][trigger][sample_output][v][fc], 'Total', efficiency_tree.getEfficiency(v, v+'-total', passed_name = passed_name, condition = fake_conditions[fc]))
+                            setHistogram(efficiencies[combined_years][trigger][sample_output][v][fc], 'Total', efficiencies[year][trigger][sample_output][v][fc]['Total'])
+
+    for year in years_to_plot:
+        for v in var:
+            if '3D' in v  or '-' in v: continue
+            for isample, sample_output in enumerate(samples_to_plot):
+                if sample_output != 'WZ': continue    
+                output_string = getOutputBase(year, sample_output).replace('Triggers/data/', 'Triggers/data/Results/')
+                p = Plot([efficiencies[year]['total'][sample_output][v]['prompt']['Total'].getEfficiency(), efficiencies[year]['total'][sample_output][v]['nonprompt']['Total'].getEfficiency()], ['prompt #tau (MC)', 'nonprompt #tau (MC)'], 
+                         'total/'+v, year = year, era = args.era, draw_ratio = 'from_signal', color_palette='Large', color_palette_bkgr='Didar', x_name = var[v][2][0], y_name = var[v][2][1])
+                p.setLegend(x1=0.4, x2=0.96, y1=0.82, y2=.92, ncolumns=2)
+                p.drawHist(output_string + '/nonpromptstudy', draw_option='EP', bkgr_draw_option='EP', max_cutoff=1.3)
+            output_string = getOutputBase(year, 'WZ').replace('Triggers/data/', 'Triggers/data/Results/')
+            p = Plot([efficiencies[year]['total']['WZ'][v]['prompt']['Total'].getEfficiency(), efficiencies[year]['total']['WZ'][v]['nonprompt']['Total'].getEfficiency()], ['prompt #tau (MC)', 'nonprompt #tau (MC)'], 
+                     'total/'+v, year = year, era = args.era, draw_ratio = 'from_signal', color_palette='Large', color_palette_bkgr='Didar', x_name = var[v][2][0], y_name = var[v][2][1])
+            p.setLegend(x1=0.4, x2=0.96, y1=0.82, y2=.92, ncolumns=2)
+            p.drawHist(output_string + '/nonpromptstudy', draw_option='EP', bkgr_draw_option='EP', max_cutoff=1.3)
+            #p = Plot(efficiencies[year]['total']['WZ'][v]['prompt']['Total'].getEfficiency(), ['prompt #tau (MC)', 'nonprompt #tau (MC)'], 
+            #         'total/'+v, year = year, era = args.era, draw_ratio = True, bkgr_hist = efficiencies[year]['total']['XG'][v]['nonprompt']['Total'].getEfficiency(), color_palette='Large', color_palette_bkgr='Didar', x_name = var[v][2][0], y_name = var[v][2][1])
+            #p.setLegend(x1=0.4, x2=0.96, y1=0.82, y2=.92, ncolumns=2)
+            #p.drawHist(output_string + '/nonpromptstudy', draw_option='EP', bkgr_draw_option='EP', max_cutoff=1.3)
