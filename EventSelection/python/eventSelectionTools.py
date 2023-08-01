@@ -136,9 +136,9 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
             new_chain.light_charge[light_index] = chain._lCharge[ptAndIndex[i][1]]
             light_index += 1
 
-    new_chain.n_ele = new_chain.l_flavor.count(0)
-    new_chain.n_mu = new_chain.l_flavor.count(1)
-    new_chain.n_tau = new_chain.l_flavor.count(2)
+    new_chain.n_ele = [x for x in new_chain.l_flavor].count(0)
+    new_chain.n_mu = [x for x in new_chain.l_flavor].count(1)
+    new_chain.n_tau = [x for x in new_chain.l_flavor].count(2)
 
     if not chain.is_data:
         prompt_list = [chain._lIsPrompt[l] for l in new_chain.l_indices]
