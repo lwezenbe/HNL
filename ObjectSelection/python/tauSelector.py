@@ -284,6 +284,14 @@ def isTightTauEwkino(chain, index):
     if not tau_id_WP[chain.era][('MVA2017v2', 'tight')](chain)[index]:   return False
     return True
 
+
+def isPromptTau(chain, index):
+    if chain._lFlavor[index] != 2:          return False
+    if not chain._lIsPrompt[index]:         return False
+    if chain._tauGenStatus[index] != 5:     return False 
+    return True
+
+
 #
 # General functions
 #
@@ -292,6 +300,8 @@ def isLooseTau(chain, index, algo):
         return isLooseTauHNL(chain, index)
     elif algo == 'ewkino':
         return isLooseTauEwkino(chain, index)
+    elif algo == 'prompt':
+        return isPromptTau(chain, index)
     else:
         raise RuntimeError('Wrong input for "algo" in isLooseTau')
 
@@ -300,6 +310,8 @@ def isFOTau(chain, index, algo):
         return isFOTauHNL(chain, index)
     elif algo == 'ewkino':
         return isFOTauEwkino(chain, index)
+    elif algo == 'prompt':
+        return isPromptTau(chain, index)
     else:
         raise RuntimeError('Wrong input for "algo" in isFOTau')
 
@@ -308,6 +320,8 @@ def isTightTau(chain, index, algo):
         return isTightTauHNL(chain, index)
     elif algo == 'ewkino':
         return isTightTauEwkino(chain, index)
+    elif algo == 'prompt':
+        return isPromptTau(chain, index)
     else:
         raise RuntimeError('Wrong input for "algo" in isTightTau')
 

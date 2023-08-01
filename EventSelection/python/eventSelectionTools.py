@@ -65,9 +65,12 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         else: 
             raise RuntimeError('In selectLeptonsGeneral: flavor provided is neither an electron, muon or tau')
 
-        if isGoodLepton(chain, l):
+        #if isGoodLepton(chain, l):
+        #    chain.leptons.append((pt_to_use, l)) 
+        from HNL.ObjectSelection.leptonSelector import isGoodLeptonGeneral
+        if isGoodLeptonGeneral(chain, l, algo = 'prompt'):
             chain.leptons.append((pt_to_use, l)) 
-  
+     
     keep_sideband = chain.need_sideband
 
     if keep_sideband is not None:
@@ -176,6 +179,8 @@ def selectGenLeptonsGeneral(chain, new_chain, nL, cutter=None):
         new_chain.l_charge = [0.0]*nL
         new_chain.l_flavor = [0.0]*nL
         new_chain.l_e = [0.0]*nL
+        #new_chain.l_dxy = [0.0]*nL
+        #new_chain.l_dz = [0.0]*nL
         # new_chain.l_vise = [0.0]*nL
  
     chain.leptons = []
@@ -183,7 +188,7 @@ def selectGenLeptonsGeneral(chain, new_chain, nL, cutter=None):
         if isGoodGenLepton(chain, l): 
             chain.leptons.append((chain._gen_lPt[l], l))  
 
-    if len(chain.leptons) != nL:  return False
+    if not cutter.cut(len(chain.leptons) == nL, '3 prompt leptons'):  return False
 
     ptAndIndex = sorted(chain.leptons, reverse=True, key = getSortKey)
 
@@ -199,6 +204,8 @@ def selectGenLeptonsGeneral(chain, new_chain, nL, cutter=None):
         # new_chain.l_vise[i] = chain._gen_lVisE[ptAndIndex[i][1]]
         new_chain.l_charge[i] = chain._gen_lCharge[ptAndIndex[i][1]]
         new_chain.l_flavor[i] = chain._gen_lFlavor[ptAndIndex[i][1]]
+        #new_chain.l_dxy[i] = chain._gen_dxy[ptAndIndex[i][1]]
+        #new_chain.l_dz[i] = chain._gen_dz[ptAndIndex[i][1]]
     
     prompt_list = [chain._gen_lIsPrompt[l] for l in new_chain.l_indices]
     new_chain.is_prompt = all(prompt_list)

@@ -233,12 +233,8 @@ def getMaxWithErr(hist, syst_hist = None):
                 new_val = hist.GetBinContent(bx, by) + hist.GetBinErrorUp(bx, by)
                 if new_val > max_val:       max_val = new_val
               
-#    elif isinstance(hist, ROOT.TGraph):
-#        for bx in xrange(1, hist.GetNbinsX()):
-#            for by in xrange(1, hist.GetNbinsY()):
-#                new_val = hist.GetBinContent(bx, by) + hist.GetBinErrorUp(bx, by)
-#                if new_val > max_val:       max_val = new_val
-    
+    elif isinstance(hist, ROOT.TGraph):
+        return max([x for x in hist.GetY()])
     else:
         print "Wrong type in getMaxWithErr. Returning 0."
         return 0.
@@ -264,6 +260,8 @@ def getMinWithErr(hist, zero_not_allowed=False, syst_hist = None):
                 if zero_not_allowed and new_val <= 0.: new_val = hist.GetBinContent(bx, by)
                 if new_val < min_val:       min_val = new_val
               
+    elif isinstance(hist, ROOT.TGraph):
+        return min([x for x in hist.GetY()])
     else:
         print "Wrong type in getMaxWithErr. Returning 0."
         return 0.01

@@ -21,7 +21,7 @@ samplename = 'HNL-mu-m30-Vsq1em4-prompt'
 
 #prepare object  and event selection
 from HNL.ObjectSelection.objectSelection import getObjectSelection
-from HNL.ObjectSelection.leptonSelector import isGoodLightLepton
+from HNL.ObjectSelection.leptonSelector import isGoodLepton, isPromptLepton
 from HNL.EventSelection.eventSelector import EventSelector
 from HNL.EventSelection.signalLeptonMatcher import SignalLeptonMatcher
 from HNL.EventSelection.eventSelectionTools import selectGenLeptonsGeneral, selectLeptonsGeneral
@@ -40,13 +40,7 @@ for sample in sample_manager.sample_list:
     #
     chain = sample.initTree(needhcount=False)
     chain.HNLmass = sample.mass
-#    chain.obj_sel = getObjectSelection('Luka')
-
-#    chain.HNLmass = sample.getMass()
-#    chain.year = int(2016)
-    slm = SignalLeptonMatcher(chain)
-#    from HNL.EventSelection.eventCategorization import EventCategory
-#    ec = EventCategory(chain)
+#    slm = SignalLeptonMatcher(chain)
 
     delete_branches = ['lhe', 'Lhe']
     delete_branches.extend(['HLT']) #TODO: For now using pass_trigger, this may need to change
@@ -60,17 +54,10 @@ for sample in sample_manager.sample_list:
     #
     # comparison with ewkino
     #
-    # print chain.GetEntries()
-    event_range = xrange(10)
-    #event_range = xrange(chain.GetEntries())
+    event_range = xrange(1000)
     for entry in event_range:
-        # if entry != 999: continue
-        # chain.Show(entry)
-
-#        if not entry in [95]: continue
        
         chain.GetEntry(entry)
-        print 'EVENT', entry
-        selectGenLeptonsGeneral(chain, chain, 3)
-        slm.isZevent()
+        #selectGenLeptonsGeneral(chain, chain, 3)
+        #slm.isZevent()
 
