@@ -36,6 +36,8 @@ def getObjectSelection(selection):
         object_selection = objectSelectionCollection() 
     elif selection == 'HNLtauTest':
         object_selection = objectSelectionCollection(tau_algo='HNLtauTest')         
+    elif selection == 'prompt':
+        object_selection = objectSelectionCollection(tau_algo='prompt', light_algo='prompt')         
     elif selection == 'leptonMVAtop':
         object_selection = objectSelectionCollection(tau_algo='HNL', light_algo='leptonMVAtop', notau=False, analysis='HNL', jet_algo = 'HNL')         
     elif selection == 'AN2017014':

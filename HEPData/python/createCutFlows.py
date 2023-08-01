@@ -107,7 +107,6 @@ def createCutFlowTable(in_path, categories, name):
     from HNL.Samples.sample import Sample
     signals = in_json['signal'].keys()
     def sortKey(s):
-        print s
         return float(Sample.getSignalMass(s))
     signals = sorted(signals, key=sortKey)
 
@@ -173,9 +172,6 @@ def createCutFlowTableTest(in_path, categories, name):
             else:
                 #Cross check the cut names
                 tmp_check = [translateCut(cut, category) for cut in in_json[sig_string][sig][category]['cuts'] if translateCut(cut, category) != 'Clean Nonprompt ZG']
-                print 'New'
-                print cut_names
-                print tmp_check
                 if tmp_check != cut_names:
                     raise RuntimeError("Trying to add different cutflows in single table")
 
@@ -188,6 +184,52 @@ def createCutFlowTableTest(in_path, categories, name):
             table.add_variable(tmp_var)
 
     return table
+
+def printTexTable(in_path, category, name, scale_signal=None):
+    import json
+    with open(in_path, 'r') as infile:
+        in_json = json.load(infile)
+
+    from HNL.Samples.sample import Sample
+    signals = in_json['signal'].keys()
+    backgrounds = in_json['bkgr'].keys()
+
+
+    cutflow_values = {}
+    for i_sig, sig in enumerate(signals):
+        if i_sig == 0:
+            cut_names = [translateCut(cut, category) for cut in in_json['signal'][sig][category]['cuts']]
+        else:
+            #Cross check the cut names
+            tmp_check = [translateCut(cut, category) for cut in in_json['signal'][sig][category]['cuts'] if translateCut(cut, category) != 'Clean Nonprompt ZG']
+            if tmp_check != cut_names:
+                raise RuntimeError("Trying to add different cutflows in single table")
+
+        ignore_index = in_json['signal'][sig][category]['cuts'].index('Clean Nonprompt ZG') if 'Clean Nonprompt ZG' in in_json['signal'][sig][category]['cuts'] else None
+        cutflow_values[sig] = in_json['signal'][sig][category]['values']
+        if ignore_index is not None: cutflow_values[sig].pop(ignore_index)
+        if scale_signal is not None: 
+            cutflow_values[sig] = [x*scale_signal for x in cutflow_values[sig]]    
+
+    for i_sig, sig in enumerate(backgrounds):
+        tmp_check = [translateCut(cut, category) for cut in in_json['bkgr'][sig][category]['cuts'] if translateCut(cut, category) != 'Clean Nonprompt ZG']
+        if tmp_check != cut_names:
+            raise RuntimeError("Trying to add different cutflows in single table")
+    
+        ignore_index = in_json['bkgr'][sig][category]['cuts'].index('Clean Nonprompt ZG') if 'Clean Nonprompt ZG' in in_json['bkgr'][sig][category]['cuts'] else None
+        tmp_cutflow_values = in_json['bkgr'][sig][category]['values']
+        if ignore_index is not None: tmp_cutflow_values.pop(ignore_index)
+        if i_sig == 0:
+            cutflow_values['Bkgr'] = [x for x in tmp_cutflow_values]
+        else:
+            for i, tv in enumerate(tmp_cutflow_values):
+                cutflow_values['Bkgr'][i] += tv
+
+            
+    cutflow_values_keys = ['Bkgr'] + sorted(signals)
+    print ' & '.join(['Selection'] + cutflow_values_keys)+ '\\\\'
+    for ic, c in enumerate(cut_names):
+        print ' & '.join([c]+[str(round(cutflow_values[sn][ic], 1)) for sn in cutflow_values_keys]) + '\\\\'
 
 
 def addCutflowTo(submission):
@@ -226,8 +268,16 @@ if __name__ == '__main__':
     submission = Submission()
     #addCutflowTo(submission)
     
-    table = createCutFlowTableTest('/storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Analysis/data/Results/runAnalysis/HNL-CutFlowMC/MVA-default-highMassSR-/UL2018/signalAndBackground-Majorana/e_coupling/customMasses/200.0/CutFlows/cutflow.json', ['NoTau'], 'cutflow: high mass region')
-    submission.add_table(table) 
+    table_elow = createCutFlowTableTest('/storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Analysis/data/Results/runAnalysis/HNL-CutFlow/MVA-default-lowMassSRloose-/UL2016post-2016pre-2017-2018/signalAndBackground-Majorana/e_coupling/customMasses/20.0-40.0-60.0/CutFlows/cutflow.json', ['NoTau'], 'cutflow: low mass region: NoTau')
+    table_taulow = createCutFlowTableTest('/storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Analysis/data/Results/runAnalysis/HNL-CutFlow/MVA-default-lowMassSRloose-/UL2016post-2016pre-2017-2018/signalAndBackground-Majorana/tau_coupling/customMasses/20.0-40.0-60.0/CutFlows/cutflow.json', ['SingleTau'], 'cutflow: low mass region: SingleTau')
+    table_ehigh = createCutFlowTableTest('/storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Analysis/data/Results/runAnalysis/HNL-CutFlow/MVA-default-highMassSR-/UL2016post-2016pre-2017-2018/signalAndBackground-Majorana/e_coupling/customMasses/150.0-500.0-800.0/CutFlows/cutflow.json', ['NoTau'], 'cutflow: high mass region: NoTau')
+    submission.add_table(table_elow) 
+    submission.add_table(table_taulow) 
+    submission.add_table(table_ehigh) 
 
     submission.create_files('./submission')
+    #printTexTable('/storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Analysis/data/Results/runAnalysis/HNL-CutFlow/MVA-default-lowMassSRloose-/UL2016post-2016pre-2017-2018/signalAndBackground-Majorana/e_coupling/customMasses/20.0-40.0-60.0/CutFlows/cutflow.json', 'NoTau', 'cutflow: low mass region: NoTau')
+    #printTexTable('/storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Analysis/data/Results/runAnalysis/HNL-CutFlow/MVA-default-lowMassSRloose-/UL2016post-2016pre-2017-2018/signalAndBackground-Majorana/tau_coupling/customMasses/20.0-40.0-60.0/CutFlows/cutflow.json', 'SingleTau', 'cutflow: low mass region: SingleTau', scale_signal=100.)
+    #printTexTable('/storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Analysis/data/Results/runAnalysis/HNL-CutFlow/MVA-default-highMassSR-/UL2016post-2016pre-2017-2018/signalAndBackground-Majorana/e_coupling/customMasses/150.0-500.0-800.0/CutFlows/cutflow.json', 'NoTau', 'cutflow: high mass region: NoTau', scale_signal = 1000.)
+    printTexTable('/storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Analysis/data/Results/runAnalysis/HNL-CutFlow/MVA-default-highMassSR-/UL2016post-2016pre-2017-2018/signalAndBackground-Majorana/tau_coupling/customMasses/150.0-500.0-800.0/CutFlows/cutflow.json', 'SingleTau', 'cutflow: high mass region: NoTau', scale_signal = 1000.)
 

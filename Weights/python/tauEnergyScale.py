@@ -48,11 +48,17 @@ UNC_LIB = {
 class TauEnergyScale:
     
     def __init__(self, era, year, algorithm):
-        self.testool = TauESTool(YEARLIB_TES[era+year], ALGOLIB[algorithm])
-        self.tfestool = TauFESTool(YEARLIB_FES[era+year])
+        if algorithm != 'prompt':
+            self.testool = TauESTool(YEARLIB_TES[era+year], ALGOLIB[algorithm])
+            self.tfestool = TauFESTool(YEARLIB_FES[era+year])
+        else:
+            self.testool = None
+            self.tfestool = None
 
     #tlv is four vector to correct
     def applyES(self, tlv, dm, genmatch):
+        if self.testool is None or self.tfestool is None:
+            return 1.
         if genmatch == 1 or genmatch == 3:
             if dm == 0 or dm == 1:
                 tlv *= self.tfestool.getFES(tlv.Eta(), dm, genmatch)
@@ -64,6 +70,8 @@ class TauEnergyScale:
 
     #tlv is four vector to correct
     def readES(self, tlv, dm, genmatch, syst = 'nominal'):
+        if self.testool is None or self.tfestool is None:
+            return 1.
         if genmatch == 1 or genmatch == 3:
             if 'tauEnergyScale-e' in syst:
                 if dm == 0 and 'dm0' in syst:
