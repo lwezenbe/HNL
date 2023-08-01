@@ -53,7 +53,7 @@ from HNL.Plotting.style import setDefault, setDefault2D
 class Plot(object):
     
     def __init__(self, signal_hist = None, tex_names = None, name = None, x_name = None, y_name = None, bkgr_hist = None, observed_hist = None, syst_hist = None, extra_text = None, 
-        x_log = None, y_log = None, draw_ratio = None, draw_significance = None, color_palette = 'HNLfromTau', color_palette_bkgr = 'HNLfromTau', year = '2016', era = 'prelegacy', equalize_bins = False, ignore_stat_err = False):
+        x_log = None, y_log = None, draw_ratio = None, draw_significance = None, color_palette = 'HNLfromTau', color_palette_bkgr = 'HNLfromTau', year = '2016', era = 'prelegacy', equalize_bins = False):
 
         self.s = makeList(getHistList(signal_hist, equalize_bins)) if signal_hist is not None else []
         try:
@@ -83,7 +83,7 @@ class Plot(object):
 
         self.observed = getHistList(observed_hist, equalize_bins)
 
-        self.syst_hist = makeList(getHistList(syst_hist, equalize_bins))
+        self.syst_hist = getHistList(syst_hist, equalize_bins)
 
         self.hs = None  #hist stack
 
@@ -120,25 +120,16 @@ class Plot(object):
         self.color_palette = color_palette
         self.color_palette_bkgr = color_palette_bkgr
 
-        self.ignore_stat_err = ignore_stat_err
-
         self.setLegend()
 
 
     def createErrorHist(self):
-        from HNL.Plotting.plottingTools import setHistErrors
         if len(self.s) > 0:
             self.stat_signal_errors = [s.Clone(s.GetName()+'_statError') for s in self.s]
             self.stat_totsignal_error = self.total_s.Clone('totalSignalStatError')
-            if self.ignore_stat_err:
-                self.stat_signal_errors = [setHistErrors(s, 0.) for s in self.stat_signal_errors]
-                self.stat_totsignal_error = setHistErrors(self.stat_totsignal_error, 0.)
         if len(self.b) > 0:
             self.stat_bkgr_errors = [b.Clone(b.GetName()+'_statError') for b in self.b] if len(self.b) > 0 else None
             self.stat_totbkgr_error = self.total_b.Clone('totalSignalStatError') if self.total_b is not None else None
-            if self.ignore_stat_err:
-                self.stat_bkgr_errors = [setHistErrors(b, 0.) for b in self.stat_bkgr_errors]
-                self.stat_totbkgr_error = setHistErrors(self.stat_totbkgr_error, 0.)
 
             #
             # Add syst and stat together
@@ -207,12 +198,15 @@ class Plot(object):
             # 
             # Set y log and calculate min and max
             if self.y_log:
+                print 'a'
                 self.plotpad.SetLogy()
 
                 if max_cutoff is None:
                     self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*3
+                    print 'here', self.max_to_set
                 else:
                     self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(max_cutoff))/2)*3
+                    print 'there'
 
                 self.min_to_set = min_cutoff if min_cutoff is not None else 0.3*self.overall_min
             else:
@@ -364,7 +358,7 @@ class Plot(object):
         return        
 
     @staticmethod
-    def setRatioHist(hist1, hist2):
+    def setRatio(hist1, hist2):
         ratio = hist1.Clone('ratio')
         ratio.Divide(hist2)
 
@@ -382,26 +376,8 @@ class Plot(object):
             else:
                 ratio.SetBinError(b, 0.)
         
-        return ratio
-
-    @staticmethod
-    def setRatioGraphs(graph1, graph2):
-        if graph1.GetN() != graph2.GetN(): return None
-        ratio = graph1.Clone('ratio')
-        for i in xrange(1, graph1.GetN()+1):
-            ratio.SetPointY(i, graph1.GetPointY(i)/graph2.GetPointY(i))
-            #for j in xrange(1, graph2.GetN()+1):
-            #    if graph1.GetPointX(i) == graph2.GetPointX(j):
-            #        ratio.SetPointY(i, graph1.GetPointY()/graph2.GetPointY())
-        return ratio
-
-    def setRatio(self, hist1, hist2, graphs = False):
-        if not graphs:
-            return self.setRatioHist(hist1, hist2)
-        else:
-            return self.setRatioGraphs(hist1, hist2)
+        return ratio 
         
- 
     def calculateRatio(self, signal_only = False, return_bkgr = False):
         ratios = []
         if signal_only:
@@ -423,18 +399,6 @@ class Plot(object):
             ratios.append(self.setRatio(self.observed, self.total_b))
 
         return ratios
-
-    def calculateRatioGraph(self, observed = False, multiple_signal = None):
-        ratios = []
-        index_to_use = 0 if not observed else 3
-        if multiple_signal:
-            for i, s in enumerate(self.s):
-                for b in self.b:
-                    ratios.append(self.setRatioGraphs(s[index_to_use], b))
-        else:
-            for b in self.b:
-                ratios.append(self.setRatioGraphs(self.s[index_to_use], b))
-        
 
     def drawRatio(self, ratios, custom_labels = None, just_errors = False, ref_line = 1., ignore_errors = False, denom = None):
         self.ratio_pad.cd()        
@@ -526,7 +490,7 @@ class Plot(object):
             self.tot_err = setAxis(self.tot_err)            
     
             self.tot_err.Draw("E2")
-            if not self.ignore_stat_err: self.stat_err.Draw("E2Same")
+            self.stat_err.Draw("E2Same")
             self.b[0].GetXaxis().DrawClone()
 
 
@@ -561,7 +525,7 @@ class Plot(object):
         if not ignore_errors:
             self.ratio_legend = ROOT.TLegend(0.2, .75, .6, .9)
             self.ratio_legend.SetNColumns(3)
-            if not self.ignore_stat_err: self.ratio_legend.AddEntry(self.stat_err, 'Stat. Pred. Error', 'F')
+            self.ratio_legend.AddEntry(self.stat_err, 'Stat. Pred. Error', 'F')
             self.ratio_legend.AddEntry(self.tot_err, 'Tot. Pred. Error', 'F')
             # if self.observed is not None:
             #     self.ratio_legend.AddEntry(ratios[0], 'Obs./pred.', 'F')
@@ -1297,17 +1261,14 @@ class Plot(object):
     # or a list of length 4 also containing the observed
     # If you want to add observed and expected from prevous analysis to compare to, add those to background
     #
-    def drawBrazilian(self, output_dir, ignore_expected = False, ignore_bands = False, **kwargs):
+    def drawBrazilian(self, output_dir, ignore_expected = False, ignore_bands = False, multiple_signals = False, **kwargs):
         setDefault()
 
         if ignore_expected:
             ignore_bands = True
         
         #Create Canvas
-        if self.draw_ratio is None:
-            self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
-        else:
-            self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1100)
+        self.canvas = ROOT.TCanvas("Canv"+self.name, "Canv"+self.name, 1000, 1000)
 
         self.setPads()
         self.plotpad.Draw()
@@ -1325,14 +1286,24 @@ class Plot(object):
         green = []
         yellow = []
         observed = []
-    
-        median = addSignal(median, self.s[0])
-        green = addSignal(green, self.s[1])
-        yellow = addSignal(yellow, self.s[2])
-        try:
-            observed = addSignal(observed, self.s[3])
-        except:
-            observed = None
+        if not multiple_signals:
+            median = addSignal(median, self.s[0])
+            green = addSignal(green, self.s[1])
+            yellow = addSignal(yellow, self.s[2])
+            try:
+                observed = addSignal(observed, self.s[3])
+            except:
+                observed = [None]
+        else:
+            for s in self.s:
+                median = addSignal(median, s[0])
+                green = addSignal(green, s[1])
+                yellow = addSignal(yellow, s[2])
+                try:
+                    observed = addSignal(observed, s[3])
+                except:
+                    pass
+
 
         val_to_check = []
         values = []
@@ -1350,19 +1321,13 @@ class Plot(object):
         max_y = max(val_to_check)
         min_y = min(val_to_check)
 
-        frame = self.plotpad.DrawFrame(1.4, 0.95*min(values), 1.05*max(values), 10)
+        frame = self.plotpad.DrawFrame(1.4, 0.001, 410, 10)
         frame.GetXaxis().SetNdivisions(508)
         frame.GetYaxis().SetTitle(self.y_name)
         frame.GetXaxis().SetTitle(self.x_name)
         frame.SetMinimum(0.3*min_y)
         frame.SetMaximum(max_y*100)
-        frame.GetXaxis().SetRangeUser(0.95*min(values), 1.05*max(values))
-        if self.draw_ratio is not None:
-            frame.GetXaxis().SetTitleSize(.06)
-            frame.GetYaxis().SetTitleSize(.06)
-            frame.GetXaxis().SetLabelSize(.06)
-            frame.GetYaxis().SetLabelSize(.06)
-            #frame.GetYaxis().SetTitleOffset(.3)
+        frame.GetXaxis().SetLimits(0.95*min(values), 1.05*max(values))
 
         for iy, y in enumerate(yellow):
             y.SetFillColor(ROOT.kOrange)
@@ -1405,14 +1370,13 @@ class Plot(object):
                     else:
                         subbkgr.Draw('Lsame')
 
-        if observed is not None:
-            for i_obs, obs in enumerate(observed):
-                obs.SetLineColor(ROOT.kBlack)
-                obs.SetLineWidth(4)
-                if ignore_expected and len(self.b) == 0 and i_obs == 0:
-                    obs.Draw('L')
-                else:
-                    obs.Draw('Lsame')
+        for i_obs, obs in enumerate(observed):
+            obs.SetLineColor(ROOT.kBlack)
+            obs.SetLineWidth(4)
+            if ignore_expected and len(self.b) == 0 and i_obs == 0:
+                obs.Draw('L')
+            else:
+                obs.Draw('Lsame')
 
         frame.Draw('sameaxis')
 
@@ -1426,8 +1390,7 @@ class Plot(object):
         else:
             frame.SetMinimum(0.001*min_y)
             frame.SetMaximum(max_y)
-      
- 
+        
         #Create Legend
         self.canvas.cd()
         legend = ROOT.TLegend(0.5, .7, .9, .9)
@@ -1451,41 +1414,6 @@ class Plot(object):
         if self.extra_text is not None:
             self.drawExtraText()
  
-        if self.draw_ratio is not None:
-            self.ratio_pad.cd()
-            ratio_frame = self.ratio_pad.DrawFrame(1.4, 0.95*min(values), 1.05*max(values), 10)
-
-            ratio_frame.GetXaxis().SetTitleSize(.18)
-            ratio_frame.GetYaxis().SetTitleSize(.15)
-            ratio_frame.GetXaxis().SetLabelSize(.18)
-            ratio_frame.GetYaxis().SetLabelSize(.15)
-            ratio_frame.GetYaxis().SetTitleOffset(.4)
-            ratio_frame.GetXaxis().SetTitleOffset(1.0)
-
-            ratio_frame.GetXaxis().SetNdivisions(508)
-            ratio_frame.GetYaxis().SetNdivisions(504)
-            ratio_frame.GetYaxis().SetTitle('#frac{'+signal_legend+'}{Reference}')
-            ratio_frame.GetXaxis().SetTitle(self.x_name)
-            ratio_frame.SetMinimum(0.9*pt.getOverallMinimum(self.draw_ratio))
-            ratio_frame.SetMaximum(1.1*pt.getOverallMaximum(self.draw_ratio))
-            ratio_frame.GetXaxis().SetRangeUser(0.95*min(values), 1.05*max(values))
-            
-            self.line = ROOT.TLine(0.95*min(values), 1., 1.05*max(values), 1.)
-            self.line.SetLineColor(ROOT.kBlack)
-            self.line.SetLineWidth(1)
-            self.line.SetLineStyle(3)
-
-            for ir, r in enumerate(self.draw_ratio):
-                r.SetLineColor(ps.getColor('Limit', ir))
-                r.SetLineWidth(2)
-                r.Draw('L' if ir == 0 else 'LSame')
-            #self.drawRatio(self.draw_ratio, ignore_errors = True)
-            self.line.Draw()        
-    
-            ratio_frame.Draw('sameaxis')
-
-            self.ratio_pad.Update()
-
         ROOT.gPad.Update() 
         self.canvas.Update()
         cl.CMS_lumi(self.canvas, 4, 11, 'Simulation', self.era+self.year)

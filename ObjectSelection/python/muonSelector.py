@@ -29,14 +29,8 @@ def getMuonE(chain, index, syst = None):
 
 def isGoodGenMuon(chain, index):
     if not chain._gen_lIsPrompt[index]:         return False
-    #if chain._gen_lEta[index] > 2.4:            return False
+    if chain._gen_lEta[index] > 2.4:            return False
     return True
-
-def isPromptMuon(chain, index):
-    if chain._lFlavor[index] != 1: return False
-    if not chain._lIsPrompt[index]: return False
-    return True
-
 
 def isBaseMuon(chain, index, syst = None):
     if abs(chain._lEta[index]) >= 2.4:          return False
@@ -345,7 +339,6 @@ def isLooseMuon(chain, index, algo, syst=None):
     elif algo == 'tZq' or algo == 'HNLprelegacy':                return isLooseMuonLuka(chain, index, syst)
     elif algo == 'HNL':                 return isLooseMuonHNL(chain, index, syst)
     elif algo == 'ewkino':              return isLooseMuonEwkino(chain, index, syst)
-    elif algo == 'prompt':              return isPromptMuon(chain, index)
     else:
         print 'Wrong input for "algo" in isLooseMuon'
         return False
@@ -359,7 +352,6 @@ def isFOMuon(chain, index, algo, syst=None):
     elif algo == 'tZq' or algo == 'HNLprelegacy':                return isFOMuonLuka(chain, index, syst)
     elif algo == 'HNL':                return isFOMuonHNL(chain, index, syst)
     elif algo == 'ewkino':              return isFOMuonEwkino(chain, index, syst)
-    elif algo == 'prompt':              return isPromptMuon(chain, index)
     else:
         print 'Wrong input for "algo" in isFOMuon'
         return False
@@ -373,7 +365,6 @@ def isTightMuon(chain, index, algo, syst=None):
     elif algo == 'tZq' or algo == 'HNLprelegacy':                return isTightMuonLuka(chain, index, syst)
     elif algo == 'HNL':                return isTightMuonHNL(chain, index, syst)
     elif algo == 'ewkino':              return isTightMuonEwkino(chain, index, syst)
-    elif algo == 'prompt':              return isPromptMuon(chain, index)
     else:
         print 'Wrong input for "algo" in isTightMuon'
         return False

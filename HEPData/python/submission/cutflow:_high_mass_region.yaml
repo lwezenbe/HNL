@@ -1,0 +1,223 @@
+dependent_variables:
+- header:
+    name: Number of passing events
+  qualifiers:
+  - name: SQRT(S)
+    units: TeV
+    value: 13
+  - name: LUMINOSITY
+    units: fb$^{-1}$
+    value: 138
+  - name: Final State
+    value: NoTau
+  - name: Sample
+    value: HNL-e-m200-Vsq1em4-prompt
+  values:
+  - value: 0.89025
+  - value: 0.88956
+  - value: 0.88573
+  - value: 0.73067
+  - value: 0.72831
+  - value: 0.72819
+  - value: 0.71996
+  - value: 0.71715
+  - value: 0.64754
+  - value: 0.61871
+  - value: 0.61857
+  - value: 0.61857
+  - value: 0.31122
+  - value: 0.30722
+  - value: 0.30713
+- header:
+    name: Number of passing events
+  qualifiers:
+  - name: SQRT(S)
+    units: TeV
+    value: 13
+  - name: LUMINOSITY
+    units: fb$^{-1}$
+    value: 138
+  - name: Final State
+    value: NoTau
+  - name: Sample
+    value: TT-T+X
+  values:
+  - value: 555510.0
+  - value: 555260.0
+  - value: 369530.0
+  - value: 9578.3
+  - value: 3495.7
+  - value: 3486.0
+  - value: 3292.9
+  - value: 3283.3
+  - value: 506.88
+  - value: 371.87
+  - value: 369.93
+  - value: 369.93
+  - value: 157.27
+  - value: 143.9
+  - value: 141.18
+- header:
+    name: Number of passing events
+  qualifiers:
+  - name: SQRT(S)
+    units: TeV
+    value: 13
+  - name: LUMINOSITY
+    units: fb$^{-1}$
+    value: 138
+  - name: Final State
+    value: NoTau
+  - name: Sample
+    value: triboson
+  values:
+  - value: 810.33
+  - value: 809.19
+  - value: 697.5
+  - value: 292.61
+  - value: 233.44
+  - value: 233.29
+  - value: 218.86
+  - value: 218.05
+  - value: 155.08
+  - value: 130.94
+  - value: 130.83
+  - value: 130.83
+  - value: 28.489
+  - value: 27.048
+  - value: 26.972
+- header:
+    name: Number of passing events
+  qualifiers:
+  - name: SQRT(S)
+    units: TeV
+    value: 13
+  - name: LUMINOSITY
+    units: fb$^{-1}$
+    value: 138
+  - name: Final State
+    value: NoTau
+  - name: Sample
+    value: XG
+  values:
+  - value: 2104800.0
+  - value: 2104300.0
+  - value: 1688100.0
+  - value: 132690.0
+  - value: 18366.0
+  - value: 18219.0
+  - value: 17922.0
+  - value: 17898.0
+  - value: 16019.0
+  - value: 5039.1
+  - value: 5037.8
+  - value: 5037.8
+  - value: 1396.4
+  - value: 822.14
+  - value: 692.08
+- header:
+    name: Number of passing events
+  qualifiers:
+  - name: SQRT(S)
+    units: TeV
+    value: 13
+  - name: LUMINOSITY
+    units: fb$^{-1}$
+    value: 138
+  - name: Final State
+    value: NoTau
+  - name: Sample
+    value: Other
+  values:
+  - value: 96948000.0
+  - value: 96946000.0
+  - value: 1896100.0
+  - value: 3025.0
+  - value: 668.56
+  - value: 667.75
+  - value: 607.81
+  - value: 607.8
+  - value: 489.96
+  - value: 177.82
+  - value: 177.81
+  - value: 177.81
+  - value: 168.92
+  - value: 159.99
+  - value: 14.92
+- header:
+    name: Number of passing events
+  qualifiers:
+  - name: SQRT(S)
+    units: TeV
+    value: 13
+  - name: LUMINOSITY
+    units: fb$^{-1}$
+    value: 138
+  - name: Final State
+    value: NoTau
+  - name: Sample
+    value: WZ
+  values:
+  - value: 30557.0
+  - value: 30543.0
+  - value: 28615.0
+  - value: 19837.0
+  - value: 17773.0
+  - value: 17721.0
+  - value: 17361.0
+  - value: 17326.0
+  - value: 15022.0
+  - value: 10529.0
+  - value: 10507.0
+  - value: 10507.0
+  - value: 1224.8
+  - value: 1138.0
+  - value: 1115.3
+- header:
+    name: Number of passing events
+  qualifiers:
+  - name: SQRT(S)
+    units: TeV
+    value: 13
+  - name: LUMINOSITY
+    units: fb$^{-1}$
+    value: 138
+  - name: Final State
+    value: NoTau
+  - name: Sample
+    value: ZZ-H
+  values:
+  - value: 43082.0
+  - value: 43068.0
+  - value: 30310.0
+  - value: 6490.5
+  - value: 4664.9
+  - value: 4611.7
+  - value: 4366.5
+  - value: 4359.4
+  - value: 3708.0
+  - value: 1513.6
+  - value: 1506.3
+  - value: 1506.3
+  - value: 276.8
+  - value: 206.78
+  - value: 203.92
+independent_variables:
+- header:
+    name: Requirement
+  values:
+  - value: total
+  - value: passes $p_T^{\textrm{miss}}$ filters
+  - value: passes trigger
+  - value: three tight leptons
+  - value: pass final state selection
+  - value: passes offline trigger thresholds
+  - value: no fourth FO lepton
+  - value: veto on three same signs
+  - value: b-veto
+  - value: $p_T(\textrm{leading lepton}) > 55$GeV
+  - value: $p_T(\textrm{subleading lepton}) > 15$GeV
+  - value: $p_T(\textrm{trailing lepton}) > 10$GeV
+  - value: $|m(2l|\textrm{OSSF}) - m_Z| > 15$GeV
+  - value: $|m(3l) - m_Z| > 15$GeV
+  - value: min $m(2l|\textrm{OSSF}) > 5$GeV

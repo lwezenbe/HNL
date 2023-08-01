@@ -19,9 +19,6 @@ class SignalLeptonMatcher:
 
     def initEvent(self):
         self.used_lheparticles = []
-        self.l1 = None
-        self.l2 = None
-        self.l3 = None
 
     def lheParticleHistory(self, index):
         history = [abs(self.c._lhePdgId[index])]
@@ -33,11 +30,11 @@ class SignalLeptonMatcher:
 
     def matchLheParticle(self, l):
         tmp_match = None
-        min_dr = 1.
+        min_dr = 0.3
         for i in xrange(self.c._nLheParticles):
             #Avoid double matching
             if i in self.used_lheparticles:     continue
- 
+            
             #Check if the flavor of the gen lepton corresponds to the pdg id of the lhe particle that we checking as potential match
             if abs(self.c._lhePdgId[i]) != PDG_DICT[self.c._gen_lFlavor[l]]: continue
 
@@ -52,8 +49,6 @@ class SignalLeptonMatcher:
 
 
     def matchSelectedLeptons(self):
-        self.initEvent()
-        #print self.used_lheparticles
         selected_leptons = self.c.l_indices
         match_dict = {}
         l2l3 = []
@@ -142,6 +137,7 @@ class SignalLeptonMatcher:
 
     def isZevent(self):
         self.matchSelectedLeptons()
+        self.initEvent()
         if self.l2 is None or self.l3 is None: return
         print self.l2, self.l3
         print self.c._gen_lMomPdg[self.l2], self.c._gen_lMomPdg[self.l3]

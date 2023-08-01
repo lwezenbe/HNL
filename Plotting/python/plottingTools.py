@@ -120,8 +120,3 @@ def writeMessage(output_dir, message):
     out_file = open(output_dir + '/note.txt', 'w')
     out_file.write(message)
     out_file.close()
-
-def setHistErrors(hist, err_value = 0.):
-    for b in xrange(1, hist.GetNbinsX()+1):
-        hist.SetBinError(b, err_value)
-    return hist

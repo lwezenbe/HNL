@@ -21,7 +21,7 @@ submission_parser.add_argument('--isTest',   action='store_true',       default=
 submission_parser.add_argument('--batchSystem', action='store',         default='HTCondor',  help='choose batchsystem', choices=['local', 'HTCondor', 'Cream02'])
 submission_parser.add_argument('--dryRun',   action='store_true',       default=False,  help='do not launch subjobs, only show them')
 submission_parser.add_argument('--genLevel',   action='store_true',     default=False,  help='Use gen level variables')
-submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'tZq', 'TTT', 'HNLtauTest', 'corrMet', 'prompt'])
+submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'tZq', 'TTT', 'HNLtauTest', 'corrMet'])
 submission_parser.add_argument('--strategy',   action='store', default='MVA',  help='Select the strategy to use to separate signal from background', choices=['cutbased', 'MVA'])
 submission_parser.add_argument('--analysis',   action='store', default='HNL',  help='Select the strategy to use to separate signal from background', choices=['HNL', 'AN2017014', 'ewkino', 'tZq'])
 submission_parser.add_argument('--region', action='store', default='baseline', type=str,  help='What region do you want to select for?')
@@ -360,7 +360,7 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
     # Set event range
     #
     if args.isTest:
-        up_limit = 30000 if args.systematics != 'full' else 2000
+        up_limit = 20000 if args.systematics != 'full' else 2000
         if len(sample.getEventRange(0)) < up_limit:
             event_range = sample.getEventRange(0)
         else:
@@ -432,8 +432,6 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
         # Loop over all events
         #
         for entry in event_range:
-            #if entry == 18:
-            #    chain.Show(entry)
             chain.GetEntry(entry)
             progress(entry - event_range[0], len(event_range), print_every = None if args.isTest else 10000)
 
@@ -453,7 +451,7 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
             if args.tag == 'TauFakes':
                 if not is_sideband_event: continue
                 is_sideband_event = False
-
+ 
             #
             # Make the code blind in signal regions
             # If you ever remove these next lines, remove manually_blinded as well
@@ -502,10 +500,7 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
                     chain.leadingFakeLeptonPt = -1.
                     chain.leadingFakeElectronPt = -1.
                     chain.leadingFakeMuonPt = -1.
-       
-            #print entry 
-            if chain.category == 11: print entry
-            
+                    
             #
             # Fill tree
             #
@@ -582,7 +577,7 @@ else:
     
     def createSingleVariableDistributions(tree, vname, hname, bins, condition, proc, year, include_systematics = 'nominal', split_corr = False, additional_weight = None, ignore_sideband = False):
         out_dict = {}
-    
+
         weight = 'weight'
         if additional_weight is not None:
             weight += '*'+additional_weight
@@ -614,12 +609,11 @@ else:
  
         from HNL.Tools.outputTree import OutputTree
         def getTree(name, path):
-            #if not args.combineYears:
-            #    return OutputTree(name, path+'/variables.root')
-            #else:
-            #    in_paths = [path+'/variables_{0}.root'.format(y) for y in args.year]
-            #    return OutputTree(name, in_paths)
-            return OutputTree(name, path+'/variables.root')
+            if not args.combineYears:
+                return OutputTree(name, path+'/variables.root')
+            else:
+                in_paths = [path+'/variables_{0}.root'.format(y) for y in args.year]
+                return OutputTree(name, in_paths)
  
         from HNL.EventSelection.eventCategorization import isLightLeptonFinalState
         categories_to_use = categories_dict[0]
@@ -658,11 +652,6 @@ else:
                                 vsquared_translated = vsquared_translated.replace('e-', 'em')
                                 new_name = cleaned_sample_name.split('-Vsq')[0]+'-Vsq'+vsquared_translated + '-' + Sample.getSignalDisplacedString(cleaned_sample_name)
                                 additional_weight = str(coupling_squared/Sample.getSignalCouplingSquared(sample_name))
-                    
-                                #tmp
-                                #additional_weight += '*(isDiracType*0.926+!isDiracType*1.0799)'
-                                additional_weight += '*(isDiracType*1.2+!isDiracType*0.73)'
-                                
                                 if args.plotDirac: additional_weight += '*diracSF'
                                 if corr_syst == 'nominal':
                                     tmp_list_of_hist[c][v]['signal'][new_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, include_systematics, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband)
@@ -1052,6 +1041,7 @@ else:
 
                 sr_condition = '||'.join(['searchregion=={0}'.format(x) for x in srm[args.region].getGroupValues(sr)]) if sr != 'Combined' else None
                 #Scout the binning
+
                 binning = insertRebin(var_for_datacard, year, signal_list, background_collection, data_list, additional_condition = sr_condition, ignore_sideband = ignore_sideband, searchregion = sr, for_datacards = True) 
                 
                 hist_for_datacard = createVariableDistributions(category_dict[args.categoriesToPlot], var_for_datacard, signal_list[year], background_collection[year], data_list[year], sample_manager, year, sr_condition, include_systematics = args.systematics, sr=sr, split_corr=True, for_datacards=True, ignore_sideband = ignore_sideband, custom_bins = binning)
@@ -1365,7 +1355,7 @@ else:
                         if args.includeData is not None: draw_ratio = True
                         if not args.individualSamples:
                             #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
-                            p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = True, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
+                            p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = False, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
                             #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = True, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era, equalize_bins=True,
                             #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = False, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
                                     color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau' if not args.analysis == 'tZq' else 'tZq', x_name = var[v][2][0], y_name = var[v][2][1])
@@ -1483,26 +1473,22 @@ else:
         for year in years_to_plot:
 
             in_files = {'signal' : {}, 'bkgr' : {}}
-            print signal_names
-            for sample_name in background_collection[year]+signal_names: 
-            #for sample_name in signal_names: 
+            #for sample_name in background_collection[year]+signal_names: 
+            for sample_name in signal_names: 
                 if not args.individualSamples:
-                    in_path = lambda y : getOutputName('signal' if 'HNL' in sample_name else 'bkgr', y, args.tag)+'/'+sample_name+'/variables.root'
-                    #if args.flavor != 'tau' or not 'HNL' in sample_name:
-                    #    in_path = lambda y : getOutputName('signal' if 'HNL' in sample_name else 'bkgr', y, args.tag)+'/'+sample_name+'/variables.root'
-                    #else:
-                    #    extra_name = sample_name.replace('tau', 'tauhad')
-                    #    in_path = lambda y : getOutputName('signal' if 'HNL' in sample_name else 'bkgr', y, args.tag)+'/'+sample_name+'/variables-{0}.root'.format(extra_name)
+                    if args.flavor != 'tau' or not 'HNL' in sample_name:
+                        in_path = lambda y : getOutputName('signal' if 'HNL' in sample_name else 'bkgr', y, args.tag)+'/'+sample_name+'/variables.root'
+                    else:
+                        extra_name = sample_name.replace('tau', 'tauhad')
+                        in_path = lambda y : getOutputName('signal' if 'HNL' in sample_name else 'bkgr', y, args.tag)+'/'+sample_name+'/variables-{0}.root'.format(extra_name)
                 else:
                     in_path = lambda y : getOutputName('bkgr', y, args.tag)+'/'+sample_manager.output_dict[sample_name]+'/variables-'+sample_name+'.root'
     
                 from HNL.Tools.helpers import isValidRootFile
-                print sample_name, 'isValidRootFile', isValidRootFile(in_path(year))
-                print in_path(year)
                 if not isValidRootFile(in_path(year)): continue
                 in_files['signal' if 'HNL' in sample_name else 'bkgr'][sample_name] = in_path(year)
             
-            print in_files['signal'] 
+    
             from HNL.HEPData.createCutFlows import createCutFlowJSONs
             out_cat = {}
             for c in category_dict[args.categoriesToPlot][0]:

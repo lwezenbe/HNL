@@ -9,7 +9,7 @@ submission_parser.add_argument('--era',     action='store',       default='UL', 
 submission_parser.add_argument('--masses', type=float, nargs='*',  help='Only run or plot signal samples with mass given in this list')
 submission_parser.add_argument('--couplings', nargs='*', type=float,  help='Only run or plot signal samples with coupling squared given in this list')
 submission_parser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
-submission_parser.add_argument('--method',   action='store', default='',  help='What method should we use?', choices = ['asymptotic', 'hybrid', 'significance', 'covariance', 'impact', 'gof', 'postfit'])
+submission_parser.add_argument('--method',   action='store', default='',  help='What method should we use?', choices = ['asymptotic', 'hybrid', 'significance', 'covariance', 'impact', 'gof'])
 submission_parser.add_argument('--blind',   action='store_true', default=False,  help='activate --blind option of combine')
 submission_parser.add_argument('--useExistingLimits',   action='store_true', default=False,  help='Dont run combine, just plot')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
@@ -143,13 +143,10 @@ def runGoodnessOfFit(datacard, cardname):
     os.system('scp '+output_folder+'/gof_plot.pdf '+public_html+'/gof_plot.pdf')
     
 def producePostFit(datacard, cardname):
-    print datacard
-    output_folder = getOutputFolder(datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/postfit/'+cardname)
-    #runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root ; combine ws.root -M FitDiagnostics --saveWithUnc', output_folder)    
-    runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root ; combine ws.root -M FitDiagnostics --saveWithUnc --rMin -1 --rMax 5 --cminDefaultMinimizerStrategy 0', output_folder)    
-    #runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root ; combine ws.root -M FitDiagnostics --rMin -10 --robustFit=1 --rMax 5 --cminDefaultMinimizerStrategy 0', output_folder)    
+    output_folder = getOutputFolder(datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/asymptotic/'+cardname)
+    runCombineCommand('combine ws.root -M FitDiagnostics', output_folder)    
     os.system('scp '+datacard+' '+output_folder+'/datacard.txt')
-    runCombineCommand('PostFitShapesFromWorkspace -d datacard.txt -w ws.root --output postfitshapes.root -f fitDiagnosticsTest.root:fit_s --postfit --sampling', output_folder)    
+    runCombineCommand('PostFitShapesFromWorkspace -d datacard.txt -w ws.root -o postfitshapes.root -f fitDiagnostics.root:fit_s --postfit', output_folder)    
 
 def getCovarianceMatrix(datacard, cardname):
     output_folder = getOutputFolder(datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/covariance/'+cardname)
@@ -185,8 +182,6 @@ def runLimit(card_manager, signal_name, cardnames):
         runImpacts(datacard, getOutDataCardName(cardnames))
     elif args.method == 'gof':
         runGoodnessOfFit(datacard, getOutDataCardName(cardnames))
-    elif args.method == 'postfit':
-        producePostFit(datacard, getOutDataCardName(cardnames))
     print 'Finished running toy limits for {0}'.format(signal_name)
 
 

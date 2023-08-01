@@ -204,9 +204,6 @@ class Histogram:
         tmp_other_histogram = other_histogram.clone('other_hist_clone')
         self.hist.Add(tmp_other_histogram.getHist())
 
-    def scale(self, new_scale):
-        self.hist.Scale(new_scale)
-
     def getYieldHistogram(self):
         tmp_hist = ROOT.TH1D('totalyield', 'total yield', 1, 0, 1)
         tmp_hist.SetBinContent(1, self.hist.GetSumOfWeights())

@@ -4,7 +4,7 @@
 import os, argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 submission_parser = argParser.add_argument_group('submission', 'Arguments for submission. Any arguments not in this group will not be regarded for submission.')
-submission_parser.add_argument('--datacard', default=None, type=str,  help='What final state datacard should be used?')
+submission_parser.add_argument('--datacards', nargs = '*', default=None, type=str,  help='What final state datacards should be used?')
 submission_parser.add_argument('--compareToExternal',   type=str, nargs='*',  help='Compare to a specific experiment')
 submission_parser.add_argument('--compareToCards', default = None,  type=str, nargs='*',  help='Compare to a specific card if it exists. If you want different selection use "selection/card" otherwise just "card"')
 submission_parser.add_argument('--output',   type=str, help='Compare to a specific card if it exists. If you want different selection use "selection/card" otherwise just "card"')
@@ -50,17 +50,32 @@ def getGraphObjFromFile(in_name, obj_name):
 
 
 main_graphs = []
-print os.path.join(in_base_folder, args.datacard, 'limits.root')
-main_graphs.append(getGraphObjFromFile(os.path.join(in_base_folder, args.datacard, 'limits.root'), 'expected_central'))
-main_graphs.append(getGraphObjFromFile(os.path.join(in_base_folder, args.datacard, 'limits.root'), 'expected_1sigma'))
-main_graphs.append(getGraphObjFromFile(os.path.join(in_base_folder, args.datacard, 'limits.root'), 'expected_2sigma'))
-if not args.blind:
-    observed = getGraphObjFromFile(os.path.join(in_base_folder, args.datacard, 'limits.root'), 'observed')
-    if observed is not None:
-        main_graphs.append(observed)
+for dc in args.datacards:
+    tmp_list = []
+    tmp_list.append(getGraphObjFromFile(os.path.join(in_base_folder, dc, 'limits.root'), 'expected_central'))
+    tmp_list.append(getGraphObjFromFile(os.path.join(in_base_folder, dc, 'limits.root'), 'expected_1sigma'))
+    tmp_list.append(getGraphObjFromFile(os.path.join(in_base_folder, dc, 'limits.root'), 'expected_2sigma'))
+    if not args.blind:
+        observed = getGraphObjFromFile(os.path.join(in_base_folder, dc, 'limits.root'), 'observed')
+        if observed is not None:
+            tmp_list.append(observed)
+    main_graphs.append([x for x in tmp_list])
+    del tmp_list
+    try:
+        del observed
+    except:
+        pass
 
-main_masses = set([x for x in main_graphs[0].GetX()])
-main_masses = sorted([x for x in main_masses])
+def getSortKey(graphs):
+    from HNL.Plotting.plottingTools import getXMin
+    return getXMin([graphs[0]]) 
+
+main_graphs = sorted(main_graphs, key = getSortKey)
+#Get set of masses contained in main_graphs
+
+main_masses = set()
+for mg in main_graphs:
+    main_masses.update([x for x in mg[0].GetX()])
 
 from HNL.Plotting.plottingTools import extraTextFormat
 if args.flavor == 'e':
@@ -100,72 +115,10 @@ if args.compareToCards is not None:
 
 if args.bkgrTexNames is not None:
     tex_names = args.bkgrTexNames
-
-
-def getRatio(graph1, graph2):
-    x_values_1 = [x for x in graph1.GetX()]
-    x_values_2 = [x for x in graph2.GetX()]
-    y_values_1 = [y for y in graph1.GetY()]
-    y_values_2 = [y for y in graph2.GetY()]
-
-    new_x_values = []
-    new_graph1_y_values = []
-    new_graph2_y_values = []
-    second_index = 0
-    for first_index, first_value in enumerate(x_values_1):
-        if second_index >= len(x_values_2):
-            break
         
-        # Case 1, both lists have the same value at the same index
-        if first_value == x_values_2[second_index]:
-            new_x_values.append(first_value)
-            new_graph1_y_values.append(y_values_1[first_index])
-            new_graph2_y_values.append(y_values_2[second_index])
-            second_index += 1
-            continue
-        # Case 2, value 1 is lower than value 2
-        if first_value < x_values_2[second_index]:
-            if first_value not in x_values_2:
-                continue
-            # Case 2.1, There are multiple entries for value 1
-            # Case 2.2. there is just one entry but it is not in x_values_2, just skip it
-            if x_values_1.count(first_value) > 1:
-                #Just add it again
-                new_x_values.append(first_value)
-                new_graph1_y_values.append(y_values_1[first_index])
-                new_graph2_y_values.append(y_values_2[second_index-1])
-            continue
-        #Case 3: value 1 is higher than value 2
-        if first_value > x_values_2[second_index]:
-            # Case 3.1, value 2 is not in x_values_1 but value 1 is in x_values_2, jump forward to correct index
-            # Case 3.2, value 2 is not in x_values_1 and vice versa, 
-            if x_values_2[second_index] not in x_values_1 and first_value in x_values_2:
-                second_index = x_values_2.index(first_value)
-                new_x_values.append(first_value)
-                new_graph1_y_values.append(y_values_1[first_index])
-                new_graph2_y_values.append(y_values_2[second_index])
-                second_index += 1
-            elif x_values_2[second_index] not in x_values_1 and first_value not in x_values_2:
-                second_index += 1
-            else:
-                print 'Weird'
-            continue
-
-    from ROOT import TGraph
-    graph = TGraph(len(new_x_values))
-    for ix, x_val in enumerate(new_x_values):
-        graph.SetPoint(ix, x_val, new_graph1_y_values[ix]/new_graph2_y_values[ix])
-    return graph
-
-ratios = []
-for tn, bh in zip(tex_names, bkgr_hist):
-    ratios.append(getRatio(main_graphs[0], bh))
-if len(ratios) < 1:
-    ratios = None
-
 from HNL.Plotting.plot import Plot
 from HNL.Stat.combineTools import coupling_dict
-year = args.datacard.split('UL')[1].split('/')[0]
+year = args.datacards[0].split('UL')[1].split('/')[0]
 y_axis_label = args.yaxis if args.yaxis is not None else '|V_{'+coupling_dict[args.flavor]+' N}|^{2}'
-p = Plot(main_graphs, tex_names, 'limits', extra_text = extra_text, bkgr_hist = bkgr_hist, y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = y_axis_label, era = 'UL', year = year, draw_ratio = ratios)
-p.drawBrazilian(output_dir = os.path.join(in_base_folder, args.output), ignore_expected = args.ignoreExpected, signal_legend=args.signalTexName, ignore_bands = args.ignoreBands)
+p = Plot(main_graphs, tex_names, 'limits', extra_text = extra_text, bkgr_hist = bkgr_hist, y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = y_axis_label, era = 'UL', year = year)
+p.drawBrazilian(output_dir = os.path.join(in_base_folder, args.output), multiple_signals = True, ignore_expected = args.ignoreExpected, signal_legend=args.signalTexName, ignore_bands = args.ignoreBands)
