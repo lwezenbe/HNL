@@ -24,7 +24,7 @@ var_gen_3l = {'minMos':        (lambda c : c.minMos,   np.arange(0., 120., 12.),
         'drl1l2':      (lambda c : c.dr_l1l2,       np.arange(0., 4.5, .25),       ('#Delta R(l1,l2)', 'Events')),
         'drl1l3':      (lambda c : c.dr_l1l3,       np.arange(0., 4.5, .25),       ('#Delta R(l1,l3)', 'Events')),
         'drl2l3':      (lambda c : c.dr_l2l3,       np.arange(0., 4.5, .25),       ('#Delta R(l2,l3)', 'Events')),
-        'ctau':      (lambda c : c._ctauHN,       np.arange(0., 4.5, .25),       ('#ctau', 'Events')),
+        #'ctau':      (lambda c : c._ctauHN,       np.arange(0., 4.5, .25),       ('#ctau', 'Events')),
         #'l1dxy':      (lambda c : c.l_dxy[l1],       np.arange(0., 4.5, .25),       ('dxy(l1)', 'Events')),
         #'l2dxy':      (lambda c : c.l_dxy[l2],       np.arange(0., 4.5, .25),       ('dxy(l2)', 'Events')),
         #'l3dxy':      (lambda c : c.l_dxy[l3],       np.arange(0., 4.5, .25),       ('dxy(l3)', 'Events')),
@@ -96,7 +96,7 @@ var_reco_3l = {
         'drmaxossf':      (lambda c : c.dr_maxOSSF,       np.arange(0., 5.5, .25),       ('#Delta R(max(OSSF))', 'Events')),
         'mtnonossf':          (lambda c : c.mtNonZossf,      np.arange(0., 240., 5.),         ('m_{ll,Z} [GeV]', 'Events')),
         
-        'ctau':      (lambda c : c._ctauHN,       np.arange(0., 4.5, .25),       ('#ctau', 'Events')),
+        #'ctau':      (lambda c : c._ctauHN,       np.arange(0., 4.5, .25),       ('#ctau', 'Events')),
     }
 
 var_reco_4l = {

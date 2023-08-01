@@ -29,7 +29,7 @@ def getMuonE(chain, index, syst = None):
 
 def isGoodGenMuon(chain, index):
     if not chain._gen_lIsPrompt[index]:         return False
-    #if chain._gen_lEta[index] > 2.4:            return False
+    if chain._gen_lEta[index] > 2.4:            return False
     return True
 
 def isPromptMuon(chain, index):

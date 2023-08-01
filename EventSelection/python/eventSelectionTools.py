@@ -65,11 +65,11 @@ def selectLeptonsGeneral(chain, new_chain, nL, cutter=None, sort_leptons = True)
         else: 
             raise RuntimeError('In selectLeptonsGeneral: flavor provided is neither an electron, muon or tau')
 
-        #if isGoodLepton(chain, l):
-        #    chain.leptons.append((pt_to_use, l)) 
-        from HNL.ObjectSelection.leptonSelector import isGoodLeptonGeneral
-        if isGoodLeptonGeneral(chain, l, algo = 'prompt'):
+        if isGoodLepton(chain, l):
             chain.leptons.append((pt_to_use, l)) 
+        #from HNL.ObjectSelection.leptonSelector import isGoodLeptonGeneral #In case you need prompt leptons
+        #if isGoodLeptonGeneral(chain, l, algo = 'prompt'):
+        #    chain.leptons.append((pt_to_use, l)) 
      
     keep_sideband = chain.need_sideband
 

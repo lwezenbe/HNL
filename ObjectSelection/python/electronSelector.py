@@ -35,7 +35,7 @@ def getElectronE(chain, index, syst = None):
 #
 def isGoodGenElectron(chain, index):
     if not chain._gen_lIsPrompt[index]:         return False
-    #if chain._gen_lEta[index] > 2.5:            return False
+    if chain._gen_lEta[index] > 2.5:            return False
     return True
 
 #

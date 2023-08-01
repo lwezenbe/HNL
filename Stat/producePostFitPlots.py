@@ -54,9 +54,7 @@ labels = [label_dict[l] for l in args.xlabels]*2 if args.xlabels is not None els
 
 output = os.path.join(input_base, args.output, signal_name)
 # Make plots
-print input_file
 for ichannel, channel in enumerate(all_channels):
-    print channel
     from HNL.Tools.helpers import getObjFromFile
     from HNL.Tools.histogram import Histogram
     from HNL.Plotting.plottingTools import extraTextFormat

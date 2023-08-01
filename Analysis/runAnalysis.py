@@ -360,7 +360,7 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
     # Set event range
     #
     if args.isTest:
-        up_limit = 30000 if args.systematics != 'full' else 2000
+        up_limit = 20000 if args.systematics != 'full' else 2000
         if len(sample.getEventRange(0)) < up_limit:
             event_range = sample.getEventRange(0)
         else:
@@ -432,8 +432,6 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
         # Loop over all events
         #
         for entry in event_range:
-            #if entry == 18:
-            #    chain.Show(entry)
             chain.GetEntry(entry)
             progress(entry - event_range[0], len(event_range), print_every = None if args.isTest else 10000)
 
@@ -503,9 +501,6 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
                     chain.leadingFakeElectronPt = -1.
                     chain.leadingFakeMuonPt = -1.
        
-            #print entry 
-            if chain.category == 11: print entry
-            
             #
             # Fill tree
             #
@@ -614,12 +609,11 @@ else:
  
         from HNL.Tools.outputTree import OutputTree
         def getTree(name, path):
-            #if not args.combineYears:
-            #    return OutputTree(name, path+'/variables.root')
-            #else:
-            #    in_paths = [path+'/variables_{0}.root'.format(y) for y in args.year]
-            #    return OutputTree(name, in_paths)
-            return OutputTree(name, path+'/variables.root')
+            if not args.combineYears:
+                return OutputTree(name, path+'/variables.root')
+            else:
+                in_paths = [path+'/variables_{0}.root'.format(y) for y in args.year]
+                return OutputTree(name, in_paths)
  
         from HNL.EventSelection.eventCategorization import isLightLeptonFinalState
         categories_to_use = categories_dict[0]
@@ -660,8 +654,7 @@ else:
                                 additional_weight = str(coupling_squared/Sample.getSignalCouplingSquared(sample_name))
                     
                                 #tmp
-                                #additional_weight += '*(isDiracType*0.926+!isDiracType*1.0799)'
-                                additional_weight += '*(isDiracType*1.2+!isDiracType*0.73)'
+                                #additional_weight += '*(isDiracType*1.2+!isDiracType*0.73)'
                                 
                                 if args.plotDirac: additional_weight += '*diracSF'
                                 if corr_syst == 'nominal':
@@ -1483,7 +1476,6 @@ else:
         for year in years_to_plot:
 
             in_files = {'signal' : {}, 'bkgr' : {}}
-            print signal_names
             for sample_name in background_collection[year]+signal_names: 
             #for sample_name in signal_names: 
                 if not args.individualSamples:
@@ -1497,12 +1489,9 @@ else:
                     in_path = lambda y : getOutputName('bkgr', y, args.tag)+'/'+sample_manager.output_dict[sample_name]+'/variables-'+sample_name+'.root'
     
                 from HNL.Tools.helpers import isValidRootFile
-                print sample_name, 'isValidRootFile', isValidRootFile(in_path(year))
-                print in_path(year)
                 if not isValidRootFile(in_path(year)): continue
                 in_files['signal' if 'HNL' in sample_name else 'bkgr'][sample_name] = in_path(year)
             
-            print in_files['signal'] 
             from HNL.HEPData.createCutFlows import createCutFlowJSONs
             out_cat = {}
             for c in category_dict[args.categoriesToPlot][0]:
