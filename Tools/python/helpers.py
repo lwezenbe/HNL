@@ -102,8 +102,10 @@ def makePathTimeStamped(path):
 #Sort one list based on another list
 #
 def sortByOtherList(to_sort, base):
-    orderedList = [x for _, x in sorted(zip(base, to_sort))]
-    return orderedList
+    import numpy as np
+    index_list = np.argsort(base)
+    ordered_list = [to_sort[i] for i in index_list]
+    return ordered_list
 
 #
 #Get all low edges of hist because I dont trust the root function

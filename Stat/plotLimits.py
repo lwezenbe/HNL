@@ -17,6 +17,7 @@ submission_parser.add_argument('--plotSingleBackground', action='store', default
 submission_parser.add_argument('--ignoreExpected', action='store_true', default=False,  help='Only plot observed')
 submission_parser.add_argument('--ignoreBands', action='store_true', default=False,  help='Only plot observed')
 submission_parser.add_argument('--yaxis', action='store', default=None,  help='custom y axis label')
+argParser.add_argument('--paperPlots',   action='store_true',     default=False,  help='Slightly adapt the plots to be paper-approved')
 args = argParser.parse_args()
 
 import os
@@ -64,11 +65,11 @@ main_masses = sorted([x for x in main_masses])
 
 from HNL.Plotting.plottingTools import extraTextFormat
 if args.flavor == 'e':
-    coupling_text = 'V_{Ne}:V_{N#mu}:V_{N#tau} = 1:0:0'
+    coupling_text = 'V_{eN}:V_{#muN}:V_{#tauN} = 1:0:0'
 elif args.flavor == 'mu':
-    coupling_text = 'V_{Ne}:V_{N#mu}:V_{N#tau} = 0:1:0'
+    coupling_text = 'V_{eN}:V_{#muN}:V_{#tauN} = 0:1:0'
 elif args.flavor == 'tau':
-    coupling_text = 'V_{Ne}:V_{N#mu}:V_{N#tau} = 0:0:1'
+    coupling_text = 'V_{eN}:V_{#muN}:V_{#tauN} = 0:0:1'
 extra_text = [extraTextFormat(coupling_text)]
 if args.extratext is not None:
     extra_text.append(extraTextFormat(args.extratext))
@@ -162,10 +163,11 @@ for tn, bh in zip(tex_names, bkgr_hist):
     ratios.append(getRatio(main_graphs[0], bh))
 if len(ratios) < 1:
     ratios = None
+if args.paperPlots: ratios = None
 
 from HNL.Plotting.plot import Plot
 from HNL.Stat.combineTools import coupling_dict
 year = args.datacard.split('UL')[1].split('/')[0]
 y_axis_label = args.yaxis if args.yaxis is not None else '|V_{'+coupling_dict[args.flavor]+' N}|^{2}'
-p = Plot(main_graphs, tex_names, 'limits', extra_text = extra_text, bkgr_hist = bkgr_hist, y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = y_axis_label, era = 'UL', year = year, draw_ratio = ratios)
+p = Plot(main_graphs, tex_names, 'limits', extra_text = extra_text, bkgr_hist = bkgr_hist, y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = y_axis_label, era = 'UL', year = year, draw_ratio = ratios, for_paper = args.paperPlots)
 p.drawBrazilian(output_dir = os.path.join(in_base_folder, args.output), ignore_expected = args.ignoreExpected, signal_legend=args.signalTexName, ignore_bands = args.ignoreBands)

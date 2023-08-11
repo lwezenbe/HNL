@@ -80,12 +80,13 @@ def orderHist(hist, names, lowest_first = False):
     weight = -1.
     if lowest_first: weight = 1.
     sof = [h.GetSumOfWeights()*weight for h in hist]
+    #statement that if values are the same, it keeps it in sortByOtherList
     return sortByOtherList(hist, sof), sortByOtherList(names, sof)
 
 def extraTextFormat(text, xpos = None, ypos = None, textsize = None, align = 12):
     tmp_textsize = 0.03
     if textsize is not None: tmp_textsize *= textsize 
-    return [text, xpos, ypos, tmp_textsize, align]
+    return ['#bf{'+text+'}', xpos, ypos, tmp_textsize, align]
 
 def drawLineFormat(x0 = None, x1 = None, y0 = None, y1 = None, color = None, width = 3, style = 1):
     if color is None: color = ROOT.kBlack
@@ -108,12 +109,12 @@ def getCumulativeValue(hist, h_bin):
 
 def getUnit(x):
     if x.find('[') == -1:
-        return ''
+        return 'units'
     else:
         return x[x.find('[')+len('['):x.rfind(']')]
 
 def allBinsSameWidth(hist):
-    bin_array = [hist.GetBinWidth(b) for b in xrange(hist.GetNbinsX())]
+    bin_array = [round(hist.GetBinWidth(b), 2) for b in xrange(hist.GetNbinsX())]
     return bin_array.count(bin_array[0]) == len(bin_array)
 
 def writeMessage(output_dir, message):

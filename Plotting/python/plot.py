@@ -53,7 +53,7 @@ from HNL.Plotting.style import setDefault, setDefault2D
 class Plot(object):
     
     def __init__(self, signal_hist = None, tex_names = None, name = None, x_name = None, y_name = None, bkgr_hist = None, observed_hist = None, syst_hist = None, extra_text = None, 
-        x_log = None, y_log = None, draw_ratio = None, draw_significance = None, color_palette = 'HNLfromTau', color_palette_bkgr = 'HNLfromTau', year = '2016', era = 'prelegacy', equalize_bins = False, ignore_stat_err = False):
+        x_log = None, y_log = None, draw_ratio = None, draw_significance = None, color_palette = 'HNLfromTau', color_palette_bkgr = 'HNLfromTau', year = '2016', era = 'prelegacy', equalize_bins = False, ignore_stat_err = False, for_paper = False):
 
         self.s = makeList(getHistList(signal_hist, equalize_bins)) if signal_hist is not None else []
         try:
@@ -87,6 +87,8 @@ class Plot(object):
 
         self.hs = None  #hist stack
 
+        self.for_paper = for_paper
+
         self.x_name = x_name
         self.y_name = y_name
         if self.x_name is None:
@@ -99,6 +101,7 @@ class Plot(object):
                 self.y_name = self.s[0].GetYaxis().GetTitle()
             elif len(self.b) > 0:
                 self.y_name = self.b[0].GetYaxis().GetTitle()
+        
         try:
             if not isinstance(self.x_name, list) and not isinstance(self.x_name, dict): self.y_name = self.getYName()
         except:
@@ -145,8 +148,8 @@ class Plot(object):
             #
             self.tot_totbkgr_error = self.stat_totbkgr_error.Clone('Total Error on background')
 
-            if self.syst_hist is not None:
-                if isList(self.syst_hist):
+            if self.syst_hist is not None :
+                if isList(self.syst_hist) and None not in self.syst_hist:
                     self.syst_totbkgr_error = self.syst_hist[0].Clone('syst_totbgkr_error')
                     for b in xrange(1, self.syst_totbkgr_error.GetNbinsX()+1):
                         for s in self.syst_hist[1:]:
@@ -170,7 +173,7 @@ class Plot(object):
                     bin_syst_error = self.syst_totbkgr_error.GetBinError(b)
                     self.tot_totbkgr_error.SetBinError(b, np.sqrt(bin_stat_error ** 2 + bin_syst_error ** 2))
 
-    def setAxisLog(self, is2D = False, stacked = True, min_cutoff = None, max_cutoff = None, include_errors=True):
+    def setAxisLog(self, is2D = False, stacked = True, min_cutoff = None, max_cutoff = None, include_errors=True, need_additional_space = False):
 
         if is2D:
             if self.x_log:
@@ -210,7 +213,10 @@ class Plot(object):
                 self.plotpad.SetLogy()
 
                 if max_cutoff is None:
-                    self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*3
+                    if not need_additional_space:
+                        self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*0.2
+                    else:
+                        self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)
                 else:
                     self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(max_cutoff))/2)*3
 
@@ -241,7 +247,7 @@ class Plot(object):
                 self.s[0].GetYaxis().SetTitleSize(.06)
                 self.s[0].GetXaxis().SetLabelSize(.06)
                 self.s[0].GetYaxis().SetLabelSize(.06)
-                self.s[0].GetYaxis().SetTitleOffset(1)
+                self.s[0].GetYaxis().SetTitleOffset(1.1)
             else:
                 # self.b[0].SetMinimum(1e-5)
                 self.b[0].SetMinimum(self.min_to_set)
@@ -271,10 +277,17 @@ class Plot(object):
 
         add_x_width = allBinsSameWidth(test_hist)
 
+        if self.for_paper and self.x_name =='Search region':
+            self.y_name += ' / bin'
+
         if '[' in self.y_name:
             return self.y_name
         elif add_x_width and not '/' in self.y_name: 
-            self.y_name +=  ' / ' +str(test_hist.GetBinWidth(1)) +' '+ pt.getUnit(self.x_name)
+            bin_width = test_hist.GetBinWidth(1)
+            if (bin_width).is_integer():
+                self.y_name +=  ' / ' +str(int(bin_width)) +' '+ pt.getUnit(self.x_name)
+            else:
+                self.y_name +=  ' / ' +str(bin_width) +' '+ pt.getUnit(self.x_name)
 
         return self.y_name
 
@@ -336,10 +349,9 @@ class Plot(object):
         if self.draw_significance and self.draw_ratio is not None:
             self.sig_pad = ROOT.TPad('sig_pad', 'sig_pad', 0, 0.05, 1, 0.25)
             self.ratio_pad = ROOT.TPad('ratio_pad', 'ratio_pad', 0, 0.25, 1, 0.45)
-            self.ratio_pad.SetBottomMargin(0.05)
             plot_pad_y = 0.45
         elif self.draw_ratio is not None:
-            self.ratio_pad = ROOT.TPad('ratio_pad', 'ratio_pad', 0, 0.05, 1, 0.25)
+            self.ratio_pad = ROOT.TPad('ratio_pad', 'ratio_pad', 0, 0.03, 1, 0.25)
             plot_pad_y = 0.25
         elif self.draw_significance:
             self.sig_pad = ROOT.TPad('sig_pad', 'sig_pad', 0, 0.05, 1, 0.25)
@@ -348,10 +360,14 @@ class Plot(object):
         self.plotpad = ROOT.TPad('plotpad', 'plotpad', 0, plot_pad_y, 1, 0.98)
 
         self.plotpad.Draw()
+        self.canvas.SetRightMargin(0.05)
+        self.plotpad.SetRightMargin(0.05)
         if self.draw_ratio is not None:
             self.plotpad.SetBottomMargin(0.)
-            self.ratio_pad.SetTopMargin(0.05)
-            self.ratio_pad.SetBottomMargin(0.38)
+            self.ratio_pad.SetTopMargin(0.07)
+            self.ratio_pad.SetBottomMargin(0.42)
+            self.ratio_pad.SetRightMargin(0.05)
+            #self.ratio_pad.SetBottomMargin(0.5)
             if self.x_log: self.ratio_pad.SetLogx()  
             self.ratio_pad.Draw()
 
@@ -444,9 +460,9 @@ class Plot(object):
             r.SetMarkerColor(r.GetLineColor())
 
         if self.observed is not None:
-            ytitle = 'Obs./Pred.'
+            ytitle = 'Data/Pred.'
         else:
-            ytitle = 'S/B'
+            ytitle = 'LNC/LNV'
 
         def setAxis(in_hist):
             in_hist.SetMinimum(max(0., 0.7*pt.getOverallMinimum(ratios if self.observed is None else [ratios[-1]], zero_not_allowed = True,  include_error=True)))
@@ -454,8 +470,12 @@ class Plot(object):
                 in_hist.SetMaximum(2.)
             else:
                 in_hist.SetMaximum(min(6, 1.3*pt.getOverallMaximum(ratios if self.observed is None else [ratios[-1]], include_error=True)))
+            
             in_hist.GetXaxis().SetTitleSize(.18)
-            in_hist.GetYaxis().SetTitleSize(.18)
+            if self.observed is not None:
+                in_hist.GetYaxis().SetTitleSize(.16)
+            else:
+                in_hist.GetYaxis().SetTitleSize(.18)
             in_hist.GetXaxis().SetLabelSize(.18)
             in_hist.GetYaxis().SetLabelSize(.18)
             in_hist.GetYaxis().SetTitleOffset(.3)
@@ -463,7 +483,8 @@ class Plot(object):
             if self.draw_significance:
                 in_hist.GetXaxis().SetLabelOffset(999999)
             else:
-                in_hist.GetXaxis().SetTitleOffset(0.95)
+                #in_hist.GetXaxis().SetTitleOffset(0.95)
+                in_hist.GetXaxis().SetTitleOffset(1.)
             if self.draw_significance:
                 in_hist.SetTitle('; ; '+ytitle)
             else:
@@ -471,6 +492,7 @@ class Plot(object):
                 if custom_labels is not None:
                     for i, n in enumerate(custom_labels):
                         in_hist.GetXaxis().SetBinLabel(i+1, n)
+                    in_hist.GetXaxis().SetLabelOffset(.04)
             return in_hist
 
        #Draw errors
@@ -526,7 +548,7 @@ class Plot(object):
             self.tot_err = setAxis(self.tot_err)            
     
             self.tot_err.Draw("E2")
-            if not self.ignore_stat_err: self.stat_err.Draw("E2Same")
+            if not self.for_paper and not self.ignore_stat_err: self.stat_err.Draw("E2Same")
             self.b[0].GetXaxis().DrawClone()
 
 
@@ -558,7 +580,7 @@ class Plot(object):
 
         self.line.Draw()
 
-        if not ignore_errors:
+        if not ignore_errors and not self.for_paper:
             self.ratio_legend = ROOT.TLegend(0.2, .75, .6, .9)
             self.ratio_legend.SetNColumns(3)
             if not self.ignore_stat_err: self.ratio_legend.AddEntry(self.stat_err, 'Stat. Pred. Error', 'F')
@@ -571,7 +593,7 @@ class Plot(object):
             self.ratio_legend.SetBorderSize(0)
             self.ratio_legend.Draw()
 
-        if len(ratios) == 1:
+        if len(ratios) == 1 and not self.for_paper:
             extra_text = ROOT.TLatex()
             avg = 0.
             nbins = ratios[0].GetNbinsX()
@@ -632,7 +654,7 @@ class Plot(object):
         significances[0].SetMaximum(1.3*pt.getOverallMaximum(significances, include_error=False))
         significances[0].GetXaxis().SetTitleSize(.12)
         significances[0].GetYaxis().SetTitleSize(.12)
-        significances[0].GetXaxis().SetTitleOffset(1.0)
+        significances[0].GetXaxis().SetTitleOffset(1.03)
         significances[0].GetXaxis().SetLabelSize(.12)
         significances[0].GetYaxis().SetLabelSize(.12)
         significances[0].GetYaxis().SetTitleOffset(0.6)
@@ -739,6 +761,7 @@ class Plot(object):
                 self.tot_totbkgr_error.SetFillStyle(3013)
                 self.tot_totbkgr_error.SetFillColor(ROOT.kGray+2)
                 self.tot_totbkgr_error.SetMarkerStyle(0)
+                self.tot_totbkgr_error.SetLineWidth(0)
                 self.tot_totbkgr_error.Draw("E2 Same")
             else:
                 for i in xrange(len(self.b)):
@@ -810,6 +833,8 @@ class Plot(object):
 
                 h.SetLineColor(ps.getHNLColor(n))
                 h.SetLineWidth(4)
+                from HNL.Plotting.style import getLineStyle2
+                h.SetLineStyle(getLineStyle2(self.s.index(h)))
 
             # Otherwise generic settings
             else:
@@ -821,6 +846,8 @@ class Plot(object):
                 h.SetLineWidth(4)
                 h.SetMarkerStyle(0)
                 h.SetMarkerColor(ps.getColor(self.color_palette, color_index))
+                from HNL.Plotting.style import getLineStyle2
+                h.SetLineStyle(getLineStyle2(self.s.index(h)))
 
         #
         # Set Bkgr Histogram Styles
@@ -922,10 +949,10 @@ class Plot(object):
                 if h.GetSumOfWeights() == 0: continue
                 if normalize_signal == 'bkgr':
                     if len(self.b) == 0:
-                        # raise RuntimeError("Trying to normalize a signal to a nonexisting background in drawHist")
-                        #Normalize everything to the first histogram
                         if ih > 0:
                             h.Scale(self.s[0].GetSumOfWeights()/h.GetSumOfWeights())
+                        # raise RuntimeError("Trying to normalize a signal to a nonexisting background in drawHist")
+                        #Normalize everything to the first histogram
                     else:
                         h.Scale(self.total_b.GetSumOfWeights()/h.GetSumOfWeights())
                 elif isinstance(normalize_signal, int) or isinstance(normalize_signal, float):
@@ -936,15 +963,36 @@ class Plot(object):
                 else:
                     h.Draw(draw_option+'Same')
 
-        if normalize_signal == 'bkgr':
-            if self.extra_text is None: self.extra_text = []
-            self.extra_text.append(pt.extraTextFormat('Scaled to background yield'))          
-        elif isinstance(normalize_signal, int) or isinstance(normalize_signal, float):
-            if self.extra_text is None: self.extra_text = []
-            if normalize_signal >= 1.:
-                self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0}'.format(int(normalize_signal))))          
-            else:
-                self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0:.3g}'.format(normalize_signal)))          
+        need_to_specify_scale = True
+        if self.extra_text is not None:
+            for ixt, xt in enumerate(self.extra_text):
+                if '|V_' in xt[0]:
+                    if isinstance(normalize_signal, int) or isinstance(normalize_signal, float):
+                        print xt[0]
+                        first_part, second_part = xt[0].split(' = ')
+                        second_part = float(second_part.split('}')[0])
+                        second_part *= normalize_signal
+                        from decimal import Decimal
+                        second_part = '%.1E' % Decimal(str(second_part))
+                        a, b = second_part.split('E')
+                        b = int(b)
+                        second_part = a + '#times10^{'+str(b)+'}'
+                        self.extra_text[ixt][0] = first_part + ' = ' + second_part+'}'
+                        need_to_specify_scale = False
+                    else:
+                        self.extra_text[ixt][0] = ""
+                    break
+
+        if need_to_specify_scale: 
+            if normalize_signal == 'bkgr':
+                if self.extra_text is None: self.extra_text = []
+                self.extra_text.append(pt.extraTextFormat('Signal yield scaled to background yield'))          
+            elif isinstance(normalize_signal, int) or isinstance(normalize_signal, float):
+                if self.extra_text is None: self.extra_text = []
+                if normalize_signal >= 1.:
+                    self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0}'.format(int(normalize_signal))))          
+                else:
+                    self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0:.3g}'.format(normalize_signal)))          
         
         self.drawErrors(draw_option, bkgr_draw_option, error_option, bkgr_error_option)
 
@@ -962,7 +1010,7 @@ class Plot(object):
         #
         # Calculate ranges of axis and set to log if requested
         #
-        self.setAxisLog(stacked = (len(self.b) > 0 and 'Stack' in bkgr_draw_option) or 'Stack' in draw_option, min_cutoff = min_cutoff, max_cutoff = max_cutoff, include_errors=error_option is not None and bkgr_error_option is not None)
+        self.setAxisLog(stacked = (len(self.b) > 0 and 'Stack' in bkgr_draw_option) or 'Stack' in draw_option, min_cutoff = min_cutoff, max_cutoff = max_cutoff, include_errors=error_option is not None and bkgr_error_option is not None, need_additional_space = normalize_signal == 'bkgr')
         #self.setAxisLog(stacked = (len(self.b) > 0 and 'Stack' in bkgr_draw_option) or 'Stack' in draw_option, min_cutoff = min_cutoff, max_cutoff = max_cutoff, include_errors=False)
 
         #
@@ -1157,7 +1205,7 @@ class Plot(object):
  
         ROOT.gPad.Update() 
         self.canvas.Update()
-        cl.CMS_lumi(self.canvas, 4, 11, 'Simulation', self.era+self.year)
+        cl.CMS_lumi(self.canvas, 4, 11, 'Simulation' if self.observed is None else 'Preliminary', self.era+self.year)
 
         #Save everything
         self.savePlot(output_dir +'/'+ self.name, message = None)
@@ -1394,10 +1442,12 @@ class Plot(object):
                         m.Draw('Lsame')
          
         if len(self.b) > 0:
+            from HNL.Plotting.style import getLineStyle
             for i_bkgr, bkgr in enumerate(self.b):
                 bkgr.SetLineColor(ps.getColor('Limit', i_bkgr))
                 bkgr.SetLineWidth(3)
                 bkgr.SetMarkerStyle(1)
+                if self.for_paper: bkgr.SetLineStyle(getLineStyle(i_bkgr + 1))
                 sub_backgrounds = addSignal([], bkgr)
                 for i_subbkgr, subbkgr in enumerate(sub_backgrounds):
                     if ignore_expected and i_bkgr == 0 and i_subbkgr == 0:
@@ -1430,19 +1480,28 @@ class Plot(object):
  
         #Create Legend
         self.canvas.cd()
-        legend = ROOT.TLegend(0.5, .7, .9, .9)
+        legend_entries = []
         signal_legend = kwargs.get('signal_legend', None)
-        if not ignore_expected:
-            legend.AddEntry(median[0], "Asymptotic CL_{s} expected" if signal_legend is None else '{0} (Expected)'.format(signal_legend),'L')
-        if not ignore_bands:
-            legend.AddEntry(green[0], "#pm 1 std. deviation",'f')
-            legend.AddEntry(yellow[0], "#pm 2 std. deviation",'f')
         if observed is not None and observed != []:
-            legend.AddEntry(observed[0], "Observed" if signal_legend is None else '{0} (Observed)'.format(signal_legend),'L')
+            legend_entries.append((observed[0], "Observed" if signal_legend is None else '{0} (Observed)'.format(signal_legend),'L'))
+        if not ignore_expected:
+            legend_entries.append((median[0], "Median expected" if signal_legend is None else '{0} (Expected)'.format(signal_legend),'L'))
+        if not ignore_bands:
+            legend_entries.append((green[0], "68% expected",'f'))
+            legend_entries.append((yellow[0], "95% expected",'f'))
         if self.tex_names is not None and len(self.b) > 0:
             for l, b in zip(self.tex_names, self.b):
                 graph = addSignal([], b)[0]
-                legend.AddEntry(graph, l)
+                legend_entries.append((graph, l, 'L'))
+
+        y1 = 0.7
+        if self.for_paper:
+            n_entry_target = 6.
+            n_entry_current = len(legend_entries)
+            y1 += 0.18*(1-(n_entry_current/n_entry_target))
+        legend = ROOT.TLegend(0.5, y1, .9, .88)
+        for le in legend_entries:
+            legend.AddEntry(le[0], le[1], le[2])
         legend.SetFillStyle(0)
         legend.SetBorderSize(0)
         legend.Draw()
@@ -1464,7 +1523,8 @@ class Plot(object):
 
             ratio_frame.GetXaxis().SetNdivisions(508)
             ratio_frame.GetYaxis().SetNdivisions(504)
-            ratio_frame.GetYaxis().SetTitle('#frac{'+signal_legend+'}{Reference}')
+            if signal_legend is not None:
+                ratio_frame.GetYaxis().SetTitle('#frac{'+signal_legend+'}{Reference}')
             ratio_frame.GetXaxis().SetTitle(self.x_name)
             ratio_frame.SetMinimum(0.9*pt.getOverallMinimum(self.draw_ratio))
             ratio_frame.SetMaximum(1.1*pt.getOverallMaximum(self.draw_ratio))
@@ -1488,7 +1548,7 @@ class Plot(object):
 
         ROOT.gPad.Update() 
         self.canvas.Update()
-        cl.CMS_lumi(self.canvas, 4, 11, 'Simulation', self.era+self.year)
+        cl.CMS_lumi(self.plotpad, 4, 11, 'Simulation' if observed is None else 'Preliminary', self.era+self.year)
 
         #Save everything
         self.savePlot(output_dir +'/'+ self.name, message = None)

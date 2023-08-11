@@ -33,10 +33,14 @@ chain = TChain('blackJackAndHookers/blackJackAndHookersTree')
 import glob
 #paths = glob.glob('/pnfs/iihe/cms/store/user/lwezenbe/heavyNeutrino/230427_142455/localSubmission_test-v2/20230713_153253/0000/*.root')
 #paths = glob.glob('/pnfs/iihe/cms/store/user/lwezenbe/heavyNeutrino/HeavyNeutrino_trilepton_M-30_V-0p01_mu_LO_TuneCP5_13TeV-madgraph-pythia8/localSubmission_test-v2/20230713_153353/0000/*.root')
-#paths = glob.glob('/pnfs/iihe/cms/store/user/lwezenbe/test/displaced.root')
-paths = glob.glob('/pnfs/iihe/cms/store/user/lwezenbe/test/prompt.root')
+paths = glob.glob('/pnfs/iihe/cms/store/user/lwezenbe/test/displaced.root')
+#paths = glob.glob('/pnfs/iihe/cms/store/user/lwezenbe/test/prompt.root')
 #paths = glob.glob('/user/lwezenbe/private/NTuplizer/SignalTester/CMSSW_10_6_27/src/heavyNeutrino/multilep/test/testoutput/prompt_1.root')
 #paths = glob.glob('/user/lwezenbe/private/NTuplizer/SignalTester/CMSSW_10_6_27/src/heavyNeutrino/multilep/test/testoutput/rawprompt_1.root')
+#paths = glob.glob('/pnfs/iihe/cms/store/user/lwezenbe/heavyNeutrino/230802_164933/localSubmission_test-nofilter/20230803_103440/0000/*root')
+#paths = glob.glob('/pnfs/iihe/cms/store/user/lwezenbe/heavyNeutrino/230802_165247/localSubmission_test-nofilter/20230803_103501/0000/*root')
+#paths = glob.glob('/pnfs/iihe/cms/store/user/lwezenbe/heavyNeutrino/230803_125117_displacedadapted/localSubmission_test-nofilter/20230803_162254/0000/*root')
+#paths = glob.glob('/pnfs/iihe/cms/store/user/lwezenbe/heavyNeutrino/230803_172228_displacedfrankenstein/localSubmission_test-nofilter/20230804_103801/0000/*root')
 for p in paths:
     chain.Add(p)
 
@@ -165,13 +169,14 @@ branches.extend(['HNLpt/F'])
 branches.extend(['HNLmass/F'])
 branches.extend(['combinedMassl1l2nu/F'])
 branches.extend(['l1pt/F', 'l2pt/F', 'l3pt/F'])
-branches.extend(['isDiracType/F'])
+branches.extend(['isLNC/F'])
 output_tree = OutputTree('events', 'data/eventLoopLhe/events.root', branches = branches, branches_already_defined = False)
 
 #
 # comparison with ewkino
 #
-event_range = xrange(30000)
+print chain.GetEntries()
+event_range = xrange(28000)
 #event_range = xrange(chain.GetEntries())
 for entry in event_range:
     #if entry != 151: continue
@@ -220,7 +225,7 @@ for entry in event_range:
     output_tree.setTreeVariable('l1pt', chain._lhePt[indices[0]])
     output_tree.setTreeVariable('l2pt', chain._lhePt[indices[1]])
     output_tree.setTreeVariable('l3pt', chain._lhePt[indices[2]])
-    output_tree.setTreeVariable('isDiracType', category in [0, 3])
+    output_tree.setTreeVariable('isLNC', category in [0, 3])
     output_tree.fill()
 
     if category == 0:

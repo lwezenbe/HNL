@@ -150,8 +150,8 @@ SUPER_CATEGORIES = {
     'Other': [39]
     }
 SUPER_CATEGORIES_TEX = {
-    'SingleTau' : '2 light lep + #tau_{h}', 
-    'NoTau' : '3 light lep', 
+    'SingleTau' : '1#tau_{h}', 
+    'NoTau' : '0#tau_{h}', 
 #    'Total': [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16], 
     'Other': '4 leptons'
     }
@@ -183,8 +183,8 @@ ANALYSIS_CATEGORIES_TEX = {
     'TauEMu'            : 'e#mu#tau_{h}',
     #'SS-TauEMu'         : '#e^{#pm}#mu^{#pm}#tau_{h}',
     #'OS-TauEMu'         : '#e^{#pm}#mu^{#mp}#tau_{h}',
-    'EEE-Mu'            : 'eee/#mu',
-    'MuMuMu-E'          : '#mu#mu#mu/e',
+    'EEE-Mu'            : 'eee/ee#mu',
+    'MuMuMu-E'          : '#mu#mu#mu/#mu#mue',
     #'EEE'               : 'eee',
     #'EEMu'              : 'ee#mu',
     #'MuMuMu'            : '#mu#mu#mu',

@@ -6,6 +6,6 @@ sample_tex_names = {
     'XG' : 'V#gamma',
     'Other' : 'Other',
     'triboson' : 'Triboson',
-    'charge-misid' : 'Charge Misid.'
+    'charge-misid' : 'Charge MisID'
 }
 

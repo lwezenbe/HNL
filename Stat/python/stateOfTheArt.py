@@ -14,12 +14,14 @@ def makeGraph(flavor, in_name, masses):
     return out_graph
 
 legend_names = {
-    'expected_17012_prompt' : '#splitline{EXO-17-012}{(Expected, Majorana)}',
-    'observed_17012_prompt' : 'EXO-17-012 (prompt)',
-    'observed_17012_displaced' : 'EXO-17-012',
+    'expected_17012_prompt' : '#splitline{3l prompt}{(Expected, Majorana)}',
+    'observed_17012_prompt' : '3l prompt',
+    'observed_17012_displaced' : '3l prompt',
     'delphi_prompt' : 'DELPHI',
-    'exo-21-003-obs' : 'arXiv:2206.08956',
-    'exo-21-003-exp' : 'arXiv:2206.08956 (expected)'
+    #'exo-21-003-obs' : 'arXiv:2206.08956',
+    'exo-21-003-obs' : '#it{t}-channel VBF',
+    #'exo-21-003-exp' : 'arXiv:2206.08956 (expected)'
+    'exo-21-003-exp' : '#it{t}-channel VBF (expected)'
 }
 def makeGraphList(flavor, in_names, masses):
     graph_list = []
