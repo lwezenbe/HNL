@@ -63,7 +63,6 @@ class Reader:
                     var_name_stripped = v.split('(')[1].split(')')[0]
                     self.variable_array[v][0] = abs(getattr(self.chain, var_name_stripped))
                     
-
         return self.reader.EvaluateMVA(self.name_to_book)
 
     def predictAndWriteToChain(self, chain, trainingnames=False):

@@ -39,6 +39,14 @@ def isGoodGenElectron(chain, index):
     return True
 
 #
+# Prompt selection
+#
+def isPromptElectron(chain, index):
+    if chain._lFlavor[index] != 0: return False
+    if not chain._lIsPrompt[index]: return False
+    return True
+
+#
 # Basic kinematic cuts
 #
 def isBaseElectron(chain, index, syst = None):
@@ -567,6 +575,7 @@ def isLooseElectron(chain, index, algo, syst = None):
     elif algo == 'tZq':                 return isLooseElectronLuka(chain, index, syst)
     elif 'HNL' in algo:                 return isLooseElectronHNL(chain, index, syst)
     elif algo == 'ewkino':              return isLooseElectronEwkino(chain, index, syst)
+    elif algo == 'prompt':              return isPromptElectron(chain, index)
     else:
         print 'Wrong input for "algo" in isLooseElectron'
         return False
@@ -581,6 +590,7 @@ def isFOElectron(chain, index, algo, syst = None):
     elif algo == 'HNLprelegacy':        return isFOElectronHNLPrelegacy(chain, index, syst)
     elif algo == 'HNL':                 return isFOElectronHNLUL(chain, index, syst)
     elif algo == 'ewkino':              return isFOElectronEwkino(chain, index, syst)
+    elif algo == 'prompt':              return isPromptElectron(chain, index)
     else:
         print 'Wrong input for "algo" in isFOElectron'
         return False
@@ -595,6 +605,7 @@ def isTightElectron(chain, index, algo, syst = None):
     elif algo == 'HNLprelegacy':        return isTightElectronHNLPrelegacy(chain, index, syst)
     elif algo == 'HNL':                 return isTightElectronHNLUL(chain, index, syst)
     elif algo == 'ewkino':              return isTightElectronEwkino(chain, index, syst)
+    elif algo == 'prompt':              return isPromptElectron(chain, index)
     else:
         print 'Wrong input for "algo" in isTightElectron'
         return False

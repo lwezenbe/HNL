@@ -231,7 +231,7 @@ if not args.makePlots:
         chain.GetEntry(entry)
         if args.isTest: progress(entry - event_range[0], len(event_range))
         
-        if not selectGenLeptonsGeneral(chain, chain, 3):   continue
+        if not selectGenLeptonsGeneral(chain, chain, 3, cutter):   continue
         
         if args.genLevel:
             slm = SignalLeptonMatcher(chain)

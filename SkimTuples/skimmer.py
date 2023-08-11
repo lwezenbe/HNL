@@ -248,7 +248,7 @@ if not args.checkLogs:
             
             #initiate event but dont yet select
             if args.genSkim:        
-                selectGenLeptonsGeneral(chain, chain, 3)
+                selectGenLeptonsGeneral(chain, chain, 3, cutter)
             else:
                 selectLeptonsGeneral(chain, chain, 3, cutter = cutter)
 
