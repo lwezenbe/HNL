@@ -299,8 +299,8 @@ def getMarker(index):
     if index == 6:      return 26
 
 def getLineStyle(index):
-    if index == 1:      return 7
-    if index == 2:      return 9
+    if index == 1:      return 9
+    if index == 2:      return 7
     return 1
 
 def getLineStyle2(index):

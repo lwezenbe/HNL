@@ -613,9 +613,12 @@ else:
         def getTree(name, path):
             if not args.combineYears:
                 return OutputTree(name, path+'/variables.root')
+            elif args.region not in signal_regions:
+                print 'here'
+                in_paths = [path+'/variables_{0}.root'.format(y) for y in args.year]
+                print in_paths
+                return OutputTree(name, in_paths)
             else:
-                #in_paths = [path+'/variables_{0}.root'.format(y) for y in args.year]
-                #return OutputTree(name, in_paths)
                 return OutputTree(name, path+'/variables.root')
  
         from HNL.EventSelection.eventCategorization import isLightLeptonFinalState
@@ -1166,7 +1169,6 @@ else:
             from HNL.Tools.outputTree import cleanName
             output_dir = os.path.join(os.getcwd(), 'data', 'testArea' if args.isTest else '', 'Results', 'runAnalysis', args.analysis+'-'+args.tag if args.tag is not None else args.analysis, '-'.join([args.strategy, args.selection, args.region, cleanName(args.additionalCondition) if args.additionalCondition is not None else '']), args.era+str(year))
 
-
             if args.signalOnly:
                 signal_or_background_str = 'signalOnly'
             elif args.plotBkgrOnly:
@@ -1193,6 +1195,7 @@ else:
             if args.paperPlots: output_dir += "/forPaper"
             output_dir_unstamped = output_dir
             output_dir = makePathTimeStamped(output_dir)
+            print output_dir
 
             #
             # Create variable plots for each category
@@ -1234,7 +1237,7 @@ else:
                         from decimal import Decimal
                         et_flavor = args.flavor if args.flavor == 'e' else '#'+args.flavor
                         default_coupling = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][args.masses[0]]
-                        extra_text.append(extraTextFormat('|V_{'+et_flavor+'N}|^{2} = '+'%.0E' % Decimal(str(default_coupling)), textsize = 0.7))
+                        extra_text.append(extraTextFormat('|V_{'+et_flavor+'N}|^{2} = '+'%.0E' % Decimal(str(default_coupling)), textsize = 0.8))
                     #if args.searchregion is not None:
                     #    from HNL.EventSelection.searchRegions import searchregion_tex
                     #    extra_text.append(extraTextFormat('SR {0}'.format(searchregion_tex[args.searchregion]), textsize=0.65))       
@@ -1242,6 +1245,7 @@ else:
                     # Plots that display chosen for chosen signal masses and backgrounds the distributions for the different variables
                     # S and B in same canvas for each variable
                     for v in var_to_use.keys():
+                        print v
                         syst_hist = []
                         bkgr_legendnames = []
                         # Make list of background histograms for the plot object (or None if no background)
@@ -1371,13 +1375,13 @@ else:
                                   
                                 if args.region == 'lowMassSR':
                                     plotLowMassRegions(signal_hist, bkgr_hist, syst_hist, legend_names, 
-                                        out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), extra_text = [x for x in extra_text], year = year, era = args.era, observed_hist = observed_hist, for_paper = args.paperPlots)
+                                        out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), extra_text = [[y for y in x] for x in extra_text], year = year, era = args.era, observed_hist = observed_hist, for_paper = args.paperPlots)
                                 if args.region == 'lowMassSRloose':
                                     plotLowMassRegionsLoose(signal_hist, bkgr_hist, syst_hist, legend_names, 
-                                        out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), extra_text = [x for x in extra_text], year = year, era = args.era, observed_hist = observed_hist, for_paper = args.paperPlots)
+                                        out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), extra_text = [[y for y in x] for x in extra_text], year = year, era = args.era, observed_hist = observed_hist, for_paper = args.paperPlots)
                                 if args.region == 'highMassSR':
                                     plotHighMassRegions(signal_hist, bkgr_hist, syst_hist, legend_names, 
-                                        out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), extra_text = [x for x in extra_text], year = year, era = args.era, observed_hist = observed_hist, final_state = c, for_paper = args.paperPlots)
+                                        out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), extra_text = [[y for y in x] for x in extra_text], year = year, era = args.era, observed_hist = observed_hist, final_state = c, for_paper = args.paperPlots)
         
         
                         # Create plot object (if signal and background are displayed, also show the ratio)
@@ -1386,12 +1390,12 @@ else:
                         if args.includeData is not None: draw_ratio = True
                         if not args.individualSamples:
                             #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
-                            p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = True, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
+                            p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = True, extra_text = [[y for y in x] for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
                             #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = True, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era, equalize_bins=True,
                             #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = False, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
                                     color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau' if not args.analysis == 'tZq' else 'tZq', x_name = var[v][2][0], y_name = var[v][2][1], for_paper = args.paperPlots)
                         else:
-                            p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
+                            p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = [[y for y in x] for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
                                     color_palette = 'Didar', color_palette_bkgr = 'Didar', x_name = var[v][2][0], y_name = var[v][2][1], for_paper = args.paperPlots)
         
                         # Draw

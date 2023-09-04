@@ -350,7 +350,7 @@ def plotGeneralGroups(group_signal_hist, group_bkgr_hist, group_syst_hist, tex_n
         tmp_bkgr = [x for x in group_bkgr_hist[group]]
         tmp_syst = [x for x in group_syst_hist[group]] if group_syst_hist[group] is not None else None
         p = Plot(tmp_signal if len(tmp_signal) > 0 else None, tex_names, bkgr_hist = tmp_bkgr if len(tmp_bkgr) > 0 else None, observed_hist = observed_hist[group] if observed_hist is not None else None, syst_hist = tmp_syst, name = group, x_name = 'Search region', y_name = 'Events', y_log=True, 
-                extra_text = extra_text, color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau', draw_ratio = draw_ratio, year = year, era = era, for_paper = for_paper)
+                extra_text = [[y for y in x] for x in extra_text], color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau', draw_ratio = draw_ratio, year = year, era = era, for_paper = for_paper)
         custom_labels = [searchregion_tex[group] + str(i) for i in range(1,tmp_signal[0].GetNbinsX()+1)]
         p.drawHist(output_dir = out_path, min_cutoff = 1., normalize_signal = 'med', custom_labels = custom_labels)
         #p.drawHist(output_dir = out_path, min_cutoff = 1.)
@@ -462,7 +462,7 @@ def plotLowMassRegions(signal_hist, bkgr_hist, syst_hist, tex_names, out_path, y
     custom_labels = ['0-10', '10-20', '20-30', '> 30']*2
 
     draw_ratio = 'errorsOnly' if signal_hist is not None and bkgr_hist is not None else None
-    p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, syst_hist = syst_hist, name = 'All', x_name = 'M_{2lOS}^{min} [GeV]', y_name = 'Events', extra_text = extra_text, y_log=True, 
+    p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, syst_hist = syst_hist, name = 'All', x_name = 'M_{2lOS}^{min} [GeV]', y_name = 'Events', extra_text = [[y for y in x] for x in extra_text], y_log=True, 
             color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau', draw_ratio = draw_ratio, year = year, era = era, for_paper = for_paper)
  
     p.drawHist(output_dir = out_path, draw_lines = line_collection, min_cutoff = 0.1, custom_labels = custom_labels, normalize_signal = 'med')
@@ -492,7 +492,7 @@ def plotLowMassRegionsLoose(signal_hist, bkgr_hist, syst_hist, tex_names, out_pa
     #    draw_ratio = 'errorsOnly'
     else:
         draw_ratio = None
-    p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = extra_text,
+    p = Plot(signal_hist, tex_names, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist, name = 'All', x_name = 'Search region', y_name = 'Events', y_log=True, extra_text = [[y for y in x] for x in extra_text],
             color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau', draw_ratio = draw_ratio, year = year, era = era, for_paper = for_paper)
     custom_labels = ['L{0}'.format(i) for i in range(1, 17)]
     p.drawHist(output_dir = out_path, min_cutoff = 1., normalize_signal = 'med', custom_labels = custom_labels)
@@ -518,13 +518,13 @@ def plotLowMassRegionsLoose(signal_hist, bkgr_hist, syst_hist, tex_names, out_pa
     draw_ratio = 'errorsOnly' if signal_hist is not None and bkgr_hist is not None else None
     if observed_hist is not None: draw_ratio = True
     tmp_signal_hist, tmp_bkgr_hist, tmp_syst, tmp_observed_hist = combineGroupHist(grouped_signal_hist, grouped_bkgr_hist, grouped_syst_hist, 'lowMassSRloose', ['A', 'B'], observed_hist = grouped_observed_hist)
-    p = Plot(tmp_signal_hist, tex_names, bkgr_hist = tmp_bkgr_hist, observed_hist = tmp_observed_hist, syst_hist = tmp_syst, name = 'AB', x_name = 'M_{2lOS}^{min} [GeV]', y_name = 'Events', extra_text = extra_text, y_log=True, 
+    p = Plot(tmp_signal_hist, tex_names, bkgr_hist = tmp_bkgr_hist, observed_hist = tmp_observed_hist, syst_hist = tmp_syst, name = 'AB', x_name = 'M_{2lOS}^{min} [GeV]', y_name = 'Events', extra_text = [[y for y in x] for x in extra_text], y_log=True, 
             color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau', draw_ratio = draw_ratio, year = year, era = era, for_paper = for_paper)
  
     p.drawHist(output_dir = out_path, draw_lines = line_collection, min_cutoff = 0.1, custom_labels = custom_labels)
     
     tmp_signal_hist, tmp_bkgr_hist, tmp_syst, tmp_observed_hist = combineGroupHist(grouped_signal_hist, grouped_bkgr_hist, grouped_syst_hist, 'lowMassSRloose', ['C', 'D'], observed_hist = grouped_observed_hist)
-    p = Plot(tmp_signal_hist, tex_names, bkgr_hist = tmp_bkgr_hist, observed_hist = tmp_observed_hist, name = 'CD', x_name = 'M_{2lOS}^{min} [GeV]', y_name = 'Events', extra_text = extra_text, y_log=True, 
+    p = Plot(tmp_signal_hist, tex_names, bkgr_hist = tmp_bkgr_hist, observed_hist = tmp_observed_hist, name = 'CD', x_name = 'M_{2lOS}^{min} [GeV]', y_name = 'Events', extra_text = [[y for y in x] for x in extra_text], y_log=True, 
             color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau', syst_hist = tmp_syst, draw_ratio = draw_ratio, year = year, era = era, for_paper = for_paper)
  
     p.drawHist(output_dir = out_path, draw_lines = line_collection, min_cutoff = 0.1, custom_labels = custom_labels)
@@ -547,10 +547,8 @@ def writeHEPjson(signal_hist, bkgr_hist, signal_syst, bkgr_syst, out_path, regio
         tmp_grouped_signal_syst = [tmp_group_hist[2], collectGroupHist(None, None, signal_syst[1], 'highMassSR', observed_hist = None, hist_output=True)[2]]
         tmp_group_hist = collectGroupHist(None, bkgr_hist, bkgr_syst[0], 'highMassSR', observed_hist = observed_hist, hist_output=True)
         grouped_bkgr_hist = tmp_group_hist[1]
-        print grouped_bkgr_hist
         tmp_grouped_bkgr_syst = [tmp_group_hist[2], collectGroupHist(None, None, bkgr_syst[1], 'highMassSR', observed_hist = None, hist_output=True)[2]]
         grouped_observed_hist = tmp_group_hist[3]
-        print grouped_observed_hist
 
         #Reorganize the syst hist
         grouped_signal_syst = {}
@@ -565,11 +563,9 @@ def writeHEPjson(signal_hist, bkgr_hist, signal_syst, bkgr_syst, out_path, regio
                 grouped_bkgr_syst[rg] = [tmp_grouped_bkgr_syst[0][rg], tmp_grouped_bkgr_syst[1][rg]] 
             except:
                 grouped_bkgr_syst[rg] = [[None]*len(bkgr_hist)]*2
-                print rg, grouped_bkgr_syst[rg]
 
         for rg in region_groups[region].keys():
             sr_json = createYieldJson(grouped_signal_hist[rg], grouped_bkgr_hist[rg], grouped_observed_hist[rg], grouped_signal_syst[rg], grouped_bkgr_syst[rg], signal_names, bkgr_names, combine_bkgr=combine_bkgr, binned=False, signal_coupling = signal_coupling, signal_mass = signal_mass)
-            print out_path+'/searchregion-{0}.json'.format(rg)
             with open(out_path+'/searchregion-{0}.json'.format(rg), 'w') as outfile:
                 json.dump(sr_json, outfile)
 

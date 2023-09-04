@@ -211,7 +211,9 @@ class DatacardManager:
         regions = [self.singleyear_managers[0].getHNLregion(signal_name, None)] if self.regions is None else self.regions
         for iyear, year in enumerate(self.years):
             for region in regions:
-                if not os.path.exists(self.singleyear_managers[iyear].getDatacardPath(signal_name, 'x', region = region, define_strategy = False).rsplit('/', 1)[0]): exists = False
+                if not os.path.exists(self.singleyear_managers[iyear].getDatacardPath(signal_name, 'x', region = region, define_strategy = False).rsplit('/', 1)[0]): 
+                    exists = False
+                    print 'problem with', self.singleyear_managers[iyear].getDatacardPath(signal_name, 'x', region = region, define_strategy = False).rsplit('/', 1)[0] 
 
         return exists
     

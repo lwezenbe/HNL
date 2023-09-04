@@ -22,7 +22,7 @@ for dc in args.datacards:
             graph = getObjFromFile(os.path.join(in_base_folder, dc, 'limits.root'), gn)
         except:
             graph = None
-            
+    
         if graph is not None:
             if gn not in mgraphs.keys():
                 mgraphs[gn] = MultiGraph()

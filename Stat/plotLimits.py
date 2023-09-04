@@ -158,12 +158,14 @@ def getRatio(graph1, graph2):
         graph.SetPoint(ix, x_val, new_graph1_y_values[ix]/new_graph2_y_values[ix])
     return graph
 
-ratios = []
-for tn, bh in zip(tex_names, bkgr_hist):
-    ratios.append(getRatio(main_graphs[0], bh))
-if len(ratios) < 1:
+if args.paperPlots: 
     ratios = None
-if args.paperPlots: ratios = None
+else:
+    ratios = []
+    for tn, bh in zip(tex_names, bkgr_hist):
+        ratios.append(getRatio(main_graphs[0], bh))
+    if len(ratios) < 1:
+        ratios = None
 
 from HNL.Plotting.plot import Plot
 from HNL.Stat.combineTools import coupling_dict
