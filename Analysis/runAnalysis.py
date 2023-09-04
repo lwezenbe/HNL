@@ -614,9 +614,7 @@ else:
             if not args.combineYears:
                 return OutputTree(name, path+'/variables.root')
             elif args.region not in signal_regions:
-                print 'here'
                 in_paths = [path+'/variables_{0}.root'.format(y) for y in args.year]
-                print in_paths
                 return OutputTree(name, in_paths)
             else:
                 return OutputTree(name, path+'/variables.root')
@@ -1195,7 +1193,6 @@ else:
             if args.paperPlots: output_dir += "/forPaper"
             output_dir_unstamped = output_dir
             output_dir = makePathTimeStamped(output_dir)
-            print output_dir
 
             #
             # Create variable plots for each category
@@ -1245,7 +1242,6 @@ else:
                     # Plots that display chosen for chosen signal masses and backgrounds the distributions for the different variables
                     # S and B in same canvas for each variable
                     for v in var_to_use.keys():
-                        print v
                         syst_hist = []
                         bkgr_legendnames = []
                         # Make list of background histograms for the plot object (or None if no background)
