@@ -1025,7 +1025,9 @@ else:
         if args.mergeYears: exit(0)
         background_collection[years_to_plot[0]] = [x for x in background_collection[args.year[0]]]
 
-        
+    print signal_list       
+
+ 
     #
     #       Plot!
     #

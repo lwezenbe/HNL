@@ -162,8 +162,9 @@ if args.paperPlots:
     ratios = None
 else:
     ratios = []
-    for tn, bh in zip(tex_names, bkgr_hist):
-        ratios.append(getRatio(main_graphs[0], bh))
+    if tex_names is not None and bkgr_hist is not None:
+        for tn, bh in zip(tex_names, bkgr_hist):
+            ratios.append(getRatio(main_graphs[0], bh))
     if len(ratios) < 1:
         ratios = None
 
@@ -172,4 +173,5 @@ from HNL.Stat.combineTools import coupling_dict
 year = args.datacard.split('UL')[1].split('/')[0]
 y_axis_label = args.yaxis if args.yaxis is not None else '|V_{'+coupling_dict[args.flavor]+' N}|^{2}'
 p = Plot(main_graphs, tex_names, 'limits', extra_text = extra_text, bkgr_hist = bkgr_hist, y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = y_axis_label, era = 'UL', year = year, draw_ratio = ratios, for_paper = args.paperPlots)
+print in_base_folder, args.output
 p.drawBrazilian(output_dir = os.path.join(in_base_folder, args.output), ignore_expected = args.ignoreExpected, signal_legend=args.signalTexName, ignore_bands = args.ignoreBands)

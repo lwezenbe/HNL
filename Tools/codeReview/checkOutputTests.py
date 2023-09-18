@@ -185,7 +185,9 @@ def compareFiles(f, withinerrors=False):
         list_of_hist_names.append(c[0])
     in_file.Close()
 
-    out_file_name = f.replace('Previous', 'LOG').split('.')[0]+'.txt'
+    out_file_name = '/user/lwezenbe/Testing/LOG'+f.split('Previous')[-1].split('.')[0]+'.txt'
+
+    #out_file_name = f.replace('Previous', 'LOG').split('.')[0]+'.txt'
     makeDirIfNeeded(out_file_name)
     out_file = open(out_file_name, 'w')
     everything_clear = True
@@ -259,7 +261,7 @@ def checkAllOutput(withinerrors=False):
                     out_file.write(cf)
         out_file.close()
 
-    tot_file = open(BASE_FOLDER+'totalreport.txt', 'w')
+    tot_file = open(BASE_FOLDER+'/totalreport.txt', 'w')
     if len(faulty_sd) == 0:
         tot_file.write("EVERYTHING CLEAR")
     else:

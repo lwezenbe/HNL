@@ -687,7 +687,7 @@ class Plot(object):
         return self.sig_pad
 
     def savePlot(self, destination, message = None):
-        makeDirIfNeeded(destination)
+        #makeDirIfNeeded(destination)
         destination_components = destination.split('/')
         cleaned_components = [x for x in destination_components if not isTimeStampFormat(x)]
         try:
@@ -701,15 +701,15 @@ class Plot(object):
             makeDirIfNeeded(php_destination)    
             os.system('cp -rf $CMSSW_BASE/src/HNL/Tools/php/index.php '+ php_destination.rsplit('/', 1)[0]+'/index.php')   
 
-            cmssw_version = os.path.expandvars('$CMSSW_BASE').rsplit('/', 1)[-1]
-            central_destination =  '/user/lwezenbe/private/Backup/'+cmssw_version+'/'
-            central_destination += '/'.join([comp for comp in destination_components[index_for_php+1:]])
-            makeDirIfNeeded(central_destination)    
+            #cmssw_version = os.path.expandvars('$CMSSW_BASE').rsplit('/', 1)[-1]
+            #central_destination =  '/user/lwezenbe/private/Backup/'+cmssw_version+'/'
+            #central_destination += '/'.join([comp for comp in destination_components[index_for_php+1:]])
+            #makeDirIfNeeded(central_destination)    
 
 
-        self.canvas.SaveAs(destination + ".pdf")
-        self.canvas.SaveAs(destination + ".png")
-        self.canvas.SaveAs(destination + ".root")
+        #self.canvas.SaveAs(destination + ".pdf")
+        #self.canvas.SaveAs(destination + ".png")
+        #self.canvas.SaveAs(destination + ".root")
 
         #Clean out the php directory you want to write to if it is already filled, otherwise things go wrong with updating the file on the website
         #os.system("rm "+php_destination.rsplit('/')[0]+"/*")
@@ -719,13 +719,13 @@ class Plot(object):
             self.canvas.SaveAs(php_destination + ".png")
             self.canvas.SaveAs(php_destination + ".root")
 
-        #
-        # Save to a central, local backup that you can return to also after you switched CMSSW
-        #
-        if index_for_php:
-            self.canvas.SaveAs(central_destination + ".pdf")
-            self.canvas.SaveAs(central_destination + ".png")
-            self.canvas.SaveAs(central_destination + ".root")
+        ##
+        ## Save to a central, local backup that you can return to also after you switched CMSSW
+        ##
+        #if index_for_php:
+        #    self.canvas.SaveAs(central_destination + ".pdf")
+        #    self.canvas.SaveAs(central_destination + ".png")
+        #    self.canvas.SaveAs(central_destination + ".root")
 
         if message is not None:
             pt.writeMessage(destination.rsplit('/', 1)[0], message)
@@ -1398,7 +1398,7 @@ class Plot(object):
         max_y = max(val_to_check)
         min_y = min(val_to_check)
 
-        frame = self.plotpad.DrawFrame(1.4, 0.95*min(values), 1.05*max(values), 10)
+        frame = self.plotpad.DrawFrame(0.95*min(values), 1.4, 1.05*max(values), 10)
         frame.GetXaxis().SetNdivisions(508)
         frame.GetYaxis().SetTitle(self.y_name)
         frame.GetXaxis().SetTitle(self.x_name)

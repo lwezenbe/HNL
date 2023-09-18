@@ -33,7 +33,7 @@ years = ['2016pre', '2016post', '2017', '2018']
 #years = ['2016pre']
 #years = ['2016pre', '2017', '2018']
 eras = ['UL']
-skims = ['Reco']
+skims = ['noskim']
 settings = {'skim_selection' : 'default', 'region' : None}
 for year in years:
     for era in eras:

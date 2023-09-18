@@ -67,11 +67,16 @@ def successfullJob(fname, level = 0):
                 if err in line: return False
         for err in OTHER_ERRORS:
             if err in line: return False
-       
+     
         passed = SUCCESS_MESSAGE in line
+
+#        failed = 'Bus error' in line
+#        if failed: return False
+#        else: continue
 
         if not passed: continue
         else: return True
+#    return True
     return False
 
 from HNL.Tools.helpers import makeDirIfNeeded

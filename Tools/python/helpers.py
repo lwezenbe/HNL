@@ -342,10 +342,10 @@ def copyFileToTestingArea(original_path, arg_string):
     #
     # Have to hardcode because $HOME doesnt work on t2b condor
     #
-    path_to_use = os.path.expandvars("/storage_mnt/storage/user/lwezenbe/Testing/Latest/"+'/'.join(split_path[index_to_use:-1])+'/'+arg_string+'/'+split_path[-1])
+    path_to_use = os.path.expandvars("/ada_mnt/ada/user/lwezenbe/Testing/Latest/"+'/'.join(split_path[index_to_use:-1])+'/'+arg_string+'/'+split_path[-1])
+    #path_to_use = os.path.expandvars("/pnfs/iihe/cms/store/user/lwezenbe/Testing/Latest/"+'/'.join(split_path[index_to_use:-1])+'/'+arg_string+'/'+split_path[-1])
     makeDirIfNeeded(path_to_use)
     os.system('scp '+original_path+' '+path_to_use)
-
 
 def add1Doverflow(hist):
     overflow=hist.Clone()

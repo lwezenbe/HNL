@@ -58,7 +58,7 @@ def getOutputFolder(base_folder):
         output_folder = base_folder
         if args.tag is not None: output_folder += '-'+args.tag
     else:
-        output_folder = '/storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/'+args.outputfolder
+        output_folder = '/ada_mnt/ada/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/'+args.outputfolder
     return output_folder
 
 def runAsymptoticLimit(datacard, cardname):
@@ -282,6 +282,7 @@ limits = {}
 print 'start'
 for mass in args.masses:
     mass_str = str(mass) if not mass.is_integer() else str(int(mass))
+    print mass_str
     couplings = returnCouplings(mass)
     input_folders = []
     for c in couplings:
@@ -295,15 +296,16 @@ for mass in args.masses:
     if args.displaced and mass <= displaced_mass_threshold:
         tmp_limit = extractScaledLimitsDisplacedHNL(input_folders, couplings, blind=args.blind)
         from HNL.Stat.combineTools import drawSignalStrengthPerCouplingDisplaced
-#        drawSignalStrengthPerCouplingDisplaced(input_folders, couplings, destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
+        drawSignalStrengthPerCouplingDisplaced(input_folders, couplings, destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
     else:
         from HNL.Stat.combineTools import getCrossSection
         if not args.xseclimit:
             tmp_limit = extractScaledLimitsPromptHNL(input_folders[0], couplings[0])
         else:
             tmp_limit = extractScaledLimitsPromptHNL(input_folders[0], getCrossSection(args.flavor, mass, couplings[0]))
-#        from HNL.Stat.combineTools import drawSignalStrengthPerCouplingPrompt
-#        drawSignalStrengthPerCouplingPrompt(input_folders[0], couplings[0], destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
+        from HNL.Stat.combineTools import drawSignalStrengthPerCouplingPrompt
+        #print destination+'/components'
+        #drawSignalStrengthPerCouplingPrompt(input_folders[0], couplings[0], destination+'/components', 'm'+mass_str, year_to_read, args.flavor, blind=args.blind)
 
     if tmp_limit is not None and len(tmp_limit) > 4: 
         passed_masses.append(mass)

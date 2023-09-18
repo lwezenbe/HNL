@@ -31,7 +31,7 @@ from ROOT import TChain
 chain = TChain('blackJackAndHookers/blackJackAndHookersTree')
 import glob
 #paths = glob.glob('/pnfs/iihe/cms/store/user/lwezenbe/heavyNeutrino/230427_142455/localSubmission_test-v2/20230713_153253/0000/*.root')
-paths = glob.glob('/pnfs/iihe/cms/store/user/lwezenbe/heavyNeutrino/HeavyNeutrino_trilepton_M-30_V-0p01_mu_LO_TuneCP5_13TeV-madgraph-pythia8/localSubmission_test-v2/20230713_153353/0000/*.root')
+paths = glob.glob('/pnfs/iihe/cms/store/user/joknolle/hnltuples/HNL3l_displaced_nomadspin_M20p0_Vsq1p0em06_e_LO_230810_120749_Run2SIM_UL2018MiniAOD_230810_200715_v4/230821_124759/*root')
 for p in paths:
     chain.Add(p)
 
