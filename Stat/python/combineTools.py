@@ -218,7 +218,6 @@ def makeGraphs(x_values, limits, blind=False):
             graphs['2sigma'].SetPoint(npoints*2-1-i, m, limits[m][0.025])
             if not blind:
                 graphs['observed'].SetPoint(i, m, limits[m][-1.])
-                
         except:
             pass
 
@@ -230,7 +229,6 @@ def makeGraphs(x_values, limits, blind=False):
 def saveGraphs(graphs, outpath):
     makeDirIfNeeded(outpath)
     out_file = ROOT.TFile(outpath, 'recreate')
-    print outpath
     graphs[0].Write('expected_central')
     graphs[1].Write('expected_1sigma')
     graphs[2].Write('expected_2sigma')
