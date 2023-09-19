@@ -61,7 +61,7 @@ class Cutter():
             # Have to hardcode because $HOME doesnt work on t2b condor
             #
             import os
-            path_to_use = os.path.expandvars("/storage_mnt/storage/user/lwezenbe/Testing/Latest/"+'/'.join(split_path[index_to_use:-1])+'/'+arg_string+'/'+split_path[-1])
+            path_to_use = os.path.expandvars("/ada_mnt/ada/user/lwezenbe/Testing/Latest/"+'/'.join(split_path[index_to_use:-1])+'/'+arg_string+'/'+split_path[-1])
         else:
             path_to_use = original_path
 

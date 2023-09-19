@@ -271,10 +271,10 @@ if not args.makePlots:
     fakerate = {}
     if 'tau' in args.flavorToTest:
         if not args.inData:
-            base_path_tau = lambda proc : os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', 
+            base_path_tau = lambda proc : os.path.expandvars(os.path.join('/pnfs/iihe/cms/store/user/lwezenbe/HNL/BackgroundEstimation', 'tightToLoose', 
                                                                         args.era+'-'+args.year, data_str, 'tau', 'TauFakes'+proc+'ttl-'+args.selection, proc, 'events.root'))
         else:
-            base_path_tau = lambda proc : os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'BackgroundEstimation', 'data', 'tightToLoose', 
+            base_path_tau = lambda proc : os.path.expandvars(os.path.join('/pnfs/iihe/cms/store/user/lwezenbe/HNL/BackgroundEstimation', 'tightToLoose', 
                                                                         args.era+'-'+args.year, data_str, 'tau', 'TauFakes'+proc+'ttl-'+args.selection, 'events.root'))
         #bins = (np.array([20., 25., 35., 50., 70., 100.]), np.arange(0., 3.0, 0.5), np.arange(-0.5, 12.5, 0.5))
         bins = (np.array([20., 25., 35., 50., 70., 100.]), np.arange(0., 3.0, 0.5))

@@ -58,6 +58,8 @@ argParser.add_argument('--unblind',   action='store_true',     default=False,  h
 argParser.add_argument('--plotDirac',   action='store_true',     default=False,  help='plot dirac type HNL')
 argParser.add_argument('--plotDisplaced',   action='store_true',     default=False,  help='plot displaced type HNL')
 argParser.add_argument('--ignoreSideband',   action='store_true',     default=False,  help='if there is a sideband nonprompt selection, please ignore it in the plotting')
+argParser.add_argument('--paperPlots',   action='store_true',     default=False,  help='Slightly adapt the plots to be paper-approved')
+argParser.add_argument('--normalizeSignal',   action='store',     default=None,  help='Add a custom signal normalization function')
 
 args = argParser.parse_args()
 
@@ -611,9 +613,11 @@ else:
         def getTree(name, path):
             if not args.combineYears:
                 return OutputTree(name, path+'/variables.root')
-            else:
+            elif args.region not in signal_regions:
                 in_paths = [path+'/variables_{0}.root'.format(y) for y in args.year]
                 return OutputTree(name, in_paths)
+            else:
+                return OutputTree(name, path+'/variables.root')
  
         from HNL.EventSelection.eventCategorization import isLightLeptonFinalState
         categories_to_use = categories_dict[0]
@@ -887,6 +891,23 @@ else:
                 else:
                     binning[c][v] = np.array([x for x in getBinning(v, args.region, in_var[v][1])])
         #del list_of_probe_hist
+
+        if args.paperPlots:
+            from HNL.Analysis.helpers import removeEmptyBins
+            list_of_probe_hist = createVariableDistributions(category_dict[args.categoriesToPlot], in_var, signal_list[year], background_collection[year], data_list[year], sample_manager, year, additional_condition = additional_condition, include_systematics = 'nominal', ignore_sideband = ignore_sideband, for_datacards = for_datacards, custom_bins = binning)
+            for c in category_dict[args.categoriesToPlot][0]:
+                for v in in_var.keys():
+                    if v == 'searchregion': continue
+                    bkgrs = list_of_probe_hist[c][v]['bkgr'].keys()
+                    tot_hist = list_of_probe_hist[c][v]['bkgr'][bkgrs[0]]['nominal'].clone('tot')
+                    for b in bkgrs[1:]:
+                        tot_hist.add(list_of_probe_hist[c][v]['bkgr'][b]['nominal'])
+
+
+                    binning[c][v] = np.array(removeEmptyBins([tot_hist]))
+                    
+
+
         return binning
 
     def translateSearchRegions():
@@ -918,7 +939,7 @@ else:
     #Add entry for the search regions in the var dictionary
     from HNL.Weights.reweighter import var_weights
     if not args.genLevel:    var.update(var_weights)
-    var['searchregion'] = (lambda c : c.searchregion, 'placeholder', ('Search Region', 'Events'))
+    var['searchregion'] = (lambda c : c.searchregion, 'placeholder', ('Search region', 'Events'))
     #var = {
     #    'leadingFakeLeptonPt' : (lambda c : c.leadingFakeLeptonPt[0],       np.arange(0., 300., 15.),       ('p_{T} (leading fake lepton) [GeV]', 'Events')),
     #    'leadingFakeElectronPt' : (lambda c : c.leadingFakeElectronPt[0],       np.arange(0., 300., 15.),       ('p_{T} (leading fake electron) [GeV]', 'Events')),
@@ -1004,7 +1025,6 @@ else:
         if args.mergeYears: exit(0)
         background_collection[years_to_plot[0]] = [x for x in background_collection[args.year[0]]]
 
-        
     #
     #       Plot!
     #
@@ -1111,6 +1131,7 @@ else:
 #    from HNL.Analysis.outputConversion import writeYieldTable 
 #    writeYieldTable(list_of_hist, 'Other', 'searchregion', os.path.join(os.getcwd(), 'data', 'testArea' if args.isTest else '', 'Results', 'runAnalysis', args.analysis+'-'+args.tag if args.tag is not None else args.analysis, '-'.join([args.strategy, args.selection, args.region, cleanName(args.additionalCondition) if args.additionalCondition is not None else ''])), split_bkgr = True)
 
+        print years_to_plot
         for year in years_to_plot:
             binning = insertRebin(var_to_use, year, signal_list, background_collection, data_list, additional_condition = additional_condition, ignore_sideband = ignore_sideband, searchregion = args.searchregion)
             print "Creating list of histograms"
@@ -1145,7 +1166,6 @@ else:
             from HNL.Tools.outputTree import cleanName
             output_dir = os.path.join(os.getcwd(), 'data', 'testArea' if args.isTest else '', 'Results', 'runAnalysis', args.analysis+'-'+args.tag if args.tag is not None else args.analysis, '-'.join([args.strategy, args.selection, args.region, cleanName(args.additionalCondition) if args.additionalCondition is not None else '']), args.era+str(year))
 
-
             if args.signalOnly:
                 signal_or_background_str = 'signalOnly'
             elif args.plotBkgrOnly:
@@ -1167,7 +1187,9 @@ else:
                 else:
                     output_dir = os.path.join(output_dir, 'customMasses', str(min(args.masses))+'to'+ str(max(args.masses)))
             else:         output_dir = os.path.join(output_dir, 'allMasses')
+            output_dir += '/norm-'+str(args.normalizeSignal)
 
+            if args.paperPlots: output_dir += "/forPaper"
             output_dir_unstamped = output_dir
             output_dir = makePathTimeStamped(output_dir)
 
@@ -1200,13 +1222,18 @@ else:
                     else:
                         from HNL.EventSelection.eventCategorization import SUPER_CATEGORIES_TEX
                         c_name = SUPER_CATEGORIES_TEX[c] 
-        
-                    extra_text = [extraTextFormat(c_name, xpos = 0.2, ypos = 0.74, textsize = None, align = 12)]  #Text to display event type in plot
+       
+                    extra_text = [] 
+                    if args.region in signal_regions: 
+                        #extra_text.append(extraTextFormat('#bf{'+c_name+'}', xpos = 0.2, ypos = 0.74, textsize = None, align = 12))  #Text to display event type in plot
+                        extra_text.append(extraTextFormat(c_name, xpos = 0.2, ypos = 0.74, textsize = None, align = 12))  #Text to display event type in plot
+                    else: 
+                        extra_text.append(extraTextFormat("", xpos = 0.2, ypos = 0.74, textsize = None, align = 12))  #Text to display event type in plot
                     if args.flavor: 
                         from decimal import Decimal
                         et_flavor = args.flavor if args.flavor == 'e' else '#'+args.flavor
                         default_coupling = args.rescaleSignal if args.rescaleSignal is not None else signal_couplingsquared[args.flavor][args.masses[0]]
-                        extra_text.append(extraTextFormat('|V_{'+et_flavor+'N}|^{2} = '+'%.0E' % Decimal(str(default_coupling)), textsize = 0.7))
+                        extra_text.append(extraTextFormat('|V_{'+et_flavor+'N}|^{2} = '+'%.0E' % Decimal(str(default_coupling)), textsize = 0.8))
                     #if args.searchregion is not None:
                     #    from HNL.EventSelection.searchRegions import searchregion_tex
                     #    extra_text.append(extraTextFormat('SR {0}'.format(searchregion_tex[args.searchregion]), textsize=0.65))       
@@ -1262,9 +1289,9 @@ else:
                                 # else:
                                 # signal_legendnames.append('HNL '+ sk.split('-')[1] +' m_{N} = '+sk.split('-m')[-1]+ ' GeV')
                                 if not 'displaced' in sk:
-                                    signal_legendnames.append('HNL m_{N}='+str(Sample.getSignalMass(sk))+ 'GeV')
+                                    signal_legendnames.append('HNL '+str(Sample.getSignalMass(sk))+ ' GeV')
                                 else:
-                                    signal_legendnames.append('displaced HNL m_{N}='+str(Sample.getSignalMass(sk))+ 'GeV')
+                                    signal_legendnames.append('displaced HNL '+str(Sample.getSignalMass(sk))+ ' GeV')
                                 signal_coupling.append(Sample.getSignalCouplingSquared(sk))
                                 signal_masses.append(Sample.getSignalMass(sk))
                                     
@@ -1343,13 +1370,13 @@ else:
                                   
                                 if args.region == 'lowMassSR':
                                     plotLowMassRegions(signal_hist, bkgr_hist, syst_hist, legend_names, 
-                                        out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), extra_text = [x for x in extra_text], year = year, era = args.era, observed_hist = observed_hist)
+                                        out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), extra_text = [[y for y in x] for x in extra_text], year = year, era = args.era, observed_hist = observed_hist, for_paper = args.paperPlots)
                                 if args.region == 'lowMassSRloose':
                                     plotLowMassRegionsLoose(signal_hist, bkgr_hist, syst_hist, legend_names, 
-                                        out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), extra_text = [x for x in extra_text], year = year, era = args.era, observed_hist = observed_hist)
+                                        out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), extra_text = [[y for y in x] for x in extra_text], year = year, era = args.era, observed_hist = observed_hist, for_paper = args.paperPlots)
                                 if args.region == 'highMassSR':
                                     plotHighMassRegions(signal_hist, bkgr_hist, syst_hist, legend_names, 
-                                        out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), extra_text = [x for x in extra_text], year = year, era = args.era, observed_hist = observed_hist, final_state = c)
+                                        out_path = os.path.join(output_dir, 'Yields', 'SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), extra_text = [[y for y in x] for x in extra_text], year = year, era = args.era, observed_hist = observed_hist, final_state = c, for_paper = args.paperPlots)
         
         
                         # Create plot object (if signal and background are displayed, also show the ratio)
@@ -1358,32 +1385,20 @@ else:
                         if args.includeData is not None: draw_ratio = True
                         if not args.individualSamples:
                             #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = extra_text, draw_ratio = draw_ratio, year = year, era=args.era,
-                            p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = True, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
+                            p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = True, extra_text = [[y for y in x] for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
                             #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = True, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era, equalize_bins=True,
                             #p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, syst_hist = syst_hist if args.systematics == 'full' and not args.ignoreSystematics else None, y_log = False, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
-                                    color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau' if not args.analysis == 'tZq' else 'tZq', x_name = var[v][2][0], y_name = var[v][2][1])
+                                    color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau' if not args.analysis == 'tZq' else 'tZq', x_name = var[v][2][0], y_name = var[v][2][1], for_paper = args.paperPlots)
                         else:
-                            p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = [x for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
-                                    color_palette = 'Didar', color_palette_bkgr = 'Didar', x_name = var[v][2][0], y_name = var[v][2][1])
+                            p = Plot(signal_hist, legend_names, c+'-'+v, bkgr_hist = bkgr_hist, observed_hist = observed_hist, y_log = True, extra_text = [[y for y in x] for x in extra_text], draw_ratio = draw_ratio, year = year, era=args.era,
+                                    color_palette = 'Didar', color_palette_bkgr = 'Didar', x_name = var[v][2][0], y_name = var[v][2][1], for_paper = args.paperPlots)
         
                         # Draw
                         #p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c), normalize_signal = True, draw_option='EHist', min_cutoff = 1)
                         if '-' in v:
                             p.draw2D(output_dir = os.path.join(output_dir+'/2D', 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c))
                         else:
-                            normalize_signal = None
-                            if not args.bkgrOnly:
-                                #if 'mass' in v:
-                                #    normalize_signal = 'med'
-                                #else:
-                                #    normalize_signal = None
-                                #normalize_signal = 'med'
-                                normalize_signal = 'bkgr'
-                            if 'analysis' in args.categoriesToPlot:
-                                normalize_signal = 'med'
-                            else:
-                                normalize_signal = 'bkgr'
-                            p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), normalize_signal = normalize_signal, draw_option='EHist', min_cutoff = 1)
+                            p.drawHist(output_dir = os.path.join(output_dir, 'Variables' if v != 'searchregion' else 'Yields/SearchRegions', c, '-'.join(args.searchregion) if args.searchregion is not None else ''), normalize_signal = args.normalizeSignal, draw_option='EHist', min_cutoff = 1)
                         # p.drawHist(output_dir = os.path.join(output_dir, c), normalize_signal = False, draw_option='EHist', min_cutoff = 1)
         
 

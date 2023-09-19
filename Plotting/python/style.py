@@ -278,8 +278,9 @@ def getLineColor(index):
     if index == 2:      return TColor.GetColor("#E8C547")
 
 def getLimitColors(index):
+    if index == 0:      return TColor.GetColor("#8075FF")
     if index == 1:      return TColor.GetColor("#ED474A")
-    if index == 0:      return TColor.GetColor("#FF00FF")
+    if index == 6:      return TColor.GetColor("#FF00FF")
     if index == 2:      return TColor.GetColor("#72DDF7")
     if index == 3:      return TColor.GetColor("#0000ff")
     if index == 4:      return TColor.GetColor("#685762")
@@ -296,6 +297,16 @@ def getMarker(index):
     if index == 4:      return 24
     if index == 5:      return 25
     if index == 6:      return 26
+
+def getLineStyle(index):
+    if index == 1:      return 9
+    if index == 2:      return 7
+    return 1
+
+def getLineStyle2(index):
+    if index == 1:      return 7
+    if index == 2:      return 2
+    return 1
 
 def returnSignalLegendName(name):
     split_name = name.split('-M')
