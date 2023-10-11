@@ -108,7 +108,7 @@ def getCumulativeValue(hist, h_bin):
     return out_val, np.sqrt(out_err)
 
 def getUnit(x):
-    if x.find('[') == -1:
+    if x.find('[') == -1 or not 'eV' in x:
         return 'units'
     else:
         return x[x.find('[')+len('['):x.rfind(']')]
@@ -126,3 +126,10 @@ def setHistErrors(hist, err_value = 0.):
     for b in xrange(1, hist.GetNbinsX()+1):
         hist.SetBinError(b, err_value)
     return hist
+
+def getTickLengthFromRef(ref_pad, new_pad, ref_length):
+    print "NEW"
+    print ref_pad.GetWh(), ref_pad.GetWw(), ref_pad.GetWNDC()
+    print new_pad.GetWh(), new_pad.GetWw(), new_pad.GetWNDC()
+    print ref_length
+

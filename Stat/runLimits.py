@@ -146,8 +146,10 @@ def producePostFit(datacard, cardname):
     print datacard
     output_folder = getOutputFolder(datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/postfit/'+cardname)
     #runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root ; combine ws.root -M FitDiagnostics --saveWithUnc', output_folder)    
-    runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root ; combine ws.root -M FitDiagnostics --saveWithUnc --rMin -1 --rMax 5 --cminDefaultMinimizerStrategy 0', output_folder)    
-    #runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root ; combine ws.root -M FitDiagnostics --rMin -10 --robustFit=1 --rMax 5 --cminDefaultMinimizerStrategy 0', output_folder)    
+    runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root ; combine ws.root -M FitDiagnostics --saveWithUnc --rMin -1 --rMax 5 --cminDefaultMinimizerStrategy 0 --expectSignal 0 --plots', output_folder)    
+    #runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root ; combine ws.root -M FitDiagnostics --saveWithUnc --rMin -10 --robustFit=1 --rMax 5 --cminDefaultMinimizerStrategy 0 --expectSignal 0 --plots', output_folder)    
+    #runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root ; combine ws.root -M FitDiagnostics  --rMin -1 --robustFit=1 --rMax 1 --expectSignal 0 --setRobustFitAlgo 1 --setRobustFitStrategy 1 --plots --saveWithUnc', output_folder)    
+    #runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root ; combine ws.root -M FitDiagnostics  --rMin -10 --robustFit=1 --rMax 5 --expectSignal 0 --setRobustFitAlgo 1 --setRobustFitStrategy 1', output_folder)    
     os.system('scp '+datacard+' '+output_folder+'/datacard.txt')
     runCombineCommand('PostFitShapesFromWorkspace -d datacard.txt -w ws.root --output postfitshapes.root -f fitDiagnosticsTest.root:fit_s --postfit --sampling', output_folder)    
 

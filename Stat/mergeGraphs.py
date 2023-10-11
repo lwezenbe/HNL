@@ -15,19 +15,25 @@ graph_names = ['expected_central', 'expected_1sigma', 'expected_2sigma', 'observ
 from HNL.Tools.helpers import getObjFromFile
 in_base_folder = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'output')
 
+import json
 mgraphs = {}
+out_dict = {}
 for dc in args.datacards:
     for gn in graph_names:
         try:
             graph = getObjFromFile(os.path.join(in_base_folder, dc, 'limits.root'), gn)
         except:
             graph = None
+        
     
         if graph is not None:
             if gn not in mgraphs.keys():
                 mgraphs[gn] = MultiGraph()
 
             mgraphs[gn].Add(graph)
+    
+    with open(os.path.join(in_base_folder, dc, 'limits.json'), 'r') as infile:
+        out_dict[dc.split('/')[-2]] = json.load(infile)
 
 from HNL.Tools.helpers import makeDirIfNeeded
 from ROOT import TFile
@@ -36,4 +42,7 @@ makeDirIfNeeded(outpath)
 for ign, gn in enumerate(mgraphs.keys()):
     mgraphs[gn].write(outpath, gn, append = ign > 0)
 
-
+json_f = json.dumps(out_dict)
+out_file = open(outpath.split('.')[0]+'.json', 'w')
+out_file.write(json_f)
+out_file.close()

@@ -84,7 +84,7 @@ class SingleYearDatacardManager:
 
         if self.flavor != 'tau':
             return sr+'-'+final_state+'-'+mva_name+self.flavor
-        elif final_state == 'NoTau' or final_state in ['TauEE', 'TauEMu', 'TauMuMu']:
+        elif final_state == 'NoTau' or final_state not in ['TauEE', 'TauEMu', 'TauMuMu']:
             return sr+'-'+final_state+'-'+mva_name+'taulep'
         else:
             return sr+'-'+final_state+'-'+mva_name+'tauhad'

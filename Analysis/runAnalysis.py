@@ -58,7 +58,7 @@ argParser.add_argument('--unblind',   action='store_true',     default=False,  h
 argParser.add_argument('--plotDirac',   action='store_true',     default=False,  help='plot dirac type HNL')
 argParser.add_argument('--plotDisplaced',   action='store_true',     default=False,  help='plot displaced type HNL')
 argParser.add_argument('--ignoreSideband',   action='store_true',     default=False,  help='if there is a sideband nonprompt selection, please ignore it in the plotting')
-argParser.add_argument('--paperPlots',   action='store_true',     default=False,  help='Slightly adapt the plots to be paper-approved')
+argParser.add_argument('--paperPlots',   action='store',     default=None,  help='Slightly adapt the plots to be paper-approved')
 argParser.add_argument('--normalizeSignal',   action='store',     default=None,  help='Add a custom signal normalization function')
 
 args = argParser.parse_args()
@@ -403,6 +403,8 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
         if args.tag == 'fakePtTest':
             branches.extend(['leadingFakeLeptonPt/F', 'leadingFakeMuonPt/F', 'leadingFakeElectronPt/F'])
 
+        branches.extend(['eventNb/F', 'lumiBlock/F', 'runNb/F'])
+
         #tmp  
         if not args.genLevel: 
             branches.extend(['passedChargeConsistency/F'])        
@@ -533,6 +535,9 @@ if not args.makePlots and not args.makeDataCards and not args.mergeYears:
                 output_tree.setTreeVariable('leadingFakeLeptonPt', chain.leadingFakeLeptonPt)
                 output_tree.setTreeVariable('leadingFakeElectronPt', chain.leadingFakeElectronPt)
                 output_tree.setTreeVariable('leadingFakeMuonPt', chain.leadingFakeMuonPt)
+            output_tree.setTreeVariable('eventNb', chain._eventNb)
+            output_tree.setTreeVariable('lumiBlock', chain._lumiBlock)
+            output_tree.setTreeVariable('runNb', chain._runNb)
             
             #tmp
             if not args.genLevel:
@@ -656,7 +661,7 @@ else:
                                 vsquared_translated = vsquared_translated.replace('e-', 'em')
                                 new_name = cleaned_sample_name.split('-Vsq')[0]+'-Vsq'+vsquared_translated + '-' + Sample.getSignalDisplacedString(cleaned_sample_name)
                                 additional_weight = str(coupling_squared/Sample.getSignalCouplingSquared(sample_name))
-                    
+ 
                                 #tmp
                                 #additional_weight += '*(isDiracType*1.2+!isDiracType*0.73)'
                                 
@@ -696,6 +701,18 @@ else:
                             tmp_list_of_hist[c][v]['data']['sideband'][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&issideband)'+additional_condition, proc_to_use, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']
     
         if not args.signalOnly:
+
+            #
+            # Tmp SF for ZZ and ZG
+            #
+            def getPromptWeight(name):
+                if name == 'ZZ-H':
+                    return '1.11'
+                elif name == 'XG':
+                    return '1.12'
+                else:
+                     return '1.'
+            
             print "Loading background histograms"
             for ib, b in enumerate(background):
                 for c, cc in zip(categories_to_use, category_conditions):
@@ -712,10 +729,11 @@ else:
                         intree = getTree('events_{0}'.format(corr_syst), getOutputName('bkgr', year, args.tag)+'/'+b)                 
                         for c, cc in zip(categories_to_use, category_conditions):
                             for iv, v in enumerate(var_dict.keys()): 
-                                if corr_syst == 'nominal': 
-                                    tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
+                                if corr_syst == 'nominal':
+                                    tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband, additional_weight = getPromptWeight(b))
+                                    #tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
                                 else:
-                                    tmp_list_of_hist[c][v]['bkgr'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']
+                                    tmp_list_of_hist[c][v]['bkgr'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband, additional_weight = getPromptWeight(b))['nominal']
                                 
                                 #charge
                                 if corr_syst == 'nominal': 
@@ -764,15 +782,28 @@ else:
                 for c, cc in zip(categories_to_use, category_conditions):
                     for iv, v in enumerate(var_dict.keys()):
                         tmp_list_of_hist[c][v]['bkgr']['non-prompt'] = tmp_list_of_hist[c][v]['data']['sideband']
-                        
+                       
                         #Remove prompt contribution
                         for b in background:  
                             if b in ['charge-misid', 'non-prompt']: continue
+                            #if b == 'XG': continue
                             for k in tmp_list_of_hist[c][v]['bkgr']['non-prompt'].keys():
                                 tmp_list_of_hist[c][v]['bkgr']['non-prompt'][k].getHist().Add(tmp_list_of_hist[c][v]['data'][b]['nominal'].getHist(), -1.) 
                         
                         for k in tmp_list_of_hist[c][v]['bkgr']['non-prompt'].keys():
                             tmp_list_of_hist[c][v]['bkgr']['non-prompt'][k].removeNegativeBins(error=1.0)
+
+            if args.paperPlots is not None:
+                backgrounds_to_merge = ['charge-misid', 'triboson', 'TT-T+X']
+                for c, cc in zip(categories_to_use, category_conditions):
+                    for iv, v in enumerate(var_dict.keys()):
+                        if 'Other' not in tmp_list_of_hist[c][v]['bkgr'].keys():
+                            raise RuntimeError("Trying to merge backgrounds for paper into a non-existing category")
+                        for btm in backgrounds_to_merge:
+                            for k in tmp_list_of_hist[c][v]['bkgr'][btm].keys():
+                                tmp_list_of_hist[c][v]['bkgr']['Other'][k].getHist().Add(tmp_list_of_hist[c][v]['bkgr'][btm]['nominal'].getHist())
+                            tmp_list_of_hist[c][v]['bkgr'].pop(btm)
+
  
         return tmp_list_of_hist
     
@@ -892,7 +923,7 @@ else:
                     binning[c][v] = np.array([x for x in getBinning(v, args.region, in_var[v][1])])
         #del list_of_probe_hist
 
-        if args.paperPlots:
+        if args.paperPlots is not None:
             from HNL.Analysis.helpers import removeEmptyBins
             list_of_probe_hist = createVariableDistributions(category_dict[args.categoriesToPlot], in_var, signal_list[year], background_collection[year], data_list[year], sample_manager, year, additional_condition = additional_condition, include_systematics = 'nominal', ignore_sideband = ignore_sideband, for_datacards = for_datacards, custom_bins = binning)
             for c in category_dict[args.categoriesToPlot][0]:
@@ -985,7 +1016,7 @@ else:
         mixed_list = signal_list[year] + bkgr_list[year] + data_list[year]
         custom_list_to_use = customizeListToUse(year)
         full_path = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Analysis'))
-        merge(mixed_list, __file__, jobs[year], ('sample', 'subJob'), argParser, istest=args.isTest, additionalArgs= [('year', year)], man_changed_args = {'customList':custom_list_to_use}, full_path = full_path)
+        #merge(mixed_list, __file__, jobs[year], ('sample', 'subJob'), argParser, istest=args.isTest, additionalArgs= [('year', year)], man_changed_args = {'customList':custom_list_to_use}, full_path = full_path)
 
         if not args.individualSamples:
             background_collection[year] = []
@@ -1137,7 +1168,7 @@ else:
             print "Creating list of histograms"
             if not args.cutFlowOnly:
                 list_of_hist[year] = createVariableDistributions(category_dict[args.categoriesToPlot], var_to_use, signal_list[year], background_collection[year], data_list[year], sample_manager, year, additional_condition = additional_condition, include_systematics = args.systematics if not args.ignoreSystematics else 'nominal', ignore_sideband = ignore_sideband, custom_bins = binning)
-    
+
             def selectNMostContributingHist(hist_dict, n, syst = 'nominal'):
                 yield_dict = {x : hist_dict[x][syst].getHist().GetSumOfWeights() for x in hist_dict.keys()}
                 no_other = False
@@ -1189,7 +1220,12 @@ else:
             else:         output_dir = os.path.join(output_dir, 'allMasses')
             output_dir += '/norm-'+str(args.normalizeSignal)
 
-            if args.paperPlots: output_dir += "/forPaper"
+            if args.paperPlots is not None: 
+                if args.paperPlots == 'default':
+                    output_dir += "/forPaper"
+                if args.paperPlots == 'raw':
+                    output_dir += "/forPaperRaw"
+            
             output_dir_unstamped = output_dir
             output_dir = makePathTimeStamped(output_dir)
 
@@ -1226,9 +1262,9 @@ else:
                     extra_text = [] 
                     if args.region in signal_regions: 
                         #extra_text.append(extraTextFormat('#bf{'+c_name+'}', xpos = 0.2, ypos = 0.74, textsize = None, align = 12))  #Text to display event type in plot
-                        extra_text.append(extraTextFormat(c_name, xpos = 0.2, ypos = 0.74, textsize = None, align = 12))  #Text to display event type in plot
+                        extra_text.append(extraTextFormat(c_name, xpos = 0.2, ypos = 0.78, textsize = None, align = 12))  #Text to display event type in plot
                     else: 
-                        extra_text.append(extraTextFormat("", xpos = 0.2, ypos = 0.74, textsize = None, align = 12))  #Text to display event type in plot
+                        extra_text.append(extraTextFormat("", xpos = 0.2, ypos = 0.78, textsize = None, align = 12))  #Text to display event type in plot
                     if args.flavor: 
                         from decimal import Decimal
                         et_flavor = args.flavor if args.flavor == 'e' else '#'+args.flavor
@@ -1237,6 +1273,7 @@ else:
                     #if args.searchregion is not None:
                     #    from HNL.EventSelection.searchRegions import searchregion_tex
                     #    extra_text.append(extraTextFormat('SR {0}'.format(searchregion_tex[args.searchregion]), textsize=0.65))       
+                    extra_text.append(extraTextFormat('Prefit', textsize = 0.8))
  
                     # Plots that display chosen for chosen signal masses and backgrounds the distributions for the different variables
                     # S and B in same canvas for each variable
@@ -1289,9 +1326,9 @@ else:
                                 # else:
                                 # signal_legendnames.append('HNL '+ sk.split('-')[1] +' m_{N} = '+sk.split('-m')[-1]+ ' GeV')
                                 if not 'displaced' in sk:
-                                    signal_legendnames.append('HNL '+str(Sample.getSignalMass(sk))+ ' GeV')
+                                    signal_legendnames.append('HNL '+str(int(Sample.getSignalMass(sk)))+ '#scale[0.5]{ }GeV')
                                 else:
-                                    signal_legendnames.append('displaced HNL '+str(Sample.getSignalMass(sk))+ ' GeV')
+                                    signal_legendnames.append('displaced HNL '+str(int(Sample.getSignalMass(sk)))+ '#scale[0.5]{ }GeV')
                                 signal_coupling.append(Sample.getSignalCouplingSquared(sk))
                                 signal_masses.append(Sample.getSignalMass(sk))
                                     

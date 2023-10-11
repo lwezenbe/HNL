@@ -34,6 +34,7 @@ class Event(object):
         self.use_corrected_met = kwargs.get('use_corrected_met', False) 
         self.chain.obj_sel = kwargs.get('obj_sel', getObjectSelection(self.chain.selection))
         self.chain.need_sideband = kwargs.get('sideband', None)
+        print self.chain.need_sideband
         self.chain.original_object_selection = {k:self.chain.obj_sel[k] for k in self.chain.obj_sel.keys()}
         if self.chain.need_sideband is not None:
             setSideband(self.chain)       

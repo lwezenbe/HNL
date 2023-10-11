@@ -138,9 +138,9 @@ def getArgsStr(arg_list, to_ignore):
             continue
         elif isinstance(arg_list[arg], list):
             if len(arg_list[arg]) > 3:
-                args_str += '_' + str(arg) + '-' + str(min(arg_list[arg]))+'to'+ str(max(arg_list[arg]))
+                args_str += '_' + str(arg[0]) + '-' + str(min(arg_list[arg]))+'to'+ str(max(arg_list[arg]))
             else:
-                args_str += '_' + str(arg) + '-' + '-'.join([str(x).replace('/', '-') for x in sorted(arg_list[arg])])
+                args_str += '_' + str(arg[0]) + '-' + '-'.join([str(x).replace('/', '-') for x in sorted(arg_list[arg])])
         else:
             args_str += '_' + str(arg) + '-' + str(arg_list[arg]).replace('/', '-')
     args_str = "".join(i for i in args_str if i not in " &\/:*?<>|")

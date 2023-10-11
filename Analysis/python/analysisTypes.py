@@ -82,7 +82,7 @@ var_reco_3l = {
         'drl1j':      (lambda c : c.dr_closestJet[0],       np.arange(0., 4.5, .25),       ('#DeltaR(l_{1},j)', 'Events')),
         'drl2j':      (lambda c : c.dr_closestJet[1],       np.arange(0., 4.5, .25),       ('#DeltaR(l_{2},j)', 'Events')),
         'drl3j':      (lambda c : c.dr_closestJet[2],       np.arange(0., 4.5, .25),       ('#DeltaR(l_{3},j)', 'Events')),
-        'drminOS':      (lambda c : c.dr_minOS,       np.arange(0., 4.5, .25),       ('#DeltaR[min m(2l|OS)]', 'Events')),
+        'drminOS':      (lambda c : c.dr_minOS,       np.arange(0., 3.6, .3),       ('#DeltaR[min m(2l|OS)]', 'Events')),
         'dphil1met':      (lambda c : abs(c.dphi_l1met),       np.arange(0., 3.5, .25),       ('#Delta#phi(l_{1},p_{T}^{miss})', 'Events')),
         'dphil2met':      (lambda c : abs(c.dphi_l2met),       np.arange(0., 3.5, .25),       ('#Delta#phi(l_{2},p_{T}^{miss})', 'Events')),
         'dphil3met':      (lambda c : abs(c.dphi_l3met),       np.arange(0., 3.5, .25),       ('#Delta#phi(l_{3},p_{T}^{miss})', 'Events')),

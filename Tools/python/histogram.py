@@ -61,8 +61,6 @@ class Histogram:
         else:
             print "Incorrect input for Histogram"
             exit(0)
-        
-        
         try:
             self.overflow = overflow['overflow']
         except:

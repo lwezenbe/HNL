@@ -53,7 +53,7 @@ from HNL.Plotting.style import setDefault, setDefault2D
 class Plot(object):
     
     def __init__(self, signal_hist = None, tex_names = None, name = None, x_name = None, y_name = None, bkgr_hist = None, observed_hist = None, syst_hist = None, extra_text = None, 
-        x_log = None, y_log = None, draw_ratio = None, draw_significance = None, color_palette = 'HNLfromTau', color_palette_bkgr = 'HNLfromTau', year = '2016', era = 'prelegacy', equalize_bins = False, ignore_stat_err = False, for_paper = False):
+        x_log = None, y_log = None, draw_ratio = None, draw_significance = None, color_palette = 'HNLfromTau', color_palette_bkgr = 'HNLfromTau', year = '2016', era = 'prelegacy', equalize_bins = False, ignore_stat_err = False, for_paper = None):
 
         self.s = makeList(getHistList(signal_hist, equalize_bins)) if signal_hist is not None else []
         try:
@@ -101,11 +101,16 @@ class Plot(object):
                 self.y_name = self.s[0].GetYaxis().GetTitle()
             elif len(self.b) > 0:
                 self.y_name = self.b[0].GetYaxis().GetTitle()
-        
+
         try:
             if not isinstance(self.x_name, list) and not isinstance(self.x_name, dict): self.y_name = self.getYName()
         except:
             pass
+        
+        if self.for_paper is not None and self.for_paper == 'raw':
+            self.y_name = ""
+            self.x_name = ""
+        
 
         self.canvas = None #Can not be created until gROOT and gStyle settings are set
         self.plotpad = None
@@ -113,6 +118,8 @@ class Plot(object):
         self.y_log = y_log
 
         self.extra_text = [i for i in extra_text] if extra_text is not None else None
+        if self.for_paper is not None and self.for_paper == 'raw':
+            self.extra_text = None
 
         self.draw_ratio = draw_ratio
         self.draw_significance = draw_significance
@@ -173,7 +180,7 @@ class Plot(object):
                     bin_syst_error = self.syst_totbkgr_error.GetBinError(b)
                     self.tot_totbkgr_error.SetBinError(b, np.sqrt(bin_stat_error ** 2 + bin_syst_error ** 2))
 
-    def setAxisLog(self, is2D = False, stacked = True, min_cutoff = None, max_cutoff = None, include_errors=True, need_additional_space = False):
+    def setAxisLog(self, is2D = False, stacked = True, min_cutoff = None, max_cutoff = None, include_errors=True, need_additional_space = False, custom_divisions = None):
 
         if is2D:
             if self.x_log:
@@ -215,8 +222,10 @@ class Plot(object):
                 if max_cutoff is None:
                     if not need_additional_space:
                         self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*2.
+                        #self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*150.
+                        #self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*.1
                     else:
-                        self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*3.
+                        self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*20.
                 else:
                     self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(max_cutoff))/2)*3
 
@@ -240,6 +249,8 @@ class Plot(object):
                 self.hs.GetXaxis().SetLabelSize(.06)
                 self.hs.GetYaxis().SetLabelSize(.06)
                 self.hs.GetYaxis().SetTitleOffset(1)
+                if custom_divisions is not None:
+                    self.hs.GetXaxis().SetNdivisions(custom_divisions)
             elif len(self.b) == 0: 
                 self.s[0].SetMinimum(self.min_to_set)
                 self.s[0].SetMaximum(self.max_to_set)
@@ -248,6 +259,8 @@ class Plot(object):
                 self.s[0].GetXaxis().SetLabelSize(.06)
                 self.s[0].GetYaxis().SetLabelSize(.06)
                 self.s[0].GetYaxis().SetTitleOffset(1.1)
+                if custom_divisions is not None:
+                    self.s[0].GetXaxis().SetNdivisions(custom_divisions)
             else:
                 # self.b[0].SetMinimum(1e-5)
                 self.b[0].SetMinimum(self.min_to_set)
@@ -258,18 +271,22 @@ class Plot(object):
                 self.b[0].GetXaxis().SetLabelSize(.06)
                 self.b[0].GetYaxis().SetLabelSize(.06)
                 self.b[0].GetYaxis().SetTitleOffset(1)
+                if custom_divisions is not None:
+                    self.b[0].GetXaxis().SetNdivisions(custom_divisions)
 
             self.plotpad.Update()
 
     def setLegend(self, x1=0.4, y1=.7, x2=.9, y2=.9, ncolumns = 2, textsize=0.03):
         self.legend = ROOT.TLegend(x1, y1, x2, y2)
-        self.legend.SetNColumns(ncolumns)
+        #self.legend.SetNColumns(ncolumns)
         self.legend.SetTextSize(textsize)
         self.legend.SetFillStyle(0)
         self.legend.SetBorderSize(0)
         return self.legend
 
-    def getYName(self): 
+    def getYName(self):
+        if self.for_paper is not None and self.for_paper == 'raw':
+            return self.y_name
         from HNL.Plotting.plottingTools import allBinsSameWidth
         test_hist = self.s[0] if len(self.s) > 0 else self.b[0]
         #Should only be done for 1D hist, the veto also works for TH3 and so on because it inherits from TH2
@@ -277,7 +294,7 @@ class Plot(object):
 
         add_x_width = allBinsSameWidth(test_hist)
 
-        if self.for_paper and self.x_name =='Search region':
+        if self.for_paper == 'default' and self.x_name =='Search region':
             self.y_name += ' / bin'
 
         if '[' in self.y_name:
@@ -352,6 +369,9 @@ class Plot(object):
             plot_pad_y = 0.45
         elif self.draw_ratio is not None:
             self.ratio_pad = ROOT.TPad('ratio_pad', 'ratio_pad', 0, 0.03, 1, 0.25)
+            #self.ratio_pad = ROOT.TPad('ratio_pad', 'ratio_pad', 0, 0.0, 1, 0.25)
+            print self.ratio_pad.GetWh(), self.ratio_pad.GetAbsHNDC()
+            print self.ratio_pad.GetWw(), self.ratio_pad.GetAbsWNDC()
             plot_pad_y = 0.25
         elif self.draw_significance:
             self.sig_pad = ROOT.TPad('sig_pad', 'sig_pad', 0, 0.05, 1, 0.25)
@@ -367,6 +387,7 @@ class Plot(object):
             self.ratio_pad.SetTopMargin(0.07)
             self.ratio_pad.SetBottomMargin(0.42)
             self.ratio_pad.SetRightMargin(0.05)
+            self.ratio_pad.Update()
             #self.ratio_pad.SetBottomMargin(0.5)
             if self.x_log: self.ratio_pad.SetLogx()  
             self.ratio_pad.Draw()
@@ -452,8 +473,9 @@ class Plot(object):
                 ratios.append(self.setRatioGraphs(self.s[index_to_use], b))
         
 
-    def drawRatio(self, ratios, custom_labels = None, just_errors = False, ref_line = 1., ignore_errors = False, denom = None):
+    def drawRatio(self, ratios, custom_labels = None, just_errors = False, ref_line = 1., ignore_errors = False, denom = None, custom_divisions = None):
         self.ratio_pad.cd()        
+
 
         for r in ratios:
             r.SetMarkerStyle(20)
@@ -463,13 +485,15 @@ class Plot(object):
             ytitle = 'Data/Pred.'
         else:
             ytitle = 'LNC/LNV'
+        if self.for_paper == "raw":
+            ytitle = ""
 
         def setAxis(in_hist):
-            in_hist.SetMinimum(max(0., 0.7*pt.getOverallMinimum(ratios if self.observed is None else [ratios[-1]], zero_not_allowed = True,  include_error=True)))
-            if just_errors:
-                in_hist.SetMaximum(2.)
+            in_hist.SetMinimum(max(0., 0.9*pt.getOverallMinimum(ratios if self.observed is None else [ratios[-1]], zero_not_allowed = True,  include_error=True)))
+            if just_errors or self.for_paper is not None:
+                in_hist.SetMaximum(min(2., 1.1*pt.getOverallMaximum(ratios if self.observed is None else [ratios[-1]], include_error=True)))
             else:
-                in_hist.SetMaximum(min(6, 1.3*pt.getOverallMaximum(ratios if self.observed is None else [ratios[-1]], include_error=True)))
+                in_hist.SetMaximum(min(6, 1.1*pt.getOverallMaximum(ratios if self.observed is None else [ratios[-1]], include_error=True)))
             
             in_hist.GetXaxis().SetTitleSize(.18)
             if self.observed is not None:
@@ -479,6 +503,8 @@ class Plot(object):
             in_hist.GetXaxis().SetLabelSize(.18)
             in_hist.GetYaxis().SetLabelSize(.18)
             in_hist.GetYaxis().SetTitleOffset(.3)
+            if custom_divisions is not None:
+                in_hist.GetXaxis().SetNdivisions(custom_divisions)
             in_hist.GetYaxis().SetNdivisions(505)
             if self.draw_significance:
                 in_hist.GetXaxis().SetLabelOffset(999999)
@@ -547,8 +573,11 @@ class Plot(object):
 #                        self.tot_err.GetXaxis().SetBinLabel(i+1, n)
             self.tot_err = setAxis(self.tot_err)            
     
+            from HNL.Plotting.plottingTools import getTickLengthFromRef
             self.tot_err.Draw("E2")
-            if not self.for_paper and not self.ignore_stat_err: self.stat_err.Draw("E2Same")
+            self.ratio_pad.Update()
+            getTickLengthFromRef(self.plotpad, self.ratio_pad, self.tot_err.GetXaxis().GetTickLength())
+            if self.for_paper is None and not self.ignore_stat_err: self.stat_err.Draw("E2Same")
             self.b[0].GetXaxis().DrawClone()
 
 
@@ -580,7 +609,7 @@ class Plot(object):
 
         self.line.Draw()
 
-        if not ignore_errors and not self.for_paper:
+        if not ignore_errors and self.for_paper is None:
             self.ratio_legend = ROOT.TLegend(0.2, .75, .6, .9)
             self.ratio_legend.SetNColumns(3)
             if not self.ignore_stat_err: self.ratio_legend.AddEntry(self.stat_err, 'Stat. Pred. Error', 'F')
@@ -593,7 +622,7 @@ class Plot(object):
             self.ratio_legend.SetBorderSize(0)
             self.ratio_legend.Draw()
 
-        if len(ratios) == 1 and not self.for_paper:
+        if len(ratios) == 1 and self.for_paper is None:
             extra_text = ROOT.TLatex()
             avg = 0.
             nbins = ratios[0].GetNbinsX()
@@ -771,10 +800,9 @@ class Plot(object):
                         self.stat_bkgr_errors[i].SetMarkerStyle(0)
                     self.stat_bkgr_errors[i].Draw(bkgr_error_option+" Same")
 
-            self.legend.AddEntry(self.tot_totbkgr_error, 'Total Unc.' if self.syst_hist is not None else 'Stat. Unc.')
 
     def drawHist(self, output_dir = None, normalize_signal = None, draw_option = 'EHist', bkgr_draw_option = 'Stack', error_option = 'E', bkgr_error_option = 'E', draw_cuts = None, 
-        custom_labels = None, draw_lines = None, message = None, min_cutoff = None, max_cutoff = None, ref_line = 1., observed_name = 'Data'):
+        custom_labels = None, draw_lines = None, message = None, min_cutoff = None, max_cutoff = None, ref_line = 1., observed_name = 'Data', custom_divisions = None):
 
         #
         # Some default settings
@@ -799,10 +827,10 @@ class Plot(object):
 
         try:
             if custom_labels is not None and len(custom_labels) != self.s[0].GetNbinsX():
-                raise RuntimeError("Inconsistent number of bins ("+str(self.s[0].GetNbinsX())+") compared to number of labels given ("+len(custom_labels)+")")
+                raise RuntimeError("Inconsistent number of bins ("+str(self.s[0].GetNbinsX())+") compared to number of labels given ("+str(len(custom_labels))+")")
         except:
             if custom_labels is not None and len(custom_labels) != self.b[0].GetNbinsX():
-                raise RuntimeError("Inconsistent number of bins ("+str(self.b[0].GetNbinsX())+") compared to number of labels given ("+len(custom_labels)+")")
+                raise RuntimeError("Inconsistent number of bins ("+str(self.b[0].GetNbinsX())+") compared to number of labels given ("+str(len(custom_labels))+")")
 
         if draw_option == 'Stack' and len(self.b) > 0:
             raise RuntimeError('The "Stack" option for signal is meant to be used when there is no background. In case of background, input the hist to stack as background.')
@@ -868,6 +896,7 @@ class Plot(object):
             
             # Prepare for stacking (Can not conflict with signal stacks due to runtimeError raise at the beginning)
             if bkgr_draw_option == 'Stack':
+                print self.b_tex_names
                 self.b, self.b_tex_names = pt.orderHist(self.b, self.b_tex_names, lowest_first = True)
                 self.hs = ROOT.THStack("hs", "hs")
                 for i, (h, n) in enumerate(zip(self.b, self.b_tex_names)):
@@ -976,7 +1005,7 @@ class Plot(object):
                         second_part = '%.1E' % Decimal(str(second_part))
                         a, b = second_part.split('E')
                         b = int(b)
-                        second_part = a + '#times10^{'+str(b)+'}'
+                        second_part = a + ' #times 10^{'+str(b)+'}'
                         self.extra_text[ixt][0] = first_part + ' = ' + second_part+'}'
                         need_to_specify_scale = False
                     else:
@@ -1010,7 +1039,7 @@ class Plot(object):
         #
         # Calculate ranges of axis and set to log if requested
         #
-        self.setAxisLog(stacked = (len(self.b) > 0 and 'Stack' in bkgr_draw_option) or 'Stack' in draw_option, min_cutoff = min_cutoff, max_cutoff = max_cutoff, include_errors=error_option is not None and bkgr_error_option is not None, need_additional_space = normalize_signal == 'bkgr')
+        self.setAxisLog(stacked = (len(self.b) > 0 and 'Stack' in bkgr_draw_option) or 'Stack' in draw_option, min_cutoff = min_cutoff, max_cutoff = max_cutoff, include_errors=error_option is not None and bkgr_error_option is not None, need_additional_space = normalize_signal == 'bkgr', custom_divisions = custom_divisions)
         #self.setAxisLog(stacked = (len(self.b) > 0 and 'Stack' in bkgr_draw_option) or 'Stack' in draw_option, min_cutoff = min_cutoff, max_cutoff = max_cutoff, include_errors=False)
 
         #
@@ -1081,10 +1110,13 @@ class Plot(object):
        
         loop_obj = [item for item in self.s]
         if len(self.b) > 0: loop_obj.extend(self.b)
-        for h, n in zip(loop_obj, self.tex_names):
-            self.legend.AddEntry(h, n, 'F' if not 'HNL' in n else 'L')
         if self.observed is not None:
             self.legend.AddEntry(self.observed, observed_name, 'EP')
+        for h, n in zip(loop_obj, self.tex_names):
+            self.legend.AddEntry(h, n, 'F' if not 'HNL' in n else 'L')
+        self.legend.AddEntry(self.tot_totbkgr_error, 'Total unc.' if self.syst_hist is not None else 'Stat. unc.')
+        
+        self.legend.SetNColumns(2)
 
         self.legend.Draw()
 
@@ -1093,7 +1125,7 @@ class Plot(object):
             if self.b is None:                 raise RuntimeError("Cannot ask ratio or significance if no background is given")
             ratios = self.calculateRatio(signal_only = self.draw_ratio == 'from_signal')
             ratios_denom = self.calculateRatio(signal_only = self.draw_ratio == 'from_signal', return_bkgr = True)
-            self.drawRatio(ratios, custom_labels, just_errors, ref_line = ref_line, ignore_errors = self.draw_ratio == 'from_signal', denom = ratios_denom)
+            self.drawRatio(ratios, custom_labels, just_errors, ref_line = ref_line, ignore_errors = self.draw_ratio == 'from_signal', denom = ratios_denom, custom_divisions = custom_divisions)
             self.ratio_pad.Update()
         if self.draw_significance is not None:
             existing_significances = isinstance(self.draw_significance, list)
@@ -1113,7 +1145,10 @@ class Plot(object):
         ROOT.gPad.Update() 
         self.canvas.Update()
         #CMS lumi
-        cl.CMS_lumi(self.canvas, 4, 11, 'Preliminary', self.era+self.year)
+        if self.for_paper is not None and self.for_paper == 'raw':
+            cl.CMS_lumi(self.canvas, 4, 11, '', self.era+self.year, for_paper = self.for_paper)
+        else:
+            cl.CMS_lumi(self.canvas, 4, 11, 'Preliminary', self.era+self.year)
 
         #Save everything
         self.savePlot(output_dir +'/'+ self.name, message)
@@ -1402,8 +1437,6 @@ class Plot(object):
         frame.GetXaxis().SetNdivisions(508)
         frame.GetYaxis().SetTitle(self.y_name)
         frame.GetXaxis().SetTitle(self.x_name)
-        frame.SetMinimum(0.3*min_y)
-        frame.SetMaximum(max_y*100)
         frame.GetXaxis().SetRangeUser(0.95*min(values), 1.05*max(values))
         if self.draw_ratio is not None:
             frame.GetXaxis().SetTitleSize(.06)
@@ -1442,12 +1475,12 @@ class Plot(object):
                         m.Draw('Lsame')
          
         if len(self.b) > 0:
-            from HNL.Plotting.style import getLineStyle
+            from HNL.Plotting.style import getLineStyleBraz
             for i_bkgr, bkgr in enumerate(self.b):
-                bkgr.SetLineColor(ps.getColor('Limit', i_bkgr))
+                bkgr.SetLineColor(ps.getColor('Limit', self.tex_names[i_bkgr]))
                 bkgr.SetLineWidth(3)
                 bkgr.SetMarkerStyle(1)
-                if self.for_paper: bkgr.SetLineStyle(getLineStyle(i_bkgr + 1))
+                if self.for_paper is not None: bkgr.SetLineStyle(getLineStyleBraz(self.tex_names[i_bkgr]))
                 sub_backgrounds = addSignal([], bkgr)
                 for i_subbkgr, subbkgr in enumerate(sub_backgrounds):
                     if ignore_expected and i_bkgr == 0 and i_subbkgr == 0:
@@ -1468,14 +1501,16 @@ class Plot(object):
 
         if self.x_log :
             self.plotpad.SetLogx()
-        
+       
+
+        max_y_sf = kwargs.get('max_y_sf', 1.) 
         if self.y_log:
             self.plotpad.SetLogy()
             frame.SetMinimum(0.3*min_y)
-            frame.SetMaximum(max_y*100)
+            frame.SetMaximum(max_y*100*max_y_sf)
         else:
             frame.SetMinimum(0.001*min_y)
-            frame.SetMaximum(max_y)
+            frame.SetMaximum(max_y*max_y_sf)
       
  
         #Create Legend
@@ -1494,11 +1529,11 @@ class Plot(object):
                 graph = addSignal([], b)[0]
                 legend_entries.append((graph, l, 'L'))
 
-        y1 = 0.7
-        if self.for_paper:
-            n_entry_target = 6.
+        y1 = 0.65
+        if self.for_paper is not None:
+            n_entry_target = 8.
             n_entry_current = len(legend_entries)
-            y1 += 0.18*(1-(n_entry_current/n_entry_target))
+            y1 += (0.88-y1)*(1-(n_entry_current/n_entry_target))
         legend = ROOT.TLegend(0.5, y1, .9, .88)
         for le in legend_entries:
             legend.AddEntry(le[0], le[1], le[2])

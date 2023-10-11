@@ -158,7 +158,8 @@ def getHNLColor(name):
     elif '80' in name:   return TColor.GetColor("#00fefe")
     elif '60' in name:   return TColor.GetColor("#fe68fe")
     elif '40' in name:   return TColor.GetColor("#fe8420")
-    elif '20' in name:   return TColor.GetColor("#70fe00")
+    #elif '20' in name:   return TColor.GetColor("#70fe00")
+    elif '20' in name:   return TColor.GetColor("#262626")
     elif '10' in name:   return TColor.GetColor("#fefe00")
     elif '5' in name:   return TColor.GetColor("#fed38b")
     else:               return TColor.GetColor("#a0d681")
@@ -277,14 +278,20 @@ def getLineColor(index):
     if index == 1:      return TColor.GetColor("#685762")
     if index == 2:      return TColor.GetColor("#E8C547")
 
-def getLimitColors(index):
-    if index == 0:      return TColor.GetColor("#8075FF")
-    if index == 1:      return TColor.GetColor("#ED474A")
-    if index == 6:      return TColor.GetColor("#FF00FF")
-    if index == 2:      return TColor.GetColor("#72DDF7")
-    if index == 3:      return TColor.GetColor("#0000ff")
-    if index == 4:      return TColor.GetColor("#685762")
-    if index == 5:      return TColor.GetColor("#E8C547")
+def getLimitColors(name):
+    if  '2016' in name:      return TColor.GetColor("#8075FF")
+    if 'DELPHI' in name:      return TColor.GetColor("#ED474A")
+    #if 'DELPHI' in name:      return TColor.GetColor("#FF00FF")
+    #if 'VBF' in name:      return TColor.GetColor("#72DDF7")
+    #if 'VBF' in name:      return TColor.GetColor("#F2D0A9")
+    #if 'VBF' in name:      return TColor.GetColor("#04A777")
+    if 'VBF' in name:      return TColor.GetColor("#7CEA9C")
+    #if 'DELPHI' in name:      return TColor.GetColor("#0000ff")
+    #if 'DELPHI' in name:      return TColor.GetColor("#685762")
+    #if 'DELPHI' in name:      return TColor.GetColor("#E8C547")
+    if 'displaced' in name: return TColor.GetColor("#4A7C59")
+    #if 'displaced' in name: return TColor.GetColor("#898980")
+    return ROOT.kBlack
 
 def getBlackColor():
     return ROOT.kBlack
@@ -301,6 +308,14 @@ def getMarker(index):
 def getLineStyle(index):
     if index == 1:      return 9
     if index == 2:      return 7
+    if index == 3:      return 2
+    return 1
+
+def getLineStyleBraz(name):
+    if '2016' in name:      return 9
+    if 'VBF' in name:      return 7
+    if 'DELPHI' in name:      return 2
+    if 'displaced' in name:      return 3
     return 1
 
 def getLineStyle2(index):

@@ -7,21 +7,27 @@ def makeGraph(flavor, in_name, masses):
     import_path = os.path.expandvars(os.path.join('$CMSSW_BASE', 'src', 'HNL', 'Stat', 'data', 'StateOfTheArt', 'stateOfTheArt.json'))
     with open(import_path, 'r') as openfile:
         json_dict = json.load(openfile)
-    masses_to_keep = array('f', sorted([float(m) for m in json_dict[flavor][in_name] if float(m) >= min_mass and float(m) <= max_mass]))
-    appropriate_couplings = array('f', [json_dict[flavor][in_name][str(m)] for m in masses_to_keep])
+    if "fixed_order" in json_dict[flavor][in_name].keys():
+        print "10.1000003815", array('f', [float("10.1000003815")])
+        masses_to_keep = [float(m) for m in json_dict[flavor][in_name]["fixed_order"] if float(m) >= min_mass and float(m) <= max_mass]
+    else:
+        masses_to_keep = sorted([float(m) for m in json_dict[flavor][in_name] if float(m) >= min_mass and float(m) <= max_mass])
+    appropriate_couplings = array('f', [json_dict[flavor][in_name][repr(m)] for m in masses_to_keep])
     from ROOT import TGraph
-    out_graph = TGraph(len(masses_to_keep), masses_to_keep, appropriate_couplings)
+    out_graph = TGraph(len(masses_to_keep), array('f', masses_to_keep), appropriate_couplings)
     return out_graph
 
 legend_names = {
     'expected_17012_prompt' : '#splitline{3l prompt}{(Expected, Majorana)}',
-    'observed_17012_prompt' : '3l prompt',
-    'observed_17012_displaced' : '3l prompt',
+    'observed_17012_prompt' : '3l prompt (2016)',
+    'observed_17012_displaced' : '3l prompt (2016)',
     'delphi_prompt' : 'DELPHI',
     #'exo-21-003-obs' : 'arXiv:2206.08956',
     'exo-21-003-obs' : '#it{t}-channel VBF',
     #'exo-21-003-exp' : 'arXiv:2206.08956 (expected)'
-    'exo-21-003-exp' : '#it{t}-channel VBF (expected)'
+    'exo-21-003-exp' : '#it{t}-channel VBF (expected)',
+    'martina_displaced' : '3l displaced',
+    'martina_displaced_dirac' : '3l displaced'
 }
 def makeGraphList(flavor, in_names, masses):
     graph_list = []
