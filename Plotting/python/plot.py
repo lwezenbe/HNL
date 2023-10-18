@@ -362,6 +362,7 @@ class Plot(object):
         return
 
     def setPads(self):
+
         plot_pad_y = 0.05
         if self.draw_significance and self.draw_ratio is not None:
             self.sig_pad = ROOT.TPad('sig_pad', 'sig_pad', 0, 0.05, 1, 0.25)
@@ -576,7 +577,10 @@ class Plot(object):
             from HNL.Plotting.plottingTools import getTickLengthFromRef
             self.tot_err.Draw("E2")
             self.ratio_pad.Update()
-            getTickLengthFromRef(self.plotpad, self.ratio_pad, self.tot_err.GetXaxis().GetTickLength())
+            tick_x, tick_y = getTickLengthFromRef(self.plotpad, self.ratio_pad, 0.02)
+            self.tot_err.GetXaxis().SetTickLength(tick_x)
+            self.tot_err.GetYaxis().SetTickLength(tick_y)
+            self.tot_err.Draw("E2")
             if self.for_paper is None and not self.ignore_stat_err: self.stat_err.Draw("E2Same")
             self.b[0].GetXaxis().DrawClone()
 
@@ -861,8 +865,8 @@ class Plot(object):
 
                 h.SetLineColor(ps.getHNLColor(n))
                 h.SetLineWidth(4)
-                from HNL.Plotting.style import getLineStyle2
-                h.SetLineStyle(getLineStyle2(self.s.index(h)))
+                from HNL.Plotting.style import getLineStyleHNL
+                h.SetLineStyle(getLineStyleHNL(self.s_tex_names[self.s.index(h)]))
 
             # Otherwise generic settings
             else:
@@ -874,8 +878,8 @@ class Plot(object):
                 h.SetLineWidth(4)
                 h.SetMarkerStyle(0)
                 h.SetMarkerColor(ps.getColor(self.color_palette, color_index))
-                from HNL.Plotting.style import getLineStyle2
-                h.SetLineStyle(getLineStyle2(self.s.index(h)))
+                from HNL.Plotting.style import getLineStyleHNL
+                h.SetLineStyle(getLineStyleHNL(self.s_tex_names[self.s.index(h)]))
 
         #
         # Set Bkgr Histogram Styles
@@ -1013,7 +1017,7 @@ class Plot(object):
                     break
 
         if need_to_specify_scale: 
-            if normalize_signal == 'bkgr':
+            if normalize_signal == 'bkgr' and self.for_paper is None:
                 if self.extra_text is None: self.extra_text = []
                 self.extra_text.append(pt.extraTextFormat('Signal yield scaled to background yield'))          
             elif isinstance(normalize_signal, int) or isinstance(normalize_signal, float):
@@ -1039,7 +1043,7 @@ class Plot(object):
         #
         # Calculate ranges of axis and set to log if requested
         #
-        self.setAxisLog(stacked = (len(self.b) > 0 and 'Stack' in bkgr_draw_option) or 'Stack' in draw_option, min_cutoff = min_cutoff, max_cutoff = max_cutoff, include_errors=error_option is not None and bkgr_error_option is not None, need_additional_space = normalize_signal == 'bkgr', custom_divisions = custom_divisions)
+        self.setAxisLog(stacked = (len(self.b) > 0 and 'Stack' in bkgr_draw_option) or 'Stack' in draw_option, min_cutoff = min_cutoff, max_cutoff = max_cutoff, include_errors=error_option is not None and bkgr_error_option is not None, need_additional_space = normalize_signal == 'bkgr' and self.for_paper is None, custom_divisions = custom_divisions)
         #self.setAxisLog(stacked = (len(self.b) > 0 and 'Stack' in bkgr_draw_option) or 'Stack' in draw_option, min_cutoff = min_cutoff, max_cutoff = max_cutoff, include_errors=False)
 
         #
@@ -1107,17 +1111,30 @@ class Plot(object):
         # legend = ROOT.TLegend(0.4, .7, .9, .9)
         # legend.SetNColumns(1)
 
-       
-        loop_obj = [item for item in self.s]
-        if len(self.b) > 0: loop_obj.extend(self.b)
-        if self.observed is not None:
-            self.legend.AddEntry(self.observed, observed_name, 'EP')
-        for h, n in zip(loop_obj, self.tex_names):
-            self.legend.AddEntry(h, n, 'F' if not 'HNL' in n else 'L')
-        self.legend.AddEntry(self.tot_totbkgr_error, 'Total unc.' if self.syst_hist is not None else 'Stat. unc.')
-        
-        self.legend.SetNColumns(2)
+      
+        def getLegendStyle(in_name):
+            if in_name == 'Data':
+                return 'EP'
+            if 'HNL' in in_name:
+                return 'L'
+            return 'F'
 
+        from HNL.Plotting.plottingTools import orderHNLbyMass
+        hnl_hist, hnl_names = orderHNLbyMass(self.s, self.s_tex_names)
+        loop_obj = [item for item in hnl_hist]
+        if len(self.b) > 0: loop_obj.extend(reversed(self.b))
+        self.legend.SetNColumns(2)
+        if self.observed is not None:
+            loop_obj.insert(0, self.observed)
+        loop_obj.append(self.tot_totbkgr_error)    
+        from HNL.Plotting.plottingTools import reorderLegendNames
+#        new_tex_names = [observed_name]+[x for x in self.tex_names]+['Total unc.' if self.syst_hist is not None else 'Stat. unc.']
+        new_tex_names = [observed_name]+[x for x in hnl_names]+[x for x in reversed(self.b_tex_names)] + ['Total unc.' if self.syst_hist is not None else 'Stat. unc.']
+        new_tex_names, loop_obj = reorderLegendNames(new_tex_names, loop_obj, 2)
+        for h, n in zip(loop_obj, new_tex_names):
+            self.legend.AddEntry(h, n, getLegendStyle(n))
+
+        self.legend.SetTextFont(42)
         self.legend.Draw()
 
         if self.draw_ratio is not None:

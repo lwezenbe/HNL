@@ -83,6 +83,11 @@ def orderHist(hist, names, lowest_first = False):
     #statement that if values are the same, it keeps it in sortByOtherList
     return sortByOtherList(hist, sof), sortByOtherList(names, sof)
 
+def orderHNLbyMass(hist, names):
+    from HNL.Samples.sample import Sample
+    sof = [float(n.split('HNL ')[1].split('#')[0]) for n in names]
+    return sortByOtherList(hist, sof), sortByOtherList(names, sof)
+
 def extraTextFormat(text, xpos = None, ypos = None, textsize = None, align = 12):
     tmp_textsize = 0.03
     if textsize is not None: tmp_textsize *= textsize 
@@ -127,9 +132,37 @@ def setHistErrors(hist, err_value = 0.):
         hist.SetBinError(b, err_value)
     return hist
 
-def getTickLengthFromRef(ref_pad, new_pad, ref_length):
-    print "NEW"
-    print ref_pad.GetWh(), ref_pad.GetWw(), ref_pad.GetWNDC()
-    print new_pad.GetWh(), new_pad.GetWw(), new_pad.GetWNDC()
-    print ref_length
+def getTickLengthFromRef(ref_pad, new_pad, tick_size):       
+    refpadW = ref_pad.GetWw()*ref_pad.GetAbsWNDC()
+    refpadH = ref_pad.GetWh()*ref_pad.GetAbsHNDC()
+    tick_ref_x = (ref_pad.GetUxmax() - ref_pad.GetUxmin())/(ref_pad.GetX2()-ref_pad.GetX1())*refpadH*tick_size
+    tick_ref_y = (ref_pad.GetUymax() - ref_pad.GetUymin())/(ref_pad.GetY2()-ref_pad.GetY1())*refpadW*tick_size
+    newpadW = new_pad.GetWw()*new_pad.GetAbsWNDC()
+    newpadH = new_pad.GetWh()*new_pad.GetAbsHNDC()
+    tick_new_x = (new_pad.GetUxmax() - new_pad.GetUxmin())/(new_pad.GetX2()-new_pad.GetX1())*newpadH
+    tick_new_y = (new_pad.GetUymax() - new_pad.GetUymin())/(new_pad.GetY2()-new_pad.GetY1())*newpadW
+    return tick_ref_x/tick_new_x, tick_ref_y/tick_new_y
 
+def reorderLegendNames(in_names, in_hist, n_columns):
+    def chunks(l, n):
+        """Yield n number of sequential chunks from l."""
+        d, r = divmod(len(l), n)
+        for i in range(n):
+            si = (d+1)*(i if i < r else r) + d*(0 if i < r else i - r)
+            yield l[si:si+(d+1 if i < r else d)]
+
+    lists_of_names = [x for x in chunks(in_names, n_columns)]
+    lists_of_hist = [x for x in chunks(in_hist, n_columns)]
+
+    list_of_names = []
+    list_of_hist = []
+    for i in xrange(len(lists_of_names[0])):
+        for j in xrange(len(lists_of_names)):
+            try:
+                list_of_names.append(lists_of_names[j][i])
+                list_of_hist.append(lists_of_hist[j][i])
+            except:
+                continue
+
+    return list_of_names, list_of_hist
+        

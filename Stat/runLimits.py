@@ -114,9 +114,9 @@ def runImpacts(datacard, cardname):
     #extra_conditions = '--robustFit=1 '
     #extra_conditions = '--robustFit=1 --stepSize=0.05 --setRobustFitAlgo migrad'
     runCombineCommand(  'text2workspace.py '+datacard+ ' -o ws.root ; '
-                        + 'combineTool.py -M Impacts -d ws.root -m 100 {0} --doInitialFit ; '.format(extra_conditions)
-                        + 'combineTool.py -M Impacts -d ws.root -m 100 {0} --doFits --parallel 10 ; '.format(extra_conditions)
-                        + 'combineTool.py -M Impacts -d ws.root -m 100 {0} -o impacts.json ; '.format(extra_conditions)
+                        + 'combineTool.py -M Impacts -d ws.root -m 100 {0} --doInitialFit --expectSignal 0; '.format(extra_conditions)
+                        + 'combineTool.py -M Impacts -d ws.root -m 100 {0} --doFits --parallel 10 --expectSignal 0; '.format(extra_conditions)
+                        + 'combineTool.py -M Impacts -d ws.root -m 100 {0} -o impacts.json --expectSignal 0; '.format(extra_conditions)
                         + 'plotImpacts.py -i  impacts.json -o  impacts', 
                     output_folder)
     

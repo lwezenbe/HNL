@@ -306,6 +306,7 @@ def getMarker(index):
     if index == 6:      return 26
 
 def getLineStyle(index):
+    print index
     if index == 1:      return 9
     if index == 2:      return 7
     if index == 3:      return 2
@@ -321,6 +322,12 @@ def getLineStyleBraz(name):
 def getLineStyle2(index):
     if index == 1:      return 7
     if index == 2:      return 2
+    return 1
+
+def getLineStyleHNL(index):
+    if '40' in index or '150' in index or '200' in index: return 7
+    if '20' in index or '85' in index: return 1
+    if '60' in index or '300' in index: return 2
     return 1
 
 def returnSignalLegendName(name):
