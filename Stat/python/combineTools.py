@@ -79,8 +79,11 @@ def makeDataCard(bin_name, flavor, era, year, obs_yield, sig_name, bkgr_names, s
     out_file.write('-'*400 + '\n')
 
     from HNL.Systematics.systematics import insertSystematics
-    insertSystematics(out_file, bkgr_names, sig_name, year, final_state, datadriven_processes = ['non-prompt'] if nonprompt_from_sideband else None)
+    insertSystematics(out_file, bkgr_names, sig_name, year, final_state, datadriven_processes = ['non-prompt'] if nonprompt_from_sideband else None, decorrelate_sr = bin_name.split('-')[0])
 
+    # Define groups
+    from HNL.Systematics.systematics import insertGroups
+    insertGroups(out_file, bkgr_names, sig_name, year, final_state, datadriven_processes = ['non-prompt'] if nonprompt_from_sideband else None, decorrelate_sr = bin_name.split('-')[0])
 
     #autoMCstats
     if shapes:

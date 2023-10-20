@@ -9,7 +9,7 @@ submission_parser.add_argument('--era',     action='store',       default='UL', 
 submission_parser.add_argument('--masses', type=float, nargs='*',  help='Only run or plot signal samples with mass given in this list')
 submission_parser.add_argument('--couplings', nargs='*', type=float,  help='Only run or plot signal samples with coupling squared given in this list')
 submission_parser.add_argument('--flavor', action='store', default='',  help='Which coupling should be active?' , choices=['tau', 'e', 'mu', '2l'])
-submission_parser.add_argument('--method',   action='store', default='',  help='What method should we use?', choices = ['asymptotic', 'hybrid', 'significance', 'covariance', 'impact', 'gof', 'postfit'])
+submission_parser.add_argument('--method',   action='store', default='',  help='What method should we use?', choices = ['asymptotic', 'hybrid', 'significance', 'covariance', 'impact', 'gof', 'postfit', 'groupedimpact'])
 submission_parser.add_argument('--blind',   action='store_true', default=False,  help='activate --blind option of combine')
 submission_parser.add_argument('--useExistingLimits',   action='store_true', default=False,  help='Dont run combine, just plot')
 submission_parser.add_argument('--selection',   action='store', default='default',  help='Select the type of selection for objects', choices=['leptonMVAtop', 'AN2017014', 'default', 'Luka', 'TTT'])
@@ -126,6 +126,60 @@ def runImpacts(datacard, cardname):
     os.system('scp '+output_folder+'/impacts.pdf '+public_html+'/impacts.pdf')
     return
 
+def runGroupedImpacts(datacard, cardname):
+    output_folder = getOutputFolder(datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/GroupedImpacts/'+cardname)
+    
+    command = ''
+    # initial fit:
+    #command += 'combine --saveWorkspace --redefineSignalPOIs r --setParameters r=1 -M MultiDimFit -d {0} -n hnl.postfit ; '.format(datacard)
+    ## scan 1:
+    #command += 'combine higgsCombinehnl.postfit.MultiDimFit.mH120.root -M MultiDimFit --algo grid --snapshotName MultiDimFit --setParameterRanges r=-1,1 --redefineSignalPOIs r --setParameters r=1 ; '
+
+    ## increasingly freezing groups:
+    #command += 'combine higgsCombinehnl.postfit.MultiDimFit.mH120.root -M MultiDimFit --algo grid --snapshotName MultiDimFit --setParameterRanges r=-1,1 --redefineSignalPOIs r --setParameters r=1 --freezeNuisanceGroups luminosity -n hnl.freeze_lumi; '
+    #command += 'combine higgsCombinehnl.postfit.MultiDimFit.mH120.root -M MultiDimFit --algo grid --snapshotName MultiDimFit --setParameterRanges r=-1,1 --redefineSignalPOIs r --setParameters r=1 --freezeNuisanceGroups luminosity,theory -n hnl.freeze_lumi_theory; '
+    #command += 'combine higgsCombinehnl.postfit.MultiDimFit.mH120.root -M MultiDimFit --algo grid --snapshotName MultiDimFit --setParameterRanges r=-1,1 --redefineSignalPOIs r --setParameters r=1 --freezeNuisanceGroups luminosity,theory,trigger -n hnl.freeze_lumi_theory_trigger; '
+    #command += 'combine higgsCombinehnl.postfit.MultiDimFit.mH120.root -M MultiDimFit --algo grid --snapshotName MultiDimFit --setParameterRanges r=-1,1 --redefineSignalPOIs r --setParameters r=1 --freezeNuisanceGroups luminosity,theory,trigger,WZ_norm -n hnl.freeze_lumi_theory_trigger_WZ; '
+    #command += 'combine higgsCombinehnl.postfit.MultiDimFit.mH120.root -M MultiDimFit --algo grid --snapshotName MultiDimFit --setParameterRanges r=-1,1 --redefineSignalPOIs r --setParameters r=1 --freezeNuisanceGroups luminosity,theory,trigger,WZ_norm,ZZ_norm -n hnl.freeze_lumi_theory_trigger_WZ_ZZ; '
+    #command += 'combine higgsCombinehnl.postfit.MultiDimFit.mH120.root -M MultiDimFit --algo grid --snapshotName MultiDimFit --setParameterRanges r=-1,1 --redefineSignalPOIs r --setParameters r=1 --freezeNuisanceGroups luminosity,theory,trigger,WZ_norm,ZZ_norm,conv_norm -n hnl.freeze_lumi_theory_trigger_WZ_ZZ_conv; '
+    #command += 'combine higgsCombinehnl.postfit.MultiDimFit.mH120.root -M MultiDimFit --algo grid --snapshotName MultiDimFit --setParameterRanges r=-1,1 --redefineSignalPOIs r --setParameters r=1 --freezeNuisanceGroups luminosity,theory,trigger,WZ_norm,ZZ_norm,conv_norm,prompt_norm -n hnl.freeze_lumi_theory_trigger_WZ_ZZ_conv_otherprompt; '
+    #command += 'combine higgsCombinehnl.postfit.MultiDimFit.mH120.root -M MultiDimFit --algo grid --snapshotName MultiDimFit --setParameterRanges r=-1,1 --redefineSignalPOIs r --setParameters r=1 --freezeNuisanceGroups luminosity,theory,trigger,WZ_norm,ZZ_norm,conv_norm,prompt_norm,nonprompt_light -n hnl.freeze_lumi_theory_trigger_WZ_ZZ_conv_otherprompt_nonpromptlight; '
+    #command += 'combine higgsCombinehnl.postfit.MultiDimFit.mH120.root -M MultiDimFit --algo grid --snapshotName MultiDimFit --setParameterRanges r=-1,1 --redefineSignalPOIs r --setParameters r=1 --freezeNuisanceGroups luminosity,theory,trigger,WZ_norm,ZZ_norm,conv_norm,prompt_norm,nonprompt_light,nonprompt_tau -n hnl.freeze_lumi_theory_trigger_WZ_ZZ_conv_otherprompt_nonpromptlight_nonprompttau; '
+    #command += 'combine higgsCombinehnl.postfit.MultiDimFit.mH120.root -M MultiDimFit --algo grid --snapshotName MultiDimFit --setParameterRanges r=-1,1 --redefineSignalPOIs r --setParameters r=1 --freezeNuisanceGroups luminosity,theory,trigger,WZ_norm,ZZ_norm,conv_norm,prompt_norm,nonprompt_light,nonprompt_tau,electron -n hnl.freeze_lumi_theory_trigger_WZ_ZZ_conv_otherprompt_nonpromptlight_nonprompttau_electron; '
+    #command += 'combine higgsCombinehnl.postfit.MultiDimFit.mH120.root -M MultiDimFit --algo grid --snapshotName MultiDimFit --setParameterRanges r=-1,1 --redefineSignalPOIs r --setParameters r=1 --freezeNuisanceGroups luminosity,theory,trigger,WZ_norm,ZZ_norm,conv_norm,prompt_norm,nonprompt_light,nonprompt_tau,electron,muon -n hnl.freeze_lumi_theory_trigger_WZ_ZZ_conv_otherprompt_nonpromptlight_nonprompttau_electron_muon; '
+    #command += 'combine higgsCombinehnl.postfit.MultiDimFit.mH120.root -M MultiDimFit --algo grid --snapshotName MultiDimFit --setParameterRanges r=-1,1 --redefineSignalPOIs r --setParameters r=1 --freezeNuisanceGroups luminosity,theory,trigger,WZ_norm,ZZ_norm,conv_norm,prompt_norm,nonprompt_light,nonprompt_tau,electron,muon,tau -n hnl.freeze_lumi_theory_trigger_WZ_ZZ_conv_otherprompt_nonpromptlight_nonprompttau_electron_muon_tau; '
+    #command += 'combine higgsCombinehnl.postfit.MultiDimFit.mH120.root -M MultiDimFit --algo grid --snapshotName MultiDimFit --setParameterRanges r=-1,1 --redefineSignalPOIs r --setParameters r=1 --freezeNuisanceGroups luminosity,theory,trigger,WZ_norm,ZZ_norm,conv_norm,prompt_norm,nonprompt_light,nonprompt_tau,electron,muon,tau,jets -n hnl.freeze_lumi_theory_trigger_WZ_ZZ_conv_otherprompt_nonpromptlight_nonprompttau_electron_muon_tau_jets; '
+    #command += 'combine higgsCombinehnl.postfit.MultiDimFit.mH120.root -M MultiDimFit --algo grid --snapshotName MultiDimFit --setParameterRanges r=-1,1 --redefineSignalPOIs r --setParameters r=1 --freezeNuisanceGroups allConstrainedNuisances -n hnl.freeze_all; '
+
+    # plot
+    command += 'plot1DScan.py higgsCombineTest.MultiDimFit.mH120.root --main-label "Total Uncert." --POI r --others'
+    command += ' higgsCombinehnl.freeze_lumi.MultiDimFit.mH120.root:"freeze lum":13'
+    command += ' higgsCombinehnl.freeze_lumi_theory.MultiDimFit.mH120.root:"freeze lum_theo":12'
+    command += ' higgsCombinehnl.freeze_lumi_theory_trigger.MultiDimFit.mH120.root:"freeze lum_theo_trig":11'
+    command += ' higgsCombinehnl.freeze_lumi_theory_trigger_WZ.MultiDimFit.mH120.root:"freeze lum_theo_trig_WZ":10'
+    command += ' higgsCombinehnl.freeze_lumi_theory_trigger_WZ_ZZ.MultiDimFit.mH120.root:"freeze lum_theo_trig_WZ_ZZ":9'
+    command += ' higgsCombinehnl.freeze_lumi_theory_trigger_WZ_ZZ_conv.MultiDimFit.mH120.root:"freeze lum_theo_trig_WZ_ZZ_conv":8'
+    command += ' higgsCombinehnl.freeze_lumi_theory_trigger_WZ_ZZ_conv_otherprompt.MultiDimFit.mH120.root:"freeze lum_theo_trig_WZ_ZZ_conv_p":7'
+    command += ' higgsCombinehnl.freeze_lumi_theory_trigger_WZ_ZZ_conv_otherprompt_nonpromptlight.MultiDimFit.mH120.root:"freeze lum_theo_trig_WZ_ZZ_conv_p_npl":6'
+    command += ' higgsCombinehnl.freeze_lumi_theory_trigger_WZ_ZZ_conv_otherprompt_nonpromptlight_nonprompttau.MultiDimFit.mH120.root:"freeze lum_theo_trig_WZ_ZZ_conv_p_npl_npt":5'
+    command += ' higgsCombinehnl.freeze_lumi_theory_trigger_WZ_ZZ_conv_otherprompt_nonpromptlight_nonprompttau_electron.MultiDimFit.mH120.root:"freeze lum_theo_trig_WZ_ZZ_conv_p_npl_npt_e":4'
+    command += ' higgsCombinehnl.freeze_lumi_theory_trigger_WZ_ZZ_conv_otherprompt_nonpromptlight_nonprompttau_electron_muon.MultiDimFit.mH120.root:"freeze lum_theo_trig_WZ_ZZ_conv_p_npl_npt_e_m":3'
+    command += ' higgsCombinehnl.freeze_lumi_theory_trigger_WZ_ZZ_conv_otherprompt_nonpromptlight_nonprompttau_electron_muon_tau.MultiDimFit.mH120.root:"freeze lum_theo_trig_WZ_ZZ_conv_p_npl_npt_e_m_t":2'
+    command += ' higgsCombinehnl.freeze_lumi_theory_trigger_WZ_ZZ_conv_otherprompt_nonpromptlight_nonprompttau_electron_muon_tau_jets.MultiDimFit.mH120.root:"freeze lum_theo_trig_WZ_ZZ_conv_p_npl_npt_e_m_t_j":1'
+    #command += ' higgsCombinehnl.freeze_all.MultiDimFit.mH120.root:"freeze all":1'
+    command += ' --output breakdown --y-max 10 --y-cut 40 --breakdown "lumi,theory,trig,WZ,ZZ,ZG,other prompt,nonprompt light,nonprompt tau,e,mu,tau,jets,stat"'
+    command += ' ;'
+    
+    runCombineCommand(command, output_folder)
+
+    from HNL.Tools.helpers import getPublicHTMLfolder
+    public_html = getPublicHTMLfolder(output_folder)
+    makeDirIfNeeded(public_html+'/x')
+    ##os.system('scp '+output_folder+'/scan.png '+public_html+'/scan.png')
+    ##os.system('scp '+output_folder+'/scan.pdf '+public_html+'/scan.pdf')
+    os.system('scp '+output_folder+'/breakdown.png '+public_html+'/breakdown.png')
+    os.system('scp '+output_folder+'/breakdown.pdf '+public_html+'/breakdown.pdf')
+
 def runGoodnessOfFit(datacard, cardname):    
     output_folder = getOutputFolder(datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/GOF/'+cardname)
     makeDirIfNeeded(output_folder+'/x')
@@ -143,15 +197,15 @@ def runGoodnessOfFit(datacard, cardname):
     os.system('scp '+output_folder+'/gof_plot.pdf '+public_html+'/gof_plot.pdf')
     
 def producePostFit(datacard, cardname):
-    print datacard
     output_folder = getOutputFolder(datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/postfit/'+cardname)
     #runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root ; combine ws.root -M FitDiagnostics --saveWithUnc', output_folder)    
-    runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root ; combine ws.root -M FitDiagnostics --saveWithUnc --rMin -1 --rMax 5 --cminDefaultMinimizerStrategy 0 --expectSignal 0 --plots', output_folder)    
+    #runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root ; combine ws.root -M FitDiagnostics --saveWithUnc --rMin -1 --rMax 5 --cminDefaultMinimizerStrategy 0 --expectSignal 0 --plots', output_folder)    
     #runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root ; combine ws.root -M FitDiagnostics --saveWithUnc --rMin -10 --robustFit=1 --rMax 5 --cminDefaultMinimizerStrategy 0 --expectSignal 0 --plots', output_folder)    
-    #runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root ; combine ws.root -M FitDiagnostics  --rMin -1 --robustFit=1 --rMax 1 --expectSignal 0 --setRobustFitAlgo 1 --setRobustFitStrategy 1 --plots --saveWithUnc', output_folder)    
+    runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root ; combine ws.root -M FitDiagnostics  --rMin -1 --robustFit=1 --rMax 1 --expectSignal 0 --setRobustFitAlgo 1 --setRobustFitStrategy 1 --plots --saveWithUnc', output_folder)    
     #runCombineCommand('text2workspace.py '+datacard+ ' -o ws.root ; combine ws.root -M FitDiagnostics  --rMin -10 --robustFit=1 --rMax 5 --expectSignal 0 --setRobustFitAlgo 1 --setRobustFitStrategy 1', output_folder)    
     os.system('scp '+datacard+' '+output_folder+'/datacard.txt')
-    runCombineCommand('PostFitShapesFromWorkspace -d datacard.txt -w ws.root --output postfitshapes.root -f fitDiagnosticsTest.root:fit_s --postfit --sampling', output_folder)    
+    runCombineCommand('PostFitShapesFromWorkspace -d datacard.txt -w ws.root --output postfitshapes.root -f fitDiagnosticsTest.root:fit_s --postfit --sampling --total-shapes', output_folder)    
+    #runCombineCommand('python '+os.path.expandvars('$CMSSW_BASE')+'/../CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/test/diffNuisances.py fitDiagnosticsTest.root', output_folder)
 
 def getCovarianceMatrix(datacard, cardname):
     output_folder = getOutputFolder(datacard.replace('dataCards', 'output').rsplit('/', 1)[0] +'/covariance/'+cardname)
@@ -185,6 +239,8 @@ def runLimit(card_manager, signal_name, cardnames):
         getCovarianceMatrix(datacard, getOutDataCardName(cardnames))
     elif args.method == 'impact':
         runImpacts(datacard, getOutDataCardName(cardnames))
+    elif args.method == 'groupedimpact':
+        runGroupedImpacts(datacard, getOutDataCardName(cardnames))
     elif args.method == 'gof':
         runGoodnessOfFit(datacard, getOutDataCardName(cardnames))
     elif args.method == 'postfit':

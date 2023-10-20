@@ -1208,7 +1208,7 @@ if __name__ == '__main__':
     #plotFig8p1() 
     #plotFig8p2() 
     #plotFig8p3() 
-    #plotFig8p4() 
+    plotFig8p4() 
     #plotFig8p5() 
     #plotFig8p6() 
     #
@@ -1230,4 +1230,4 @@ if __name__ == '__main__':
     #plotFig11p6() 
     
     #plotFig8p1Electron() 
-    plotFig8p1Muon() 
+    #plotFig8p1Muon() 

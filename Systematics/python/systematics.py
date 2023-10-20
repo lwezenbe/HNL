@@ -187,8 +187,21 @@ class SystematicJSONreader:
         for year in years:
             final_syst.update(self.getGeneral(syst_type, year, proc, final_state = final_state, split_correlations = split_corr, split_syst=split_syst))
         return [x for x in final_syst]
-        
-        
+
+    def getGroups(self, year):
+        final_groups = set()
+        for s in self.getAllSources(year):
+            final_groups.add(self.json_data[s]['Group'])
+        self.groups = [x for x in final_groups]
+        return self.groups
+
+    def getSystInGroup(self, group_name, year, proc, final_state = None):
+        final_list = []
+        for s in self.getAllSources(year, final_state = final_state):
+            if group_name == self.json_data[s]["Group"]:
+                final_list.append(s)
+        return final_list
+
 
 def prepareForRerunSyst(chain, event, systematic = 'nominal'):
     if not 'tauEnergyScale' in systematic:
@@ -201,7 +214,15 @@ def prepareForRerunSyst(chain, event, systematic = 'nominal'):
         event.tau_energy_scale_syst = systematic
     return event
 
-def insertSystematics(out_file, bkgr_names, sig_name, year, final_state, datadriven_processes):
+def decorrelateSearchRegions(syst_name, sr):
+    #if 'nonprompt_tau' in syst_name:
+    #    if sr in ['F', 'A', 'B']:
+    #        syst_name = syst_name.replace('nonprompt_tau', 'nonprompt_tau_nonossf')
+    #    else:   
+    #        syst_name = syst_name.replace('nonprompt_tau', 'nonprompt_tau_ossf')
+    return syst_name
+
+def insertSystematics(out_file, bkgr_names, sig_name, year, final_state, datadriven_processes, decorrelate_sr = None):
     
     reader = SystematicJSONreader(datadriven_processes = datadriven_processes)
     from HNL.Tools.helpers import tab
@@ -211,7 +232,7 @@ def insertSystematics(out_file, bkgr_names, sig_name, year, final_state, datadri
 
     for syst in reader.getAllSources(year, split_correlations=False):
         if not '-' in year or syst in reader.getFlats(year) or reader.systIsCorrelated(syst):
-            out_str = [reader.getCorrName(syst, year), 'lnN' if syst in reader.getFlats(year) else 'shape']
+            out_str = [decorrelateSearchRegions(reader.getCorrName(syst, year), decorrelate_sr) if decorrelate_sr is not None else reader.getCorrName(syst, year), 'lnN' if syst in reader.getFlats(year) else 'shape']
             for proc in bkgr_names + [sig_name]:
                 if not reader.filterProcesses(syst, proc) or not reader.filterFinalStates(syst, final_state):
                     out_str += ['-']
@@ -222,16 +243,40 @@ def insertSystematics(out_file, bkgr_names, sig_name, year, final_state, datadri
             out_file.write(tab(out_str))        
         else:
             for y in [x for x in reader.getYear(syst) if x in year.split('-')]:
-                out_str = [reader.getCorrName(syst, y), 'shape']
+                out_str = [decorrelateSearchRegions(reader.getCorrName(syst, y), decorrelate_sr) if decorrelate_sr is not None else reader.getCorrName(syst, y), 'shape']
                 for proc in bkgr_names + [sig_name]:
                     if not reader.filterProcesses(syst, proc) or not reader.filterFinalStates(syst, final_state):
                         out_str += ['-']
                     else:
                         out_str += ['1.0']
                 out_file.write(tab(out_str))        
+
+def insertGroups(out_file, bkgr_names, sig_name, year, final_state, datadriven_processes, decorrelate_sr = None):
     
+    reader = SystematicJSONreader(datadriven_processes = datadriven_processes)
+    from HNL.Tools.helpers import tab
+
+    from HNL.EventSelection.eventCategorization import translateCategories
+    final_state = translateCategories(final_state)    
+
+    out_file.write('\n')
+
+    groups = reader.getGroups(year)
+    for group in groups:
+        out_str = group + ' group = '
+        list_of_syst = reader.getSystInGroup(group, year, bkgr_names + [sig_name], final_state)
+        for syst in list_of_syst:
+            if not '-' in year or syst in reader.getFlats(year) or reader.systIsCorrelated(syst):
+                tmp_str = decorrelateSearchRegions(reader.getCorrName(syst, year), decorrelate_sr) if decorrelate_sr is not None else reader.getCorrName(syst, year)
+                out_str += " "+tmp_str
+            else:
+                for y in [x for x in reader.getYear(syst) if x in year.split('-')]:
+                    tmp_str = decorrelateSearchRegions(reader.getCorrName(syst, y), decorrelate_sr) if decorrelate_sr is not None else reader.getCorrName(syst, y)
+                    out_str += " "+tmp_str
+        out_file.write(out_str+ '\n') 
+    out_file.write('\n')
          
-def returnWeightShapes(tree, vname, hname, bins, condition, year, proc, datadriven_processes = None, additional_weight = None):
+def returnWeightShapes(tree, vname, hname, bins, condition, year, proc, datadriven_processes = None, additional_weight = None, decorrelate_sr = None):
     reader = SystematicJSONreader(datadriven_processes)
     #all_corr_weights = reader.getWeights(year, proc, split_syst=True, split_correlations=True)
     all_corr_weights = reader.compileListOfGeneralSystematics('weight', proc, year.split('-'), split_syst=True)
@@ -241,6 +286,9 @@ def returnWeightShapes(tree, vname, hname, bins, condition, year, proc, datadriv
         weight_for_name = weight
         if additional_weight is not None:
             weight += '*'+additional_weight
+
+        if decorrelate_sr is not None:
+            weight_for_name = decorrelateSearchRegions(weight_for_name, decorrelate_sr)
         out_dict[weight_for_name] = Histogram(tree.getHistFromTree(vname, hname + weight, bins, condition, weight = weight))
     return out_dict     
 

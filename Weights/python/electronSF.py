@@ -128,9 +128,9 @@ def getElectronScaleMinimal(chain, syst = 'nominal'):
         for f in chain.l_flavor:
             if f == 0:
                 if syst == 'up':
-                    out_val += 0.03
+                    out_val += 0.003
                 elif syst == 'down':
-                    out_val -= 0.03
+                    out_val -= 0.003
                 else:
                     raise RuntimeError('Unknown syst: {0}'.format(syst)) 
         return out_val

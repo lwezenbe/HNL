@@ -7,6 +7,7 @@
             "Processes"     : "MC",
             "Year"          : ["2017", "2018"],
             "Activate"      : true,
+            "Group"         : "luminosity",
             "Description"   : "Luminosity"
         },
     "lumi_13TeV_2016" :
@@ -18,6 +19,7 @@
             "Year"          : ["2016pre", "2016post"],
             "Activate"      : true,
             "Correlated"    : true,
+            "Group"         : "luminosity",
             "Description"   : "Luminosity"
         },
     "lumi_13TeV_1718" :
@@ -29,6 +31,7 @@
             "Year"          : ["2017", "2018"],
             "Activate"      : true,
             "Correlated"    : true,
+            "Group"         : "luminosity",
             "Description"   : "Luminosity"
         },
     "lumi_13TeV_correlated" :
@@ -40,6 +43,7 @@
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
             "Activate"      : true,
             "Correlated"    : true,
+            "Group"         : "luminosity",
             "Description"   : "Luminosity"
         },
     "lumi_13TeV_combined" :
@@ -50,6 +54,7 @@
             "Processes"     : "MC",
             "Year"          : ["2016post-2016pre-2017-2018"],
             "Activate"      : true,
+            "Group"         : "luminosity",
             "Description"   : "Luminosity"
         },
     "theory":
@@ -62,6 +67,7 @@
             "Activate"      : true,
             "Correlated"    : true,
             "Func"          : "theory",
+            "Group"         : "theory",
             "Description"   : "Theory uncertainties (ME and PDF)"
         },
     "triggerSFWeight_stat" :
@@ -72,6 +78,7 @@
             "Processes"     : "MC",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
             "Activate"     : true,
+            "Group"         : "trigger",
             "Description"   : "Triggers"
         },
     "triggerSyst" :
@@ -83,6 +90,7 @@
             "Year"          : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"     : true,
             "Correlated"    : true,
+            "Group"         : "trigger",
             "Description"   : "Triggers"
         },
      "WZnorm" :
@@ -94,6 +102,7 @@
             "Year"          : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"     : true,
             "Correlated"    : true,
+            "Group"         : "WZ_norm",
             "Description"   : "WZnorm"
         },
      "ZZnorm" :
@@ -105,6 +114,7 @@
             "Year"          : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"     : true,
             "Correlated"    : true,
+            "Group"         : "ZZ_norm",
             "Description"   : "ZZnorm"
         },
      "Conversionnorm" :
@@ -116,6 +126,7 @@
             "Year"          : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"     : true,
             "Correlated"    : true,
+            "Group"         : "conv_norm",
             "Description"   : "Conversionnorm"
         },
      "Tribosonnorm" :
@@ -127,6 +138,7 @@
             "Year"          : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"      : true,
             "Correlated"    : true,
+            "Group"         : "prompt_norm",
             "Description"   : "Tribosonnorm"
         },
      "TTXnorm" :
@@ -138,6 +150,7 @@
             "Year"          : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"      : true,
             "Correlated"    : true,
+            "Group"         : "prompt_norm",
             "Description"   : "TTXnorm"
         },
      "Othernorm" :
@@ -149,6 +162,7 @@
             "Year"          : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"      : true,
             "Correlated"    : true,
+            "Group"         : "prompt_norm",
             "Description"   : "TTXnorm"
         },
     "nonprompt_tau" :
@@ -159,6 +173,7 @@
             "Processes"     : "data",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
             "Activate"     : true,
+            "Group"         : "nonprompt_tau",
             "Description"   : "nonprompt tau"
         },
     "nonprompt_muon" :
@@ -169,6 +184,7 @@
             "Processes"     : "data",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
             "Activate"     : true,
+            "Group"         : "nonprompt_light",
             "Description"   : "nonprompt light lep"
         },
     "nonprompt_electron" :
@@ -179,6 +195,7 @@
             "Processes"     : "data",
             "Year"          : ["2016pre", "2016post", "2017", "2018"],
             "Activate"     : true,
+            "Group"         : "nonprompt_light",
             "Description"   : "nonprompt light lep"
         },
     "puWeight"  :
@@ -190,6 +207,7 @@
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : true,
             "Correlated"    : true,
+            "Group"         : "luminosity",
             "Description"   : "Pileup"
         },
     "chargeMisid"  :
@@ -200,6 +218,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : true,
+            "Group"         : "prompt_norm",
             "Description"   : "Charge Misid"
         },
     "electronIDSFWeight_stat"  :
@@ -210,6 +229,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
+            "Group"         : "electron",
             "Description"   : "Electron efficiency"
         },
     "electronIDSFWeight_syst"  :
@@ -221,6 +241,7 @@
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
             "Correlated"    : true,
+            "Group"         : "electron",
             "Description"   : "Electron efficiency"
         },
     "muonIDSFWeight_stat"  :
@@ -231,6 +252,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
+            "Group"         : "muon",
             "Description"   : "Muon efficiency"
         },
     "muonIDSFWeight_syst"  :
@@ -242,6 +264,7 @@
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
             "Correlated"    : true,
+            "Group"         : "muon",
             "Description"   : "Muon efficiency"
         },
     "tauSFWeight"  :
@@ -252,6 +275,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
+            "Group"         : "tau",
             "Description"   : "Tau efficiency"
         },
     "tauEnergyScale-tau-dm0"  :
@@ -262,6 +286,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
+            "Group"         : "tau",
             "Description"   : "Tau efficiency"
         },
     "tauEnergyScale-tau-dm1"  :
@@ -272,6 +297,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
+            "Group"         : "tau",
             "Description"   : "Tau efficiency"
         },
     "tauEnergyScale-tau-dm10"  :
@@ -282,6 +308,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
+            "Group"         : "tau",
             "Description"   : "Tau efficiency"
         },
     "tauEnergyScale-tau-dm11"  :
@@ -292,6 +319,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : true,
+            "Group"         : "tau",
             "Description"   : "Tau efficiency"
         },
     "tauEnergyScale-e-dm0"  :
@@ -302,6 +330,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : false,
+            "Group"         : "tau",
             "Description"   : "Tau efficiency"
         },
     "tauEnergyScale-e-dm1"  :
@@ -312,6 +341,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"], 
             "Activate"          : false,
+            "Group"         : "tau",
             "Description"   : "Tau efficiency"
         },
     "electronRecoWeight"  :
@@ -322,6 +352,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : true,
+            "Group"         : "electron",
             "Description"   : "Electron reconstruction efficiency"
         },
     "prefireWeight"     :
@@ -333,6 +364,7 @@
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : true,
             "Correlated"    : true,
+            "Group"         : "trigger",
             "Description"   : "Prefire Weight"
         },
     "btagWeight_lightcorrelated"  :
@@ -344,6 +376,7 @@
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : true,
             "Correlated"    : true,
+            "Group"         : "jets",
             "Description"   : "b tagging efficiency"
         },
     "btagWeight_bccorrelated"  :
@@ -355,6 +388,7 @@
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : true,
             "Correlated"    : true,
+            "Group"         : "jets",
             "Description"   : "b tagging efficiency"
         },
     "btagWeight_light"  :
@@ -365,6 +399,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : true,
+            "Group"         : "jets",
             "Description"   : "b tagging efficiency"
         },
     "btagWeight_bc"  :
@@ -375,6 +410,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : true,
+            "Group"         : "jets",
             "Description"   : "b tagging efficiency"
         },
     "JEC"  :
@@ -386,6 +422,7 @@
             "Year"              : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"          : false,
             "Correlated"    : true,
+            "Group"         : "jets",
             "Description"   : "Jet Energy Corrections"
         },
     "JER"  :
@@ -396,6 +433,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"          : false,
+            "Group"         : "jets",
             "Description"   : "Jet Energy Resolution"
         },
     "UnclMET"  :
@@ -406,6 +444,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"          : false,
+            "Group"         : "jets",
             "Description"   : "Unclustered MET variation"
         },
     "JETMET_correlated"  :
@@ -417,6 +456,7 @@
             "Year"              : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"          : true,
             "Correlated"    : true,
+            "Group"         : "jets",
             "Description"   : "Correlated JETMET syst"
         },
     "JETMET_uncorrelated"  :
@@ -427,6 +467,7 @@
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"          : true,
+            "Group"         : "jets",
             "Description"   : "Uncorrelated JETMET syst"
         },
     "electronScale"  :
@@ -438,6 +479,7 @@
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : true,
             "Correlated"    : true,
+            "Group"         : "electron",
             "Description"   : "Electron energy scale systematics"
         },
     "electronRes"  :
@@ -449,6 +491,7 @@
             "Year"              : ["2016pre", "2016post", "2017", "2018", "2016post-2016pre-2017-2018"],
             "Activate"          : false,
             "Correlated"        : true,
+            "Group"         : "electron",
             "Description"   : "Electron resolution smearing"
         },
     "muonScale"  :
@@ -460,6 +503,7 @@
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : false,
             "Correlated"    : true,
+            "Group"         : "muon",
             "Description"   : "Muon energy scale systematics"
         },
     "muonRes"  :
@@ -471,6 +515,7 @@
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
             "Activate"          : false,
             "Correlated"        : true,
+            "Group"         : "muon",
             "Description"   : "Muon resolution smearing"
         }
 }
