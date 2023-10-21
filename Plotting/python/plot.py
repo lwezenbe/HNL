@@ -221,8 +221,8 @@ class Plot(object):
 
                 if max_cutoff is None:
                     if not need_additional_space:
-                        self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*2.
-                        #self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*150.
+                        #self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*2.
+                        self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*150.
                         #self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*.1
                     else:
                         self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*20.

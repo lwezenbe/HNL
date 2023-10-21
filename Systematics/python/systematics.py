@@ -215,11 +215,11 @@ def prepareForRerunSyst(chain, event, systematic = 'nominal'):
     return event
 
 def decorrelateSearchRegions(syst_name, sr):
-    #if 'nonprompt_tau' in syst_name:
-    #    if sr in ['F', 'A', 'B']:
-    #        syst_name = syst_name.replace('nonprompt_tau', 'nonprompt_tau_nonossf')
-    #    else:   
-    #        syst_name = syst_name.replace('nonprompt_tau', 'nonprompt_tau_ossf')
+    if 'nonprompt_tau' in syst_name:
+        if sr in ['F', 'A', 'B']:
+            syst_name = syst_name.replace('nonprompt_tau', 'nonprompt_tau_nonossf')
+        else:   
+            syst_name = syst_name.replace('nonprompt_tau', 'nonprompt_tau_ossf')
     return syst_name
 
 def insertSystematics(out_file, bkgr_names, sig_name, year, final_state, datadriven_processes, decorrelate_sr = None):
