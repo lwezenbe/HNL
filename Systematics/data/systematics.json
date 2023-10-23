@@ -473,7 +473,7 @@
     "electronScale"  :
         {
             "Type"              : "weight",
-            "Value"             : 1.0,
+            "Value"             : 0.1,
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
