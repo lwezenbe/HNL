@@ -239,16 +239,19 @@ def insertSystematics(out_file, bkgr_names, sig_name, year, final_state, datadri
                 elif not '-' in year or syst in reader.getFlats(year):
                     out_str += [reader.getValue(syst, year, process = proc)]
                 else:
-                    out_str += ['1.0']
+                    if not 'electronScale' in syst:
+                        out_str += ['1.0']
+                    else:
+                        out_str += [0.1]
             out_file.write(tab(out_str))        
         else:
             for y in [x for x in reader.getYear(syst) if x in year.split('-')]:
                 out_str = [decorrelateSearchRegions(reader.getCorrName(syst, y), decorrelate_sr) if decorrelate_sr is not None else reader.getCorrName(syst, y), 'shape']
                 for proc in bkgr_names + [sig_name]:
-                    if not reader.filterProcesses(syst, proc) or not reader.filterFinalStates(syst, final_state):
-                        out_str += ['-']
-                    else:
+                    if not 'electronScale' in syst:
                         out_str += ['1.0']
+                    else:
+                        out_str += [0.1]
                 out_file.write(tab(out_str))        
 
 def insertGroups(out_file, bkgr_names, sig_name, year, final_state, datadriven_processes, decorrelate_sr = None):
