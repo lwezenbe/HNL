@@ -132,7 +132,10 @@ class Plot(object):
 
         self.ignore_stat_err = ignore_stat_err
 
-        self.setLegend()
+        if self.for_paper is not None and self.for_paper == 'thesis':
+            self.setLegend(x1=0.43)
+        else:
+            self.setLegend()
 
 
     def createErrorHist(self):
@@ -294,7 +297,7 @@ class Plot(object):
 
         add_x_width = allBinsSameWidth(test_hist)
 
-        if self.for_paper == 'default' and self.x_name =='Search region':
+        if self.for_paper in ['default', 'thesis']  and self.x_name =='Search region':
             self.y_name += ' / bin'
 
         if '[' in self.y_name:
@@ -1164,6 +1167,8 @@ class Plot(object):
         #CMS lumi
         if self.for_paper is not None and self.for_paper == 'raw':
             cl.CMS_lumi(self.canvas, 4, 11, '', self.era+self.year, for_paper = self.for_paper)
+        elif self.for_paper is not None and self.for_paper == 'thesis':
+            cl.CMS_lumi(self.canvas, 4, 11, 'Private work', self.era+self.year, for_paper = self.for_paper)
         else:
             cl.CMS_lumi(self.canvas, 4, 11, 'Preliminary', self.era+self.year)
 

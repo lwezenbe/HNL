@@ -35,7 +35,7 @@ class Sample(object):
     def getListOfFiles(self, sub_path = None):
         if sub_path is None:
             sub_path = self.path
-        if self.path.endswith('.root'):
+        if sub_path.endswith('.root'):
             list_of_files         = [sub_path]
         else:
             if not 'displaced' in self.name:
@@ -230,7 +230,7 @@ class SkimSample(Sample):
     def initTree(self, subjob):
 
         self.chain              = ROOT.TChain('blackJackAndHookers/blackJackAndHookersTree')
-    
+
         assert len(self.list_of_files) > 0 and isValidRootFile(self.list_of_files[0])
 
         for f in self.list_of_subjobclusters[int(subjob)]:

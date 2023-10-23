@@ -1225,6 +1225,8 @@ else:
             if args.paperPlots is not None: 
                 if args.paperPlots == 'default':
                     output_dir += "/forPaper"
+                if args.paperPlots == 'thesis':
+                    output_dir += "/forPaperThesis"
                 if args.paperPlots == 'raw':
                     output_dir += "/forPaperRaw"
             

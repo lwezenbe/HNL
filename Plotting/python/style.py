@@ -155,6 +155,7 @@ def getHNLColor(name):
     elif '150' in name:   return TColor.GetColor("#8f00c7")
     elif '120' in name:   return TColor.GetColor("#0086fe")
     elif '100' in name:   return TColor.GetColor("#D741A7")
+    elif '85' in name:  return TColor.GetColor("#262626")
     elif '80' in name:   return TColor.GetColor("#00fefe")
     elif '60' in name:   return TColor.GetColor("#fe68fe")
     elif '40' in name:   return TColor.GetColor("#fe8420")
