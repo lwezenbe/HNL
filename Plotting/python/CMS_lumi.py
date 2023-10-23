@@ -36,7 +36,7 @@ lumi_13TeV = {'prelegacy2016': "35.9 fb^{-1}", 'UL2016pre' : "19.5 fb^{-1}", 'UL
 
 drawLogo      = False
 
-def CMS_lumi(pad,  iPeriod,  iPosX, extraText = '', drawLumi = None):
+def CMS_lumi(pad,  iPeriod,  iPosX, extraText = '', drawLumi = None, for_paper = None):
     outOfFrame    = False
     if(iPosX/10==0 ): outOfFrame = True
 
@@ -125,39 +125,40 @@ def CMS_lumi(pad,  iPeriod,  iPosX, extraText = '', drawLumi = None):
 
     posY_ = 1-t - relPosY*(1-t-b)
 
-    if( not outOfFrame ):
-        if( drawLogo ):
-            posX_ =   l + 0.045*(1-l-r)*W/H
-            posY_ = 1-t - 0.045*(1-t-b)
-            xl_0 = posX_
-            yl_0 = posY_ - 0.15
-            xl_1 = posX_ + 0.15*H/W
-            yl_1 = posY_
-            CMS_logo = rt.TASImage("CMS-BW-label.png")
-            pad_logo =  rt.TPad("logo","logo", xl_0, yl_0, xl_1, yl_1 )
-            pad_logo.Draw()
-            pad_logo.cd()
-            CMS_logo.Draw("X")
-            pad_logo.Modified()
-            pad.cd()          
-        else:
-            latex.SetTextFont(cmsTextFont)
-            latex.SetTextSize(cmsTextSize*t)
-            latex.SetTextAlign(align_)
-            latex.DrawLatex(posX_, posY_, cmsText)
-            if( writeExtraText ) :
-                latex.SetTextFont(extraTextFont)
+    if for_paper != "raw":
+        if( not outOfFrame ):
+            if( drawLogo ):
+                posX_ =   l + 0.045*(1-l-r)*W/H
+                posY_ = 1-t - 0.045*(1-t-b)
+                xl_0 = posX_
+                yl_0 = posY_ - 0.15
+                xl_1 = posX_ + 0.15*H/W
+                yl_1 = posY_
+                CMS_logo = rt.TASImage("CMS-BW-label.png")
+                pad_logo =  rt.TPad("logo","logo", xl_0, yl_0, xl_1, yl_1 )
+                pad_logo.Draw()
+                pad_logo.cd()
+                CMS_logo.Draw("X")
+                pad_logo.Modified()
+                pad.cd()          
+            else:
+                latex.SetTextFont(cmsTextFont)
+                latex.SetTextSize(cmsTextSize*t)
                 latex.SetTextAlign(align_)
-                latex.SetTextSize(extraTextSize*t)
-                latex.DrawLatex(posX_, posY_- relExtraDY*cmsTextSize*t, extraText)
-    elif( writeExtraText ):
-        if( iPosX==0):
-            posX_ =   l +  3.6*relPosX*(1-l-r)
-            posY_ =   1-t+lumiTextOffset*t
+                latex.DrawLatex(posX_, posY_, cmsText)
+                if( writeExtraText ) :
+                    latex.SetTextFont(extraTextFont)
+                    latex.SetTextAlign(align_)
+                    latex.SetTextSize(extraTextSize*t)
+                    latex.DrawLatex(posX_, posY_- relExtraDY*cmsTextSize*t, extraText)
+        elif( writeExtraText ):
+            if( iPosX==0):
+                posX_ =   l +  3.6*relPosX*(1-l-r)
+                posY_ =   1-t+lumiTextOffset*t
 
-        latex.SetTextFont(extraTextFont)
-        latex.SetTextSize(extraTextSize*t)
-        latex.SetTextAlign(align_)
-        latex.DrawLatex(posX_, posY_, extraText)      
+            latex.SetTextFont(extraTextFont)
+            latex.SetTextSize(extraTextSize*t)
+            latex.SetTextAlign(align_)
+            latex.DrawLatex(posX_, posY_, extraText)      
 
     pad.Update()

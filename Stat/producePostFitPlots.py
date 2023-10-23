@@ -10,6 +10,7 @@ submission_parser.add_argument('--signal_name',   type=str, help='Compare to a s
 submission_parser.add_argument('--xnames', nargs = "*",  type=str, help='Compare to a specific card if it exists. If you want different selection use "selection/card" otherwise just "card"')
 submission_parser.add_argument('--extratext', nargs = "*",  type=str, help='Compare to a specific card if it exists. If you want different selection use "selection/card" otherwise just "card"')
 submission_parser.add_argument('--xlabels', nargs = "*",  type=str, help='Compare to a specific card if it exists. If you want different selection use "selection/card" otherwise just "card"')
+submission_parser.add_argument('--paperPlots',   action='store_true',     default=False,  help='Slightly adapt the plots to be paper-approved')
 args = argParser.parse_args()
 
 input_base = '/storage_mnt/storage/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output'
@@ -69,6 +70,20 @@ for ichannel, channel in enumerate(all_channels):
             used_bkgr_names.append(b)
         except:
             continue
+        
+    if args.paperPlots:
+        for b, bn in zip(backgrounds, used_bkgr_names):
+            if bn in ['triboson', 'TT-T+X', 'charge-misid']:
+                backgrounds[used_bkgr_names.index('Other')].add(b)
+                
+        backgrounds.pop(used_bkgr_names.index('triboson'))        
+        used_bkgr_names.pop(used_bkgr_names.index('triboson'))        
+        backgrounds.pop(used_bkgr_names.index('TT-T+X'))        
+        used_bkgr_names.pop(used_bkgr_names.index('TT-T+X'))        
+        backgrounds.pop(used_bkgr_names.index('charge-misid'))        
+        used_bkgr_names.pop(used_bkgr_names.index('charge-misid'))        
+
+
     syst_hist = Histogram(getObjFromFile(input_file, channel+'/TotalBkg'))
 
     tmp_extra_text = []
@@ -80,6 +95,6 @@ for ichannel, channel in enumerate(all_channels):
 
     bkgr_legendnames = [sample_tex_names[x] if x in sample_tex_names.keys() else x for x in used_bkgr_names]
     from HNL.Plotting.plot import Plot
-    p = Plot(signal, [signal_legendname]+bkgr_legendnames, channel.split('/')[1], bkgr_hist = backgrounds, observed_hist = observed, draw_ratio = True, year = year, era = era, color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau', y_log=True, y_name='Events', x_name = x_names[ichannel], extra_text = tmp_extra_text, syst_hist = syst_hist, ignore_stat_err = True)
+    p = Plot(signal, [signal_legendname]+bkgr_legendnames, channel.split('/')[1], bkgr_hist = backgrounds, observed_hist = observed, draw_ratio = True, year = year, era = era, color_palette = 'HNL', color_palette_bkgr = 'HNLfromTau', y_log=True, y_name='Events', x_name = x_names[ichannel], extra_text = tmp_extra_text, syst_hist = syst_hist, ignore_stat_err = True, for_paper = args.paperPlots)
 
     p.drawHist(output, min_cutoff = 1, custom_labels = labels[ichannel])

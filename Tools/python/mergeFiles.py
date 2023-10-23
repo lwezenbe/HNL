@@ -78,27 +78,27 @@ from HNL.Tools.jobSubmitter import checkCompletedJobs, submitJobs, cleanJobFiles
 #For now also have argparser in there just to be able to automatically resubmit
 def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False, groups_to_merge=None, additionalArgs=None, man_changed_args = None, full_path = None):
 
-    try:
-        if not istest and not checkShouldMerge(script, argparser, additionalArgs=additionalArgs, man_changed_args = man_changed_args, full_path = full_path):
-            print "Nothing to merge"
-            return
-    except:
-        should_abort = raw_input("The log files you are asking for do not exist. Would you like to skip merging? (y/n) \n")
-        if should_abort in ['y', 'Y']: return
+    #try:
+    #    if not istest and not checkShouldMerge(script, argparser, additionalArgs=additionalArgs, man_changed_args = man_changed_args, full_path = full_path):
+    #        print "Nothing to merge"
+    #        return
+    #except:
+    #    should_abort = raw_input("The log files you are asking for do not exist. Would you like to skip merging? (y/n) \n")
+    #    if should_abort in ['y', 'Y']: return
 
-    if not istest:
-        if argparser is None:
-            pass
-        else:
-            failed_jobs = checkCompletedJobs(script, subjob_list, argparser, additionalArgs=additionalArgs)
-            if failed_jobs is not None and len(failed_jobs) != 0:   
-                should_resubmit = raw_input("Would you like to resubmit the failed jobs? (y/n) \n")
-                if should_resubmit == 'y' or should_resubmit == 'Y':
-                    print 'resubmitting:'
-                    submitJobs(script, subjobargs, failed_jobs, argparser, resubmission=True, jobLabel = "-".join([script.split('.')[0], 'resubmission']), man_changed_args = man_changed_args)
-                else:
-                    pass    
-                if should_resubmit != 'skip': exit(0)
+    #if not istest:
+    #    if argparser is None:
+    #        pass
+    #    else:
+    #        failed_jobs = checkCompletedJobs(script, subjob_list, argparser, additionalArgs=additionalArgs)
+    #        if failed_jobs is not None and len(failed_jobs) != 0:   
+    #            should_resubmit = raw_input("Would you like to resubmit the failed jobs? (y/n) \n")
+    #            if should_resubmit == 'y' or should_resubmit == 'Y':
+    #                print 'resubmitting:'
+    #                submitJobs(script, subjobargs, failed_jobs, argparser, resubmission=True, jobLabel = "-".join([script.split('.')[0], 'resubmission']), man_changed_args = man_changed_args)
+    #            else:
+    #                pass    
+    #            if should_resubmit != 'skip': exit(0)
 
 
     # First clean up the directory
@@ -107,6 +107,6 @@ def merge(paths, script, subjob_list, subjobargs, argparser = None, istest=False
     #    moveToBackup(f)
         mergeSinglePath(f, groups_to_merge=groups_to_merge)
 
-    if not istest: 
-        cleanJobFiles(argparser, script)
-        disableShouldMerge(script, argparser, additionalArgs=additionalArgs)
+    #if not istest: 
+    #    cleanJobFiles(argparser, script)
+    #    disableShouldMerge(script, argparser, additionalArgs=additionalArgs)

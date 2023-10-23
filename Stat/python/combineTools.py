@@ -172,6 +172,7 @@ def extrapolateExclusionLimit(limits, quantile):
         print 'Found no suitable coupling point, please extend range'
         return None
     if len(limit_candidates) > 1:
+        print limit_candidates
         print 'Multiple coupling points found, please investigate'
         return None
 
