@@ -77,7 +77,6 @@ class SearchRegionManager:
                 if not isPartOfCategory(final_state_to_merge, final_state): continue
                 #First check if a specific search region is defined
                 if searchregion is not None and all([x in self.getGroupValues(searchregion) for x in bins_to_merge[self.name][final_state_to_merge]]):
-                    print np.array([x-0.5 for x in self.getGroupValues(searchregion) if x not in bins_to_merge[self.name][final_state_to_merge][1:]]+[self.getGroupValues(searchregion)[-1]+0.5])
                     return np.array([x-0.5 for x in self.getGroupValues(searchregion) if x not in bins_to_merge[self.name][final_state_to_merge][1:]]+[self.getGroupValues(searchregion)[-1]+0.5])
                 #Else adapt full range if none specified
                 elif searchregion is None:

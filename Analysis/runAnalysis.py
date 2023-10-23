@@ -238,20 +238,20 @@ if not args.isTest:
         else:
             for year in args.year:
                 jobs += [(year, '0')]
-    else:
-        for year in args.year:
-            jobs[year] = []
-            sample_manager = getSampleManager(year)
-        
-            for sample_name in sample_manager.sample_names:
-                if args.includeData is None and 'Data' in sample_name: continue
-                if args.bkgrOnly and 'HNL' in sample_name: continue
-                if args.signalOnly and not 'HNL' in sample_name: continue
-                sample = sample_manager.getSample(sample_name)
-                if args.sample and args.sample != sample.name: continue
-        #        if args.masses is not None and sample.is_signal and sample.mass not in args.masses: continue
-                for njob in xrange(sample.returnSplitJobs()): 
-                    jobs[year] += [(sample.name, str(njob), None)]
+    #else:
+    #    for year in args.year:
+    #        jobs[year] = []
+    #        sample_manager = getSampleManager(year)
+    #    
+    #        for sample_name in sample_manager.sample_names:
+    #            if args.includeData is None and 'Data' in sample_name: continue
+    #            if args.bkgrOnly and 'HNL' in sample_name: continue
+    #            if args.signalOnly and not 'HNL' in sample_name: continue
+    #            sample = sample_manager.getSample(sample_name)
+    #            if args.sample and args.sample != sample.name: continue
+    #    #        if args.masses is not None and sample.is_signal and sample.mass not in args.masses: continue
+    #            for njob in xrange(sample.returnSplitJobs()): 
+    #                jobs[year] += [(sample.name, str(njob), None)]
 else:
     for year in args.year:
         jobs[year] = []
@@ -1223,6 +1223,8 @@ else:
             if args.paperPlots is not None: 
                 if args.paperPlots == 'default':
                     output_dir += "/forPaper"
+                if args.paperPlots == 'thesis':
+                    output_dir += "/forPaperThesis"
                 if args.paperPlots == 'raw':
                     output_dir += "/forPaperRaw"
             
