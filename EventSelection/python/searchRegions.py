@@ -62,7 +62,17 @@ class SearchRegionManager:
 
     def getSearchRegionBinning(self, searchregion = None, final_state = None):
         import numpy as np
- 
+
+        if searchregion == 'All':
+            if final_state is not None and final_state == 'TauEMu':
+                if self.name == 'lowMassSRloose':
+                    #searchregion = ['C', 'D']
+                    searchregion = 'Hb'
+                elif self.name == 'highMassSR':
+                    searchregion = 'E'
+            else:
+                searchregion = None
+
         if searchregion is not None and isinstance(searchregion, list):
             total = self.getSearchRegionBinning(searchregion[0], final_state = final_state)
             for x in searchregion[1:]:
@@ -84,8 +94,6 @@ class SearchRegionManager:
                      
         if searchregion is not None:
             return np.arange(self.getGroupValues(searchregion)[0]-0.5, self.getGroupValues(searchregion)[-1]+1.5, 1.)
-        else:
-            return np.arange(0.5, self.getNumberOfSearchRegions()+1.5, 1.)
 
 
 #
@@ -111,11 +119,15 @@ searchregion_tex = {
 #
 # List of search region functions
 #
+#region_groups['lowMassSRloose'] = {
+#    'A' : [1, 2, 3, 4],
+#    'B' : [5, 6, 7, 8],
+#    'C' : [9, 10, 11, 12],
+#    'D' : [13, 14, 15, 16]
+#}
 region_groups['lowMassSRloose'] = {
-    'A' : [1, 2, 3, 4],
-    'B' : [5, 6, 7, 8],
-    'C' : [9, 10, 11, 12],
-    'D' : [13, 14, 15, 16]
+    'Ha' : [1, 2, 3, 4, 5, 6, 7, 8],
+    'Hb' : [9, 10, 11, 12, 13, 14, 15, 16],
 }
 bins_to_merge['lowMassSRloose'] = {}
 def getLowMassLooseRegion(chain):
@@ -182,10 +194,10 @@ def getLowMassRegion(chain):
         else:
             return 8
 
-region_groups['highMassSR'] = {
-    'E' : range(1, 17),
-    'F' : range(17, 26)
-}
+#region_groups['highMassSR'] = {
+#    'E' : range(1, 17),
+#    'F' : range(17, 26)
+#}
 bins_to_merge['highMassSR'] = {
     'TauEE' : [2, 3],
     'TauMuMu' : [2, 3] 
@@ -573,7 +585,8 @@ def writeHEPjson(signal_hist, bkgr_hist, signal_syst, bkgr_syst, out_path, regio
         sr_json = createYieldJson(signal_hist, bkgr_hist, observed_hist, signal_syst, bkgr_syst, signal_names, bkgr_names, combine_bkgr=combine_bkgr, binned=False)
         with open(out_path+'/searchregion.json', 'w') as outfile:
             json.dump(sr_json, outfile, indent=2)
-        
+    
+    print outfile        
     return 
 
  

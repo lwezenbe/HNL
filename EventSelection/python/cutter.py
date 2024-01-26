@@ -251,26 +251,42 @@ class CutflowReader:
         return out_lists
    
 if __name__ == '__main__':
-    #in_path = '../../Analysis/data/runAnalysis/HNL/MVA-default-lowMassSRloose-reco/UL-2018/signal/HNL-mu-m30-Vsq1em4-prompt/variables.root'
-    #in_path = '../../Analysis/data/runAnalysis/HNL/MVA-default-lowMassSRloose-reco/UL-2018/signal/HNL-mu-m30-Vsq2em6-displaced/variables.root'
-    #in_path = '../../Analysis/data/runAnalysis/HNL-CutFlow/MVA-default-lowMassSRloose-reco/UL-2018/signal/HNL-mu-m30-Vsq2em6-displaced/variables.root'
-    #in_path = '../../Analysis/data/runAnalysis/HNL-CutFlow/MVA-default-lowMassSRloose-reco/UL-2018/signal/HNL-mu-m30-Vsq1em4-prompt/variables.root'
-    in_path = '../../Analysis/data/runAnalysis/HNL-CutFlow/MVA-default-lowMassSRloose-reco/UL-2018/signal/HNL-e-m30-Vsq2em6-displaced/variables.root'
-    #in_path = '../../Analysis/data/runAnalysis/HNL-CutFlow/MVA-default-lowMassSRloose-reco/UL-2018/signal/HNL-e-m30-Vsq1em4-prompt/variables.root'
-    #in_path = '../../Analysis/data/testArea/runAnalysis/HNL/MVA-default-lowMassSRloose-reco/UL-2018/signal/HNL-mu-m30-Vsq1em4-prompt/tmp_HNL-mu-m30-Vsq1em4-prompt/HNL-mu-m30-Vsq1em4-prompt_variables_subJob0.root'
-    #in_path = '../../Analysis/data/runAnalysis/HNL/cutbased-default-lowMassSRloose-gen/UL-2018/signal/HNL-mu-m30-Vsq2em6-displaced/variables.root'
-    #in_path = '../../Analysis/data/runAnalysis/HNL/cutbased-default-lowMassSRloose-gen/UL-2018/signal/HNL-mu-m30-Vsq1em4-prompt/variables.root'
-    #in_path = '../../Analysis/data/testArea/runAnalysis/HNL/cutbased-default-lowMassSRloose-reco/UL-2018/bkgr/test-displaced/tmp_test-displaced/test-displaced_variables_subJob0.root'
-    #in_path = '../../Analysis/data/testArea/runAnalysis/HNL/cutbased-default-lowMassSRloose-reco/UL-2018/bkgr/test-prompt/tmp_test-prompt/test-prompt_variables_subJob0.root'
-    #in_path = '../../Analysis/data/testArea/runAnalysis/HNL/cutbased-default-lowMassSRloose-gen/UL-2018/bkgr/test-displaced/tmp_test-displaced/test-displaced_variables_subJob0.root'
-    #in_path = '../../Analysis/data/testArea/runAnalysis/HNL/cutbased-default-lowMassSRloose-gen/UL-2018/bkgr/test-prompt/tmp_test-prompt/test-prompt_variables_subJob0.root'
-    cfr = CutflowReader('HNL-e-m40-Vsq1em4-prompt', in_path, 'nominalnominal')
-    for x in cfr.returnCutFlow([30, 31, 32])['values']:
-    #for x in cfr.returnCutFlow([34, 35, 36])['entries']:
-        print x
-#    for i in range(1, 17):
-#        print cfr.returnCutFlow(searchregions = i)
-    #in_path = '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Test/prompt.root'
-    #in_path = '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Test/displaced.root'
-    #cfr = CutflowReader('HNL-e-m40-Vsq1em4-prompt', in_path, 'muons')
-    #print cfr.returnCutFlow()
+#    #in_path = '../../Analysis/data/runAnalysis/HNL/MVA-default-lowMassSRloose-reco/UL-2018/signal/HNL-mu-m30-Vsq1em4-prompt/variables.root'
+#    #in_path = '../../Analysis/data/runAnalysis/HNL/MVA-default-lowMassSRloose-reco/UL-2018/signal/HNL-mu-m30-Vsq2em6-displaced/variables.root'
+#    #in_path = '../../Analysis/data/runAnalysis/HNL-CutFlow/MVA-default-lowMassSRloose-reco/UL-2018/signal/HNL-mu-m30-Vsq2em6-displaced/variables.root'
+#    #in_path = '../../Analysis/data/runAnalysis/HNL-CutFlow/MVA-default-lowMassSRloose-reco/UL-2018/signal/HNL-mu-m30-Vsq1em4-prompt/variables.root'
+#    #in_path = '../../Analysis/data/runAnalysis/HNL-CutFlow/MVA-default-lowMassSRloose-reco/UL-2018/signal/HNL-e-m30-Vsq2em6-displaced/variables.root'
+#    #in_path = '../../Analysis/data/runAnalysis/HNL-CutFlow/MVA-default-lowMassSRloose-reco/UL-2018/signal/HNL-e-m30-Vsq1em4-prompt/variables.root'
+#    #in_path = '../../Analysis/data/testArea/runAnalysis/HNL/MVA-default-lowMassSRloose-reco/UL-2018/signal/HNL-mu-m30-Vsq1em4-prompt/tmp_HNL-mu-m30-Vsq1em4-prompt/HNL-mu-m30-Vsq1em4-prompt_variables_subJob0.root'
+#    #in_path = '../../Analysis/data/runAnalysis/HNL/cutbased-default-lowMassSRloose-gen/UL-2018/signal/HNL-mu-m30-Vsq2em6-displaced/variables.root'
+#    #in_path = '../../Analysis/data/runAnalysis/HNL/cutbased-default-lowMassSRloose-gen/UL-2018/signal/HNL-mu-m30-Vsq1em4-prompt/variables.root'
+#    #in_path = '../../Analysis/data/testArea/runAnalysis/HNL/cutbased-default-lowMassSRloose-reco/UL-2018/bkgr/test-displaced/tmp_test-displaced/test-displaced_variables_subJob0.root'
+#    #in_path = '../../Analysis/data/testArea/runAnalysis/HNL/cutbased-default-lowMassSRloose-reco/UL-2018/bkgr/test-prompt/tmp_test-prompt/test-prompt_variables_subJob0.root'
+#    #in_path = '../../Analysis/data/testArea/runAnalysis/HNL/cutbased-default-lowMassSRloose-gen/UL-2018/bkgr/test-displaced/tmp_test-displaced/test-displaced_variables_subJob0.root'
+#    in_path = '/pnfs/iihe/cms/store/user/lwezenbe/HNL/Analysis/HNL-CutFlow/MVA-default-lowMassSRloose-reco/UL-2016post-2016pre-2017-2018/bkgr/TT-T+X/variables.root'
+#    cfr = CutflowReader('TT-T+X', in_path, 'nominalnominal')
+#    for x, y in zip(cfr.returnCutFlow(range(1, 39))['cuts'], cfr.returnCutFlow(range(1, 39))['values']):
+#    #for x in cfr.returnCutFlow([34, 35, 36])['entries']:
+#        print x, y
+##    for i in range(1, 17):
+##        print cfr.returnCutFlow(searchregions = i)
+#    #in_path = '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Test/prompt.root'
+#    #in_path = '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Test/displaced.root'
+#    #cfr = CutflowReader('HNL-e-m40-Vsq1em4-prompt', in_path, 'muons')
+#    #print cfr.returnCutFlow()
+
+    signals = ['HNL-e-m20-Vsq1em4-prompt', 'HNL-e-m60-Vsq1em4-prompt', 'HNL-e-m200-Vsq1em4-prompt', 'HNL-e-m600-Vsq1em4-prompt']
+
+    for s in signals:
+        #in_file = '../../Analysis/data/runAnalysis/HNL/MVA-default-WZCR-reco/UL-2018/signal/{0}/variables.root'.format(s)
+        #in_file = '../../Analysis/data/runAnalysis/HNL/MVA-default-ConversionCR-reco/UL-2018/signal/{0}/variables.root'.format(s)
+        in_file = '../../Analysis/data/runAnalysis/HNL/cutbased-default-ZZCR-reco/UL-2018/signal/{0}/variables.root'.format(s)
+        cfr = CutflowReader(s, in_file, 'nominalnominal')
+        x_o = 0
+        y_o = 0
+        for x, y in zip(cfr.returnCutFlow(range(1, 39))['cuts'], cfr.returnCutFlow(range(1, 39))['values']):
+        #for x in cfr.returnCutFlow([34, 35, 36])['entries']:
+            x_o = x
+            y_o= y
+
+        print s, y_o

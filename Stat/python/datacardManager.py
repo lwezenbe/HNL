@@ -20,15 +20,17 @@ card_names_dict = {
     'EEE-Mu_MuMuMu-E_TauEE_TauEMu_TauMuMu' : 'MaxOneTau'
 }
 
-def getOutDataCardName(datacards):
+def getOutDataCardName(datacards, searchregions = None):
     out_data_card_name = '_'.join(sorted(datacards)) 
     if out_data_card_name in card_names_dict.keys(): 
         out_data_card_name = card_names_dict[out_data_card_name] 
+    if searchregions is not None:
+        out_data_card_name += '-'+''.join(searchregions)
     return out_data_card_name
 
 class SingleYearDatacardManager:
     
-    def __init__(self, year, era, strategy, flavor, selection, regions = None, masstype = 'Majorana', tag = None):
+    def __init__(self, year, era, strategy, flavor, selection, regions = None, masstype = 'Majorana', tag = None, search_regions = None):
         self.year = year
         self.era = era
         self.original_strategy = strategy
@@ -47,6 +49,7 @@ class SingleYearDatacardManager:
         self.selection = selection
         self.masstype = masstype
         self.tag = tag
+        self.search_regions = search_regions
 
         self.regions = regions
 
@@ -103,6 +106,8 @@ class SingleYearDatacardManager:
 
         output_list = []
         for search_region in srm.getListOfSearchRegionGroups():
+            if self.search_regions is not None and search_region not in self.search_regions: continue
+
             if final_state in forbidden_combinations.keys() and search_region in forbidden_combinations[final_state]: continue
             output_list.append(self.getStandardDatacardName(search_region, final_state, signal_name, strategy, sub_strategy))  
         return output_list
@@ -137,12 +142,16 @@ class SingleYearDatacardManager:
                     return self.getCustomDatacardList(signal_name, final_state, region, 'custom')
                 else:
                     return [self.getMVAName('Combined', final_state, signal_name)]
+            elif strategy_to_use == 'singlecard':
+                return [self.getCutbasedName('All', final_state)]
                 
 
     def getSignalDatacardList(self, signal_name, final_states, region):
         total_list = []
         for fs in final_states:
+            print self.getCustomDatacardList(signal_name, fs, region)
             total_list.extend(self.getCustomDatacardList(signal_name, fs, region))
+        print total_list
         return total_list
                  
 
@@ -161,29 +170,33 @@ class SingleYearDatacardManager:
     def initializeCards(self, signal_name, final_states):
         in_card_names = []
         if self.regions is None:
+            print 'A'
             cards_to_merge = self.getSignalDatacardList(signal_name, final_states, self.getHNLregion(signal_name, None))
             in_card_names = [self.getDatacardPath(signal_name, ic, define_strategy = False, region = self.getHNLregion(signal_name, None)) for ic in cards_to_merge]
         else:
+            print 'B'
             for region in self.regions:
                 cards_to_merge = self.getSignalDatacardList(signal_name, final_states, region)
                 in_card_names.extend([self.getDatacardPath(signal_name, ic, define_strategy = False, region = region) for ic in cards_to_merge])
 
-        out_card_name = self.getDatacardPath(signal_name, getOutDataCardName(final_states), region = self.combineRegionNames(signal_name))
+        out_name_tmp = getOutDataCardName(final_states, self.search_regions)
+        out_card_name = self.getDatacardPath(signal_name, out_name_tmp, region = self.combineRegionNames(signal_name))
         print out_card_name
         self.mergeDatacards(signal_name, in_card_names, out_card_name)
 
 class DatacardManager:
 
-    def __init__(self, years, era, strategy, flavor, selection, regions = None, masstype = 'Majorana', tag = None):
+    def __init__(self, years, era, strategy, flavor, selection, regions = None, masstype = 'Majorana', tag = None, search_regions = None):
         self.years = years
         self.era = era
         self.strategy = strategy
         self.flavor = flavor
         self.selection = selection
-        self.singleyear_managers = [SingleYearDatacardManager(y, era, strategy, flavor, selection, regions, masstype, tag) for y in years]
+        self.singleyear_managers = [SingleYearDatacardManager(y, era, strategy, flavor, selection, regions, masstype, tag, search_regions) for y in years]
         self.masstype = masstype
         self.tag = tag
         self.regions = regions
+        self.search_regions = search_regions
 
     def getDatacardPath(self, signal_name, card_name, region = None, define_strategy = True):
         from HNL.Stat.combineTools import displaced_mass_threshold
@@ -204,7 +217,8 @@ class DatacardManager:
         for iyear, year in enumerate(self.years):
             self.singleyear_managers[iyear].initializeCards(signal_name, final_states)
 
-        self.mergeYears(signal_name, getOutDataCardName(final_states), self.singleyear_managers[0].combineRegionNames(signal_name))
+        out_name_tmp = getOutDataCardName(final_states, self.search_regions)
+        self.mergeYears(signal_name, out_name_tmp, self.singleyear_managers[0].combineRegionNames(signal_name))
 
     def checkMassAvailability(self, signal_name):
         exists = True

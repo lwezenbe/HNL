@@ -370,7 +370,7 @@
     "btagWeight_lightcorrelated"  :
         {
             "Type"              : "weight",
-            "Value"             : [1.0, 1.0, 1.0, 1.0],
+            "Value"             : 1.0,
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],
@@ -382,7 +382,7 @@
     "btagWeight_bccorrelated"  :
         {
             "Type"              : "weight",
-            "Value"             : [1.0, 1.0, 1.0, 1.0],
+            "Value"             : 1.0,
             "FinalStates"       : "*",
             "Processes"         : "MC",
             "Year"              : ["2016pre", "2016post", "2017", "2018"],

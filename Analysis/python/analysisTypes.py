@@ -51,7 +51,7 @@ var_reco_3l = {
         'mtOther':      (lambda c : c.mtOther,  np.arange(0., 365., 15.),       ('m_{T} [GeV]', 'Events')),
         'mt3':   (lambda c : c.mt3,      np.arange(0., 415., 15.),         ('m_{T}(3l) [GeV]', 'Events')),
         #'nele': (lambda c:c.n_ele,      np.arange(-0.5, 4.5, 1.),    ('N(e)', 'Events')),       
-        #'nmu': (lambda c:c.n_mu,      np.arange(-0.5, 4.5, 1.),    ('N(#mu)', 'Events')),       
+        'nmu': (lambda c:c.n_mu,      np.arange(-0.5, 4.5, 1.),    ('N(#mu)', 'Events')),       
         #'ntau': (lambda c:c.n_tau,      np.arange(-0.5, 4.5, 1.),    ('N(#tau)', 'Events')),       
  
         # Full SR (mainly for BDT variables)

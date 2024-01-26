@@ -224,9 +224,11 @@ class Plot(object):
 
                 if max_cutoff is None:
                     if not need_additional_space:
+                        #self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*15.
                         #self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*2.
-                        self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*150.
-                        #self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*.1
+                        #self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*150.
+                        self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*.1
+                        #self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*.01
                     else:
                         self.max_to_set = self.overall_max*10**((np.log10(self.overall_max)-np.log10(self.overall_min))/2)*20.
                 else:
@@ -247,11 +249,16 @@ class Plot(object):
             if stacked:
                 self.hs.SetMinimum(self.min_to_set)
                 self.hs.SetMaximum(self.max_to_set)
-                self.hs.GetXaxis().SetTitleSize(.06)
-                self.hs.GetYaxis().SetTitleSize(.06)
-                self.hs.GetXaxis().SetLabelSize(.06)
-                self.hs.GetYaxis().SetLabelSize(.06)
-                self.hs.GetYaxis().SetTitleOffset(1)
+                #self.hs.GetXaxis().SetTitleSize(.06)
+                #self.hs.GetYaxis().SetTitleSize(.06)
+                #self.hs.GetXaxis().SetLabelSize(.06)
+                #self.hs.GetYaxis().SetLabelSize(.06)
+                self.hs.GetXaxis().SetTitleSize(.048)
+                self.hs.GetYaxis().SetTitleSize(.048)
+                self.hs.GetXaxis().SetLabelSize(.048)
+                self.hs.GetYaxis().SetLabelSize(.048)
+                self.hs.GetYaxis().SetTitleOffset(1.3)
+                self.hs.GetXaxis().SetTitleOffset(1.3)
                 if custom_divisions is not None:
                     self.hs.GetXaxis().SetNdivisions(custom_divisions)
             elif len(self.b) == 0: 
@@ -607,7 +614,7 @@ class Plot(object):
         if self.draw_ratio == 'text': draw_text += 'Text'
         if not just_errors and len(ratios) > 0:
             for ir, r in enumerate(ratios):
-                r.SetMarkerSize(1.)
+                r.SetMarkerSize(1.4)
                 if ignore_errors and ir == 0:
                     r = setAxis(r)
                     r.Draw(draw_text.replace('Same', ''))
@@ -799,6 +806,7 @@ class Plot(object):
                 self.tot_totbkgr_error.SetMarkerStyle(0)
                 self.tot_totbkgr_error.SetLineWidth(0)
                 self.tot_totbkgr_error.Draw("E2 Same")
+                print 'oejf', self.tot_totbkgr_error.GetBinContent(1)
             else:
                 for i in xrange(len(self.b)):
                     if 'E2' in bkgr_error_option:
@@ -1023,7 +1031,7 @@ class Plot(object):
             if normalize_signal == 'bkgr' and self.for_paper is None:
                 if self.extra_text is None: self.extra_text = []
                 self.extra_text.append(pt.extraTextFormat('Signal yield scaled to background yield'))          
-            elif isinstance(normalize_signal, int) or isinstance(normalize_signal, float):
+            elif (isinstance(normalize_signal, int) or isinstance(normalize_signal, float)) and self.for_paper != 'raw':
                 if self.extra_text is None: self.extra_text = []
                 if normalize_signal >= 1.:
                     self.extra_text.append(pt.extraTextFormat('Signal yield scaled with factor {0}'.format(int(normalize_signal))))          
@@ -1037,7 +1045,7 @@ class Plot(object):
             self.observed.SetLineColor(ROOT.kBlack)
             self.observed.SetMarkerColor(ROOT.kBlack)
             self.observed.SetMarkerStyle(8)
-            self.observed.SetMarkerSize(1)
+            self.observed.SetMarkerSize(1.4)
             self.observed.Draw("EPSame")
 
 
@@ -1132,7 +1140,10 @@ class Plot(object):
         loop_obj.append(self.tot_totbkgr_error)    
         from HNL.Plotting.plottingTools import reorderLegendNames
 #        new_tex_names = [observed_name]+[x for x in self.tex_names]+['Total unc.' if self.syst_hist is not None else 'Stat. unc.']
-        new_tex_names = [observed_name]+[x for x in hnl_names]+[x for x in reversed(self.b_tex_names)] + ['Total unc.' if self.syst_hist is not None else 'Stat. unc.']
+        if self.observed is not None:
+            new_tex_names = [observed_name]+[x for x in hnl_names]+[x for x in reversed(self.b_tex_names)] + ['Total unc.' if self.syst_hist is not None else 'Stat. unc.']
+        else:
+            new_tex_names = [x for x in hnl_names]+[x for x in reversed(self.b_tex_names)] + ['Total unc.' if self.syst_hist is not None else 'Stat. unc.']
         new_tex_names, loop_obj = reorderLegendNames(new_tex_names, loop_obj, 2)
         for h, n in zip(loop_obj, new_tex_names):
             self.legend.AddEntry(h, n, getLegendStyle(n))
@@ -1200,7 +1211,7 @@ class Plot(object):
             self.canvas.Clear()
         return
 
-    def drawGraph(self, output_dir = None, draw_style = "APLine"):
+    def drawGraph(self, output_dir = None, draw_style = "APLine", marker_style = None, marker_size = 1.5):
         
         setDefault()
         
@@ -1215,10 +1226,14 @@ class Plot(object):
         mgraph = ROOT.TMultiGraph()
        
         for i, graph in enumerate(self.s):
-            graph.SetMarkerSize(1.5)
+            graph.SetMarkerSize(marker_size)
             graph.SetLineColor(ps.getLineColor(i))
+            graph.SetLineWidth(3)
             graph.SetMarkerColor(ps.getLineColor(i))
-            graph.SetMarkerStyle(ps.getMarker(i))
+            if marker_style is None:
+                graph.SetMarkerStyle(ps.getMarker(i))
+            else:
+                graph.SetMarkerStyle(ps.getMarker(marker_style))
             mgraph.Add(graph)
 
         mgraph.Draw(draw_style)
@@ -1252,12 +1267,9 @@ class Plot(object):
         
         #Create Legend
         self.canvas.cd()
-        legend = ROOT.TLegend(0.5, .8, .9, .9)
         for h, n in zip(self.s, self.tex_names):
-            legend.AddEntry(h, n)
-        legend.SetFillStyle(0)
-        legend.SetBorderSize(0)
-        legend.Draw()
+            self.legend.AddEntry(h, n)
+        self.legend.Draw()
        
  
         ROOT.gPad.Update() 
@@ -1605,7 +1617,10 @@ class Plot(object):
 
         ROOT.gPad.Update() 
         self.canvas.Update()
-        cl.CMS_lumi(self.plotpad, 4, 11, 'Simulation' if observed is None else 'Preliminary', self.era+self.year)
+        if self.for_paper == 'raw':
+            cl.CMS_lumi(self.plotpad, 4, 11, '', self.era+self.year, for_paper = self.for_paper)
+        else:
+            cl.CMS_lumi(self.plotpad, 4, 11, 'Simulation' if observed is None else 'Preliminary', self.era+self.year)
 
         #Save everything
         self.savePlot(output_dir +'/'+ self.name, message = None)

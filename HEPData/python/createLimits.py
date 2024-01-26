@@ -1,4 +1,4 @@
-import hepdata_lib
+#import hepdata_lib
 from hepdata_lib import Table, Uncertainty, Variable
 from HNL.HEPData.hepdataTools import addCommonQualifiersTo, addCommonKeywordsTo
 
@@ -264,7 +264,7 @@ def addFiguresTo(submission):
     #Majorana electron limits
     figure_maj_e = Table("Limits on Majorana HNL with electron coupling")
     figure_maj_e.description =     "The 95% CL limits on $|V_{Ne}|^2$ as a function of the HNL mass for a Majorana HNL."
-    figure_maj_e.add_image('/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Majorana-prompt/UL2016post-2016pre-2017-2018/NoTau-e/limits.png')
+    figure_maj_e.add_image('/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Majorana-displaced/UL2016post-2016pre-2017-2018/NoTau-e/limits.png')
     in_files = [
         '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Majorana-prompt/UL2016post-2016pre-2017-2018/custom-lowmass-default-e-asymptotic/NoTau',
         '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Majorana-displaced/UL2016post-2016pre-2017-2018/custom-lowestmass-default-e-asymptotic/NoTau',
@@ -282,7 +282,7 @@ def addFiguresTo(submission):
     #Majorana muon limits
     figure_maj_mu = Table("Limits on Majorana HNL with muon coupling")
     figure_maj_mu.description =     "The 95% CL limits on $|V_{N\mu}|^2$ as a function of the HNL mass for a Majorana HNL."
-    figure_maj_mu.add_image('/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Majorana-prompt/UL2016post-2016pre-2017-2018/NoTau-mu/limits.png')
+    figure_maj_mu.add_image('/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Majorana-displaced/UL2016post-2016pre-2017-2018/NoTau-mu/limits.png')
     in_files = [
         '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Majorana-prompt/UL2016post-2016pre-2017-2018/custom-lowmass-default-mu-asymptotic/NoTau',
         '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Majorana-prompt/UL2016post-2016pre-2017-2018/custom-lowestmass-default-mu-asymptotic/NoTau',
@@ -300,7 +300,7 @@ def addFiguresTo(submission):
     #Majorana tau limits
     figure_maj_tau = Table("Limits on Majorana HNL with tau coupling")
     figure_maj_tau.description =     "The 95% CL limits on $|V_{N\tau}|^2$ as a function of the HNL mass for a Majorana HNL."
-    figure_maj_tau.add_image('/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Majorana-prompt/UL2016post-2016pre-2017-2018/MaxOneTau-tau/limits.png')
+    figure_maj_tau.add_image('/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Majorana-Displaced/UL2016post-2016pre-2017-2018/MaxOneTau-tau/limits.png')
     in_files = [
         '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Majorana-prompt/UL2016post-2016pre-2017-2018/custom-lowmass-default-tau-asymptotic/MaxOneTau',
         '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Majorana-prompt/UL2016post-2016pre-2017-2018/custom-lowestmass-default-tau-asymptotic/MaxOneTau', 
@@ -311,6 +311,56 @@ def addFiguresTo(submission):
     addCommonKeywordsTo(figure_maj_tau)
     submission.add_table(figure_maj_tau)
 
+    #Dirac electron limits
+    figure_dir_e = Table("Limits on Dirac HNL with electron coupling")
+    figure_dir_e.description =     "The 95% CL limits on $|V_{Ne}|^2$ as a function of the HNL mass for a Dirac HNL."
+    figure_dir_e.add_image('/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-displaced/UL2016post-2016pre-2017-2018/NoTau-e/limits.png')
+    in_files = [
+        '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-prompt/UL2016post-2016pre-2017-2018/custom-lowmass-default-e-asymptotic/NoTau',
+        '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-displaced/UL2016post-2016pre-2017-2018/custom-lowestmass-default-e-asymptotic/NoTau',
+        '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-prompt/UL2016post-2016pre-2017-2018/custom-lowestmass-default-e-asymptotic/NoTau',
+        '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-prompt/UL2016post-2016pre-2017-2018/custom-mediummass85100-default-e-asymptotic/NoTau',
+        '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-prompt/UL2016post-2016pre-2017-2018/custom-mediummass150200-default-e-asymptotic/NoTau',
+        '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-prompt/UL2016post-2016pre-2017-2018/custom-mediummass250400-default-e-asymptotic/NoTau', 
+        '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-prompt/UL2016post-2016pre-2017-2018/cutbased-default-e-asymptotic/NoTau'
+    ]
+    for variable in gatherLimits(in_files, 'e'):
+        figure_dir_e.add_variable(variable)
+    addCommonKeywordsTo(figure_dir_e)
+    submission.add_table(figure_dir_e)
+
+    #Dirac muon limits
+    figure_dir_mu = Table("Limits on Dirac HNL with muon coupling")
+    figure_dir_mu.description =     "The 95% CL limits on $|V_{N\mu}|^2$ as a function of the HNL mass for a Dirac HNL."
+    figure_dir_mu.add_image('/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-displaced/UL2016post-2016pre-2017-2018/NoTau-mu/limits.png')
+    in_files = [
+        '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-prompt/UL2016post-2016pre-2017-2018/custom-lowmass-default-mu-asymptotic/NoTau',
+        '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-prompt/UL2016post-2016pre-2017-2018/custom-lowestmass-default-mu-asymptotic/NoTau',
+        '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-displaced/UL2016post-2016pre-2017-2018/custom-lowestmass-default-mu-asymptotic/NoTau',
+        '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-prompt/UL2016post-2016pre-2017-2018/custom-mediummass85100-default-mu-asymptotic/NoTau',
+        '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-prompt/UL2016post-2016pre-2017-2018/custom-mediummass150200-default-mu-asymptotic/NoTau',
+        '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-prompt/UL2016post-2016pre-2017-2018/custom-mediummass250400-default-mu-asymptotic/NoTau',
+        '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-prompt/UL2016post-2016pre-2017-2018/cutbased-default-mu-asymptotic/NoTau'
+    ]
+    for variable in gatherLimits(in_files, 'mu'):
+        figure_dir_mu.add_variable(variable)
+    submission.add_table(figure_dir_mu)
+    addCommonKeywordsTo(figure_dir_mu)
+
+    #Dirac tau limits
+    figure_dir_tau = Table("Limits on Dirac HNL with tau coupling")
+    figure_dir_tau.description =     "The 95% CL limits on $|V_{N\tau}|^2$ as a function of the HNL mass for a Dirac HNL."
+    figure_dir_tau.add_image('/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-Displaced/UL2016post-2016pre-2017-2018/MaxOneTau-tau/limits.png')
+    in_files = [
+        '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-prompt/UL2016post-2016pre-2017-2018/custom-lowmass-default-tau-asymptotic/MaxOneTau',
+        '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-prompt/UL2016post-2016pre-2017-2018/custom-lowestmass-default-tau-asymptotic/MaxOneTau',
+        '/user/lwezenbe/private/PhD/Analysis_CMSSW_10_2_22/CMSSW_10_2_22/src/HNL/Stat/data/output/Dirac-prompt/UL2016post-2016pre-2017-2018/cutbased-default-tau-asymptotic/MaxOneTau'
+    ]
+    for variable in gatherLimits(in_files, 'tau'):
+        figure_dir_tau.add_variable(variable)
+    addCommonKeywordsTo(figure_dir_tau)
+    submission.add_table(figure_dir_tau)
+    
 
 if __name__ == '__main__':
     from hepdata_lib import Submission

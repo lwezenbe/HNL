@@ -69,23 +69,23 @@ def getSampleManager(year):
     else:
         return SampleManager(args.era, year, 'noskim', 'Triggers/triggerlist_'+args.era+str(year))
 
-#
-# Prepare jobs
-#
-jobs = {}
-from HNL.Tools.jobSubmitter import checkShouldMerge
-skip_running_jobs = args.makePlots and not any([checkShouldMerge(__file__, argParser, additionalArgs=[('year', year)]) for year in args.year])
-if not args.isTest and not skip_running_jobs:
-    for year in args.year:
-        jobs[year] = []
-        
-        sample_manager = getSampleManager(year)
-    
-        for sample_name in sample_manager.sample_names:
-            if args.sample and args.sample not in sample_name: continue 
-            sample = sample_manager.getSample(sample_name)
-            for njob in xrange(sample.returnSplitJobs()):
-                jobs[year] += [(sample.name, str(njob), year)]
+##
+## Prepare jobs
+##
+#jobs = {}
+#from HNL.Tools.jobSubmitter import checkShouldMerge
+#skip_running_jobs = args.makePlots and not any([checkShouldMerge(__file__, argParser, additionalArgs=[('year', year)]) for year in args.year])
+#if not args.isTest and not skip_running_jobs:
+#    for year in args.year:
+#        jobs[year] = []
+#        
+#        sample_manager = getSampleManager(year)
+#    
+#        for sample_name in sample_manager.sample_names:
+#            if args.sample and args.sample not in sample_name: continue 
+#            sample = sample_manager.getSample(sample_name)
+#            for njob in xrange(sample.returnSplitJobs()):
+#                jobs[year] += [(sample.name, str(njob), year)]
 
 #
 # Get Output Name
@@ -350,7 +350,7 @@ else:
         base_path_in = getOutputBase(year, '*')
                        
         in_files = glob.glob(base_path_in)
-        if not skip_running_jobs: merge(in_files, __file__, jobs[year], ('sample', 'subJob'), argParser, istest=args.isTest, additionalArgs=[('year', year)])
+#        if not skip_running_jobs: merge(in_files, __file__, jobs[year], ('sample', 'subJob'), argParser, istest=args.isTest, additionalArgs=[('year', year)])
 
         sample_manager = getSampleManager(year)  
         samples_to_plot = sample_manager.getOutputs()

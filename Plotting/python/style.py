@@ -146,16 +146,18 @@ def getHistDidar(index):
     else:               return ROOT.kBlack
 
 def getHNLColor(name):
+    if '200' in name:   return TColor.GetColor("#9A4C95")
     if '700' in name:   return TColor.GetColor("#9A4C95")
     if '600' in name:   return TColor.GetColor("#0000bd")
     if '500' in name:   return TColor.GetColor("#262626")
     if '400' in name:   return TColor.GetColor("#5d0016")
     if '300' in name:   return TColor.GetColor("#f20019")
-    elif '200' in name:   return TColor.GetColor("#06AED5")
+    #elif '200' in name:   return TColor.GetColor("#06AED5")
     elif '150' in name:   return TColor.GetColor("#8f00c7")
     elif '120' in name:   return TColor.GetColor("#0086fe")
     elif '100' in name:   return TColor.GetColor("#D741A7")
-    elif '85' in name:  return TColor.GetColor("#262626")
+    #elif '85' in name:  return TColor.GetColor("#262626")
+    elif '85' in name:  return TColor.GetColor("#fe8420")
     elif '80' in name:   return TColor.GetColor("#00fefe")
     elif '60' in name:   return TColor.GetColor("#fe68fe")
     elif '40' in name:   return TColor.GetColor("#fe8420")
@@ -290,7 +292,9 @@ def getLimitColors(name):
     #if 'DELPHI' in name:      return TColor.GetColor("#0000ff")
     #if 'DELPHI' in name:      return TColor.GetColor("#685762")
     #if 'DELPHI' in name:      return TColor.GetColor("#E8C547")
-    if 'displaced' in name: return TColor.GetColor("#4A7C59")
+    if '3l displaced' in name: return TColor.GetColor("#4A7C59")
+    #if '2l displaced' in name: return TColor.GetColor("#E6AA68")
+    if '2l displaced' in name: return TColor.GetColor("#8075FF")
     #if 'displaced' in name: return TColor.GetColor("#898980")
     return ROOT.kBlack
 
@@ -317,7 +321,8 @@ def getLineStyleBraz(name):
     if '2016' in name:      return 9
     if 'VBF' in name:      return 7
     if 'DELPHI' in name:      return 2
-    if 'displaced' in name:      return 3
+    if '3l displaced' in name:      return 3
+    if '2l displaced' in name:      return 5
     return 1
 
 def getLineStyle2(index):

@@ -18,7 +18,7 @@ submission_parser.add_argument('--ignoreExpected', action='store_true', default=
 submission_parser.add_argument('--ignoreBands', action='store_true', default=False,  help='Only plot observed')
 submission_parser.add_argument('--yaxis', action='store', default=None,  help='custom y axis label')
 submission_parser.add_argument('--maxYsf', action='store', type=float, default=1.,  help='custom scale for y axis')
-argParser.add_argument('--paperPlots',   action='store_true',     default=False,  help='Slightly adapt the plots to be paper-approved')
+argParser.add_argument('--paperPlots',   action='store',     default=None,  help='Slightly adapt the plots to be paper-approved')
 args = argParser.parse_args()
 
 import os
@@ -159,7 +159,7 @@ def getRatio(graph1, graph2):
         graph.SetPoint(ix, x_val, new_graph1_y_values[ix]/new_graph2_y_values[ix])
     return graph
 
-if args.paperPlots: 
+if args.paperPlots is not None: 
     ratios = None
 else:
     ratios = []
@@ -173,5 +173,9 @@ from HNL.Plotting.plot import Plot
 from HNL.Stat.combineTools import coupling_dict
 year = args.datacard.split('UL')[1].split('/')[0]
 y_axis_label = args.yaxis if args.yaxis is not None else '|V_{'+coupling_dict[args.flavor]+' N}|^{2}'
-p = Plot(main_graphs, tex_names, 'limits', extra_text = extra_text, bkgr_hist = bkgr_hist, y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = y_axis_label, era = 'UL', year = year, draw_ratio = ratios, for_paper = args.paperPlots)
+p = Plot(main_graphs, tex_names, 'limits-{0}'.format(args.flavor), extra_text = extra_text, bkgr_hist = bkgr_hist, y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = y_axis_label, era = 'UL', year = year, draw_ratio = ratios, for_paper = args.paperPlots)
 p.drawBrazilian(output_dir = os.path.join(in_base_folder, args.output), ignore_expected = args.ignoreExpected, signal_legend=args.signalTexName, ignore_bands = args.ignoreBands, max_y_sf = args.maxYsf)
+if args.paperPlots == 'default':
+    p = Plot(main_graphs, tex_names, 'limits-{0}-raw'.format(args.flavor), extra_text = extra_text, bkgr_hist = bkgr_hist, y_log = True, x_log=True, x_name = 'm_{N} [GeV]', y_name = y_axis_label, era = 'UL', year = year, draw_ratio = ratios, for_paper = 'raw')
+    p.drawBrazilian(output_dir = os.path.join(in_base_folder, args.output), ignore_expected = args.ignoreExpected, signal_legend=args.signalTexName, ignore_bands = args.ignoreBands, max_y_sf = args.maxYsf)
+    
