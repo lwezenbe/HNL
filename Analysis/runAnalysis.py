@@ -582,7 +582,7 @@ else:
     # Create variable distributions
     #
     
-    def createSingleVariableDistributions(tree, vname, hname, bins, condition, proc, year, include_systematics = 'nominal', split_corr = False, additional_weight = None, ignore_sideband = False):
+    def createSingleVariableDistributions(tree, vname, hname, bins, condition, proc, year, include_systematics = 'nominal', split_corr = False, additional_weight = None, ignore_sideband = False, decorrelate_sr = None):
         out_dict = {}
     
         weight = 'weight'
@@ -591,10 +591,10 @@ else:
         out_dict['nominal'] = Histogram(tree.getHistFromTree(vname, hname, bins, condition, weight=weight))
         if include_systematics != 'nominal':
             from HNL.Systematics.systematics import returnWeightShapes
-            out_dict.update(returnWeightShapes(tree, vname, hname, bins, condition, year, proc, ['non-prompt'] if not ignore_sideband else None, additional_weight=additional_weight))
+            out_dict.update(returnWeightShapes(tree, vname, hname, bins, condition, year, proc, ['non-prompt'] if not ignore_sideband else None, additional_weight=additional_weight, decorrelate_sr = decorrelate_sr))
         return out_dict 
     
-    def createVariableDistributions(categories_dict, var_dict, signal, background, data, sample_manager, year, additional_condition = None, include_systematics = 'nominal', sr = None, split_corr = False, for_datacards = False, ignore_sideband = False, custom_bins = None):
+    def createVariableDistributions(categories_dict, var_dict, signal, background, data, sample_manager, year, additional_condition = None, include_systematics = 'nominal', sr = None, split_corr = False, for_datacards = False, ignore_sideband = False, custom_bins = None, decorrelate_sr = None):
 
         from HNL.Analysis.analysisTypes import getBinning
         bins = lambda c, v: getBinning(v, args.region, var_dict[v][1]) if custom_bins is None else custom_bins[c][v] 
@@ -667,9 +667,9 @@ else:
                                 
                                 if args.plotDirac: additional_weight += '*diracSF'
                                 if corr_syst == 'nominal':
-                                    tmp_list_of_hist[c][v]['signal'][new_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, include_systematics, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband)
+                                    tmp_list_of_hist[c][v]['signal'][new_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, include_systematics, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband, decorrelate_sr = decorrelate_sr)
                                 else:
-                                    tmp_list_of_hist[c][v]['signal'][new_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband)['nominal'] 
+                                    tmp_list_of_hist[c][v]['signal'][new_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, split_corr = split_corr, additional_weight = additional_weight, ignore_sideband=ignore_sideband, decorrelate_sr = decorrelate_sr)['nominal'] 
                             else:
                                 additional_weight = 'diracSF' if args.plotDirac else None
                                 for iv, vsquared in enumerate(np.ndarray(intree.getTreeVariable('displacement_ncouplings', 0), 'f', intree.getTreeVariable('displacement_vsquared', 0))):
@@ -678,12 +678,12 @@ else:
                                     new_name = cleaned_sample_name.split('-Vsq')[0]+'-Vsq'+vsquared_translated + '-' + Sample.getSignalDisplacedString(cleaned_sample_name)
                                     additional_weight_corrected = '(displacement_lumiweight[{0}]/lumiWeight)'.format(iv) if additional_weight is None else additional_weight+'*(displacement_lumiweight[{0}]/lumiWeight)'.format(iv)
                                     if corr_syst == 'nominal':
-                                        tmp_list_of_hist[c][v]['signal'][new_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year)+'-'+vsquared_translated, bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, include_systematics, split_corr = split_corr, additional_weight = additional_weight_corrected, ignore_sideband=ignore_sideband)
+                                        tmp_list_of_hist[c][v]['signal'][new_name] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year)+'-'+vsquared_translated, bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, include_systematics, split_corr = split_corr, additional_weight = additional_weight_corrected, ignore_sideband=ignore_sideband, decorrelate_sr = decorrelate_sr)
                                     else:
-                                        tmp_list_of_hist[c][v]['signal'][new_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year)+'-'+vsquared_translated, bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, split_corr = split_corr, additional_weight = additional_weight_corrected, ignore_sideband=ignore_sideband)['nominal'] 
+                                        tmp_list_of_hist[c][v]['signal'][new_name][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-'+sample_name+'-'+str(sr)+'-'+str(year)+'-'+vsquared_translated, bins(c, v), '('+cc+'&&!issideband)'+additional_condition_to_use, sample_name, year, split_corr = split_corr, additional_weight = additional_weight_corrected, ignore_sideband=ignore_sideband, decorrelate_sr = decorrelate_sr)['nominal'] 
     
             print '\n'
-    
+   
         if args.includeData is not None and not args.signalOnly:
         #if args.includeData is not None:
             print "Loading data"
@@ -695,10 +695,10 @@ else:
                     for v in var_dict:
                         proc_to_use = 'non-prompt' if not ignore_sideband else 'Data'
                         if corr_syst == 'nominal':
-                            tmp_list_of_hist[c][v]['data']['sideband'] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&issideband)'+additional_condition, proc_to_use, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
+                            tmp_list_of_hist[c][v]['data']['sideband'] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&issideband)'+additional_condition, proc_to_use, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband, decorrelate_sr = decorrelate_sr)
                             tmp_list_of_hist[c][v]['data']['signalregion'] = {'nominal' : Histogram(intree.getHistFromTree(v, str(c)+'-'+v+'-'+'-nominal-Data-signalregion'+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!issideband)'+additional_condition))}
                         else:
-                            tmp_list_of_hist[c][v]['data']['sideband'][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&issideband)'+additional_condition, proc_to_use, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']
+                            tmp_list_of_hist[c][v]['data']['sideband'][corr_syst] = createSingleVariableDistributions(intree, v, str(c)+'-'+v+'-'+corr_syst+'-Data-sideband'+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&issideband)'+additional_condition, proc_to_use, year, split_corr=split_corr, ignore_sideband=ignore_sideband, decorrelate_sr = decorrelate_sr)['nominal']
     
         if not args.signalOnly:
 
@@ -730,16 +730,16 @@ else:
                         for c, cc in zip(categories_to_use, category_conditions):
                             for iv, v in enumerate(var_dict.keys()): 
                                 if corr_syst == 'nominal':
-                                    tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband, additional_weight = getPromptWeight(b))
-                                    #tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
+                                    tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband, additional_weight = getPromptWeight(b), decorrelate_sr = decorrelate_sr)
+                                    #tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband, decorrelate_sr = decorrelate_sr)
                                 else:
-                                    tmp_list_of_hist[c][v]['bkgr'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband, additional_weight = getPromptWeight(b))['nominal']
+                                    tmp_list_of_hist[c][v]['bkgr'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband, additional_weight = getPromptWeight(b), decorrelate_sr = decorrelate_sr)['nominal']
                                 
                                 #charge
                                 if corr_syst == 'nominal': 
-                                    tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+'-chargemisid'+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
+                                    tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+'-chargemisid'+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband, decorrelate_sr = decorrelate_sr)
                                 else:
-                                    tmp_hist = {corr_syst : createSingleVariableDistributions(intree, v, 'tmp_'+b+'-chargemisid'+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']}
+                                    tmp_hist = {corr_syst : createSingleVariableDistributions(intree, v, 'tmp_'+b+'-chargemisid'+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isChargeFlipEvent&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband, decorrelate_sr = decorrelate_sr)['nominal']}
                                     
                                 if corr_syst not in tmp_list_of_hist[c][v]['bkgr']['charge-misid'].keys():
                                     tmp_list_of_hist[c][v]['bkgr']['charge-misid'].update(tmp_hist)
@@ -750,9 +750,9 @@ else:
                                 
                                 if ignore_sideband:
                                     if corr_syst == 'nominal': 
-                                        tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isprompt&&!issideband)'+additional_condition, 'non-prompt', year, include_systematics, ignore_sideband=ignore_sideband)
+                                        tmp_hist = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isprompt&&!issideband)'+additional_condition, 'non-prompt', year, include_systematics, ignore_sideband=ignore_sideband, decorrelate_sr = decorrelate_sr)
                                     else:
-                                        tmp_hist = {corr_syst : createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isprompt&&!issideband)'+additional_condition, b, year, ignore_sideband=ignore_sideband)['nominal']}
+                                        tmp_hist = {corr_syst : createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'np'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&!isprompt&&!issideband)'+additional_condition, b, year, ignore_sideband=ignore_sideband, decorrelate_sr = decorrelate_sr)['nominal']}
            
                                     if corr_syst not in tmp_list_of_hist[c][v]['bkgr']['non-prompt'].keys():
                                         tmp_list_of_hist[c][v]['bkgr']['non-prompt'].update(tmp_hist)
@@ -763,9 +763,9 @@ else:
                                 else:
                                     #Load in the prompt sideband so we can remove it from our datadriven estimation
                                     if corr_syst == 'nominal': 
-                                        tmp_list_of_hist[c][v]['data'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year)+'-sideband', bins(c, v), '('+cc+'&&isprompt&&issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
+                                        tmp_list_of_hist[c][v]['data'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year)+'-sideband', bins(c, v), '('+cc+'&&isprompt&&issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband, decorrelate_sr = decorrelate_sr)
                                     else:
-                                        tmp_list_of_hist[c][v]['data'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year)+'-sideband', bins(c, v), '('+cc+'&&isprompt&&issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']
+                                        tmp_list_of_hist[c][v]['data'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'p'+corr_syst+'-'+str(sr)+'-'+str(year)+'-sideband', bins(c, v), '('+cc+'&&isprompt&&issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband, decorrelate_sr = decorrelate_sr)['nominal']
                             
                 else:
                     split_syst_to_run = getSystToRun(year, sample_name, split_corr=True) if include_systematics in ['full'] else ['nominal']
@@ -774,9 +774,9 @@ else:
                         for c, cc in zip(categories_to_use, category_conditions):
                             for iv, v in enumerate(var_dict.keys()):
                                 if corr_syst == 'nominal': 
-                                    tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'t'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband)
+                                    tmp_list_of_hist[c][v]['bkgr'][b] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'t'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, year, include_systematics, split_corr=split_corr, ignore_sideband=ignore_sideband, decorrelate_sr = decorrelate_sr)
                                 else:
-                                    tmp_list_of_hist[c][v]['bkgr'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'t'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband)['nominal']
+                                    tmp_list_of_hist[c][v]['bkgr'][b][corr_syst] = createSingleVariableDistributions(intree, v, 'tmp_'+b+v+str(c)+'t'+corr_syst+'-'+str(sr)+'-'+str(year), bins(c, v), '('+cc+'&&isprompt&&!issideband)'+additional_condition, b, year, split_corr=split_corr, ignore_sideband=ignore_sideband, decorrelate_sr = decorrelate_sr)['nominal']
    
             if not ignore_sideband:
                 for c, cc in zip(categories_to_use, category_conditions):
@@ -1097,9 +1097,9 @@ else:
                 sr_condition = '||'.join(['searchregion=={0}'.format(x) for x in srm[args.region].getGroupValues(sr)]) if sr != 'Combined' else None
                 #Scout the binning
                 binning = insertRebin(var_for_datacard, year, signal_list, background_collection, data_list, additional_condition = sr_condition, ignore_sideband = ignore_sideband, searchregion = sr, for_datacards = True) 
-                
-                hist_for_datacard = createVariableDistributions(category_dict[args.categoriesToPlot], var_for_datacard, signal_list[year], background_collection[year], data_list[year], sample_manager, year, sr_condition, include_systematics = args.systematics, sr=sr, split_corr=True, for_datacards=True, ignore_sideband = ignore_sideband, custom_bins = binning)
-                  
+               
+                hist_for_datacard = createVariableDistributions(category_dict[args.categoriesToPlot], var_for_datacard, signal_list[year], background_collection[year], data_list[year], sample_manager, year, sr_condition, include_systematics = args.systematics, sr=sr, split_corr=True, for_datacards=True, ignore_sideband = ignore_sideband, custom_bins = binning, decorrelate_sr = sr)
+ 
                 for ac in category_dict[args.categoriesToPlot][0]:
                     print 'Filling', ac
                     for v in var_for_datacard.keys():
@@ -1115,6 +1115,8 @@ else:
                             new_signal_name = sample_name.split('-Vsq')[0]+'-Vsq'+('{:.1e}'.format(coupling_squared).replace('-', 'm'))+'-'+Sample.getSignalDisplacedString(sample_name) 
                             out_path = os.path.join(os.path.expandvars('$CMSSW_BASE'), 'src', 'HNL', 'Stat', 'data', 'shapes', '-'.join([args.selection, args.region] if args.tag is None else [args.selection, args.region, args.tag]), args.era+str(year), args.flavor, new_signal_name, 'Dirac' if args.plotDirac else 'Majorana', bin_name+'.shapes.root')
                             makeDirIfNeeded(out_path)
+
+                            # Save shapes
                             hist_for_datacard[ac][v]['signal'][sample_name]['nominal'].replaceZeroBins()
                             hist_for_datacard[ac][v]['signal'][sample_name]['nominal'].write(out_path, write_name=new_signal_name, subdirs = [bin_name.rsplit('-', 1)[0]])
                             for syst in hist_for_datacard[ac][v]['signal'][sample_name].keys():
@@ -1135,7 +1137,7 @@ else:
                             data_hist_tmp = hist_for_datacard[ac][v]['data']['signalregion']['nominal'].clone('Ditau')
                             data_hist_tmp.replaceZeroBins()
                             data_hist_tmp.write(out_path, write_name='data_obs', append=True, subdirs = [bin_name.rsplit('-', 1)[0]])
-                         
+                        
                             makeDataCard(bin_name, args.flavor, args.era, year, 0, new_signal_name, bkgr_names, args.selection, args.region, ac, shapes=True, nonprompt_from_sideband = args.includeData == 'includeSideband', majorana_str = 'Majorana' if not args.plotDirac else 'Dirac', shapes_path=out_path, tag = args.tag)
    
     if args.makePlots:

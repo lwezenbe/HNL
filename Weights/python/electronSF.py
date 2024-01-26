@@ -127,7 +127,11 @@ def getElectronScaleMinimal(chain, syst = 'nominal'):
         out_val = 1
         for f in chain.l_flavor:
             if f == 0:
-                if syst == 'up':
+                #if syst == 'up':
+                #    out_val += 0.003
+                #elif syst == 'down':
+                #    out_val -= 0.003
+                if syst == 'up':                        #Purposefully keep wrong sf here until rerun because of the tmp fix in insertSystematics
                     out_val += 0.03
                 elif syst == 'down':
                     out_val -= 0.03
